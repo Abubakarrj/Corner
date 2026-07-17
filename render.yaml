@@ -1,0 +1,12 @@
+services:
+  - type: worker
+    name: corner-bagel
+    runtime: docker
+    rootDir: corner-bagel
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    envVars:
+      - key: PROJECT_ID
+        sync: false
+      - key: PROJECT_SECRET
+        sync: false
