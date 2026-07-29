@@ -1,20 +1,17 @@
 // Signup endpoint behind the drop-list modal.
 //
-// It validates the number and normalizes it to E.164 so that whatever ends up
-// storing and texting the list receives one canonical format. Nothing is
-// persisted or sent yet — see `onSignup` below for the single place to wire in
-// storage and the founder agent.
+// It validates the number, normalizes it to E.164, sends the welcome text via
+// Twilio, and logs the signup. Nothing is stored durably yet — see `onSignup`
+// below for where a real subscriber store belongs.
 
 // The first text a new subscriber gets, written in Abu's voice. It lives here,
 // next to the signup, so the welcome copy is versioned with the form that
-// triggers it rather than buried in the agent's prompt.
-export const WELCOME_TEXT = `Hey! I'm Abu, founder of Corner Bagel.
+// triggers it.
+export const WELCOME_TEXT = `Hey, it's Abu.
 
-Thanks for joining our text list. I promise we won't spam you.
+Just wanted to say thanks for signing up. Really excited to have you here.
 
-This is where you'll hear about new cream cheese drops, seasonal specials, neighborhood pop-ups, and the occasional surprise before anyone else. You'll also get a behind-the-scenes look at what we're baking and sourcing from our local farmers markets.
-
-If you ever have feedback, an idea, or just want to say hi, reply to this text. It comes straight to me, and I'd genuinely love to hear from you.
+If you ever have any feedback, questions, or just want to chat bagels, reply anytime. This is my number.
 
 See you around the corner.
 
@@ -29,12 +26,62 @@ function toE164(input: unknown): string | null {
   return /^[2-9]\d{2}[2-9]\d{6}$/.test(digits) ? `+1${digits}` : null;
 }
 
-// The handoff point. Today it only records the signup in the server log, so a
-// number that reaches here is captured but NOT yet stored durably and NOT yet
-// texted. Replace the body with the real subscriber store, then send
-// WELCOME_TEXT from the founder agent.
+// Kept undefined rather than throwing at import time — a missing credential
+// should silently skip the text (and say so in the log), not take the whole
+// signup endpoint down.
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER;
+
+// A raw call to Twilio's REST API rather than the `twilio` package — one POST
+// is the entire integration, and it skips a dependency for something this
+// small. See README for the three env vars this needs.
+async function sendWelcomeText(to: string) {
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_NUMBER) {
+    console.warn(
+      "[drop-list] Twilio isn't configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER) — skipping welcome text.",
+    );
+    return;
+  }
+
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(
+          `${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`,
+        ).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: to,
+        From: TWILIO_FROM_NUMBER,
+        Body: WELCOME_TEXT,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Twilio ${response.status}: ${detail.slice(0, 300)}`);
+  }
+}
+
+// The handoff point. A number that reaches here is logged and texted, but NOT
+// yet stored durably — add the real subscriber store here once one exists.
 async function onSignup(phone: string) {
   console.info(`[drop-list] signup ${phone}`);
+
+  // A texting failure shouldn't turn a valid signup into an error response —
+  // there's nothing durable to roll back yet, and the visitor did everything
+  // right. It's logged so a run of these is visible without silently losing
+  // subscribers to a bad Twilio config.
+  try {
+    await sendWelcomeText(phone);
+  } catch (error) {
+    console.error("[drop-list] welcome text failed", error);
+  }
 }
 
 export async function POST(request: Request) {
