@@ -272,14 +272,6 @@ export default function PrivacyPolicyPage() {
                 >
                   cornerbagel@publicentity.co
                 </a>
-                <br />
-                SMS:{" "}
-                <a
-                  href="sms:+12134196038?body=Hey!%20I%20have%20a%20question%20about%20Corner%20Bagel."
-                  className="underline hover:text-[#062CB3] transition-colors"
-                >
-                  Text Us
-                </a>
               </p>
             </div>
           </div>
