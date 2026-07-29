@@ -26,6 +26,10 @@ const PRIVACY_HREF = "https://publicentity.co/privacy-policy#privacy";
 // moment for it, so the modal stays out of the way on that route.
 const SUPPRESSED_PATH = "/privacy-policy";
 
+// The red of the Corner Bagel wordmark — the single fill in public/logo.svg.
+// Keep these in step if the mark is ever recoloured.
+const BRAND_RED = "#BE1923";
+
 const sansStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
 } as const;
@@ -171,7 +175,7 @@ export default function DropListModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="drop-list-title"
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl sm:p-7"
+        className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl sm:p-6"
         style={sansStyle}
       >
         <button
@@ -198,11 +202,11 @@ export default function DropListModal() {
 
         <h2
           id="drop-list-title"
-          className="mb-2 pr-8 text-[21px] font-semibold leading-tight text-[#2D2D2D]"
+          className="mb-2 pr-8 text-[18px] font-semibold leading-tight text-[#2D2D2D]"
         >
           Join our drop list!
         </h2>
-        <p className="mb-4 text-[14px] leading-[145%] text-[#575757]">
+        <p className="mb-4 text-[13px] leading-[145%] text-[#575757]">
           Add your phone number to get a text whenever we do new item drops.
         </p>
 
@@ -231,7 +235,11 @@ export default function DropListModal() {
           </div>
 
           {error ? (
-            <p role="alert" className="mt-2 text-[13px] text-[#B3061F]">
+            <p
+              role="alert"
+              style={{ color: BRAND_RED }}
+              className="mt-2 text-[12px]"
+            >
               {error}
             </p>
           ) : null}
@@ -241,13 +249,14 @@ export default function DropListModal() {
           <button
             type="submit"
             disabled={!valid || status === "sending"}
-            className="mt-3 w-full cursor-pointer rounded-xl bg-[#2D2D2D] py-3 text-[16px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
+            style={{ backgroundColor: BRAND_RED }}
+            className="mt-3 w-full cursor-pointer rounded-xl py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
           >
             {status === "sending" ? "One sec…" : "Notify me!"}
           </button>
         </form>
 
-        <p className="mt-4 text-[11px] leading-[145%] text-[#8A8A8A]">
+        <p className="mt-4 text-[10px] leading-[150%] text-[#8A8A8A]">
           By submitting your information, you agree to receive recurring
           automated marketing messages, updates, and announcements from Corner
           Bagel, a Public Entity Holdings company, at the contact information you
