@@ -11,9 +11,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const STORAGE_KEY = "cb-drop-list-v1";
 
-// How long after the page settles the modal appears. Long enough that the
-// landing page's logo animation reads first, short enough to still be seen.
-const OPEN_DELAY_MS = 1200;
+// The modal opens on whichever comes first: this timer, or the visitor
+// scrolling in either direction.
+const OPEN_DELAY_MS = 500;
+
+// Scrolling counts as the cue, but the landing and order pages don't actually
+// scroll — they're a fixed viewport with `overflow-hidden`. So the gesture is
+// what's listened for, not just the resulting scroll position: a wheel turn or
+// a drag registers on those pages even though nothing moves.
+const OPEN_EVENTS = ["scroll", "wheel", "touchmove"] as const;
 
 // The legal terms behind the disclosure live on Public Entity's site, not this
 // one — both are sections of the same page there. They open in a new tab so
@@ -66,12 +72,16 @@ export default function DropListModal() {
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const answeredRef = useRef(false);
 
   const valid = isValidPhone(phone);
 
   // Closing is final: record it so the modal stays closed on the next visit.
-  const close = useCallback((outcome: "dismissed" | "joined") => {
+  // The three outcomes are kept apart so that a future subscriber count can
+  // tell a real signup from someone who says they are already on the list.
+  const close = useCallback((outcome: "dismissed" | "joined" | "already") => {
     setOpen(false);
+    answeredRef.current = true;
     try {
       window.localStorage.setItem(STORAGE_KEY, outcome);
     } catch {
@@ -80,9 +90,14 @@ export default function DropListModal() {
     }
   }, []);
 
-  // Open on a timer, but only for a visitor who has not answered it before.
+  // Open on the timer or on a scroll, whichever lands first, and only for a
+  // visitor who has not answered it before.
   useEffect(() => {
     if (pathname === SUPPRESSED_PATH) return;
+    // Answering is remembered for the session as well as on disk, so a browser
+    // that refuses localStorage still can't have the modal spring back after a
+    // navigation.
+    if (answeredRef.current) return;
 
     let answered = false;
     try {
@@ -92,8 +107,23 @@ export default function DropListModal() {
     }
     if (answered) return;
 
-    const timer = window.setTimeout(() => setOpen(true), OPEN_DELAY_MS);
-    return () => window.clearTimeout(timer);
+    const stop = () => {
+      window.clearTimeout(timer);
+      for (const event of OPEN_EVENTS) {
+        window.removeEventListener(event, openNow);
+      }
+    };
+    // Whichever cue arrives first retires the other.
+    const openNow = () => {
+      setOpen(true);
+      stop();
+    };
+
+    const timer = window.setTimeout(openNow, OPEN_DELAY_MS);
+    for (const event of OPEN_EVENTS) {
+      window.addEventListener(event, openNow, { passive: true });
+    }
+    return stop;
   }, [pathname]);
 
   // While the modal is up: lock the page behind it, focus the field, close on
@@ -267,6 +297,17 @@ export default function DropListModal() {
             className="mt-3 w-full cursor-pointer rounded-xl py-3 text-[16px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
           >
             {status === "sending" ? "One sec…" : "Notify me!"}
+          </button>
+
+          {/* The way out for someone who already subscribed, so the only exit
+              isn't the small X in the corner. type="button" keeps it from
+              submitting the form it sits inside. */}
+          <button
+            type="button"
+            onClick={() => close("already")}
+            className="mt-3 w-full cursor-pointer text-center text-[13px] text-[#575757] underline transition-opacity hover:opacity-70"
+          >
+            Already on the list
           </button>
         </form>
 
