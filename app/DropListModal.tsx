@@ -163,7 +163,7 @@ export default function DropListModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/25 p-6 backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/25 p-5 backdrop-blur-md"
       // A click on the backdrop dismisses; clicks inside the card bubble up to
       // here too, so only a hit on the backdrop itself counts.
       onMouseDown={(event) => {
@@ -175,7 +175,7 @@ export default function DropListModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="drop-list-title"
-        className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl sm:p-6"
+        className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
         style={sansStyle}
       >
         <button
@@ -202,18 +202,18 @@ export default function DropListModal() {
 
         <h2
           id="drop-list-title"
-          className="mb-2 pr-8 text-[18px] font-semibold leading-tight text-[#2D2D2D]"
+          className="mb-2 pr-8 text-[20px] font-semibold leading-tight text-[#2D2D2D]"
         >
           Join our drop list!
         </h2>
-        <p className="mb-4 text-[13px] leading-[145%] text-[#575757]">
+        <p className="mb-4 text-[14px] leading-[145%] text-[#575757]">
           Add your phone number to get a text whenever we do new item drops.
         </p>
 
         <form onSubmit={onSubmit} noValidate>
           {/* The field's text stays at 16px however much the card tightens:
               anything smaller makes iOS Safari zoom the page on focus. */}
-          <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-3.5 py-2.5 focus-within:border-[#2D2D2D]">
+          <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
             <span className="shrink-0 text-[16px] text-[#2D2D2D]" aria-hidden>
               +1 🇺🇸
             </span>
@@ -250,13 +250,15 @@ export default function DropListModal() {
             type="submit"
             disabled={!valid || status === "sending"}
             style={{ backgroundColor: BRAND_RED }}
-            className="mt-3 w-full cursor-pointer rounded-xl py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
+            className="mt-3 w-full cursor-pointer rounded-xl py-3 text-[16px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
           >
             {status === "sending" ? "One sec…" : "Notify me!"}
           </button>
         </form>
 
-        <p className="mt-4 text-[10px] leading-[150%] text-[#8A8A8A]">
+        {/* Deliberately the smallest thing in the card — the reference design
+            sets this fine print at roughly a third of the heading. */}
+        <p className="mt-4 text-[9px] leading-[150%] text-[#8A8A8A]">
           By submitting your information, you agree to receive recurring
           automated marketing messages, updates, and announcements from Corner
           Bagel, a Public Entity Holdings company, at the contact information you
