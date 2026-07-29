@@ -245,7 +245,7 @@ export default function DropListModal() {
           Join our drop list!
         </h2>
         <p className="mb-4 text-[14px] leading-[145%] text-[#575757]">
-          Add your phone number to get a text whenever we do new item drops.
+          We&rsquo;ll text you the second something new drops.
         </p>
 
         <form onSubmit={onSubmit} noValidate>
