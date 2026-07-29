@@ -238,9 +238,14 @@ export default function DropListModal() {
           </svg>
         </button>
 
+        {/* font-family already inherits Geist from the dialog's sansStyle —
+            it's the weight and tracking that were off from the rest of the
+            build's headings (bold, -0.03em, e.g. OrderCardBody's "No Online
+            Ordering"). Matched here rather than just the typeface. */}
         <h2
           id="drop-list-title"
-          className="mb-2 pr-8 text-[20px] font-semibold leading-tight text-[#2D2D2D]"
+          className="mb-2 pr-8 text-[20px] font-bold leading-tight text-[#2D2D2D]"
+          style={{ letterSpacing: "-0.03em" }}
         >
           Join our drop list!
         </h2>
