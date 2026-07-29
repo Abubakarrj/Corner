@@ -30,6 +30,14 @@ const SUPPRESSED_PATH = "/privacy-policy";
 // Keep these in step if the mark is ever recoloured.
 const BRAND_RED = "#BE1923";
 
+// Apple's flag artwork is the Apple Color Emoji font, which ships with iOS and
+// macOS — naming it first is what makes an iPhone draw its own flag here rather
+// than letting the site font decide. Other platforms fall back to their own
+// emoji font; Windows is the one that has no flag glyphs at all and renders the
+// regional letters "US" instead.
+const EMOJI_FONT =
+  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
 const sansStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
 } as const;
@@ -214,8 +222,14 @@ export default function DropListModal() {
           {/* The field's text stays at 16px however much the card tightens:
               anything smaller makes iOS Safari zoom the page on focus. */}
           <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
-            <span className="shrink-0 text-[16px] text-[#2D2D2D]" aria-hidden>
-              +1 🇺🇸
+            {/* The flag is scoped to the emoji font on its own so that "+1"
+                still renders in Geist with the rest of the card. */}
+            <span
+              className="flex shrink-0 items-center gap-1.5 text-[16px] text-[#2D2D2D]"
+              aria-hidden
+            >
+              +1
+              <span style={{ fontFamily: EMOJI_FONT }}>🇺🇸</span>
             </span>
             <input
               ref={inputRef}
