@@ -1,8 +1,8 @@
 // Signup endpoint behind the drop-list modal.
 //
-// It validates the number, normalizes it to E.164, sends the welcome text via
-// Twilio, and logs the signup. Nothing is stored durably yet — see `onSignup`
-// below for where a real subscriber store belongs.
+// It validates the number, normalizes it to E.164, sends the welcome text and
+// a join alert via Twilio, and logs the signup. Nothing is stored durably
+// yet — see `onSignup` below for where a real subscriber store belongs.
 
 // The first text a new subscriber gets, written in Abu's voice. It lives here,
 // next to the signup, so the welcome copy is versioned with the form that
@@ -26,6 +26,16 @@ function toE164(input: unknown): string | null {
   return /^[2-9]\d{2}[2-9]\d{6}$/.test(digits) ? `+1${digits}` : null;
 }
 
+// "+14155550123" -> "415-555-0123", the dashed form the join alert reads in.
+function formatForAlert(e164: string): string {
+  const digits = e164.slice(2); // drop the leading "+1"
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+// Abu's own phone — every signup sends him a one-line heads-up here, so he can
+// see the list growing without a dashboard or a database to check.
+const RELAY_TO_NUMBER = "+12134196038";
+
 // Kept undefined rather than throwing at import time — a missing credential
 // should silently skip the text (and say so in the log), not take the whole
 // signup endpoint down.
@@ -35,11 +45,12 @@ const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER;
 
 // A raw call to Twilio's REST API rather than the `twilio` package — one POST
 // is the entire integration, and it skips a dependency for something this
-// small. See README for the three env vars this needs.
-async function sendWelcomeText(to: string) {
+// small. See README for the three env vars this needs. `label` only names the
+// send in logs, so a skipped or failed message says which one it was.
+async function sendSms(to: string, body: string, label: string) {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_NUMBER) {
     console.warn(
-      "[drop-list] Twilio isn't configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER) — skipping welcome text.",
+      `[drop-list] Twilio isn't configured (TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER) — skipping ${label}.`,
     );
     return;
   }
@@ -54,17 +65,13 @@ async function sendWelcomeText(to: string) {
         ).toString("base64")}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        To: to,
-        From: TWILIO_FROM_NUMBER,
-        Body: WELCOME_TEXT,
-      }),
+      body: new URLSearchParams({ To: to, From: TWILIO_FROM_NUMBER, Body: body }),
     },
   );
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`Twilio ${response.status}: ${detail.slice(0, 300)}`);
+    throw new Error(`Twilio ${response.status} (${label}): ${detail.slice(0, 300)}`);
   }
 }
 
@@ -73,14 +80,26 @@ async function sendWelcomeText(to: string) {
 async function onSignup(phone: string) {
   console.info(`[drop-list] signup ${phone}`);
 
-  // A texting failure shouldn't turn a valid signup into an error response —
-  // there's nothing durable to roll back yet, and the visitor did everything
-  // right. It's logged so a run of these is visible without silently losing
-  // subscribers to a bad Twilio config.
+  // Each send fails independently — a broken relay alert shouldn't cost the
+  // subscriber their welcome text, and vice versa. Neither failure should turn
+  // a valid signup into an error response either: there's nothing durable to
+  // roll back yet, and the visitor did everything right. Both are logged so a
+  // run of these is visible without silently losing subscribers (or Abu's
+  // alerts) to a bad Twilio config.
   try {
-    await sendWelcomeText(phone);
+    await sendSms(phone, WELCOME_TEXT, "welcome text");
   } catch (error) {
     console.error("[drop-list] welcome text failed", error);
+  }
+
+  try {
+    await sendSms(
+      RELAY_TO_NUMBER,
+      `Hey Abu, ${formatForAlert(phone)}, joined the list.`,
+      "join alert",
+    );
+  } catch (error) {
+    console.error("[drop-list] join alert failed", error);
   }
 }
 
