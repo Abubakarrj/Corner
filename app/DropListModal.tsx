@@ -13,7 +13,7 @@ const STORAGE_KEY = "cb-drop-list-v1";
 
 // The modal opens on whichever comes first: this timer, or the visitor
 // scrolling in either direction.
-const OPEN_DELAY_MS = 500;
+const OPEN_DELAY_MS = 1200;
 
 // Scrolling counts as the cue, but the landing and order pages don't actually
 // scroll — they're a fixed viewport with `overflow-hidden`. So the gesture is
