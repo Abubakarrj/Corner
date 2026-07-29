@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --animate-logo-roll: rollLogo 5s linear both;
+
+  @keyframes rollLogo {
+    from {
+      /* start at the left edge of the viewport so the donut is visible
+         immediately, then rolls right to its resting position */
+      transform: translateX(calc(-50vw - 200px)) rotate(-1440deg);
+    }
+    to {
+      transform: translateX(0) rotate(0deg);
+    }
+  }
+}
+
+/* Mobile: gelindingnya lebih cepat */
+@media (max-width: 640px) {
+  .animate-logo-roll {
+    animation-duration: 2.8s;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
