@@ -49,7 +49,7 @@ export default function DropListModal() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "joined">("idle");
+  const [status, setStatus] = useState<"idle" | "sending">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -142,7 +142,9 @@ export default function DropListModal() {
         const body = await response.json().catch(() => null);
         throw new Error(body?.error ?? "Something went wrong.");
       }
-      setStatus("joined");
+      // Signing up dismisses the modal — there is no confirmation step, so the
+      // page the visitor came for is handed straight back to them.
+      close("joined");
     } catch (submitError) {
       setStatus("idle");
       setError(
@@ -174,7 +176,7 @@ export default function DropListModal() {
       >
         <button
           type="button"
-          onClick={() => close(status === "joined" ? "joined" : "dismissed")}
+          onClick={() => close("dismissed")}
           aria-label="Close"
           className="absolute right-5 top-5 cursor-pointer text-[#575757] transition-opacity hover:opacity-60"
         >
@@ -194,102 +196,79 @@ export default function DropListModal() {
           </svg>
         </button>
 
-        {status === "joined" ? (
-          <>
-            <h2
-              id="drop-list-title"
-              className="mb-3 pr-8 text-[26px] font-semibold leading-tight text-[#2D2D2D]"
-            >
-              You&rsquo;re on the list.
-            </h2>
-            <p className="text-[15px] leading-[150%] text-[#575757]">
-              Keep an eye on your phone — Abu will text you shortly. See you
-              around the corner.
+        <h2
+          id="drop-list-title"
+          className="mb-3 pr-8 text-[26px] font-semibold leading-tight text-[#2D2D2D]"
+        >
+          Join our drop list!
+        </h2>
+        <p className="mb-6 text-[15px] leading-[150%] text-[#575757]">
+          Add your phone number to get a text whenever we do new item drops.
+        </p>
+
+        <form onSubmit={onSubmit} noValidate>
+          <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
+            <span className="shrink-0 text-[16px] text-[#2D2D2D]" aria-hidden>
+              +1 🇺🇸
+            </span>
+            <input
+              ref={inputRef}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
+              name="phone"
+              aria-label="Phone number"
+              placeholder="Phone number"
+              value={phone}
+              onChange={(event) => {
+                setPhone(formatPhone(event.target.value));
+                setError(null);
+              }}
+              className="w-full min-w-0 bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A]"
+            />
+          </div>
+
+          {error ? (
+            <p role="alert" className="mt-2 text-[13px] text-[#B3061F]">
+              {error}
             </p>
-          </>
-        ) : (
-          <>
-            <h2
-              id="drop-list-title"
-              className="mb-3 pr-8 text-[26px] font-semibold leading-tight text-[#2D2D2D]"
-            >
-              Join our drop list!
-            </h2>
-            <p className="mb-6 text-[15px] leading-[150%] text-[#575757]">
-              Add your phone number to get a text whenever we do new item drops.
-            </p>
+          ) : null}
 
-            <form onSubmit={onSubmit} noValidate>
-              <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
-                <span
-                  className="shrink-0 text-[16px] text-[#2D2D2D]"
-                  aria-hidden
-                >
-                  +1 🇺🇸
-                </span>
-                <input
-                  ref={inputRef}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel-national"
-                  name="phone"
-                  aria-label="Phone number"
-                  placeholder="Phone number"
-                  value={phone}
-                  onChange={(event) => {
-                    setPhone(formatPhone(event.target.value));
-                    setError(null);
-                  }}
-                  className="w-full min-w-0 bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A]"
-                />
-              </div>
+          {/* Faded until the number is complete, so the button shows at a
+              glance whether there is anything to submit. */}
+          <button
+            type="submit"
+            disabled={!valid || status === "sending"}
+            className="mt-4 w-full cursor-pointer rounded-xl bg-[#2D2D2D] py-4 text-[18px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
+          >
+            {status === "sending" ? "One sec…" : "Notify me!"}
+          </button>
+        </form>
 
-              {error ? (
-                <p role="alert" className="mt-2 text-[13px] text-[#B3061F]">
-                  {error}
-                </p>
-              ) : null}
-
-              {/* Faded until the number is complete, so the button shows at a
-                  glance whether there is anything to submit. */}
-              <button
-                type="submit"
-                disabled={!valid || status === "sending"}
-                className="mt-4 w-full cursor-pointer rounded-xl bg-[#2D2D2D] py-4 text-[18px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
-              >
-                {status === "sending" ? "One sec…" : "Notify me!"}
-              </button>
-            </form>
-
-            {/* The disclosure covers the act of submitting, so it belongs with
-                the form — once someone has joined it is no longer the thing
-                they are agreeing to, and it crowds out the confirmation. */}
-            <p className="mt-6 text-[12px] leading-[160%] text-[#8A8A8A]">
-              By submitting your information, you agree to receive recurring
-              automated marketing messages, updates, and announcements from
-              Corner Bagel, a Public Entity Holdings company, at the contact
-              information you provide. By signing up, you also agree to our{" "}
-              {TERMS_HREF ? (
-                <Link href={TERMS_HREF} className="underline">
-                  Terms of Service
-                </Link>
-              ) : (
-                "Terms of Service"
-              )}{" "}
-              and{" "}
-              <Link href={PRIVACY_HREF} className="underline">
-                Privacy Policy
-              </Link>
-              . Wireless carriers are not liable for delayed or undelivered
-              messages. Message and data rates may apply. Reply STOP to
-              unsubscribe or HELP for assistance. For support, email{" "}
-              <a href="mailto:support@publicentity.co" className="underline">
-                support@publicentity.co
-              </a>
-              . Text STOP at any time to opt out of all SMS communications.
-            </p>
-          </>
-        )}
+        <p className="mt-6 text-[12px] leading-[160%] text-[#8A8A8A]">
+          By submitting your information, you agree to receive recurring
+          automated marketing messages, updates, and announcements from Corner
+          Bagel, a Public Entity Holdings company, at the contact information you
+          provide. By signing up, you also agree to our{" "}
+          {TERMS_HREF ? (
+            <Link href={TERMS_HREF} className="underline">
+              Terms of Service
+            </Link>
+          ) : (
+            "Terms of Service"
+          )}{" "}
+          and{" "}
+          <Link href={PRIVACY_HREF} className="underline">
+            Privacy Policy
+          </Link>
+          . Wireless carriers are not liable for delayed or undelivered messages.
+          Message and data rates may apply. Reply STOP to unsubscribe or HELP for
+          assistance. For support, email{" "}
+          <a href="mailto:support@publicentity.co" className="underline">
+            support@publicentity.co
+          </a>
+          . Text STOP at any time to opt out of all SMS communications.
+        </p>
       </div>
     </div>
   );
