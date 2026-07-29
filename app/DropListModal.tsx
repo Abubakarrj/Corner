@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -8,9 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // any page, blurring whatever is behind it.
 //
 // It shows once per visitor: whether they join or close it, the outcome is
-// written to localStorage and the modal never opens again on that device. The
-// privacy policy page is excluded — the modal links there, so popping it over
-// the page someone navigated to from the modal would be a loop.
+// written to localStorage and the modal never opens again on that device.
 
 const STORAGE_KEY = "cb-drop-list-v1";
 
@@ -18,13 +15,16 @@ const STORAGE_KEY = "cb-drop-list-v1";
 // landing page's logo animation reads first, short enough to still be seen.
 const OPEN_DELAY_MS = 1200;
 
-// Corner Bagel has a privacy policy page but no terms of service page yet.
-// Point this at the terms route once one exists and the copy below turns it
-// into a link automatically; while it is null the words stay plain text rather
-// than linking somewhere that 404s.
-const TERMS_HREF: string | null = null;
+// The legal terms behind the disclosure live on Public Entity's site, not this
+// one — both are sections of the same page there. They open in a new tab so
+// that reading them doesn't throw away a half-typed number.
+const TERMS_HREF = "https://publicentity.co/privacy-policy#terms";
+const PRIVACY_HREF = "https://publicentity.co/privacy-policy#privacy";
 
-const PRIVACY_HREF = "/privacy-policy";
+// Corner Bagel's own privacy page. Nothing in the modal links here anymore, but
+// a marketing pop-up over the policy someone is reading is still the wrong
+// moment for it, so the modal stays out of the way on that route.
+const SUPPRESSED_PATH = "/privacy-policy";
 
 const sansStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
@@ -70,7 +70,7 @@ export default function DropListModal() {
 
   // Open on a timer, but only for a visitor who has not answered it before.
   useEffect(() => {
-    if (pathname === PRIVACY_HREF) return;
+    if (pathname === SUPPRESSED_PATH) return;
 
     let answered = false;
     try {
@@ -250,17 +250,23 @@ export default function DropListModal() {
           automated marketing messages, updates, and announcements from Corner
           Bagel, a Public Entity Holdings company, at the contact information you
           provide. By signing up, you also agree to our{" "}
-          {TERMS_HREF ? (
-            <Link href={TERMS_HREF} className="underline">
-              Terms of Service
-            </Link>
-          ) : (
-            "Terms of Service"
-          )}{" "}
+          <a
+            href={TERMS_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            Terms of Service
+          </a>{" "}
           and{" "}
-          <Link href={PRIVACY_HREF} className="underline">
+          <a
+            href={PRIVACY_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
             Privacy Policy
-          </Link>
+          </a>
           . Wireless carriers are not liable for delayed or undelivered messages.
           Message and data rates may apply. Reply STOP to unsubscribe or HELP for
           assistance. For support, email{" "}
