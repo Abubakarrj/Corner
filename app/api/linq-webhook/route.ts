@@ -148,6 +148,26 @@ async function draftReply(inboundText: string): Promise<string | null> {
   return textBlock?.text ?? null;
 }
 
+// POST /v3/chats/{chatId}/typing — shows "Abu is typing" while Claude drafts
+// a reply, so the wait reads as a person composing rather than dead air.
+// Purely cosmetic: never let a failure here block the actual reply, and skip
+// it outright for group chats, where Linq's docs say indicators aren't
+// supported. A single call covers our case — replies are short and should
+// land well within the ~85-90s an indicator stays up before needing a
+// refresh, so there's no refresh-every-60s loop here.
+async function startTyping(chatId: string) {
+  if (!LINQ_API_KEY) return;
+
+  try {
+    await fetch(`https://api.linqapp.com/api/partner/v3/chats/${chatId}/typing`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LINQ_API_KEY}` },
+    });
+  } catch (error) {
+    console.warn("[linq-webhook] typing indicator failed", error);
+  }
+}
+
 // POST /v3/chats/{chatId}/messages — replies into the thread the inbound
 // message already belongs to, rather than starting a new chat.
 async function sendReply(chatId: string, body: string) {
@@ -190,6 +210,8 @@ async function handleMessageReceived(payload: LinqWebhookPayload) {
   if (!text) return;
 
   console.info(`[linq-webhook] inbound from ${sender.handle}: ${text}`);
+
+  if (!chat.is_group) await startTyping(chat.id);
 
   try {
     const reply = await draftReply(text);
