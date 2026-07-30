@@ -11,15 +11,20 @@ import { after } from "next/server";
 // back to just logging what would have been sent.
 
 // The first email a new subscriber gets, written in Abu's voice. This is
-// reference copy only — the actual email content lives in the Transactional
-// Email template in the Loops dashboard (LOOPS_WELCOME_TRANSACTIONAL_ID
-// below points at it), since Loops sends a template you build there, not
-// raw text passed in the API call. Keep the two in sync by hand.
-export const WELCOME_TEXT = `Hey, it's Abu.
+// reference copy only — the actual From/Subject/Body live in the
+// Transactional Email template in the Loops dashboard
+// (LOOPS_WELCOME_TRANSACTIONAL_ID below points at it), since Loops sends a
+// template you build there, not raw text passed in the API call. Keep these
+// two in sync by hand.
+export const WELCOME_FROM = "abu@thecornerbagel.com";
+export const WELCOME_SUBJECT = "Nice to meet you!";
+export const WELCOME_TEXT = `Hey! Abu here, founder of Corner Bagel.
 
-Just wanted to say thanks for signing up. Really excited to have you here.
+Just wanted to personally welcome you and say thanks for signing up.
 
-If you ever have any feedback, questions, or just want to chat bagels, reply anytime. This is my direct email.
+This isn't some marketing inbox—it's me. So if you ever have a question, a suggestion, or think we messed something up, send me a text. I'd genuinely love to hear from you.
+
+I appreciate you being part of what we're building. Hopefully I'll get to meet you in the shop soon.
 
 See you around the corner.
 
