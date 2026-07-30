@@ -1,9 +1,8 @@
 // Signup endpoint behind the drop-list modal.
 //
-// It validates the number, normalizes it to E.164, and sends both texts
-// through Linq (docs.linqapp.com) — the welcome text to the new subscriber,
-// and a join alert to Abu. Nothing is stored durably yet — see `onSignup`
-// below for where a real subscriber store belongs.
+// It validates the number, normalizes it to E.164, and sends the welcome text
+// through Linq (docs.linqapp.com). Nothing is stored durably yet — see
+// `onSignup` below for where a real subscriber store belongs.
 
 // The first text a new subscriber gets, written in Abu's voice. It lives here,
 // next to the signup, so the welcome copy is versioned with the form that
@@ -26,15 +25,6 @@ function toE164(input: unknown): string | null {
   const digits = input.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
   return /^[2-9]\d{2}[2-9]\d{6}$/.test(digits) ? `+1${digits}` : null;
 }
-
-// "+14155550123" -> "415-555-0123", the dashed form the join alert reads in.
-function formatForAlert(e164: string): string {
-  const digits = e164.slice(2); // drop the leading "+1"
-  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
-
-// Abu's own phone — where the join alert below is addressed.
-const RELAY_TO_NUMBER = "+12134196038";
 
 // Kept undefined rather than throwing at import time — a missing credential
 // should silently skip the text (and say so in the log), not take the whole
@@ -88,26 +78,14 @@ async function sendSms(to: string, body: string, label: string) {
 async function onSignup(phone: string) {
   console.info(`[drop-list] signup ${phone}`);
 
-  // Each send fails independently — a broken relay alert shouldn't cost the
-  // subscriber their welcome text, and vice versa. Neither failure should turn
-  // a valid signup into an error response either: there's nothing durable to
-  // roll back yet, and the visitor did everything right. Both are logged so a
-  // run of these is visible without silently losing subscribers (or Abu's
-  // alerts) to a bad Linq config.
+  // A texting failure shouldn't turn a valid signup into an error response —
+  // there's nothing durable to roll back yet, and the visitor did everything
+  // right. It's logged so a run of these is visible without silently losing
+  // subscribers to a bad Linq config.
   try {
     await sendSms(phone, WELCOME_TEXT, "welcome text");
   } catch (error) {
     console.error("[drop-list] welcome text failed", error);
-  }
-
-  try {
-    await sendSms(
-      RELAY_TO_NUMBER,
-      `Hey Abu, ${formatForAlert(phone)}, joined the list.`,
-      "join alert",
-    );
-  } catch (error) {
-    console.error("[drop-list] join alert failed", error);
   }
 }
 
