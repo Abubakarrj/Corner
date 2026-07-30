@@ -36,37 +36,21 @@ const SUPPRESSED_PATH = "/privacy-policy";
 // Keep these in step if the mark is ever recoloured.
 const BRAND_RED = "#BE1923";
 
-// Apple's flag artwork is the Apple Color Emoji font, which ships with iOS and
-// macOS — naming it first is what makes an iPhone draw its own flag here rather
-// than letting the site font decide. Other platforms fall back to their own
-// emoji font; Windows is the one that has no flag glyphs at all and renders the
-// regional letters "US" instead.
-const EMOJI_FONT =
-  '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
-
 const sansStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
 } as const;
 
-// (555) 123-4567 — formats as you type, and caps at the 10 digits of a US
-// number so the field can never hold something the API would reject on length.
-function formatPhone(input: string) {
-  const digits = input.replace(/\D/g, "").slice(0, 10);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
-
-// A valid North American number: neither the area code nor the exchange may
-// start with 0 or 1. Same rule the API route enforces server-side.
-function isValidPhone(input: string) {
-  return /^[2-9]\d{2}[2-9]\d{6}$/.test(input.replace(/\D/g, ""));
+// A plain format check, not full RFC 5322 validation — same standard "good
+// enough" pattern most signup forms use. Mirrored server-side, which is the
+// authority since this one can be bypassed.
+function isValidEmail(input: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 }
 
 export default function DropListModal() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +58,7 @@ export default function DropListModal() {
   const inputRef = useRef<HTMLInputElement>(null);
   const answeredRef = useRef(false);
 
-  const valid = isValidPhone(phone);
+  const valid = isValidEmail(email);
 
   // Closing is final: record it so the modal stays closed on the next visit.
   // The three outcomes are kept apart so that a future subscriber count can
@@ -178,7 +162,7 @@ export default function DropListModal() {
       const response = await fetch("/api/drop-list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ email }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
@@ -250,33 +234,24 @@ export default function DropListModal() {
           Join our drop list!
         </h2>
         <p className="mb-4 text-[14px] leading-[145%] text-[#575757]">
-          We&rsquo;ll text you the second something new drops.
+          We&rsquo;ll email you the second something new drops.
         </p>
 
         <form onSubmit={onSubmit} noValidate>
           {/* The field's text stays at 16px however much the card tightens:
               anything smaller makes iOS Safari zoom the page on focus. */}
           <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
-            {/* The flag is scoped to the emoji font on its own so that "+1"
-                still renders in Geist with the rest of the card. */}
-            <span
-              className="flex shrink-0 items-center gap-1.5 text-[16px] text-[#2D2D2D]"
-              aria-hidden
-            >
-              +1
-              <span style={{ fontFamily: EMOJI_FONT }}>🇺🇸</span>
-            </span>
             <input
               ref={inputRef}
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel-national"
-              name="phone"
-              aria-label="Phone number"
-              placeholder="Phone number"
-              value={phone}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              name="email"
+              aria-label="Email address"
+              placeholder="Email address"
+              value={email}
               onChange={(event) => {
-                setPhone(formatPhone(event.target.value));
+                setEmail(event.target.value);
                 setError(null);
               }}
               className="w-full min-w-0 bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A]"
@@ -319,10 +294,11 @@ export default function DropListModal() {
         {/* Deliberately the smallest thing in the card — the reference design
             sets this fine print at roughly a third of the heading. */}
         <p className="mt-4 text-[9px] leading-[150%] text-[#8A8A8A]">
-          By submitting your information, you agree to receive recurring
-          automated marketing messages, updates, and announcements from Corner
-          Bagel, a Public Entity Holdings company, at the contact information you
-          provide. By signing up, you also agree to our{" "}
+          By submitting your email, you agree to receive marketing emails,
+          updates, and announcements from Corner Bagel, a Public Entity
+          Holdings company, at the address you provide. You can unsubscribe at
+          any time using the link at the bottom of any email. By signing up,
+          you also agree to our{" "}
           <a
             href={TERMS_HREF}
             target="_blank"
@@ -340,13 +316,11 @@ export default function DropListModal() {
           >
             Privacy Policy
           </a>
-          . Wireless carriers are not liable for delayed or undelivered messages.
-          Message and data rates may apply. Reply STOP to unsubscribe or HELP for
-          assistance. For support, email{" "}
+          . For support, email{" "}
           <a href="mailto:support@publicentity.co" className="underline">
             support@publicentity.co
           </a>
-          . Text STOP at any time to opt out of all SMS communications.
+          .
         </p>
       </div>
     </div>
