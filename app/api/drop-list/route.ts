@@ -16,8 +16,12 @@ import { after } from "next/server";
 // (LOOPS_WELCOME_TRANSACTIONAL_ID below points at it), since Loops sends a
 // template you build there, not raw text passed in the API call. Keep these
 // two in sync by hand.
+//
+// "send me a text" in the body should be hyperlinked in the Loops editor to
+// `sms:${WELCOME_SMS_LINK_PHONE}` — plain text here can't carry a link.
 export const WELCOME_FROM = "abu@thecornerbagel.com";
 export const WELCOME_SUBJECT = "Nice to meet you!";
+export const WELCOME_SMS_LINK_PHONE = "+12134196038";
 export const WELCOME_TEXT = `Hey! Abu here, founder of Corner Bagel.
 
 Just wanted to personally welcome you and say thanks for signing up.
