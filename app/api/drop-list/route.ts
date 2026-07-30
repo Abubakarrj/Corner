@@ -17,7 +17,7 @@ export const WELCOME_TEXT = `Hey, it's Abu.
 
 Just wanted to say thanks for signing up. Really excited to have you here.
 
-If you ever have any feedback, questions, or just want to chat bagels, reply anytime — it comes straight to me.
+If you ever have any feedback, questions, or just want to chat bagels, reply anytime. This is my direct email.
 
 See you around the corner.
 
