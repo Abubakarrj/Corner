@@ -1,8 +1,9 @@
 // Signup endpoint behind the drop-list modal.
 //
-// It validates the number, normalizes it to E.164, and logs the signup along
-// with the two texts it would send. No SMS provider is wired up — see
-// `onSignup` below for where one belongs once you've picked one.
+// It validates the number, normalizes it to E.164, and sends both texts
+// through Linq (docs.linqapp.com) — the welcome text to the new subscriber,
+// and a join alert to Abu. Nothing is stored durably yet — see `onSignup`
+// below for where a real subscriber store belongs.
 
 // The first text a new subscriber gets, written in Abu's voice. It lives here,
 // next to the signup, so the welcome copy is versioned with the form that
@@ -32,25 +33,82 @@ function formatForAlert(e164: string): string {
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-// Abu's own phone — where the join alert below is addressed, once something
-// actually sends it.
+// Abu's own phone — where the join alert below is addressed.
 const RELAY_TO_NUMBER = "+12134196038";
 
-// No SMS provider is connected. Both messages are fully composed and logged
-// here so wiring one up later is a single change: replace this function's
-// body with the provider's send call — everything upstream of it (signup
-// validation, the message text, the two-send structure) already stays put.
-function logSms(to: string, body: string, label: string) {
-  console.info(`[drop-list] would send ${label} to ${to}:\n${body}`);
+// Kept undefined rather than throwing at import time — a missing credential
+// should silently skip the text (and say so in the log), not take the whole
+// signup endpoint down.
+const LINQ_API_KEY = process.env.LINQ_API_KEY;
+// The number assigned to your Linq account — both messages send *from* it.
+// Independent of RELAY_TO_NUMBER above: even if they end up being the same
+// physical number, confirm with Linq that a number can receive its own
+// outbound send (the join alert's "to") before assuming it, rather than
+// hardcoding that assumption here.
+const LINQ_FROM_NUMBER = process.env.LINQ_FROM_NUMBER;
+
+// POST /v3/chats — see https://docs.linqapp.com/api/. One request both starts
+// the conversation and sends the first message, which is all either of these
+// two texts needs. `label` only names the send in logs, so a skipped or
+// failed message says which one it was.
+async function sendSms(to: string, body: string, label: string) {
+  if (!LINQ_API_KEY || !LINQ_FROM_NUMBER) {
+    console.warn(
+      `[drop-list] Linq isn't configured (LINQ_API_KEY / LINQ_FROM_NUMBER) — skipping ${label}.`,
+    );
+    return;
+  }
+
+  const response = await fetch("https://api.linqapp.com/api/partner/v3/chats", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LINQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: LINQ_FROM_NUMBER,
+      to: [to],
+      message: {
+        parts: [{ type: "text", value: body }],
+        // Scoped to this exact send, so a network-layer retry of this same
+        // request can't double-text someone.
+        idempotency_key: `drop-list-${label}-${to}-${Date.now()}`,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Linq ${response.status} (${label}): ${detail.slice(0, 300)}`);
+  }
 }
 
-// The handoff point. A number that reaches here is logged and its two texts
-// are logged, but NOT actually sent and NOT stored durably — add the real
-// subscriber store and an SMS provider here once you have both.
-function onSignup(phone: string) {
+// The handoff point. A number that reaches here is logged and texted, but NOT
+// yet stored durably — add the real subscriber store here once one exists.
+async function onSignup(phone: string) {
   console.info(`[drop-list] signup ${phone}`);
-  logSms(phone, WELCOME_TEXT, "welcome text");
-  logSms(RELAY_TO_NUMBER, `Hey Abu, ${formatForAlert(phone)}, joined the list.`, "join alert");
+
+  // Each send fails independently — a broken relay alert shouldn't cost the
+  // subscriber their welcome text, and vice versa. Neither failure should turn
+  // a valid signup into an error response either: there's nothing durable to
+  // roll back yet, and the visitor did everything right. Both are logged so a
+  // run of these is visible without silently losing subscribers (or Abu's
+  // alerts) to a bad Linq config.
+  try {
+    await sendSms(phone, WELCOME_TEXT, "welcome text");
+  } catch (error) {
+    console.error("[drop-list] welcome text failed", error);
+  }
+
+  try {
+    await sendSms(
+      RELAY_TO_NUMBER,
+      `Hey Abu, ${formatForAlert(phone)}, joined the list.`,
+      "join alert",
+    );
+  } catch (error) {
+    console.error("[drop-list] join alert failed", error);
+  }
 }
 
 export async function POST(request: Request) {
@@ -69,7 +127,7 @@ export async function POST(request: Request) {
     );
   }
 
-  onSignup(phone);
+  await onSignup(phone);
 
   return Response.json({ ok: true }, { status: 200 });
 }
