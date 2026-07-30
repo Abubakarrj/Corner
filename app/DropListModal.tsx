@@ -32,6 +32,11 @@ const PRIVACY_HREF = "https://publicentity.co/privacy-policy#privacy";
 // moment for it, so the modal stays out of the way on that route.
 const SUPPRESSED_PATH = "/privacy-policy";
 
+// Must match HONEYPOT_FIELD in app/api/drop-list/route.ts. A real visitor
+// never sees or reaches this field — it's positioned off-screen rather than
+// display:none/hidden, since some bots skip fields a naive check would catch.
+const HONEYPOT_FIELD = "company";
+
 // The red of the Corner Bagel wordmark — the single fill in public/logo.svg.
 // Keep these in step if the mark is ever recoloured.
 const BRAND_RED = "#BE1923";
@@ -57,6 +62,10 @@ export default function DropListModal() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const answeredRef = useRef(false);
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  // When the modal became visible, so the server can reject a submit that
+  // arrives faster than a human could plausibly fill the field.
+  const openedAtRef = useRef(0);
 
   const valid = isValidEmail(email);
 
@@ -115,6 +124,8 @@ export default function DropListModal() {
   useEffect(() => {
     if (!open) return;
 
+    openedAtRef.current = Date.now();
+
     const { body } = document;
     const previousOverflow = body.style.overflow;
     body.style.overflow = "hidden";
@@ -162,7 +173,11 @@ export default function DropListModal() {
       const response = await fetch("/api/drop-list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          [HONEYPOT_FIELD]: honeypotRef.current?.value ?? "",
+          elapsed_ms: Date.now() - openedAtRef.current,
+        }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
@@ -238,6 +253,19 @@ export default function DropListModal() {
         </p>
 
         <form onSubmit={onSubmit} noValidate>
+          {/* Honeypot: invisible to a real visitor (off-screen, not tabbable,
+              excluded from the accessibility tree), so only an automated
+              filler that blindly populates every field ever sets this. */}
+          <input
+            ref={honeypotRef}
+            type="text"
+            name={HONEYPOT_FIELD}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+          />
+
           {/* The field's text stays at 16px however much the card tightens:
               anything smaller makes iOS Safari zoom the page on focus. */}
           <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
