@@ -6,10 +6,54 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // The drop-list signup modal. It lives in the root layout so it can appear over
 // any page, blurring whatever is behind it.
 //
-// It shows once per visitor: whether they join or close it, the outcome is
-// written to localStorage and the modal never opens again on that device.
+// Signing up is terminal — join once and it never opens again on that
+// device. But closing it without joining isn't: this is a marketing signup,
+// so a dismissal just means "not right now," and the modal comes back on a
+// later visit to try again. Each time it's dismissed again the wait before
+// the next attempt grows (COOLDOWN_SCHEDULE_DAYS), so it presses harder early
+// and backs off for a visitor who keeps saying no, rather than nagging every
+// visit forever.
+const STORAGE_KEY = "cb-drop-list-v2";
 
-const STORAGE_KEY = "cb-drop-list-v1";
+type StoredState = {
+  outcome: "dismissed" | "joined" | "already";
+  // How many times it's been shown and not joined. Drives the cooldown below
+  // — irrelevant once outcome is "joined".
+  count: number;
+  lastShownAt: number;
+};
+
+// Days to wait before showing again, indexed by how many times it's already
+// been turned down. Grows, then holds at the last value — 3 days, a week, two
+// weeks, then a month forever after, rather than escalating without end.
+const COOLDOWN_SCHEDULE_DAYS = [3, 7, 14, 30];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function cooldownMsFor(count: number): number {
+  const days =
+    COOLDOWN_SCHEDULE_DAYS[Math.min(count - 1, COOLDOWN_SCHEDULE_DAYS.length - 1)];
+  return days * DAY_MS;
+}
+
+function readStoredState(): StoredState | null {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredState>;
+    if (
+      (parsed.outcome === "dismissed" ||
+        parsed.outcome === "joined" ||
+        parsed.outcome === "already") &&
+      typeof parsed.count === "number" &&
+      typeof parsed.lastShownAt === "number"
+    ) {
+      return parsed as StoredState;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 // The modal opens on whichever comes first: this timer, or the visitor
 // scrolling in either direction.
@@ -69,36 +113,39 @@ export default function DropListModal() {
 
   const valid = isValidEmail(email);
 
-  // Closing is final: record it so the modal stays closed on the next visit.
-  // The three outcomes are kept apart so that a future subscriber count can
-  // tell a real signup from someone who says they are already on the list.
+  // Joining is final. Dismissing or saying "already on the list" isn't —
+  // both just push the next attempt out by the cooldown schedule above, and
+  // bump the count that schedule reads from.
   const close = useCallback((outcome: "dismissed" | "joined" | "already") => {
     setOpen(false);
     answeredRef.current = true;
     try {
-      window.localStorage.setItem(STORAGE_KEY, outcome);
+      const prior = readStoredState();
+      const count = outcome === "joined" ? (prior?.count ?? 0) : (prior?.count ?? 0) + 1;
+      const state: StoredState = { outcome, count, lastShownAt: Date.now() };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       // Private browsing or blocked storage — the modal simply shows again
       // next time, which is better than failing to close.
     }
   }, []);
 
-  // Open on the timer or on a scroll, whichever lands first, and only for a
-  // visitor who has not answered it before.
+  // Open on the timer or on a scroll, whichever lands first — for a visitor
+  // who has never seen it, or one whose cooldown from the last dismissal has
+  // elapsed. A join is the one outcome that ends this for good.
   useEffect(() => {
     if (pathname === SUPPRESSED_PATH) return;
     // Answering is remembered for the session as well as on disk, so a browser
     // that refuses localStorage still can't have the modal spring back after a
-    // navigation.
+    // navigation within the same visit.
     if (answeredRef.current) return;
 
-    let answered = false;
-    try {
-      answered = window.localStorage.getItem(STORAGE_KEY) !== null;
-    } catch {
-      answered = false;
+    const state = readStoredState();
+    if (state?.outcome === "joined") {
+      answeredRef.current = true;
+      return;
     }
-    if (answered) return;
+    if (state && Date.now() - state.lastShownAt < cooldownMsFor(state.count)) return;
 
     const stop = () => {
       window.clearTimeout(timer);
