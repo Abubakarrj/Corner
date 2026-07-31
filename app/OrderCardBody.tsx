@@ -5,10 +5,11 @@
 // page is: a continuous clamp between a comfortable phone floor and a
 // desktop ceiling, rather than measured off any one line.
 //
-// 13px on a phone, growing to 17px by desktop width. See app/about/page.tsx
-// for the full reasoning; kept in step with its FONT_SIZE by eye since nothing
-// here imports the other.
-const cardFontSize = "clamp(13px, 0.44vw + 11.35px, 17px)";
+// Scaled down from /about's own clamp (13px -> 17px): this card carries a
+// heading plus three paragraphs plus a contact line, noticeably more copy in
+// one block than /about's single paragraph, so it reads best a size smaller
+// across the board — 11px on a phone, growing to 14px by desktop width.
+const cardFontSize = "clamp(11px, 0.36vw + 9.3px, 14px)";
 
 // The text style the order card is measured and rendered with. Exported so
 // /about can render its own paragraph in the same typeface, weight and
