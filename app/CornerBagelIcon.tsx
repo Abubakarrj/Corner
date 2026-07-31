@@ -30,9 +30,12 @@ export default function CornerBagelIcon() {
   if (pathname !== "/order" && pathname !== "/bagel" && pathname !== "/about")
     return null;
 
-  // It leads to /about everywhere else; on /about itself it leads back to the
-  // order card, so it is never a link to the page you are already on.
-  const href = pathname === "/about" ? "/order" : "/about";
+  // On /about it leads back to the order card. On /order it leads home — the
+  // second tap of the "bagel" undoes the first, landing back on the animated
+  // logo rather than the about copy. Everywhere else (/bagel) it still leads
+  // to /about. Never a link to the page you're already on.
+  const href =
+    pathname === "/about" ? "/order" : pathname === "/order" ? "/" : "/about";
 
   return (
     <div
@@ -53,7 +56,11 @@ export default function CornerBagelIcon() {
             {CAPTION_REFERENCE}
             <Link
               href={href}
-              aria-label={pathname === "/about" ? "Corner Bagel" : "About Corner Bagel"}
+              aria-label={
+                pathname === "/about" || pathname === "/order"
+                  ? "Corner Bagel"
+                  : "About Corner Bagel"
+              }
               className="pointer-events-auto visible absolute left-full top-1/2 ml-1.5 h-4 w-4 -translate-y-1/2 cursor-pointer md:ml-2 md:h-6 md:w-6"
             >
               <Image
