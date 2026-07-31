@@ -13,29 +13,22 @@ import {
   pageWrapper,
 } from "./bagelLayout";
 
-// A single corner bagel icon for the whole app. It lives in the root layout, so
-// it stays mounted while navigating between /order and /bagel — the same DOM
-// element, never remounted, so it can't jump or animate on navigation.
+// The corner bagel icon. /bagel only — it used to also appear on /order and
+// /about, positioned via this same replica-of-the-bagel-page-layout trick,
+// but those two pages have no bagel photo for it to sit against, so it just
+// floated alone in empty space. Since it no longer needs to persist across
+// navigation to pages it isn't on, this could move into the /bagel page
+// itself, but it's kept here, just narrowed to one route, to leave the
+// (already-correct) positioning math untouched.
 //
 // It's pinned to the bagel page's caption line: the overlay reproduces that
 // page's layout (page wrapper -> content box -> frame -> caption) with nothing
 // visible in it, then hangs the icon off the right-hand end of an invisible copy
 // of the caption text. Every measurement in that replica comes from the viewport
-// alone — see bagelLayout — so it resolves identically on both pages and the
-// icon sits at the same spot everywhere.
+// alone — see bagelLayout — so it resolves identically to the real page.
 export default function CornerBagelIcon() {
   const pathname = usePathname();
-
-  // Only the order, bagel and about pages carry the corner icon.
-  if (pathname !== "/order" && pathname !== "/bagel" && pathname !== "/about")
-    return null;
-
-  // On /about it leads back to the order card. On /order it leads home — the
-  // second tap of the "bagel" undoes the first, landing back on the animated
-  // logo rather than the about copy. Everywhere else (/bagel) it still leads
-  // to /about. Never a link to the page you're already on.
-  const href =
-    pathname === "/about" ? "/order" : pathname === "/order" ? "/" : "/about";
+  if (pathname !== "/bagel") return null;
 
   return (
     <div
@@ -55,12 +48,8 @@ export default function CornerBagelIcon() {
           <span className="relative inline-block invisible">
             {CAPTION_REFERENCE}
             <Link
-              href={href}
-              aria-label={
-                pathname === "/about" || pathname === "/order"
-                  ? "Corner Bagel"
-                  : "About Corner Bagel"
-              }
+              href="/about"
+              aria-label="About Corner Bagel"
               className="pointer-events-auto visible absolute left-full top-1/2 ml-1.5 h-4 w-4 -translate-y-1/2 cursor-pointer md:ml-2 md:h-6 md:w-6"
             >
               <Image
