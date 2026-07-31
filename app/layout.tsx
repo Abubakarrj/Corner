@@ -4,7 +4,6 @@ import Link from "next/link";
 import "./globals.css";
 import CornerBagelIcon from "./CornerBagelIcon";
 import DropListModal from "./DropListModal";
-import HamburgerMenu from "./HamburgerMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +34,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
         {children}
         <CornerBagelIcon />
-        <HamburgerMenu />
         <DropListModal />
         <div
           className="fixed bottom-4 right-4 z-50 text-[12px] opacity-75 font-sans"
