@@ -76,7 +76,7 @@ export default function Home() {
             className="whitespace-nowrap text-[14px] italic text-[#2D2D2D] sm:text-[15px]"
             style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
           >
-            Skip the queue
+            Curated from our kitchen
           </span>
         </div>
       </div>
