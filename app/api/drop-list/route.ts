@@ -1,21 +1,19 @@
 import { resolveMx } from "node:dns/promises";
-import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 
 // Signup endpoint behind the drop-list modal.
 //
 // It validates the email — format, then that the domain can actually receive
 // mail — runs a few lightweight bot defenses, then adds the contact to Loops
-// (loops.so) and sends the welcome email through Loops' transactional API.
-// If LOOPS_API_KEY isn't set (e.g. local dev without credentials), it falls
-// back to just logging what would have been sent.
+// (loops.so). The welcome email itself isn't sent from here: it's a Loops
+// Workflow, configured in the dashboard to fire automatically whenever a
+// contact is added — so the one API call this route makes (contacts/create)
+// is also what triggers it. If LOOPS_API_KEY isn't set (e.g. local dev
+// without credentials), it falls back to just logging the signup.
 
-// The first email a new subscriber gets, written in Abu's voice. This is
-// reference copy only — the actual From/Subject/Body live in the
-// Transactional Email template in the Loops dashboard
-// (LOOPS_WELCOME_TRANSACTIONAL_ID below points at it), since Loops sends a
-// template you build there, not raw text passed in the API call. Keep these
-// two in sync by hand.
+// Reference copy only, matching what the Workflow's email step should say —
+// nothing here is sent through the API, since a Workflow's content lives
+// entirely in the Loops dashboard. Keep the two in sync by hand.
 //
 // "send me a text" in the body should be hyperlinked in the Loops editor to
 // `sms:${WELCOME_SMS_LINK_PHONE}` — plain text here can't carry a link.
@@ -118,11 +116,11 @@ function logEmail(to: string, body: string, label: string) {
 }
 
 const LOOPS_API_KEY = process.env.LOOPS_API_KEY;
-const LOOPS_WELCOME_TRANSACTIONAL_ID = process.env.LOOPS_WELCOME_TRANSACTIONAL_ID;
 const LOOPS_CONTACTS_URL = "https://app.loops.so/api/v1/contacts/create";
-const LOOPS_TRANSACTIONAL_URL = "https://app.loops.so/api/v1/transactional";
 
-// Adds the contact to the Loops audience. A 409 means the contact already
+// Adds the contact to the Loops audience — and, since the Workflow sending
+// Abu's welcome is configured to trigger off exactly that, this call is also
+// what sets the welcome email in motion. A 409 means the contact already
 // exists — a returning subscriber, not a failure — so that status alone is
 // swallowed rather than thrown.
 async function addToLoopsAudience(email: string): Promise<void> {
@@ -143,43 +141,11 @@ async function addToLoopsAudience(email: string): Promise<void> {
   }
 }
 
-// Sends Abu's welcome email via Loops' transactional API. This calls a
-// template built in the Loops dashboard (id in LOOPS_WELCOME_TRANSACTIONAL_ID)
-// — Loops doesn't accept raw email body content in this request, only a
-// reference to a template you've already created there.
-async function sendWelcomeEmail(email: string): Promise<void> {
-  if (!LOOPS_WELCOME_TRANSACTIONAL_ID) {
-    throw new Error("LOOPS_WELCOME_TRANSACTIONAL_ID is not set");
-  }
-
-  const response = await fetch(LOOPS_TRANSACTIONAL_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${LOOPS_API_KEY}`,
-      // Guards against sending Abu's welcome twice for one signup, e.g. if a
-      // retry or `after()` re-run ever occurs.
-      "Idempotency-Key": randomUUID(),
-    },
-    body: JSON.stringify({
-      email,
-      transactionalId: LOOPS_WELCOME_TRANSACTIONAL_ID,
-    }),
-  });
-
-  if (!response.ok) {
-    const failure = await response.json().catch(() => null);
-    throw new Error(
-      `Loops transactional send failed (${response.status}): ${failure?.message ?? "unknown error"}`,
-    );
-  }
-}
-
-// The handoff point. Runs the actual Loops calls after the response has
-// already gone out to the visitor — signup and email delivery are best-effort
-// from here on, and a Loops hiccup shouldn't make the form itself look
-// broken. Falls back to a console log when no API key is configured, so
-// local dev without credentials still shows what would have happened.
+// The handoff point. Runs the actual Loops call after the response has
+// already gone out to the visitor — signup is best-effort from here on, and
+// a Loops hiccup shouldn't make the form itself look broken. Falls back to a
+// console log when no API key is configured, so local dev without
+// credentials still shows what would have happened.
 function onSignup(email: string) {
   console.info(`[drop-list] signup ${email}`);
 
@@ -191,7 +157,6 @@ function onSignup(email: string) {
   after(async () => {
     try {
       await addToLoopsAudience(email);
-      await sendWelcomeEmail(email);
     } catch (error) {
       console.error(`[drop-list] Loops signup failed for ${email}:`, error);
     }
