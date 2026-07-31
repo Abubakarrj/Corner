@@ -5,10 +5,10 @@ import Link from "next/link";
 // modeled on a reference screenshot (Mardy's).
 const BRAND_RED = "#BE1923";
 
-// The preorder flow lives on its own subdomain, not a route in this app —
+// The shop/pantry flow lives on its own subdomain, not a route in this app —
 // a plain anchor rather than next/link, since Link's client-side routing
 // doesn't apply across origins anyway.
-const PREORDER_HREF = "https://order.thecornerbagel.com";
+const SHOP_HREF = "https://shop.thecornerbagel.com";
 
 export default function Home() {
   return (
@@ -41,7 +41,7 @@ export default function Home() {
           column rather than a wide mark over a narrow pill. */}
       <div className="mt-6 flex flex-col items-center">
         <a
-          href={PREORDER_HREF}
+          href={SHOP_HREF}
           style={{
             borderColor: BRAND_RED,
             color: BRAND_RED,
@@ -49,7 +49,7 @@ export default function Home() {
           }}
           className="w-48 cursor-pointer border-2 bg-white py-3.5 text-center text-[15px] font-bold tracking-[0.08em] transition-opacity hover:opacity-80 sm:w-56 sm:py-4 md:w-64 lg:w-72"
         >
-          PREORDER
+          SHOP PANTRY
         </a>
 
         {/* A straight line, like the reference — no more hand-drawn curl.
