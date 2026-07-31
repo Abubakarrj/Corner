@@ -56,7 +56,14 @@ export default function Home() {
             Sized to the text's cap height (~11px at 14–15px type), so the
             arrow reads as part of the line of text, not a separate mark. */}
         <div className="mt-4 flex items-center gap-2">
-          <svg width="7" height="11" viewBox="0 0 7 11" fill="none" aria-hidden>
+          <svg
+            width="7"
+            height="11"
+            viewBox="0 0 7 11"
+            fill="none"
+            aria-hidden
+            className="animate-arrow-bounce"
+          >
             <path
               d="M3.5 10.5V0.5M3.5 0.5L0.75 3.25M3.5 0.5L6.25 3.25"
               stroke="#2D2D2D"
