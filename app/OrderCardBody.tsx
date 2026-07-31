@@ -65,7 +65,7 @@ export default function OrderCardBody() {
         className="m-0 mx-auto mb-[1em] text-pretty leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Corner Bagel brings East Coast bagel craftsmanship to LA’s laid-back
+        Corner Bagel brings East Coast bagel craftsmanship to a laid-back
         way of life.
       </p>
       <p
