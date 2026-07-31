@@ -2,9 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 // SKETCH — a preorder CTA + "skip the queue" annotation under the logo,
-// modeled on a reference screenshot (Mardy's). Not wired to a real preorder
-// flow yet; the button just points at /order like the logo does.
+// modeled on a reference screenshot (Mardy's).
 const BRAND_RED = "#BE1923";
+
+// The preorder flow lives on its own subdomain, not a route in this app —
+// a plain anchor rather than next/link, since Link's client-side routing
+// doesn't apply across origins anyway.
+const PREORDER_HREF = "https://order.thecornerbagel.com";
 
 export default function Home() {
   return (
@@ -36,17 +40,17 @@ export default function Home() {
           lg:w-72, same steps as the Link above), so the lockup reads as one
           column rather than a wide mark over a narrow pill. */}
       <div className="mt-6 flex flex-col items-center">
-        <Link
-          href="/order"
+        <a
+          href={PREORDER_HREF}
           style={{
             borderColor: BRAND_RED,
             color: BRAND_RED,
             fontFamily: "var(--font-geist-sans), sans-serif",
           }}
-          className="w-48 cursor-pointer rounded-xl border-2 bg-white py-3.5 text-center text-[15px] font-bold tracking-[0.08em] shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-opacity hover:opacity-80 sm:w-56 sm:py-4 md:w-64 lg:w-72"
+          className="w-48 cursor-pointer border-2 bg-white py-3.5 text-center text-[15px] font-bold tracking-[0.08em] transition-opacity hover:opacity-80 sm:w-56 sm:py-4 md:w-64 lg:w-72"
         >
           PREORDER
-        </Link>
+        </a>
 
         {/* A straight line, like the reference — no more hand-drawn curl.
             Sized to the text's cap height (~11px at 14–15px type), so the
