@@ -1,18 +1,13 @@
 // This card used to hold a handful of short one-line facts ("No Online
 // Ordering", a partner-location list), sized by shrinking to fit the widest
-// single line. It now holds running paragraph copy instead — the same kind
-// of content /about carries — so it's sized and wrapped the same way that
-// page is: a continuous clamp between a comfortable phone floor and a
-// desktop ceiling, rather than measured off any one line.
+// single line. It now holds running paragraph copy instead, so it's sized
+// and wrapped for that: a continuous clamp between a comfortable phone
+// floor and a desktop ceiling, rather than measured off any one line.
 //
-// 13px on a phone, growing to 17px by desktop width. See app/about/page.tsx
-// for the full reasoning; kept in step with its FONT_SIZE by eye since nothing
-// here imports the other.
+// 13px on a phone, growing to 17px by desktop width.
 const cardFontSize = "clamp(13px, 0.44vw + 11.35px, 17px)";
 
-// The text style the order card is measured and rendered with. Exported so
-// /about can render its own paragraph in the same typeface, weight and
-// colour (it overrides fontSize itself, since its copy is longer).
+// The text style the order card is measured and rendered with.
 export const orderTextStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
   fontWeight: 400,
@@ -22,33 +17,16 @@ export const orderTextStyle = {
   color: "#000000",
 } as const;
 
-// The style of the card's close link, used on /about (this card has no
-// close link of its own). 7/8 of the body text, the ratio it had at desktop
-// size (14/16), so it shrinks in step with the rest of the card.
-export const closeStyle = {
-  fontFamily: "var(--font-geist-sans), sans-serif",
-  fontWeight: 400,
-  fontSize: `calc(${cardFontSize} * 0.875)`,
-  lineHeight: "100%",
-  letterSpacing: "-0.02em",
-  textDecoration: "underline",
-  textDecorationStyle: "solid" as const,
-  color: "#2D2D2D",
-  opacity: "0.4"
-};
-
 // Running copy wants more air than a heading's tight 100% leading and
 // -0.03em tracking allow — those are display settings that make a paragraph
-// hard to follow. Same measure as /about's paragraph (30em, ~55 characters a
-// line) so a centred line stays comfortable to read.
+// hard to follow. 30em (~55 characters a line) so a centred line stays
+// comfortable to read.
 const bodyStyle = {
   letterSpacing: "-0.005em",
   maxWidth: "30em",
 };
 
-// The order card's content — every child that gives the card its size — but
-// NOT the corner icon. Both the real order page and the icon overlay render
-// this, so they always share identical dimensions.
+// The order card's content — every child that gives the card its size.
 export default function OrderCardBody() {
   return (
     <>
