@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import "./globals.css";
-import CornerBagelIcon from "./CornerBagelIcon";
-import DropListModal from "./DropListModal";
+import CookieConsent from "./CookieConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +18,15 @@ export const metadata: Metadata = {
   description: "The Corner Bagel",
 };
 
+// Deliberately bare otherwise — no floating chrome (corner icon, email
+// signup pop-up, privacy footer link) lives here. That's all in
+// app/(marketing)/layout.tsx instead, so /shop (a separate top-level
+// segment) never renders it and this root layout has no reason to opt out
+// of static prerendering. Cookie consent is the one exception: it belongs
+// everywhere, including the shop subdomain (its cart uses localStorage
+// too), and — like the components it's next to here — is a plain client
+// component with no server-side host/pathname dependency, so it doesn't
+// force this layout into dynamic rendering the way reading headers() did.
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,20 +40,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
         {children}
-        <CornerBagelIcon />
-        <DropListModal />
-        <div
-          className="fixed bottom-4 right-4 z-50 text-[12px] opacity-75 font-sans"
-          style={{
-            color: "#ffffff",
-            mixBlendMode: "difference",
-            fontFamily: "var(--font-geist-sans), sans-serif",
-          }}
-        >
-          <Link href="/privacy-policy" className="hover:cursor-pointer">
-            Privacy Policy &nbsp; © 2026
-          </Link>
-        </div>
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import OrderCardBody, { orderTextStyle } from "../OrderCardBody";
+import OrderCardBody, { orderTextStyle } from "../../OrderCardBody";
 
 export default function OrderPage() {
   return (

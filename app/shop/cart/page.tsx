@@ -1,0 +1,120 @@
+"use client";
+
+import Link from "next/link";
+import { useCart } from "../CartContext";
+import { formatPrice, getProduct } from "../products";
+import ProductImage from "../ProductImage";
+
+const BRAND_RED = "#BE1923";
+
+export default function CartPage() {
+  const { lines, setQuantity, removeItem, subtotalCents } = useCart();
+
+  const rows = lines
+    .map((line) => ({ line, product: getProduct(line.slug) }))
+    .filter((row): row is { line: (typeof lines)[number]; product: NonNullable<ReturnType<typeof getProduct>> } =>
+      Boolean(row.product),
+    );
+
+  return (
+    <div
+      className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
+      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+    >
+      <h1
+        className="mb-6 text-[24px] font-bold text-[#2D2D2D]"
+        style={{ letterSpacing: "-0.03em" }}
+      >
+        Cart
+      </h1>
+
+      {rows.length === 0 ? (
+        <div>
+          <p className="text-[14px] text-[#575757]">Your cart is empty.</p>
+          <Link href="/" className="mt-3 inline-block cursor-pointer text-[14px] underline">
+            Browse the pantry
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col divide-y divide-[#E2E2E2]">
+            {rows.map(({ line, product }) => (
+              <div key={line.slug} className="flex gap-4 py-4">
+                <Link href={`/product/${product.slug}`} className="shrink-0 cursor-pointer">
+                  <ProductImage
+                    swatch={product.swatch}
+                    name={product.name}
+                    className="h-20 w-20 rounded-lg"
+                  />
+                </Link>
+
+                <div className="flex flex-1 flex-col">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link
+                      href={`/product/${product.slug}`}
+                      className="cursor-pointer text-[14px] font-medium text-[#2D2D2D] hover:underline"
+                    >
+                      {product.name}
+                    </Link>
+                    <span className="whitespace-nowrap text-[14px] text-[#2D2D2D]">
+                      {formatPrice(product.priceCents * line.quantity)}
+                    </span>
+                  </div>
+                  <span className="text-[13px] text-[#575757]">
+                    {formatPrice(product.priceCents)} each
+                  </span>
+
+                  <div className="mt-auto flex items-center gap-3 pt-2">
+                    <div className="flex items-center border border-[#E2E2E2]">
+                      <button
+                        type="button"
+                        aria-label={`Decrease quantity of ${product.name}`}
+                        onClick={() => setQuantity(line.slug, line.quantity - 1)}
+                        className="h-8 w-8 cursor-pointer text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                      >
+                        −
+                      </button>
+                      <span className="w-6 text-center text-[13px] text-[#2D2D2D]">
+                        {line.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Increase quantity of ${product.name}`}
+                        onClick={() => setQuantity(line.slug, line.quantity + 1)}
+                        className="h-8 w-8 cursor-pointer text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(line.slug)}
+                      className="cursor-pointer text-[12px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-center justify-between border-t border-[#E2E2E2] pt-4">
+            <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
+            <span className="text-[16px] font-bold text-[#2D2D2D]">
+              {formatPrice(subtotalCents)}
+            </span>
+          </div>
+
+          <Link
+            href="/checkout"
+            style={{ backgroundColor: BRAND_RED }}
+            className="mt-4 block w-full cursor-pointer py-3.5 text-center text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+          >
+            Checkout
+          </Link>
+        </>
+      )}
+    </div>
+  );
+}

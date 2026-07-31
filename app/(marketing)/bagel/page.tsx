@@ -10,7 +10,7 @@ import {
   frameHeight,
   gutter,
   pageWrapper,
-} from "../bagelLayout";
+} from "../../bagelLayout";
 
 // Slide order, left -> right: expand (0), schmear (1). Expand is first, so the
 // left arrow never shows on open — there's nothing to its left.

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { closeStyle, orderTextStyle } from "../OrderCardBody";
+import { closeStyle, orderTextStyle } from "../../OrderCardBody";
 
 // The same card as /order — one centred block on a white full-viewport page, in
 // the order card's typeface, weight and colour — but sized on its own terms.
@@ -52,7 +52,7 @@ export default function AboutPage() {
           className="m-0 mx-auto mb-[2em] text-pretty leading-[1.7] sm:leading-[1.8]"
           style={bodyStyle}
         >
-          Corner Bagel brings East Coast bagel craftsmanship to LA’s laid-back
+          Corner Bagel brings East Coast bagel craftsmanship to a laid-back
           way of life. We make naturally fermented, kettle-boiled bagels baked
           for a crisp crust and chewy interior. We source fresh produce from
           local farmers markets and pair it with thoughtfully selected

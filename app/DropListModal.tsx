@@ -74,6 +74,11 @@ const PRIVACY_HREF = "https://publicentity.co/privacy-policy#privacy";
 // Corner Bagel's own privacy page. Nothing in the modal links here anymore, but
 // a marketing pop-up over the policy someone is reading is still the wrong
 // moment for it, so the modal stays out of the way on that route.
+//
+// The shop subdomain gets the same treatment, but isn't handled here —
+// app/layout.tsx doesn't even mount this component there. See the comment
+// on RootLayout for why that's decided server-side instead of by checking
+// the path here (a rewrite makes usePathname unreliable for this).
 const SUPPRESSED_PATH = "/privacy-policy";
 
 // Must match HONEYPOT_FIELD in app/api/drop-list/route.ts. A real visitor
