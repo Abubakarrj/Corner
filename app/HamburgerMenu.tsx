@@ -1,19 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
 
-// A floating menu button, homepage-only. Everywhere else the site's
-// navigation is contextual (the corner icon, the "Close" link on /about) —
-// this is the one page with nothing else to click, so it's the one page that
-// gets a menu.
-
-const CAREERS_EMAIL = "careers@thecornerbagel.com";
-
-const sansStyle = {
-  fontFamily: "var(--font-geist-sans), sans-serif",
-} as const;
+// A menu icon, homepage-only. Not wired to anything yet — just the icon,
+// positioned where the eventual menu button will live.
 
 function HamburgerIcon() {
   // Three rounded bars, the bottom one shorter — matches the reference icon
@@ -29,87 +19,11 @@ function HamburgerIcon() {
 
 export default function HamburgerMenu() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // Close on Escape, or on a click/tap outside the button and panel.
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (panelRef.current?.contains(target)) return;
-      if (buttonRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [open]);
-
   if (pathname !== "/") return null;
 
   return (
-    <div className="fixed right-5 top-5 z-40 sm:right-6 sm:top-6" style={sansStyle}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Menu"
-        aria-expanded={open}
-        className="flex h-14 w-14 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-      >
-        <HamburgerIcon />
-      </button>
-
-      {open ? (
-        <div
-          ref={panelRef}
-          role="menu"
-          className="absolute right-0 top-[calc(100%+8px)] w-48 overflow-hidden rounded-2xl bg-white py-2 shadow-[0_8px_30px_rgba(0,0,0,0.15)]"
-        >
-          <Link
-            href="/bagel"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-5 py-2.5 text-[15px] text-[#2D2D2D] transition-colors hover:bg-[#F7F7F7]"
-          >
-            Menu
-          </Link>
-          <Link
-            href="/order"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-5 py-2.5 text-[15px] text-[#2D2D2D] transition-colors hover:bg-[#F7F7F7]"
-          >
-            Order
-          </Link>
-          <Link
-            href="/catering"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-5 py-2.5 text-[15px] text-[#2D2D2D] transition-colors hover:bg-[#F7F7F7]"
-          >
-            Catering
-          </Link>
-          <a
-            href={`mailto:${CAREERS_EMAIL}`}
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-5 py-2.5 text-[15px] text-[#2D2D2D] transition-colors hover:bg-[#F7F7F7]"
-          >
-            Careers
-          </a>
-        </div>
-      ) : null}
+    <div className="fixed right-5 top-5 z-40 flex h-14 w-14 items-center justify-center sm:right-6 sm:top-6">
+      <HamburgerIcon />
     </div>
   );
 }
