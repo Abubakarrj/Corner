@@ -65,8 +65,8 @@ export default function CartDrawer({
     );
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" label="Basket">
-      <div className="flex items-center justify-between border-b border-[#F0F0F0] px-5 py-4">
+    <Drawer open={open} onClose={onClose} side="right" label="Basket" width="wide">
+      <div className="flex items-center justify-between border-b border-[#F0F0F0] px-6 py-4">
         <h2
           className="text-[18px] font-bold text-[#2D2D2D]"
           style={{ letterSpacing: "-0.03em" }}
@@ -108,9 +108,9 @@ export default function CartDrawer({
         </div>
       ) : (
         <>
-          <div className="flex-1 divide-y divide-[#F0F0F0] overflow-y-auto px-5">
+          <div className="flex-1 divide-y divide-[#F0F0F0] overflow-y-auto px-6">
             {rows.map(({ line, product }) => (
-              <div key={line.slug} className="flex gap-3.5 py-4">
+              <div key={line.slug} className="flex gap-4 py-5">
                 <Link
                   href={`/shop/product/${product.slug}`}
                   onClick={onClose}
@@ -119,42 +119,45 @@ export default function CartDrawer({
                   <ProductImage
                     swatch={product.swatch}
                     name={product.name}
-                    className="h-16 w-16 rounded-lg"
+                    className="h-20 w-20 rounded-lg"
                   />
                 </Link>
 
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-3">
                     <Link
                       href={`/shop/product/${product.slug}`}
                       onClick={onClose}
-                      className="cursor-pointer truncate text-[14px] font-medium text-[#2D2D2D] hover:underline"
+                      className="cursor-pointer text-[15px] font-medium text-[#2D2D2D] hover:underline"
                     >
                       {product.name}
                     </Link>
-                    <span className="whitespace-nowrap text-[14px] text-[#2D2D2D]">
+                    <span className="whitespace-nowrap text-[15px] text-[#2D2D2D]">
                       {formatPrice(product.priceCents * line.quantity)}
                     </span>
                   </div>
+                  <span className="mt-0.5 text-[13px] text-[#8A8A8A]">
+                    {formatPrice(product.priceCents)} each
+                  </span>
 
-                  <div className="mt-auto flex items-center justify-between pt-2">
+                  <div className="mt-auto flex items-center justify-between pt-3">
                     <div className="flex items-center rounded-full border border-[#E2E2E2]">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity - 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[15px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-9 w-9 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
                       >
                         −
                       </button>
-                      <span className="w-5 text-center text-[13px] text-[#2D2D2D]">
+                      <span className="w-6 text-center text-[14px] text-[#2D2D2D]">
                         {line.quantity}
                       </span>
                       <button
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity + 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[15px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-9 w-9 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
                       >
                         +
                       </button>
@@ -172,7 +175,7 @@ export default function CartDrawer({
             ))}
           </div>
 
-          <div className="border-t border-[#F0F0F0] px-5 pb-5 pt-4">
+          <div className="border-t border-[#F0F0F0] px-6 pb-5 pt-4">
             <div className="flex items-center justify-between">
               <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
               <span className="text-[16px] font-bold text-[#2D2D2D]">

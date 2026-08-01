@@ -369,9 +369,7 @@ export default function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close chat" : "Open chat"}
         aria-expanded={open}
-        // Ink rather than brand red, matching the launcher in the user's
-        // reference; the panel header keeps the red.
-        style={{ backgroundColor: "#2D2D2D" }}
+        style={{ backgroundColor: BRAND_RED }}
         className="pointer-events-auto relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
       >
         {/* The two glyphs crossfade and quarter-turn into each other, so the

@@ -17,12 +17,17 @@ export default function Drawer({
   side,
   label,
   children,
+  // The menu's category list stays comfortable at a narrow width; the
+  // basket needs more room so its rows (image, name, price, stepper,
+  // remove) stop crowding each other — see CartDrawer's use of "wide".
+  width = "narrow",
 }: {
   open: boolean;
   onClose: () => void;
   side: "left" | "right";
   label: string;
   children: React.ReactNode;
+  width?: "narrow" | "wide";
 }) {
   const panelRef = useRef<HTMLElement>(null);
 
@@ -88,7 +93,9 @@ export default function Drawer({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={`absolute top-0 flex h-full w-[85vw] max-w-sm flex-col bg-white transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`absolute top-0 flex h-full flex-col bg-white transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
+        } ${
           side === "left"
             ? `left-0 shadow-[8px_0_40px_rgba(0,0,0,0.12)] ${
                 open ? "translate-x-0" : "-translate-x-full"
