@@ -38,7 +38,7 @@ export default async function ProductPage({
           />
           {product.tag ? (
             <span
-              className="absolute left-3 top-3 rounded-full bg-[#2D2D2D] px-2.5 py-0.5 text-[10px] font-medium text-[#F7F4EB]"
+              className="absolute left-3 top-3 rounded-full bg-[#3E4A30] px-2.5 py-0.5 text-[10px] font-medium text-[#F3F1E5]"
               style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
             >
               {product.tag}
@@ -51,7 +51,7 @@ export default async function ProductPage({
             {product.category}
           </p>
           <h1
-            className="mt-1 text-[20px] leading-tight text-[#2D2D2D]"
+            className="mt-1 text-[20px] leading-tight text-[#3E4A30]"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             {product.name}
@@ -59,7 +59,7 @@ export default async function ProductPage({
           <p className="mt-1 text-[14px] text-[#6F6A5C]">
             {formatPrice(product.priceCents)}
           </p>
-          <p className="mt-4 text-[13px] leading-[1.6] text-[#2D2D2D]">
+          <p className="mt-4 text-[13px] leading-[1.6] text-[#3E4A30]">
             {product.description}
           </p>
 

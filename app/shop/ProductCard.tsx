@@ -31,7 +31,7 @@ export default function ProductCard({ product }: { product: Product }) {
           className="aspect-square w-full rounded-2xl"
         />
         {product.tag ? (
-          <span className="absolute left-3 top-3 rounded-full bg-[#2D2D2D] px-2.5 py-0.5 text-[10px] font-medium text-[#F7F4EB]">
+          <span className="absolute left-3 top-3 rounded-full bg-[#3E4A30] px-2.5 py-0.5 text-[10px] font-medium text-[#F3F1E5]">
             {product.tag}
           </span>
         ) : null}
@@ -39,7 +39,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
       <Link
         href={`/shop/product/${product.slug}`}
-        className="mt-3 cursor-pointer text-[15px] leading-snug text-[#2D2D2D] hover:underline"
+        className="mt-3 cursor-pointer text-[15px] leading-snug text-[#3E4A30] hover:underline"
         style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
       >
         {product.name}
@@ -54,7 +54,7 @@ export default function ProductCard({ product }: { product: Product }) {
           addItem(product.slug);
           requestOpenBasket();
         }}
-        className="mt-3 flex cursor-pointer items-center justify-between rounded-full border border-[#2D2D2D] px-3.5 py-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[#2D2D2D] transition-colors hover:bg-[#2D2D2D] hover:text-[#F7F4EB]"
+        className="mt-3 flex cursor-pointer items-center justify-between rounded-full border border-[#3E4A30] px-3.5 py-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[#3E4A30] transition-colors hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
       >
         <span>Add to basket</span>
         <span>{formatPrice(product.priceCents)}</span>

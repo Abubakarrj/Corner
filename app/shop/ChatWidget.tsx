@@ -4,7 +4,11 @@ import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { COOKIE_CONSENT_CHANGED_EVENT } from "../CookieConsent";
 
-const BRAND_RED = "#BE1923";
+// Produce palette — deep olive carries the widget, sage is the visitor's
+// bubble, and the old brand red survives only as the error-text colour.
+const OLIVE = "#3E4A30";
+const SAGE = "#B7C9A2";
+const ERROR_RED = "#BE1923";
 
 // Must match STORAGE_KEY in app/CookieConsent.tsx. The cookie banner is a
 // full-width bar docked to the same bottom-right corner this widget lives
@@ -89,7 +93,7 @@ function SendArrowIcon() {
 
 function BagelAvatar() {
   return (
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#F0F0F0] bg-white">
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#E7E2D2] bg-white">
       <Image
         src="/icon.svg"
         alt=""
@@ -103,12 +107,12 @@ function BagelAvatar() {
 }
 
 const botBubbleClass =
-  "w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-[#F4F4F4] px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2D2D2D]";
+  "w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-[#EFEBDD] px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#3E4A30]";
 const userBubbleClass =
-  "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-white";
+  "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2F3A24]";
 
 const contactFieldClass =
-  "rounded-xl border border-[#E2E2E2] px-3.5 py-2.5 text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D] sm:text-[14px]";
+  "rounded-xl border border-[#DDD6C2] px-3.5 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] sm:text-[14px]";
 
 type Entry = { id: number; role: "bot" | "user"; text: string };
 
@@ -255,7 +259,7 @@ export default function ChatWidget() {
         }`}
       >
         <div
-          style={{ backgroundColor: BRAND_RED }}
+          style={{ backgroundColor: OLIVE }}
           className="flex items-center gap-3 px-5 py-4"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
@@ -292,7 +296,7 @@ export default function ChatWidget() {
         {/* The thread. Bot messages on the left, the visitor's replies on
             the right, newest kept in view. */}
         <div ref={threadRef} className="max-h-[50vh] overflow-y-auto p-4">
-          <p className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8A8A]">
+          <p className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8672]">
             Corner Bagel
           </p>
           <div className="mb-2 ml-9">
@@ -314,7 +318,7 @@ export default function ChatWidget() {
                   key={option}
                   type="button"
                   onClick={() => pickTopic(option)}
-                  className="cursor-pointer rounded-full border border-[#D9D9D9] px-3.5 py-2 text-[13px] text-[#2D2D2D] transition-colors hover:border-[#BE1923] hover:text-[#BE1923]"
+                  className="cursor-pointer rounded-full border border-[#DDD6C2] px-3.5 py-2 text-[13px] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#EFEBDD]"
                 >
                   {option}
                 </button>
@@ -326,7 +330,7 @@ export default function ChatWidget() {
             entry.role === "user" ? (
               <div key={entry.id} className="mt-3 flex justify-end">
                 <span
-                  style={{ backgroundColor: BRAND_RED }}
+                  style={{ backgroundColor: SAGE }}
                   className={userBubbleClass}
                 >
                   {entry.text}
@@ -347,7 +351,7 @@ export default function ChatWidget() {
             <form
               onSubmit={submitContact}
               noValidate
-              className="ml-9 mt-3 flex flex-col gap-2.5 rounded-2xl border border-[#F0F0F0] p-3"
+              className="ml-9 mt-3 flex flex-col gap-2.5 rounded-2xl border border-[#E7E2D2] p-3"
             >
               <input
                 type="text"
@@ -375,14 +379,14 @@ export default function ChatWidget() {
                 className={contactFieldClass}
               />
               {error ? (
-                <p role="alert" style={{ color: BRAND_RED }} className="text-[11px]">
+                <p role="alert" style={{ color: ERROR_RED }} className="text-[11px]">
                   {error}
                 </p>
               ) : null}
               <button
                 type="submit"
                 disabled={!contactValid || status === "sending"}
-                style={{ backgroundColor: BRAND_RED }}
+                style={{ backgroundColor: OLIVE }}
                 className="cursor-pointer rounded-xl py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
               >
                 {status === "sending" ? "Sending…" : "Send message"}
@@ -410,7 +414,7 @@ export default function ChatWidget() {
             event.preventDefault();
             sendDraft();
           }}
-          className="flex items-center gap-2 border-t border-[#F0F0F0] p-3"
+          className="flex items-center gap-2 border-t border-[#E7E2D2] p-3"
         >
           <input
             type="text"
@@ -419,13 +423,13 @@ export default function ChatWidget() {
             value={draft}
             disabled={status === "sent"}
             onChange={(e) => setDraft(e.target.value)}
-            className="min-w-0 flex-1 rounded-full border border-[#E2E2E2] px-4 py-2.5 text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D] disabled:bg-[#FAFAFA] sm:text-[14px]"
+            className="min-w-0 flex-1 rounded-full border border-[#DDD6C2] px-4 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] disabled:bg-[#FAF8F0] sm:text-[14px]"
           />
           <button
             type="submit"
             aria-label="Send"
             disabled={draft.trim().length === 0 || status === "sent"}
-            style={{ backgroundColor: BRAND_RED }}
+            style={{ backgroundColor: OLIVE }}
             className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
           >
             <SendArrowIcon />
@@ -438,9 +442,9 @@ export default function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close chat" : "Open chat"}
         aria-expanded={open}
-        // Near-black launcher, matching the chat button in the user's
-        // reference screenshots; the panel header keeps the brand red.
-        style={{ backgroundColor: "#262626" }}
+        // Deep olive launcher — same glyph as before, recoloured with the
+        // rest of the widget for the produce palette.
+        style={{ backgroundColor: OLIVE }}
         className="pointer-events-auto relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
       >
         {/* The two glyphs crossfade and quarter-turn into each other, so the

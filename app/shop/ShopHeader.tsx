@@ -20,9 +20,9 @@ const BRAND_RED = "#BE1923";
 function HamburgerIcon() {
   return (
     <svg width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden>
-      <path d="M1 1.5H19" stroke="#2D2D2D" strokeWidth="2" strokeLinecap="round" />
-      <path d="M1 7H19" stroke="#2D2D2D" strokeWidth="2" strokeLinecap="round" />
-      <path d="M1 12.5H12.5" stroke="#2D2D2D" strokeWidth="2" strokeLinecap="round" />
+      <path d="M1 1.5H19" stroke="#3E4A30" strokeWidth="2" strokeLinecap="round" />
+      <path d="M1 7H19" stroke="#3E4A30" strokeWidth="2" strokeLinecap="round" />
+      <path d="M1 12.5H12.5" stroke="#3E4A30" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -37,15 +37,15 @@ function BasketIcon() {
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M9 8.6 12 4l3 4.6"
-        stroke="#2D2D2D"
+        stroke="#3E4A30"
         strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <rect x="3" y="8" width="18" height="3.4" rx="1.7" fill="#2D2D2D" />
+      <rect x="3" y="8" width="18" height="3.4" rx="1.7" fill="#3E4A30" />
       <path
         d="M5 11.4h14l-.95 7.4a2.2 2.2 0 0 1-2.18 1.9H8.13a2.2 2.2 0 0 1-2.18-1.9L5 11.4Z"
-        fill="#2D2D2D"
+        fill="#3E4A30"
       />
       <circle cx="12" cy="5.1" r="0.65" fill="white" />
       <rect x="7.55" y="13" width="1.9" height="5.2" rx="0.95" fill="white" />
@@ -150,24 +150,25 @@ export default function ShopHeader() {
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label="Close menu"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#575757] transition-opacity hover:opacity-60"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#3E4A30] transition-opacity hover:opacity-60"
           >
             <CloseIcon />
           </button>
         </div>
 
-        {/* Sized down deliberately — medium weight at 14px, not the big
-            bold links this drawer launched with; the user wants the shop's
-            type small. */}
+        {/* Deliberately small serif links in olive — the Flamingo-style
+            menu from the user's reference, not the big bold sans links
+            this drawer launched with. */}
         <nav className="flex-1 overflow-y-auto px-6 pt-4">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8A8A]">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]">
             The Pantry
           </p>
-          <div className="flex flex-col divide-y divide-[#F0F0F0]">
+          <div className="flex flex-col divide-y divide-[#E7E2D2]">
             <Link
               href="/shop"
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer py-3 text-[14px] font-medium text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
+              className="cursor-pointer py-3 text-[15px] text-[#3E4A30] transition-opacity hover:opacity-70"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >
               All Products
             </Link>
@@ -176,7 +177,8 @@ export default function ShopHeader() {
                 key={category}
                 href={`/shop?category=${encodeURIComponent(category)}`}
                 onClick={() => setMenuOpen(false)}
-                className="cursor-pointer py-3 text-[14px] font-medium text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
+                className="cursor-pointer py-3 text-[15px] text-[#3E4A30] transition-opacity hover:opacity-70"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               >
                 {category}
               </Link>
@@ -184,16 +186,16 @@ export default function ShopHeader() {
           </div>
         </nav>
 
-        <div className="flex flex-col gap-2 border-t border-[#F0F0F0] px-6 py-5">
+        <div className="flex flex-col gap-2 border-t border-[#E7E2D2] px-6 py-5">
           <a
             href="https://thecornerbagel.com"
-            className="cursor-pointer text-[12px] text-[#8A8A8A] transition-colors hover:text-[#BE1923]"
+            className="cursor-pointer text-[12px] text-[#8A8672] transition-colors hover:text-[#3E4A30]"
           >
             ← Back to Corner Bagel
           </a>
           <a
             href="mailto:cornerbagel@publicentity.co"
-            className="cursor-pointer text-[12px] text-[#8A8A8A] underline transition-colors hover:text-[#BE1923]"
+            className="cursor-pointer text-[12px] text-[#8A8672] underline transition-colors hover:text-[#3E4A30]"
           >
             cornerbagel@publicentity.co
           </a>

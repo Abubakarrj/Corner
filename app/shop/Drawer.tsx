@@ -93,7 +93,7 @@ export default function Drawer({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={`absolute top-0 flex h-full flex-col bg-white transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`absolute top-0 flex h-full flex-col bg-[#FAF8F0] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
         } ${
           side === "left"

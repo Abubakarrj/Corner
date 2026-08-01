@@ -5,8 +5,6 @@ import { useCart } from "../CartContext";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
 
-const BRAND_RED = "#BE1923";
-
 export default function CartPage() {
   const { lines, setQuantity, removeItem, subtotalCents } = useCart();
 
@@ -22,7 +20,7 @@ export default function CartPage() {
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <h1
-        className="mb-6 text-[18px] font-bold text-[#2D2D2D]"
+        className="mb-6 text-[18px] font-bold text-[#3E4A30]"
         style={{ letterSpacing: "-0.03em" }}
       >
         Cart
@@ -30,7 +28,7 @@ export default function CartPage() {
 
       {rows.length === 0 ? (
         <div>
-          <p className="text-[14px] text-[#575757]">Your cart is empty.</p>
+          <p className="text-[14px] text-[#6F6A5C]">Your cart is empty.</p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Browse the pantry
           </Link>
@@ -52,36 +50,36 @@ export default function CartPage() {
                   <div className="flex items-start justify-between gap-2">
                     <Link
                       href={`/shop/product/${product.slug}`}
-                      className="cursor-pointer text-[14px] font-medium text-[#2D2D2D] hover:underline"
+                      className="cursor-pointer text-[14px] font-medium text-[#3E4A30] hover:underline"
                     >
                       {product.name}
                     </Link>
-                    <span className="whitespace-nowrap text-[14px] text-[#2D2D2D]">
+                    <span className="whitespace-nowrap text-[14px] text-[#3E4A30]">
                       {formatPrice(product.priceCents * line.quantity)}
                     </span>
                   </div>
-                  <span className="text-[13px] text-[#575757]">
+                  <span className="text-[13px] text-[#6F6A5C]">
                     {formatPrice(product.priceCents)} each
                   </span>
 
                   <div className="mt-auto flex items-center gap-3 pt-2">
-                    <div className="flex items-center rounded-full border border-[#E2E2E2]">
+                    <div className="flex items-center rounded-full border border-[#DDD6C2]">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity - 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#3E4A30] transition-opacity hover:opacity-60"
                       >
                         −
                       </button>
-                      <span className="w-6 text-center text-[13px] text-[#2D2D2D]">
+                      <span className="w-6 text-center text-[13px] text-[#3E4A30]">
                         {line.quantity}
                       </span>
                       <button
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity + 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#3E4A30] transition-opacity hover:opacity-60"
                       >
                         +
                       </button>
@@ -100,16 +98,16 @@ export default function CartPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between border-t border-[#E4DECE] pt-4">
-            <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
-            <span className="text-[16px] font-bold text-[#2D2D2D]">
+            <span className="text-[14px] font-medium text-[#3E4A30]">Subtotal</span>
+            <span className="text-[16px] font-bold text-[#3E4A30]">
               {formatPrice(subtotalCents)}
             </span>
           </div>
 
           <Link
             href="/shop/checkout"
-            style={{ backgroundColor: BRAND_RED }}
-            className="mt-4 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: "#3E4A30" }}
+            className="mt-4 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
           >
             Checkout
           </Link>

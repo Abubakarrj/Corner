@@ -8,9 +8,9 @@ import { formatPrice, getProduct } from "../products";
 const BRAND_RED = "#BE1923";
 
 const fieldWrapClass =
-  "flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]";
+  "flex items-center gap-2 rounded-xl border border-[#DDD6C2] px-4 py-3 focus-within:border-[#3E4A30]";
 const inputClass =
-  "w-full min-w-0 bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A]";
+  "w-full min-w-0 bg-transparent text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A]";
 
 export default function CheckoutPage() {
   const { lines, subtotalCents, clear } = useCart();
@@ -74,13 +74,13 @@ export default function CheckoutPage() {
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
-      <h1 className="mb-6 text-[18px] font-bold text-[#2D2D2D]" style={{ letterSpacing: "-0.03em" }}>
+      <h1 className="mb-6 text-[18px] font-bold text-[#3E4A30]" style={{ letterSpacing: "-0.03em" }}>
         Checkout
       </h1>
 
       {status === "placed" ? (
         <div>
-          <p className="text-[14px] text-[#575757]">
+          <p className="text-[14px] text-[#6F6A5C]">
             Order placed — we&rsquo;ll be in touch to confirm and take payment.
           </p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
@@ -89,7 +89,7 @@ export default function CheckoutPage() {
         </div>
       ) : rows.length === 0 ? (
         <div>
-          <p className="text-[14px] text-[#575757]">Your cart is empty.</p>
+          <p className="text-[14px] text-[#6F6A5C]">Your cart is empty.</p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Browse the pantry
           </Link>
@@ -148,8 +148,8 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={!valid || status === "sending"}
-              style={{ backgroundColor: BRAND_RED }}
-              className="mt-1 w-full cursor-pointer rounded-full py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
+              style={{ backgroundColor: "#3E4A30" }}
+              className="mt-1 w-full cursor-pointer rounded-full py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
             >
               {status === "sending" ? "Placing order…" : "Place order"}
             </button>
@@ -166,18 +166,18 @@ export default function CheckoutPage() {
             <div className="flex flex-col divide-y divide-[#E4DECE]">
               {rows.map(({ line, product }) => (
                 <div key={line.slug} className="flex items-center justify-between py-2.5 text-[14px]">
-                  <span className="text-[#2D2D2D]">
+                  <span className="text-[#3E4A30]">
                     {product.name} <span className="text-[#8A8A8A]">×{line.quantity}</span>
                   </span>
-                  <span className="text-[#2D2D2D]">
+                  <span className="text-[#3E4A30]">
                     {formatPrice(product.priceCents * line.quantity)}
                   </span>
                 </div>
               ))}
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-[#E4DECE] pt-3">
-              <span className="text-[13px] font-medium text-[#2D2D2D]">Subtotal</span>
-              <span className="text-[14px] font-bold text-[#2D2D2D]">
+              <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
+              <span className="text-[14px] font-bold text-[#3E4A30]">
                 {formatPrice(subtotalCents)}
               </span>
             </div>
