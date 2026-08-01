@@ -85,37 +85,45 @@ export default function ShopHeader() {
 
   return (
     <>
+      {/* The safe-area inset is padding on the header itself, not on an
+          ancestor: this bar is sticky, so once the page scrolls it sits at
+          the very top of a viewport that (under viewport-fit=cover) extends
+          under the notch. Padding here means the header's own cream fills
+          that strip and the controls sit below it — padding on a wrapper
+          would scroll away and leave the bar under the status bar. */}
       <header
-        className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#E4DECE] bg-[#F7F4EB] px-4 sm:px-6"
+        className="sticky top-0 z-40 border-b border-[#E4DECE] bg-[#F7F4EB] pt-[env(safe-area-inset-top)]"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-label="Menu"
-          aria-expanded={menuOpen}
-          className="flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-        >
-          <HamburgerIcon />
-        </button>
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+            className="flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
+          >
+            <HamburgerIcon />
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setBasketOpen(true)}
-          aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
-          aria-expanded={basketOpen}
-          className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-        >
-          <BasketIcon />
-          {itemCount > 0 ? (
-            <span
-              style={{ backgroundColor: BRAND_RED }}
-              className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-            >
-              {itemCount}
-            </span>
-          ) : null}
-        </button>
+          <button
+            type="button"
+            onClick={() => setBasketOpen(true)}
+            aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+            aria-expanded={basketOpen}
+            className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
+          >
+            <BasketIcon />
+            {itemCount > 0 ? (
+              <span
+                style={{ backgroundColor: BRAND_RED }}
+                className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+              >
+                {itemCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
       </header>
 
       {/* Drops down from the top over the page, per the reference nav,

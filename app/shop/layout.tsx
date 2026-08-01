@@ -39,12 +39,11 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
           themeColor above only covers the status-bar chrome. */}
       <style>{`html, body { background-color: #F7F4EB; }`}</style>
       {/* Warm cream ground, per the reference designs the shop is styled
-          after — the marketing site stays white; this palette is the
-          shop's own. pt-[env(safe-area-inset-top)] holds the header below
-          the notch/status bar now that the page extends underneath it —
-          without it, the header would slide up under the notch instead of
-          just the background colour extending there. */}
-      <div className="flex min-h-dvh flex-col bg-[#F7F4EB] pt-[env(safe-area-inset-top)]">
+          after — the marketing site stays white; this palette is the shop's
+          own. The notch/status-bar inset is handled by ShopHeader's own
+          padding rather than here, since a sticky header has to carry that
+          padding itself to stay clear once the page scrolls. */}
+      <div className="flex min-h-dvh flex-col bg-[#F7F4EB]">
         <ShopHeader />
         <main className="flex-1">{children}</main>
         <ChatWidget />

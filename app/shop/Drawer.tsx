@@ -121,7 +121,10 @@ export default function Drawer({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={`absolute flex flex-col overflow-y-auto bg-[#FAF8F0] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelTransformClass}`}
+        // Same reasoning as ShopHeader's inset: every variant is anchored to
+        // the viewport's top edge, which extends under the notch, so the
+        // panel carries the inset itself to keep its first row clear.
+        className={`absolute flex flex-col overflow-y-auto bg-[#FAF8F0] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelTransformClass}`}
       >
         {children}
       </aside>
