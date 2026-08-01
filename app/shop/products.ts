@@ -124,6 +124,46 @@ export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+// Amazon-style word matching: the query is split into words and a product
+// only matches if EVERY word hits something (AND, not OR) — "chili oil"
+// shouldn't surface every oil in the catalog. Where a word matches decides
+// the ranking: the start of the name beats a later word in the name, which
+// beats the category, which beats the description. Ties keep catalog order.
+//
+// Deliberately plain substring matching, no fuzzy/typo tolerance: with a
+// catalog this size that would surface more noise than it rescues, and it
+// can be added later against real search logs rather than guesses.
+export function searchProducts(query: string, limit = 6): Product[] {
+  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+
+  const scored: { product: Product; score: number; order: number }[] = [];
+
+  PRODUCTS.forEach((product, order) => {
+    const name = product.name.toLowerCase();
+    const category = product.category.toLowerCase();
+    const description = product.description.toLowerCase();
+    const nameWords = name.split(/\s+/);
+
+    let score = 0;
+    for (const word of words) {
+      if (name.startsWith(word)) score += 100;
+      else if (nameWords.some((w) => w.startsWith(word))) score += 60;
+      else if (name.includes(word)) score += 30;
+      else if (category.includes(word)) score += 15;
+      else if (description.includes(word)) score += 5;
+      else return; // this word matched nothing — the product is out
+    }
+
+    scored.push({ product, score, order });
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .slice(0, limit)
+    .map((hit) => hit.product);
+}
+
 export const SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
   { value: "name-asc", label: "Name: A to Z" },

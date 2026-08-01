@@ -1,13 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "./CartContext";
-import Drawer from "./Drawer";
 import CartDrawer from "./CartDrawer";
-import MenuCategoryLinks from "./MenuCategoryLinks";
+import SearchBar from "./SearchBar";
 import { OPEN_BASKET_EVENT } from "./openBasket";
-import { DISPLAY_FONT } from "./shopControls";
 
 const BRAND_RED = "#BE1923";
 
@@ -16,16 +13,6 @@ const BRAND_RED = "#BE1923";
 // /product/x would 404 (or land on the marketing site). On
 // shop.thecornerbagel.com these same /shop/... paths pass straight through
 // proxy.ts untouched, so one set of hrefs works on both hosts.
-
-function HamburgerIcon() {
-  return (
-    <svg width="20" height="14" viewBox="0 0 20 14" fill="none" aria-hidden>
-      <path d="M1 1.5H19" stroke="#3E4A30" strokeWidth="2" strokeLinecap="round" />
-      <path d="M1 7H19" stroke="#3E4A30" strokeWidth="2" strokeLinecap="round" />
-      <path d="M1 12.5H12.5" stroke="#3E4A30" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 // A solid market basket, matching the reference glyph the user supplied:
 // filled trapezoid body with three rounded slots, wide rounded rim, and a
@@ -55,21 +42,8 @@ function BasketIcon() {
   );
 }
 
-function CloseIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-      <path
-        d="M3.5 3.5l11 11M14.5 3.5l-11 11"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export default function ShopHeader() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const { itemCount } = useCart();
 
@@ -77,7 +51,7 @@ export default function ShopHeader() {
   // confirmation — see openBasket.ts.
   useEffect(() => {
     const onOpenBasket = () => {
-      setMenuOpen(false);
+      setSearchOpen(false);
       setBasketOpen(true);
     };
     window.addEventListener(OPEN_BASKET_EVENT, onOpenBasket);
@@ -100,100 +74,39 @@ export default function ShopHeader() {
             the safe-area inset above stacks on top of this row: a 64px row
             under a ~59px notch strip makes for a ~123px bar that eats the
             viewport. Desktop has no inset, so it keeps the roomier row. */}
-        <div className="flex h-[52px] items-center justify-between px-4 sm:h-16 sm:px-6">
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            aria-label="Menu"
-            aria-expanded={menuOpen}
-            className="flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-          >
-            <HamburgerIcon />
-          </button>
+        <div className="flex h-[52px] items-center gap-2 px-4 sm:h-16 sm:px-6">
+          {/* Keyed on open/closed so toggling remounts it, clearing the
+              query and keyboard cursor without an effect writing state. */}
+          <SearchBar
+            key={searchOpen ? "search-open" : "search-closed"}
+            open={searchOpen}
+            onOpen={() => setSearchOpen(true)}
+            onClose={() => setSearchOpen(false)}
+          />
 
-          <button
-            type="button"
-            onClick={() => setBasketOpen(true)}
-            aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
-            aria-expanded={basketOpen}
-            className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-          >
-            <BasketIcon />
-            {itemCount > 0 ? (
-              <span
-                style={{ backgroundColor: BRAND_RED }}
-                className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-              >
-                {itemCount}
-              </span>
-            ) : null}
-          </button>
+          {/* Pushed aside while the search field is expanded — the field
+              takes the row, matching the reference. */}
+          {searchOpen ? null : (
+            <button
+              type="button"
+              onClick={() => setBasketOpen(true)}
+              aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+              aria-expanded={basketOpen}
+              className="relative ml-auto flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
+            >
+              <BasketIcon />
+              {itemCount > 0 ? (
+                <span
+                  style={{ backgroundColor: BRAND_RED }}
+                  className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                >
+                  {itemCount}
+                </span>
+              ) : null}
+            </button>
+          )}
         </div>
       </header>
-
-      {/* Drops down from the top over the page, per the reference nav,
-          rather than sliding in from the side. */}
-      <Drawer
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        side="top"
-        label="Menu"
-      >
-        <div className="flex items-center justify-between px-6 py-5">
-          <Image
-            src="/logo.svg"
-            alt="Corner Bagel"
-            width={8369}
-            height={3233}
-            unoptimized
-            className="h-5 w-auto object-contain"
-          />
-          <button
-            type="button"
-            onClick={() => setMenuOpen(false)}
-            aria-label="Close menu"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#3E4A30] transition-opacity hover:opacity-60"
-          >
-            <CloseIcon />
-          </button>
-        </div>
-
-        {/* Deliberately small links in olive — the Flamingo-style
-            menu from the user's reference — with a grey highlight behind
-            whichever one matches the page currently open, per the
-            wholesale-catalog reference's grey "Catalog" row. */}
-        <nav className="px-6 pt-2">
-          <p
-            className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]"
-            style={{ fontFamily: DISPLAY_FONT }}
-          >
-            The Pantry
-          </p>
-          <Suspense fallback={null}>
-            <MenuCategoryLinks onNavigate={() => setMenuOpen(false)} />
-          </Suspense>
-        </nav>
-
-        {/* Extra bottom padding clears the home-indicator gesture area
-            under viewport-fit=cover; env() is 0 anywhere that isn't set. */}
-        <div
-          className="mt-2 flex flex-col gap-2 border-t border-[#E7E2D2] px-6 pt-5"
-          style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
-        >
-          <a
-            href="https://thecornerbagel.com"
-            className="cursor-pointer text-[12px] text-[#8A8672] transition-colors hover:text-[#3E4A30]"
-          >
-            ← Back to Corner Bagel
-          </a>
-          <a
-            href="mailto:cornerbagel@publicentity.co"
-            className="cursor-pointer text-[12px] text-[#8A8672] underline transition-colors hover:text-[#3E4A30]"
-          >
-            cornerbagel@publicentity.co
-          </a>
-        </div>
-      </Drawer>
 
       <CartDrawer open={basketOpen} onClose={() => setBasketOpen(false)} />
     </>
