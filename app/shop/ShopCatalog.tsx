@@ -50,13 +50,16 @@ export default function ShopCatalog({
         <div className="flex items-center gap-3">
           <SortDropdown activeSort={activeSort} activeCategory={activeCategory} />
 
-          <div className="flex overflow-hidden rounded-full border border-[#DDD6C2]">
+          {/* Padding-driven width (not a fixed square per button) so this
+              reads as a long horizontal pill like the Sort control next to
+              it, not a compressed little capsule. */}
+          <div className="flex h-11 overflow-hidden rounded-full border border-[#DDD6C2]">
             <button
               type="button"
               onClick={() => setView("grid")}
               aria-label="Grid view"
               aria-pressed={view === "grid"}
-              className={`flex h-11 w-11 cursor-pointer items-center justify-center transition-colors ${
+              className={`flex h-full cursor-pointer items-center justify-center px-6 transition-colors ${
                 view === "grid"
                   ? "bg-[#3E4A30] text-[#F3F1E5]"
                   : "text-[#3E4A30] hover:bg-[#EFEBDD]"
@@ -69,7 +72,7 @@ export default function ShopCatalog({
               onClick={() => setView("list")}
               aria-label="List view"
               aria-pressed={view === "list"}
-              className={`flex h-11 w-11 cursor-pointer items-center justify-center border-l border-[#DDD6C2] transition-colors ${
+              className={`flex h-full cursor-pointer items-center justify-center border-l border-[#DDD6C2] px-6 transition-colors ${
                 view === "list"
                   ? "bg-[#3E4A30] text-[#F3F1E5]"
                   : "text-[#3E4A30] hover:bg-[#EFEBDD]"
