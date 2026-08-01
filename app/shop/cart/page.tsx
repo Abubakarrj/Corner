@@ -37,7 +37,7 @@ export default function CartPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-col divide-y divide-[#E2E2E2]">
+          <div className="flex flex-col divide-y divide-[#E4DECE]">
             {rows.map(({ line, product }) => (
               <div key={line.slug} className="flex gap-4 py-4">
                 <Link href={`/shop/product/${product.slug}`} className="shrink-0 cursor-pointer">
@@ -99,7 +99,7 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-[#E2E2E2] pt-4">
+          <div className="mt-6 flex items-center justify-between border-t border-[#E4DECE] pt-4">
             <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
             <span className="text-[16px] font-bold text-[#2D2D2D]">
               {formatPrice(subtotalCents)}
@@ -109,7 +109,7 @@ export default function CartPage() {
           <Link
             href="/shop/checkout"
             style={{ backgroundColor: BRAND_RED }}
-            className="mt-4 block w-full cursor-pointer py-3.5 text-center text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+            className="mt-4 block w-full cursor-pointer rounded-full py-3.5 text-center text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
           >
             Checkout
           </Link>

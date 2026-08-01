@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { COOKIE_CONSENT_CHANGED_EVENT } from "../CookieConsent";
 
 const BRAND_RED = "#BE1923";
@@ -73,6 +73,20 @@ function CloseIcon() {
   );
 }
 
+function SendArrowIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M8 13V3M8 3L3.5 7.5M8 3l4.5 4.5"
+        stroke="white"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function BagelAvatar() {
   return (
     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#F0F0F0] bg-white">
@@ -90,15 +104,25 @@ function BagelAvatar() {
 
 const botBubbleClass =
   "w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-[#F4F4F4] px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2D2D2D]";
+const userBubbleClass =
+  "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-white";
 
-const fieldClass =
+const contactFieldClass =
   "rounded-xl border border-[#E2E2E2] px-3.5 py-2.5 text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D] sm:text-[14px]";
+
+type Entry = { id: number; role: "bot" | "user"; text: string };
 
 // A placeholder chat widget — no live agent behind it yet. Leaving a message
 // here logs it (same "log now, wire the real vendor later" pattern as the
 // signup/catering/order forms) instead of reaching anyone in real time. Swap
 // this whole component for a real provider's embed (Intercom, Gorgias,
 // Zendesk, ...) once one is chosen.
+//
+// The flow copies the concierge widget the user referenced: greeting +
+// quick-reply topics, an automated follow-up asking for details, a
+// "Type a message…" composer pinned at the bottom, and — since there's no
+// live agent to answer — one extra automated step that collects name/email
+// so the reply can actually reach the visitor.
 export default function ChatWidget() {
   const bannerVisible = useSyncExternalStore(
     subscribeCookieBanner,
@@ -107,11 +131,16 @@ export default function ChatWidget() {
   );
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState<string | null>(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [draft, setDraft] = useState("");
+  const [askedContact, setAskedContact] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const threadRef = useRef<HTMLDivElement>(null);
+  const nextId = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -122,14 +151,42 @@ export default function ChatWidget() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  const valid =
-    name.trim().length > 0 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    message.trim().length > 0;
+  // Keep the newest message in view as the thread grows.
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (thread) thread.scrollTop = thread.scrollHeight;
+  }, [entries, askedContact, status, open]);
 
-  async function onSubmit(event: React.FormEvent) {
+  function push(role: Entry["role"], text: string) {
+    setEntries((prior) => [...prior, { id: nextId.current++, role, text }]);
+  }
+
+  function pickTopic(option: string) {
+    setTopic(option);
+    push("user", option);
+    // 1:1 with the reference concierge's automated follow-up.
+    push("bot", "Do you have any additional details to share to help us assist you?");
+  }
+
+  const typedMessages = entries.filter((entry) => entry.role === "user" && entry.text !== topic);
+
+  function sendDraft() {
+    const text = draft.trim();
+    if (!text || status === "sent") return;
+    push("user", text);
+    setDraft("");
+    if (!askedContact) {
+      push("bot", "Got it — where should we email our reply?");
+      setAskedContact(true);
+    }
+  }
+
+  const contactValid =
+    name.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  async function submitContact(event: React.FormEvent) {
     event.preventDefault();
-    if (!valid || status !== "idle") return;
+    if (!contactValid || status !== "idle") return;
 
     setStatus("sending");
     setError(null);
@@ -138,13 +195,19 @@ export default function ChatWidget() {
       const response = await fetch("/api/shop-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message, topic }),
+        body: JSON.stringify({
+          name,
+          email,
+          message: typedMessages.map((entry) => entry.text).join("\n"),
+          topic,
+        }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
         throw new Error(body?.error ?? "Something went wrong.");
       }
       setStatus("sent");
+      push("bot", "Thanks — message received. We'll email you back shortly.");
     } catch (submitError) {
       setStatus("idle");
       setError(
@@ -154,11 +217,15 @@ export default function ChatWidget() {
   }
 
   function resetThread() {
+    setEntries([]);
     setTopic(null);
-    setMessage("");
+    setDraft("");
+    setAskedContact(false);
     setStatus("idle");
     setError(null);
   }
+
+  const showChips = topic === null && typedMessages.length === 0 && status === "idle";
 
   return (
     // pointer-events-none on the container: with the panel always mounted
@@ -181,7 +248,7 @@ export default function ChatWidget() {
         inert={!open}
         role="dialog"
         aria-label="Chat"
-        className={`mb-3 w-[calc(100vw-2.5rem)] max-w-[340px] origin-bottom-right overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-200 ease-out ${
+        className={`mb-3 flex w-[calc(100vw-2.5rem)] max-w-[350px] origin-bottom-right flex-col overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-200 ease-out ${
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-2 scale-95 opacity-0"
@@ -222,10 +289,9 @@ export default function ChatWidget() {
           </button>
         </div>
 
-        {/* The thread. Bot messages on the left, the visitor's picked topic
-            on the right — the quick-reply buttons stand in for typing a
-            first message, like the concierge widgets this is modeled on. */}
-        <div className="max-h-[55vh] overflow-y-auto p-4">
+        {/* The thread. Bot messages on the left, the visitor's replies on
+            the right, newest kept in view. */}
+        <div ref={threadRef} className="max-h-[50vh] overflow-y-auto p-4">
           <p className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8A8A]">
             Corner Bagel
           </p>
@@ -241,127 +307,130 @@ export default function ChatWidget() {
           </div>
           <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">Automated</p>
 
-          {topic === null ? (
+          {showChips ? (
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               {TOPICS.map((option) => (
                 <button
                   key={option}
                   type="button"
-                  onClick={() => setTopic(option)}
-                  className="cursor-pointer rounded-xl border border-[#D9D9D9] px-3.5 py-2 text-[13px] text-[#2D2D2D] transition-colors hover:border-[#BE1923] hover:text-[#BE1923]"
+                  onClick={() => pickTopic(option)}
+                  className="cursor-pointer rounded-full border border-[#D9D9D9] px-3.5 py-2 text-[13px] text-[#2D2D2D] transition-colors hover:border-[#BE1923] hover:text-[#BE1923]"
                 >
                   {option}
                 </button>
               ))}
             </div>
-          ) : (
-            <>
-              <div className="mt-4 flex justify-end">
+          ) : null}
+
+          {entries.map((entry) =>
+            entry.role === "user" ? (
+              <div key={entry.id} className="mt-3 flex justify-end">
                 <span
                   style={{ backgroundColor: BRAND_RED }}
-                  className="w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-white"
+                  className={userBubbleClass}
                 >
-                  {topic}
+                  {entry.text}
                 </span>
               </div>
-
-              {status === "sent" ? (
-                <>
-                  <div className="mt-3 flex items-end gap-2">
-                    <BagelAvatar />
-                    <p className={botBubbleClass}>
-                      Thanks — message received. We&rsquo;ll email you back
-                      shortly.
-                    </p>
-                  </div>
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={resetThread}
-                      className="cursor-pointer text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
-                    >
-                      Send another message
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mt-1 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => setTopic(null)}
-                      className="cursor-pointer text-[11px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
-                    >
-                      Change topic
-                    </button>
-                  </div>
-
-                  <form
-                    onSubmit={onSubmit}
-                    noValidate
-                    className="mt-3 flex flex-col gap-2.5"
-                  >
-                    <input
-                      type="text"
-                      autoComplete="name"
-                      aria-label="Name"
-                      placeholder="Name"
-                      value={name}
-                      onChange={(e) => {
-                        setName(e.target.value);
-                        setError(null);
-                      }}
-                      className={fieldClass}
-                    />
-                    <input
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      aria-label="Email address"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setError(null);
-                      }}
-                      className={fieldClass}
-                    />
-                    <textarea
-                      aria-label="Message"
-                      placeholder="Tell us a little more…"
-                      value={message}
-                      onChange={(e) => {
-                        setMessage(e.target.value);
-                        setError(null);
-                      }}
-                      rows={3}
-                      className={`resize-none ${fieldClass}`}
-                    />
-
-                    {error ? (
-                      <p
-                        role="alert"
-                        style={{ color: BRAND_RED }}
-                        className="text-[11px]"
-                      >
-                        {error}
-                      </p>
-                    ) : null}
-
-                    <button
-                      type="submit"
-                      disabled={!valid || status === "sending"}
-                      style={{ backgroundColor: BRAND_RED }}
-                      className="mt-0.5 cursor-pointer rounded-xl py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
-                    >
-                      {status === "sending" ? "Sending…" : "Send message"}
-                    </button>
-                  </form>
-                </>
-              )}
-            </>
+            ) : (
+              <div key={entry.id} className="mt-3">
+                <div className="flex items-end gap-2">
+                  <BagelAvatar />
+                  <p className={botBubbleClass}>{entry.text}</p>
+                </div>
+                <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">Automated</p>
+              </div>
+            ),
           )}
+
+          {askedContact && status !== "sent" ? (
+            <form
+              onSubmit={submitContact}
+              noValidate
+              className="ml-9 mt-3 flex flex-col gap-2.5 rounded-2xl border border-[#F0F0F0] p-3"
+            >
+              <input
+                type="text"
+                autoComplete="name"
+                aria-label="Name"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
+                className={contactFieldClass}
+              />
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                aria-label="Email address"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+                className={contactFieldClass}
+              />
+              {error ? (
+                <p role="alert" style={{ color: BRAND_RED }} className="text-[11px]">
+                  {error}
+                </p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={!contactValid || status === "sending"}
+                style={{ backgroundColor: BRAND_RED }}
+                className="cursor-pointer rounded-xl py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
+              >
+                {status === "sending" ? "Sending…" : "Send message"}
+              </button>
+            </form>
+          ) : null}
+
+          {status === "sent" ? (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={resetThread}
+                className="cursor-pointer text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
+              >
+                Send another message
+              </button>
+            </div>
+          ) : null}
         </div>
+
+        {/* The composer, pinned under the thread like the reference —
+            free-typing works alongside (or instead of) the topic buttons. */}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            sendDraft();
+          }}
+          className="flex items-center gap-2 border-t border-[#F0F0F0] p-3"
+        >
+          <input
+            type="text"
+            aria-label="Type a message"
+            placeholder={status === "sent" ? "Message sent" : "Type a message…"}
+            value={draft}
+            disabled={status === "sent"}
+            onChange={(e) => setDraft(e.target.value)}
+            className="min-w-0 flex-1 rounded-full border border-[#E2E2E2] px-4 py-2.5 text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D] disabled:bg-[#FAFAFA] sm:text-[14px]"
+          />
+          <button
+            type="submit"
+            aria-label="Send"
+            disabled={draft.trim().length === 0 || status === "sent"}
+            style={{ backgroundColor: BRAND_RED }}
+            className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
+          >
+            <SendArrowIcon />
+          </button>
+        </form>
       </div>
 
       <button
@@ -369,7 +438,9 @@ export default function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close chat" : "Open chat"}
         aria-expanded={open}
-        style={{ backgroundColor: BRAND_RED }}
+        // Near-black launcher, matching the chat button in the user's
+        // reference screenshots; the panel header keeps the brand red.
+        style={{ backgroundColor: "#262626" }}
         className="pointer-events-auto relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
       >
         {/* The two glyphs crossfade and quarter-turn into each other, so the

@@ -149,7 +149,7 @@ export default function CheckoutPage() {
               type="submit"
               disabled={!valid || status === "sending"}
               style={{ backgroundColor: BRAND_RED }}
-              className="mt-1 w-full cursor-pointer py-3.5 text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
+              className="mt-1 w-full cursor-pointer rounded-full py-3.5 text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
             >
               {status === "sending" ? "Placing order…" : "Place order"}
             </button>
@@ -163,7 +163,7 @@ export default function CheckoutPage() {
             <h2 className="mb-3 text-[13px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
               Order summary
             </h2>
-            <div className="flex flex-col divide-y divide-[#E2E2E2]">
+            <div className="flex flex-col divide-y divide-[#E4DECE]">
               {rows.map(({ line, product }) => (
                 <div key={line.slug} className="flex items-center justify-between py-2.5 text-[14px]">
                   <span className="text-[#2D2D2D]">
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-3 flex items-center justify-between border-t border-[#E2E2E2] pt-3">
+            <div className="mt-3 flex items-center justify-between border-t border-[#E4DECE] pt-3">
               <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
               <span className="text-[16px] font-bold text-[#2D2D2D]">
                 {formatPrice(subtotalCents)}

@@ -87,7 +87,7 @@ export default function ShopHeader() {
   return (
     <>
       <header
-        className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#E2E2E2] bg-white px-4 sm:px-6"
+        className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#E4DECE] bg-[#F7F4EB] px-4 sm:px-6"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
         <button

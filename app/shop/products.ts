@@ -11,6 +11,10 @@ export type Product = {
   category: string;
   description: string;
   swatch: string;
+  // Optional merchandising pill shown on the catalog tile ("New",
+  // "Bestseller") — same treatment as the reference designs. Placeholder
+  // picks below, like everything else in this file.
+  tag?: "New" | "Bestseller";
 };
 
 export const CATEGORIES = [
@@ -25,6 +29,7 @@ export const PRODUCTS: Product[] = [
     slug: "pickled-red-onions",
     name: "Pickled Red Onions",
     priceCents: 900,
+    tag: "Bestseller",
     category: "Pickles & Ferments",
     description:
       "The same quick-pickled onions that go on the sandwiches — sharp, bright, and ready for anything you'd put a pickle on.",
@@ -70,6 +75,7 @@ export const PRODUCTS: Product[] = [
     slug: "hot-honey",
     name: "Hot Honey",
     priceCents: 1200,
+    tag: "New",
     category: "Sauces & Spreads",
     description:
       "Local honey steeped with chilies — sweet first, then a slow build of heat. Great on anything that could use both.",

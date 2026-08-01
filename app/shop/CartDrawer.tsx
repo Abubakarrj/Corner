@@ -189,7 +189,7 @@ export default function CartDrawer({
               href="/shop/checkout"
               onClick={onClose}
               style={{ backgroundColor: BRAND_RED }}
-              className="mt-3 block w-full cursor-pointer py-3.5 text-center text-[14px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+              className="mt-3 block w-full cursor-pointer rounded-full py-3.5 text-center text-[14px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
             >
               Checkout
             </Link>

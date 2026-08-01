@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { CATEGORIES, type Product } from "./products";
 
-const BRAND_RED = "#BE1923";
-
-const pillBase =
-  "cursor-pointer whitespace-nowrap rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-opacity hover:opacity-70";
+// Underline tabs, matching the reference catalog: a horizontal row of
+// category names over a hairline, with the active one darkened and
+// underlined. Scrolls sideways on narrow screens rather than wrapping.
+const tabBase =
+  "-mb-px cursor-pointer whitespace-nowrap border-b-2 pb-3 text-[15px] transition-colors";
+const tabActive = "border-[#2D2D2D] font-medium text-[#2D2D2D]";
+const tabIdle = "border-transparent text-[#6F6A5C] hover:text-[#2D2D2D]";
 
 export default function CategoryNav({
   activeCategory,
@@ -13,37 +16,21 @@ export default function CategoryNav({
 }) {
   return (
     <div
-      className="mb-6 flex gap-2 overflow-x-auto pb-1"
+      className="mb-6 flex gap-6 overflow-x-auto border-b border-[#E4DECE]"
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
-      <Link
-        href="/shop"
-        style={
-          activeCategory
-            ? { borderColor: "#E2E2E2", color: "#2D2D2D" }
-            : { borderColor: BRAND_RED, backgroundColor: BRAND_RED, color: "#ffffff" }
-        }
-        className={pillBase}
-      >
+      <Link href="/shop" className={`${tabBase} ${activeCategory ? tabIdle : tabActive}`}>
         All
       </Link>
-      {CATEGORIES.map((category) => {
-        const isActive = category === activeCategory;
-        return (
-          <Link
-            key={category}
-            href={`/shop?category=${encodeURIComponent(category)}`}
-            style={
-              isActive
-                ? { borderColor: BRAND_RED, backgroundColor: BRAND_RED, color: "#ffffff" }
-                : { borderColor: "#E2E2E2", color: "#2D2D2D" }
-            }
-            className={pillBase}
-          >
-            {category}
-          </Link>
-        );
-      })}
+      {CATEGORIES.map((category) => (
+        <Link
+          key={category}
+          href={`/shop?category=${encodeURIComponent(category)}`}
+          className={`${tabBase} ${category === activeCategory ? tabActive : tabIdle}`}
+        >
+          {category}
+        </Link>
+      ))}
     </div>
   );
 }

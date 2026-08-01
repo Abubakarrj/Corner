@@ -6,44 +6,58 @@ import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
 import { requestOpenBasket } from "./openBasket";
 
-const BRAND_RED = "#BE1923";
-
+// Card layout is 1:1 with the reference the user supplied (Flamingo
+// Estate's "Summer Favorites" cards): rounded tile with a merchandising
+// pill in its top-left corner, serif product name, one-line description,
+// and a full-width rounded-pill button with "ADD TO BASKET" on the left
+// and the price on the right.
+//
 // Links are /shop-rooted, not /-rooted — see the note in ShopHeader.tsx.
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
 
   return (
-    <div className="flex flex-col">
-      <Link href={`/shop/product/${product.slug}`} className="cursor-pointer">
+    <div
+      className="flex flex-col"
+      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+    >
+      <Link
+        href={`/shop/product/${product.slug}`}
+        className="relative cursor-pointer"
+      >
         <ProductImage
           swatch={product.swatch}
           name={product.name}
-          className="aspect-square w-full rounded-lg"
+          className="aspect-square w-full rounded-2xl"
         />
+        {product.tag ? (
+          <span className="absolute left-3 top-3 rounded-full bg-[#2D2D2D] px-3 py-1 text-[11px] font-medium text-[#F7F4EB]">
+            {product.tag}
+          </span>
+        ) : null}
       </Link>
+
       <Link
         href={`/shop/product/${product.slug}`}
-        className="mt-3 cursor-pointer text-[14px] font-medium text-[#2D2D2D] hover:underline"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+        className="mt-3 cursor-pointer text-[19px] leading-snug text-[#2D2D2D] hover:underline"
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
       >
         {product.name}
       </Link>
-      <span
-        className="mt-0.5 text-[13px] text-[#575757]"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-      >
-        {formatPrice(product.priceCents)}
-      </span>
+      <p className="mt-1 line-clamp-2 text-[13px] leading-[1.45] text-[#6F6A5C]">
+        {product.description}
+      </p>
+
       <button
         type="button"
         onClick={() => {
           addItem(product.slug);
           requestOpenBasket();
         }}
-        style={{ borderColor: BRAND_RED, color: BRAND_RED }}
-        className="mt-2 cursor-pointer border py-1.5 text-[12px] font-bold uppercase tracking-[0.06em] transition-opacity hover:opacity-70"
+        className="mt-3 flex cursor-pointer items-center justify-between rounded-full border border-[#2D2D2D] px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-[#2D2D2D] transition-colors hover:bg-[#2D2D2D] hover:text-[#F7F4EB]"
       >
-        Add to cart
+        <span>Add to basket</span>
+        <span>{formatPrice(product.priceCents)}</span>
       </button>
     </div>
   );

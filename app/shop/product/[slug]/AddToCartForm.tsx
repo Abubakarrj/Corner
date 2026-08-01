@@ -2,23 +2,31 @@
 
 import { useState } from "react";
 import { useCart } from "../../CartContext";
+import { formatPrice } from "../../products";
 import { requestOpenBasket } from "../../openBasket";
 
-const BRAND_RED = "#BE1923";
-
-export default function AddToCartForm({ slug }: { slug: string }) {
+// The stepper plus the reference-style pill button: "ADD TO BASKET" on the
+// left, the live total (price × quantity) on the right, in one rounded
+// outline pill that fills on hover.
+export default function AddToCartForm({
+  slug,
+  priceCents,
+}: {
+  slug: string;
+  priceCents: number;
+}) {
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
 
   return (
     <div style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
       <div className="flex items-center gap-3">
-        <div className="flex items-center rounded-full border border-[#E2E2E2]">
+        <div className="flex shrink-0 items-center rounded-full border border-[#2D2D2D]/25">
           <button
             type="button"
             aria-label="Decrease quantity"
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className="h-10 w-10 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+            className="h-11 w-11 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
           >
             −
           </button>
@@ -27,7 +35,7 @@ export default function AddToCartForm({ slug }: { slug: string }) {
             type="button"
             aria-label="Increase quantity"
             onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-            className="h-10 w-10 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+            className="h-11 w-11 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
           >
             +
           </button>
@@ -42,10 +50,10 @@ export default function AddToCartForm({ slug }: { slug: string }) {
             // "Added" message needed here.
             requestOpenBasket();
           }}
-          style={{ backgroundColor: BRAND_RED }}
-          className="h-10 flex-1 cursor-pointer text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+          className="flex h-11 flex-1 cursor-pointer items-center justify-between rounded-full border border-[#2D2D2D] px-5 text-[12px] font-medium uppercase tracking-[0.08em] text-[#2D2D2D] transition-colors hover:bg-[#2D2D2D] hover:text-[#F7F4EB]"
         >
-          Add to cart
+          <span>Add to basket</span>
+          <span>{formatPrice(priceCents * quantity)}</span>
         </button>
       </div>
     </div>

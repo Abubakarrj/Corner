@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
     <CartProvider>
-      <div className="flex min-h-dvh flex-col bg-white">
+      {/* Warm cream ground, per the reference designs the shop is styled
+          after — the marketing site stays white; this palette is the
+          shop's own. */}
+      <div className="flex min-h-dvh flex-col bg-[#F7F4EB]">
         <ShopHeader />
         <main className="flex-1">{children}</main>
         <ChatWidget />
