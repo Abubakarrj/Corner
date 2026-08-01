@@ -1,7 +1,6 @@
 import { CATEGORIES, PRODUCTS, isSortValue, sortProducts } from "./products";
 import CategoryNav from "./CategoryNav";
 import ShopCatalog from "./ShopCatalog";
-import { DISPLAY_FONT } from "./shopControls";
 
 export default async function ShopPage({
   searchParams,
@@ -16,30 +15,11 @@ export default async function ShopPage({
     : PRODUCTS;
   const products = sortProducts(filtered, activeSort);
 
-  // Spacing rhythm, top to bottom: the masthead (heading + lede) is one
-  // tight unit, then a deliberate gap before the tabs so filtering reads as
-  // a separate band from the page's title. See shopControls.ts for the type
-  // scale these sizes come from.
+  // No masthead — the catalog opens straight on the category tabs, so the
+  // top padding is tighter than it was when a heading and lede sat above
+  // them. See shopControls.ts for the type scale the rest of the page uses.
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-14">
-      <header className="mb-9">
-        {/* Bold display type carries the hierarchy — the size stays
-            restrained so the page doesn't read oversized (a specific
-            request). */}
-        <h1
-          className="text-[22px] leading-tight text-[#3E4A30]"
-          style={{ fontFamily: DISPLAY_FONT, fontWeight: 700 }}
-        >
-          From Our Kitchen To Yours
-        </h1>
-        <p
-          className="mt-2 max-w-[62ch] text-[13px] leading-[1.55] text-[#6F6A5C]"
-          style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-        >
-          What we use behind the counter, enjoyed at the comfort of your home.
-        </p>
-      </header>
-
+    <div className="mx-auto max-w-6xl px-5 py-6 sm:px-6 sm:py-8">
       <CategoryNav activeCategory={activeCategory} activeSort={activeSort} />
 
       <ShopCatalog products={products} activeCategory={activeCategory} activeSort={activeSort} />
