@@ -156,16 +156,18 @@ export default function ShopHeader() {
           </button>
         </div>
 
+        {/* Sized down deliberately — medium weight at 14px, not the big
+            bold links this drawer launched with; the user wants the shop's
+            type small. */}
         <nav className="flex-1 overflow-y-auto px-6 pt-4">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#8A8A8A]">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8A8A]">
             The Pantry
           </p>
           <div className="flex flex-col divide-y divide-[#F0F0F0]">
             <Link
               href="/shop"
               onClick={() => setMenuOpen(false)}
-              className="cursor-pointer py-3.5 text-[20px] font-bold text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
-              style={{ letterSpacing: "-0.02em" }}
+              className="cursor-pointer py-3 text-[14px] font-medium text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
             >
               All Products
             </Link>
@@ -174,8 +176,7 @@ export default function ShopHeader() {
                 key={category}
                 href={`/shop?category=${encodeURIComponent(category)}`}
                 onClick={() => setMenuOpen(false)}
-                className="cursor-pointer py-3.5 text-[20px] font-bold text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
-                style={{ letterSpacing: "-0.02em" }}
+                className="cursor-pointer py-3 text-[14px] font-medium text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
               >
                 {category}
               </Link>
@@ -186,13 +187,13 @@ export default function ShopHeader() {
         <div className="flex flex-col gap-2 border-t border-[#F0F0F0] px-6 py-5">
           <a
             href="https://thecornerbagel.com"
-            className="cursor-pointer text-[13px] text-[#8A8A8A] transition-colors hover:text-[#BE1923]"
+            className="cursor-pointer text-[12px] text-[#8A8A8A] transition-colors hover:text-[#BE1923]"
           >
             ← Back to Corner Bagel
           </a>
           <a
             href="mailto:cornerbagel@publicentity.co"
-            className="cursor-pointer text-[13px] text-[#8A8A8A] underline transition-colors hover:text-[#BE1923]"
+            className="cursor-pointer text-[12px] text-[#8A8A8A] underline transition-colors hover:text-[#BE1923]"
           >
             cornerbagel@publicentity.co
           </a>

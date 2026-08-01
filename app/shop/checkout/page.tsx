@@ -74,7 +74,7 @@ export default function CheckoutPage() {
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
-      <h1 className="mb-6 text-[24px] font-bold text-[#2D2D2D]" style={{ letterSpacing: "-0.03em" }}>
+      <h1 className="mb-6 text-[18px] font-bold text-[#2D2D2D]" style={{ letterSpacing: "-0.03em" }}>
         Checkout
       </h1>
 
@@ -149,7 +149,7 @@ export default function CheckoutPage() {
               type="submit"
               disabled={!valid || status === "sending"}
               style={{ backgroundColor: BRAND_RED }}
-              className="mt-1 w-full cursor-pointer rounded-full py-3.5 text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
+              className="mt-1 w-full cursor-pointer rounded-full py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
             >
               {status === "sending" ? "Placing order…" : "Place order"}
             </button>
@@ -160,7 +160,7 @@ export default function CheckoutPage() {
           </form>
 
           <div className="sm:order-1">
-            <h2 className="mb-3 text-[13px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
+            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
               Order summary
             </h2>
             <div className="flex flex-col divide-y divide-[#E4DECE]">
@@ -176,8 +176,8 @@ export default function CheckoutPage() {
               ))}
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-[#E4DECE] pt-3">
-              <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
-              <span className="text-[16px] font-bold text-[#2D2D2D]">
+              <span className="text-[13px] font-medium text-[#2D2D2D]">Subtotal</span>
+              <span className="text-[14px] font-bold text-[#2D2D2D]">
                 {formatPrice(subtotalCents)}
               </span>
             </div>

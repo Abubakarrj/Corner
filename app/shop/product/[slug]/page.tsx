@@ -38,7 +38,7 @@ export default async function ProductPage({
           />
           {product.tag ? (
             <span
-              className="absolute left-3 top-3 rounded-full bg-[#2D2D2D] px-3 py-1 text-[11px] font-medium text-[#F7F4EB]"
+              className="absolute left-3 top-3 rounded-full bg-[#2D2D2D] px-2.5 py-0.5 text-[10px] font-medium text-[#F7F4EB]"
               style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
             >
               {product.tag}
@@ -47,19 +47,19 @@ export default async function ProductPage({
         </div>
 
         <div style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
-          <p className="text-[12px] uppercase tracking-[0.08em] text-[#6F6A5C]">
+          <p className="text-[10px] uppercase tracking-[0.08em] text-[#6F6A5C]">
             {product.category}
           </p>
           <h1
-            className="mt-1 text-[30px] leading-tight text-[#2D2D2D]"
+            className="mt-1 text-[20px] leading-tight text-[#2D2D2D]"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             {product.name}
           </h1>
-          <p className="mt-1 text-[16px] text-[#6F6A5C]">
+          <p className="mt-1 text-[14px] text-[#6F6A5C]">
             {formatPrice(product.priceCents)}
           </p>
-          <p className="mt-4 text-[14px] leading-[1.6] text-[#2D2D2D]">
+          <p className="mt-4 text-[13px] leading-[1.6] text-[#2D2D2D]">
             {product.description}
           </p>
 

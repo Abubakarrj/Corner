@@ -22,7 +22,7 @@ export default function CartPage() {
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <h1
-        className="mb-6 text-[24px] font-bold text-[#2D2D2D]"
+        className="mb-6 text-[18px] font-bold text-[#2D2D2D]"
         style={{ letterSpacing: "-0.03em" }}
       >
         Cart
@@ -109,7 +109,7 @@ export default function CartPage() {
           <Link
             href="/shop/checkout"
             style={{ backgroundColor: BRAND_RED }}
-            className="mt-4 block w-full cursor-pointer rounded-full py-3.5 text-center text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+            className="mt-4 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
           >
             Checkout
           </Link>

@@ -26,16 +26,16 @@ export default function AddToCartForm({
             type="button"
             aria-label="Decrease quantity"
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            className="h-11 w-11 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+            className="h-10 w-10 cursor-pointer rounded-full text-[15px] text-[#2D2D2D] transition-opacity hover:opacity-60"
           >
             −
           </button>
-          <span className="w-8 text-center text-[14px] text-[#2D2D2D]">{quantity}</span>
+          <span className="w-7 text-center text-[13px] text-[#2D2D2D]">{quantity}</span>
           <button
             type="button"
             aria-label="Increase quantity"
             onClick={() => setQuantity((q) => Math.min(20, q + 1))}
-            className="h-11 w-11 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+            className="h-10 w-10 cursor-pointer rounded-full text-[15px] text-[#2D2D2D] transition-opacity hover:opacity-60"
           >
             +
           </button>
@@ -50,7 +50,7 @@ export default function AddToCartForm({
             // "Added" message needed here.
             requestOpenBasket();
           }}
-          className="flex h-11 flex-1 cursor-pointer items-center justify-between rounded-full border border-[#2D2D2D] px-5 text-[12px] font-medium uppercase tracking-[0.08em] text-[#2D2D2D] transition-colors hover:bg-[#2D2D2D] hover:text-[#F7F4EB]"
+          className="flex h-10 flex-1 cursor-pointer items-center justify-between rounded-full border border-[#2D2D2D] px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-[#2D2D2D] transition-colors hover:bg-[#2D2D2D] hover:text-[#F7F4EB]"
         >
           <span>Add to basket</span>
           <span>{formatPrice(priceCents * quantity)}</span>

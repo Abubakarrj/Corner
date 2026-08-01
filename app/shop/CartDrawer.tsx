@@ -68,7 +68,7 @@ export default function CartDrawer({
     <Drawer open={open} onClose={onClose} side="right" label="Basket" width="wide">
       <div className="flex items-center justify-between border-b border-[#F0F0F0] px-6 py-4">
         <h2
-          className="text-[18px] font-bold text-[#2D2D2D]"
+          className="text-[15px] font-bold text-[#2D2D2D]"
           style={{ letterSpacing: "-0.03em" }}
         >
           Your basket
@@ -90,10 +90,10 @@ export default function CartDrawer({
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
           <EmptyBasketIcon />
           <div>
-            <p className="text-[15px] font-medium text-[#2D2D2D]">
+            <p className="text-[13px] font-medium text-[#2D2D2D]">
               Your basket is empty
             </p>
-            <p className="mt-1 text-[13px] text-[#8A8A8A]">
+            <p className="mt-1 text-[12px] text-[#8A8A8A]">
               Jars, sauces, and staples from behind the counter.
             </p>
           </div>
@@ -101,7 +101,7 @@ export default function CartDrawer({
             type="button"
             onClick={onClose}
             style={{ borderColor: BRAND_RED, color: BRAND_RED }}
-            className="cursor-pointer border px-6 py-2.5 text-[12px] font-bold uppercase tracking-[0.06em] transition-opacity hover:opacity-70"
+            className="cursor-pointer rounded-full border px-5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] transition-opacity hover:opacity-70"
           >
             Browse the pantry
           </button>
@@ -128,15 +128,15 @@ export default function CartDrawer({
                     <Link
                       href={`/shop/product/${product.slug}`}
                       onClick={onClose}
-                      className="cursor-pointer text-[15px] font-medium text-[#2D2D2D] hover:underline"
+                      className="cursor-pointer text-[13px] font-medium text-[#2D2D2D] hover:underline"
                     >
                       {product.name}
                     </Link>
-                    <span className="whitespace-nowrap text-[15px] text-[#2D2D2D]">
+                    <span className="whitespace-nowrap text-[13px] text-[#2D2D2D]">
                       {formatPrice(product.priceCents * line.quantity)}
                     </span>
                   </div>
-                  <span className="mt-0.5 text-[13px] text-[#8A8A8A]">
+                  <span className="mt-0.5 text-[12px] text-[#8A8A8A]">
                     {formatPrice(product.priceCents)} each
                   </span>
 
@@ -146,18 +146,18 @@ export default function CartDrawer({
                         type="button"
                         aria-label={`Decrease quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity - 1)}
-                        className="h-9 w-9 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
                       >
                         −
                       </button>
-                      <span className="w-6 text-center text-[14px] text-[#2D2D2D]">
+                      <span className="w-5 text-center text-[12px] text-[#2D2D2D]">
                         {line.quantity}
                       </span>
                       <button
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity + 1)}
-                        className="h-9 w-9 cursor-pointer rounded-full text-[16px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
                       >
                         +
                       </button>
@@ -165,7 +165,7 @@ export default function CartDrawer({
                     <button
                       type="button"
                       onClick={() => removeItem(line.slug)}
-                      className="cursor-pointer text-[12px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
+                      className="cursor-pointer text-[11px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
                     >
                       Remove
                     </button>
@@ -177,26 +177,26 @@ export default function CartDrawer({
 
           <div className="border-t border-[#F0F0F0] px-6 pb-5 pt-4">
             <div className="flex items-center justify-between">
-              <span className="text-[14px] font-medium text-[#2D2D2D]">Subtotal</span>
-              <span className="text-[16px] font-bold text-[#2D2D2D]">
+              <span className="text-[13px] font-medium text-[#2D2D2D]">Subtotal</span>
+              <span className="text-[14px] font-bold text-[#2D2D2D]">
                 {formatPrice(subtotalCents)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] text-[#8A8A8A]">
+            <p className="mt-1 text-[10px] text-[#8A8A8A]">
               Payment is confirmed with you after the order goes in.
             </p>
             <Link
               href="/shop/checkout"
               onClick={onClose}
               style={{ backgroundColor: BRAND_RED }}
-              className="mt-3 block w-full cursor-pointer rounded-full py-3.5 text-center text-[14px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+              className="mt-3 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
             >
               Checkout
             </Link>
             <Link
               href="/shop/cart"
               onClick={onClose}
-              className="mt-3 block cursor-pointer text-center text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
+              className="mt-3 block cursor-pointer text-center text-[11px] text-[#575757] underline transition-opacity hover:opacity-70"
             >
               View full basket
             </Link>

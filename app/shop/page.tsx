@@ -15,14 +15,16 @@ export default async function ShopPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+      {/* Bold carries the hierarchy on its own — sizes stay modest so the
+          page doesn't read oversized (a specific request; keep it small). */}
       <h1
-        className="mb-1 text-[32px] font-bold text-[#2D2D2D]"
+        className="mb-1 text-[20px] font-bold text-[#2D2D2D]"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif", letterSpacing: "-0.03em" }}
       >
         The Pantry
       </h1>
       <p
-        className="mb-6 text-[15px] text-[#6F6A5C]"
+        className="mb-6 text-[13px] text-[#6F6A5C]"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
         What we use behind the counter, in jars you can take home.
@@ -31,7 +33,7 @@ export default async function ShopPage({
       <CategoryNav activeCategory={activeCategory} />
 
       <p
-        className="mb-4 text-right text-[13px] text-[#6F6A5C]"
+        className="mb-4 text-right text-[12px] text-[#6F6A5C]"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
         {products.length} item{products.length === 1 ? "" : "s"}
