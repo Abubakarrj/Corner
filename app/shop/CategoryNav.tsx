@@ -29,7 +29,7 @@ export default function CategoryNav({
 
   return (
     <div
-      className="mb-6 flex gap-6 overflow-x-auto border-b border-[#E4DECE]"
+      className="mb-5 flex gap-7 overflow-x-auto border-b border-[#E4DECE]"
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <Link href={hrefFor(undefined)} className={`${tabBase} ${activeCategory ? tabIdle : tabActive}`}>
