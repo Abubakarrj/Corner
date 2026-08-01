@@ -43,7 +43,7 @@ export default function OrderCardBody() {
         className="m-0 mx-auto mb-[1em] text-pretty leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Corner Bagel brings East Coast bagel craftsmanship to a laid-back way
+        Corner Bagel brings east coast bagel craftsmanship to a laid-back way
         of life. Every bagel is naturally fermented, kettle-boiled, and baked
         to achieve a crisp crust with a perfectly chewy interior.
       </p>
