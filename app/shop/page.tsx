@@ -21,7 +21,7 @@ export default async function ShopPage({
         className="mb-1 text-[20px] font-bold text-[#3E4A30]"
         style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
       >
-        The Pantry
+        From Our Kitchen To Yours
       </h1>
       <p
         className="mb-6 text-[13px] text-[#6F6A5C]"

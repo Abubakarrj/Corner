@@ -100,16 +100,13 @@ export default function ShopHeader() {
           <HamburgerIcon />
         </button>
 
-        <Link href="/shop" className="cursor-pointer" aria-label="Corner Bagel Pantry">
-          <Image
-            src="/logo.svg"
-            alt="Corner Bagel"
-            width={8369}
-            height={3233}
-            unoptimized
-            priority
-            className="h-6 w-auto object-contain sm:h-7"
-          />
+        <Link
+          href="/shop"
+          className="cursor-pointer text-[19px] font-semibold text-[#3E4A30] sm:text-[21px]"
+          style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: "-0.01em" }}
+          aria-label="Corner Bagel Pantry"
+        >
+          Our Pantry
         </Link>
 
         <button
