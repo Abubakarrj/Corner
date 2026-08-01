@@ -71,15 +71,23 @@ const OPEN_EVENTS = ["scroll", "wheel", "touchmove"] as const;
 const TERMS_HREF = "https://publicentity.co/privacy-policy#terms";
 const PRIVACY_HREF = "https://publicentity.co/privacy-policy#privacy";
 
-// Corner Bagel's own privacy page. Nothing in the modal links here anymore, but
-// a marketing pop-up over the policy someone is reading is still the wrong
-// moment for it, so the modal stays out of the way on that route.
+// The only two routes this opens on. An allowlist rather than a list of
+// pages to suppress: this used to name /privacy-policy as the one exception,
+// and adding /cookie-policy meant the pop-up started springing up over a
+// legal page nobody had thought to exclude yet. Stated this way, a new page
+// has to be opted in, so the default for anything added later is "no
+// marketing pop-up" instead of "pop-up until someone notices."
+//
+// A marketing interruption over the policy someone is actively reading is
+// the wrong moment for it regardless — and on the cookie policy especially,
+// since the cookie banner is what sent them there.
 //
 // The shop subdomain gets the same treatment, but isn't handled here —
-// app/layout.tsx doesn't even mount this component there. See the comment
-// on RootLayout for why that's decided server-side instead of by checking
-// the path here (a rewrite makes usePathname unreliable for this).
-const SUPPRESSED_PATH = "/privacy-policy";
+// app/(marketing)/layout.tsx is what mounts this component, and /shop is a
+// separate top-level segment outside that route group, so it never renders.
+// That's structural, and doesn't depend on a path check that a rewrite would
+// make unreliable anyway.
+const MODAL_PATHS = ["/", "/order"];
 
 // Must match HONEYPOT_FIELD in app/api/drop-list/route.ts. A real visitor
 // never sees or reaches this field — it's positioned off-screen rather than
@@ -139,7 +147,7 @@ export default function DropListModal() {
   // who has never seen it, or one whose cooldown from the last dismissal has
   // elapsed. A join is the one outcome that ends this for good.
   useEffect(() => {
-    if (pathname === SUPPRESSED_PATH) return;
+    if (!MODAL_PATHS.includes(pathname)) return;
     // Answering is remembered for the session as well as on disk, so a browser
     // that refuses localStorage still can't have the modal spring back after a
     // navigation within the same visit.
