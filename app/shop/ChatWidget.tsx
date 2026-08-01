@@ -34,6 +34,17 @@ function getCookieBannerServerSnapshot() {
   return false;
 }
 
+// The quick-reply buttons under "What can we help you with?". Picking one
+// stands in for the visitor's first message — it's sent along to the intake
+// route as routing metadata, and rendered as their reply bubble in the
+// thread.
+const TOPICS = [
+  "Track my order",
+  "Report an issue",
+  "Product question",
+  "Other",
+] as const;
+
 function ChatBubbleIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -63,19 +74,23 @@ function CloseIcon() {
   );
 }
 
-function SentCheckIcon() {
+function BagelAvatar() {
   return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-      <path
-        d="M4.5 11.5l4.5 4.5 8.5-9.5"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#F0F0F0] bg-white">
+      <Image
+        src="/icon.svg"
+        alt=""
+        width={18}
+        height={18}
+        unoptimized
+        className="object-contain"
       />
-    </svg>
+    </span>
   );
 }
+
+const botBubbleClass =
+  "w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-[#F4F4F4] px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2D2D2D]";
 
 const fieldClass =
   "rounded-xl border border-[#E2E2E2] px-3.5 py-2.5 text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D] sm:text-[14px]";
@@ -92,6 +107,7 @@ export default function ChatWidget() {
     getCookieBannerServerSnapshot,
   );
   const [open, setOpen] = useState(false);
+  const [topic, setTopic] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -123,7 +139,7 @@ export default function ChatWidget() {
       const response = await fetch("/api/shop-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, topic }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
@@ -136,6 +152,13 @@ export default function ChatWidget() {
         submitError instanceof Error ? submitError.message : "Something went wrong.",
       );
     }
+  }
+
+  function resetThread() {
+    setTopic(null);
+    setMessage("");
+    setStatus("idle");
+    setError(null);
   }
 
   return (
@@ -200,88 +223,144 @@ export default function ChatWidget() {
           </button>
         </div>
 
-        <div className="p-4">
-          {status === "sent" ? (
-            <div className="flex flex-col items-center gap-3 py-4 text-center">
-              <span
-                style={{ backgroundColor: BRAND_RED }}
-                className="flex h-11 w-11 items-center justify-center rounded-full"
-              >
-                <SentCheckIcon />
-              </span>
-              <div>
-                <p className="text-[14px] font-medium text-[#2D2D2D]">
-                  Message received
-                </p>
-                <p className="mt-1 text-[13px] text-[#8A8A8A]">
-                  We&rsquo;ll email you back shortly.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMessage("");
-                  setStatus("idle");
-                }}
-                className="cursor-pointer text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
-              >
-                Send another message
-              </button>
+        {/* The thread. Bot messages on the left, the visitor's picked topic
+            on the right — the quick-reply buttons stand in for typing a
+            first message, like the concierge widgets this is modeled on. */}
+        <div className="max-h-[55vh] overflow-y-auto p-4">
+          <p className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8A8A]">
+            Corner Bagel
+          </p>
+          <div className="mb-2 ml-9">
+            <p className={botBubbleClass}>
+              Leave a message and we&rsquo;ll email you back — usually the same
+              day.
+            </p>
+          </div>
+          <div className="flex items-end gap-2">
+            <BagelAvatar />
+            <p className={botBubbleClass}>What can we help you with?</p>
+          </div>
+          <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">Automated</p>
+
+          {topic === null ? (
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              {TOPICS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setTopic(option)}
+                  className="cursor-pointer rounded-xl border border-[#D9D9D9] px-3.5 py-2 text-[13px] text-[#2D2D2D] transition-colors hover:border-[#BE1923] hover:text-[#BE1923]"
+                >
+                  {option}
+                </button>
+              ))}
             </div>
           ) : (
-            <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2.5">
-              <input
-                type="text"
-                autoComplete="name"
-                aria-label="Name"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setError(null);
-                }}
-                className={fieldClass}
-              />
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                aria-label="Email address"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError(null);
-                }}
-                className={fieldClass}
-              />
-              <textarea
-                aria-label="Message"
-                placeholder="How can we help?"
-                value={message}
-                onChange={(e) => {
-                  setMessage(e.target.value);
-                  setError(null);
-                }}
-                rows={3}
-                className={`resize-none ${fieldClass}`}
-              />
+            <>
+              <div className="mt-4 flex justify-end">
+                <span
+                  style={{ backgroundColor: BRAND_RED }}
+                  className="w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-white"
+                >
+                  {topic}
+                </span>
+              </div>
 
-              {error ? (
-                <p role="alert" style={{ color: BRAND_RED }} className="text-[11px]">
-                  {error}
-                </p>
-              ) : null}
+              {status === "sent" ? (
+                <>
+                  <div className="mt-3 flex items-end gap-2">
+                    <BagelAvatar />
+                    <p className={botBubbleClass}>
+                      Thanks — message received. We&rsquo;ll email you back
+                      shortly.
+                    </p>
+                  </div>
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={resetThread}
+                      className="cursor-pointer text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
+                    >
+                      Send another message
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mt-1 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setTopic(null)}
+                      className="cursor-pointer text-[11px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
+                    >
+                      Change topic
+                    </button>
+                  </div>
 
-              <button
-                type="submit"
-                disabled={!valid || status === "sending"}
-                style={{ backgroundColor: BRAND_RED }}
-                className="mt-0.5 cursor-pointer rounded-xl py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
-              >
-                {status === "sending" ? "Sending…" : "Send message"}
-              </button>
-            </form>
+                  <form
+                    onSubmit={onSubmit}
+                    noValidate
+                    className="mt-3 flex flex-col gap-2.5"
+                  >
+                    <input
+                      type="text"
+                      autoComplete="name"
+                      aria-label="Name"
+                      placeholder="Name"
+                      value={name}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        setError(null);
+                      }}
+                      className={fieldClass}
+                    />
+                    <input
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      aria-label="Email address"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setError(null);
+                      }}
+                      className={fieldClass}
+                    />
+                    <textarea
+                      aria-label="Message"
+                      placeholder="Tell us a little more…"
+                      value={message}
+                      onChange={(e) => {
+                        setMessage(e.target.value);
+                        setError(null);
+                      }}
+                      rows={3}
+                      className={`resize-none ${fieldClass}`}
+                    />
+
+                    {error ? (
+                      <p
+                        role="alert"
+                        style={{ color: BRAND_RED }}
+                        className="text-[11px]"
+                      >
+                        {error}
+                      </p>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      disabled={!valid || status === "sending"}
+                      style={{ backgroundColor: BRAND_RED }}
+                      className="mt-0.5 cursor-pointer rounded-xl py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
+                    >
+                      {status === "sending" ? "Sending…" : "Send message"}
+                    </button>
+                  </form>
+                </>
+              )}
+            </>
           )}
         </div>
       </div>

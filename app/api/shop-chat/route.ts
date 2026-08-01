@@ -23,8 +23,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Expected a JSON body." }, { status: 400 });
   }
 
-  const body = payload as { name?: unknown; email?: unknown; message?: unknown } | null;
-  const { name, email, message } = body ?? {};
+  const body = payload as {
+    name?: unknown;
+    email?: unknown;
+    message?: unknown;
+    topic?: unknown;
+  } | null;
+  const { name, email, message, topic } = body ?? {};
 
   if (!isNonEmptyString(name) || !isValidEmail(email) || !isNonEmptyString(message)) {
     return Response.json(
@@ -33,8 +38,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // The topic is one of the widget's quick-reply buttons ("Track my order",
+  // ...), so it's routing metadata, not something a visitor typed — optional,
+  // and free-form here so the button labels can change without this route
+  // needing to know them.
+  const topicTag = isNonEmptyString(topic) ? ` [${topic.trim()}]` : "";
+
   console.info(
-    `[shop-chat] message from ${name.trim()} <${email.trim()}>:\n${message.trim()}`,
+    `[shop-chat]${topicTag} message from ${name.trim()} <${email.trim()}>:\n${message.trim()}`,
   );
 
   return Response.json({ ok: true }, { status: 200 });

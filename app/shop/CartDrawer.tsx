@@ -21,19 +21,32 @@ function CloseIcon() {
   );
 }
 
+// Greyed-out twin of ShopHeader's BasketIcon — keep the two in step.
 function EmptyBasketIcon() {
   return (
-    <svg width="44" height="44" viewBox="0 0 20 20" fill="none" aria-hidden>
+    <svg width="44" height="44" viewBox="0 0 21 21" fill="none" aria-hidden>
       <path
-        d="M4 6h12l-1 10.5a1.5 1.5 0 0 1-1.5 1.5h-7a1.5 1.5 0 0 1-1.5-1.5L4 6Z"
+        d="M7 7.75c0-3 1.4-5 3.5-5s3.5 2 3.5 5"
+        stroke="#C9C9C9"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M3 7.75h15"
+        stroke="#C9C9C9"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4.3 7.75h12.4l-1.1 8.4a1.7 1.7 0 0 1-1.68 1.48H7.08A1.7 1.7 0 0 1 5.4 16.15l-1.1-8.4Z"
         stroke="#C9C9C9"
         strokeWidth="1.2"
         strokeLinejoin="round"
       />
       <path
-        d="M7 6V4.5a3 3 0 1 1 6 0V6"
+        d="M8.1 10.75l.3 3.5M12.9 10.75l-.3 3.5"
         stroke="#C9C9C9"
-        strokeWidth="1.2"
+        strokeWidth="1"
         strokeLinecap="round"
       />
     </svg>
