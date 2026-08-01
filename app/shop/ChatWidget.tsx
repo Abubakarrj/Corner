@@ -112,22 +112,25 @@ const botBubbleClass =
 const userBubbleClass =
   "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2F3A24]";
 
-const contactFieldClass =
-  "rounded-xl border border-[#DDD6C2] px-3.5 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] sm:text-[14px]";
+// Only the visitor's own messages carry a delivery state — the automated
+// bot lines are generated locally and never travel anywhere.
+type Delivery = "sending" | "sent" | "failed";
+type Entry = { id: number; role: "bot" | "user"; text: string; delivery?: Delivery };
 
-type Entry = { id: number; role: "bot" | "user"; text: string };
-
-// A placeholder chat widget — no live agent behind it yet. Leaving a message
-// here logs it (same "log now, wire the real vendor later" pattern as the
-// signup/catering/order forms) instead of reaching anyone in real time. Swap
-// this whole component for a real provider's embed (Intercom, Gorgias,
-// Zendesk, ...) once one is chosen.
+// The shop's chat widget. This is a direct conversation, not a contact form:
+// the visitor types, the team answers in this same window. Nothing here
+// collects a name or an email, and there is no "message sent, we'll get back
+// to you" end state — the thread stays open for as long as the visitor
+// keeps it open.
 //
-// The flow copies the concierge widget the user referenced: greeting +
-// quick-reply topics, an automated follow-up asking for details, a
-// "Type a message…" composer pinned at the bottom, and — since there's no
-// live agent to answer — one extra automated step that collects name/email
-// so the reply can actually reach the visitor.
+// Each message posts to /api/shop-chat on its own the moment it's sent, so
+// the team sees it as it's typed rather than at the end of some funnel.
+// Delivery is shown per message, and a failed send can be retried in place.
+//
+// IMPORTANT: /api/shop-chat currently only logs. Until a real provider is
+// wired up (Intercom, Gorgias, Zendesk, ...) or the team is watching those
+// logs, nobody is on the other end — this UI is ready for a live agent, it
+// does not supply one.
 export default function ChatWidget() {
   const bannerVisible = useSyncExternalStore(
     subscribeCookieBanner,
@@ -138,14 +141,13 @@ export default function ChatWidget() {
   const [topic, setTopic] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
-  const [askedContact, setAskedContact] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [acknowledged, setAcknowledged] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
+  // Ties this visitor's messages together into one thread on the receiving
+  // end. Created on the first send and kept for the life of the page.
+  const conversationId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -160,77 +162,70 @@ export default function ChatWidget() {
   useEffect(() => {
     const thread = threadRef.current;
     if (thread) thread.scrollTop = thread.scrollHeight;
-  }, [entries, askedContact, status, open]);
+  }, [entries, open]);
 
-  function push(role: Entry["role"], text: string) {
-    setEntries((prior) => [...prior, { id: nextId.current++, role, text }]);
+  function push(role: Entry["role"], text: string, delivery?: Delivery) {
+    const id = nextId.current++;
+    setEntries((prior) => [...prior, { id, role, text, delivery }]);
+    return id;
   }
 
-  function pickTopic(option: string) {
-    setTopic(option);
-    push("user", option);
-    // 1:1 with the reference concierge's automated follow-up.
-    push("bot", "Do you have any additional details to share to help us assist you?");
+  function setDelivery(id: number, delivery: Delivery) {
+    setEntries((prior) =>
+      prior.map((entry) => (entry.id === id ? { ...entry, delivery } : entry)),
+    );
   }
 
-  const typedMessages = entries.filter((entry) => entry.role === "user" && entry.text !== topic);
-
-  function sendDraft() {
-    const text = draft.trim();
-    if (!text || status === "sent") return;
-    push("user", text);
-    setDraft("");
-    if (!askedContact) {
-      push("bot", "Got it — where should we email our reply?");
-      setAskedContact(true);
-    }
-  }
-
-  const contactValid =
-    name.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-
-  async function submitContact(event: React.FormEvent) {
-    event.preventDefault();
-    if (!contactValid || status !== "idle") return;
-
-    setStatus("sending");
-    setError(null);
-
+  // Posts one message to the team. Deliberately per-message rather than
+  // batched at the end of the thread: this is a conversation, so each line
+  // has to leave as soon as it's sent.
+  async function deliver(id: number, text: string, topicForSend: string | null) {
+    conversationId.current ??=
+      globalThis.crypto?.randomUUID?.() ?? `c-${Date.now()}-${Math.random()}`;
+    setDelivery(id, "sending");
     try {
       const response = await fetch("/api/shop-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          email,
-          message: typedMessages.map((entry) => entry.text).join("\n"),
-          topic,
+          message: text,
+          topic: topicForSend,
+          conversationId: conversationId.current,
         }),
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? "Something went wrong.");
-      }
-      setStatus("sent");
-      push("bot", "Thanks — message received. We'll email you back shortly.");
-    } catch (submitError) {
-      setStatus("idle");
-      setError(
-        submitError instanceof Error ? submitError.message : "Something went wrong.",
+      if (!response.ok) throw new Error("send failed");
+      setDelivery(id, "sent");
+    } catch {
+      setDelivery(id, "failed");
+    }
+  }
+
+  function pickTopic(option: string) {
+    setTopic(option);
+    const id = push("user", option, "sending");
+    void deliver(id, option, option);
+    push("bot", "Got it. Tell us a bit more and we'll take it from here.");
+  }
+
+  function sendDraft() {
+    const text = draft.trim();
+    if (!text) return;
+    setDraft("");
+    const id = push("user", text, "sending");
+    void deliver(id, text, topic);
+    // One automated line, the first time the visitor types something, to set
+    // the expectation that a person answers in this window. After that the
+    // thread is theirs and the team's — no more canned replies.
+    if (!acknowledged) {
+      setAcknowledged(true);
+      push(
+        "bot",
+        "Thanks — we're on it. Keep this window open and we'll reply right here.",
       );
     }
   }
 
-  function resetThread() {
-    setEntries([]);
-    setTopic(null);
-    setDraft("");
-    setAskedContact(false);
-    setStatus("idle");
-    setError(null);
-  }
-
-  const showChips = topic === null && typedMessages.length === 0 && status === "idle";
+  const showChips = topic === null && entries.length === 0;
 
   return (
     // pointer-events-none on the container: with the panel always mounted
@@ -286,7 +281,7 @@ export default function ChatWidget() {
               Corner Bagel
             </p>
             <p className="text-[12px] leading-tight text-white/80">
-              We reply by email, usually same day
+              Chat with our team
             </p>
           </div>
           <button
@@ -310,8 +305,8 @@ export default function ChatWidget() {
           </p>
           <div className="mb-2 ml-9">
             <p className={botBubbleClass}>
-              Leave a message and we&rsquo;ll email you back — usually the same
-              day.
+              You&rsquo;re chatting with the Corner Bagel team — replies land
+              right here in this window.
             </p>
           </div>
           <div className="flex items-end gap-2">
@@ -337,13 +332,30 @@ export default function ChatWidget() {
 
           {entries.map((entry) =>
             entry.role === "user" ? (
-              <div key={entry.id} className="mt-3 flex justify-end">
+              <div key={entry.id} className="mt-3 flex flex-col items-end">
                 <span
                   style={{ backgroundColor: SAGE }}
                   className={userBubbleClass}
                 >
                   {entry.text}
                 </span>
+                {/* Per-message delivery, the way a chat app shows it — a
+                    failed line is retried in place rather than making the
+                    visitor retype it. */}
+                {entry.delivery === "failed" ? (
+                  <button
+                    type="button"
+                    onClick={() => void deliver(entry.id, entry.text, topic)}
+                    style={{ color: ERROR_RED }}
+                    className="mt-1 cursor-pointer text-[11px] underline transition-opacity hover:opacity-70"
+                  >
+                    Not delivered — tap to retry
+                  </button>
+                ) : (
+                  <span className="mt-1 text-[11px] text-[#9A9A9A]">
+                    {entry.delivery === "sending" ? "Sending…" : "Sent"}
+                  </span>
+                )}
               </div>
             ) : (
               <div key={entry.id} className="mt-3">
@@ -356,68 +368,11 @@ export default function ChatWidget() {
             ),
           )}
 
-          {askedContact && status !== "sent" ? (
-            <form
-              onSubmit={submitContact}
-              noValidate
-              className="ml-9 mt-3 flex flex-col gap-2.5 rounded-2xl border border-[#E7E2D2] p-3"
-            >
-              <input
-                type="text"
-                autoComplete="name"
-                aria-label="Name"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setError(null);
-                }}
-                className={contactFieldClass}
-              />
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                aria-label="Email address"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError(null);
-                }}
-                className={contactFieldClass}
-              />
-              {error ? (
-                <p role="alert" style={{ color: ERROR_RED }} className="text-[11px]">
-                  {error}
-                </p>
-              ) : null}
-              <button
-                type="submit"
-                disabled={!contactValid || status === "sending"}
-                style={{ backgroundColor: OLIVE }}
-                className="cursor-pointer rounded-xl py-2.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
-              >
-                {status === "sending" ? "Sending…" : "Send message"}
-              </button>
-            </form>
-          ) : null}
-
-          {status === "sent" ? (
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={resetThread}
-                className="cursor-pointer text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
-              >
-                Send another message
-              </button>
-            </div>
-          ) : null}
         </div>
 
-        {/* The composer, pinned under the thread like the reference —
-            free-typing works alongside (or instead of) the topic buttons. */}
+        {/* The composer, pinned under the thread — free-typing works
+            alongside (or instead of) the topic buttons, and never locks:
+            the conversation has no end state to disable it at. */}
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -428,16 +383,15 @@ export default function ChatWidget() {
           <input
             type="text"
             aria-label="Type a message"
-            placeholder={status === "sent" ? "Message sent" : "Type a message…"}
+            placeholder="Type a message…"
             value={draft}
-            disabled={status === "sent"}
             onChange={(e) => setDraft(e.target.value)}
-            className="min-w-0 flex-1 rounded-full border border-[#DDD6C2] px-4 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] disabled:bg-[#FAF8F0] sm:text-[14px]"
+            className="min-w-0 flex-1 rounded-full border border-[#DDD6C2] px-4 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] sm:text-[14px]"
           />
           <button
             type="submit"
             aria-label="Send"
-            disabled={draft.trim().length === 0 || status === "sent"}
+            disabled={draft.trim().length === 0}
             style={{ backgroundColor: OLIVE }}
             className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
           >
