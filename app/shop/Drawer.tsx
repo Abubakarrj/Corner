@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-// The slide-over shell shared by the shop's menu (left) and basket (right)
+// The slide-over shell shared by the shop's menu (top) and basket (right)
 // drawers. Always mounted so it can animate closed as well as open —
 // conditional rendering would snap it away — with `inert` keeping focus and
 // clicks out while it's off-screen.
@@ -17,14 +17,15 @@ export default function Drawer({
   side,
   label,
   children,
-  // The menu's category list stays comfortable at a narrow width; the
-  // basket needs more room so its rows (image, name, price, stepper,
-  // remove) stop crowding each other — see CartDrawer's use of "wide".
+  // The basket needs more room than a sidebar for its rows (image, name,
+  // price, stepper, remove) to stop crowding each other — see CartDrawer's
+  // use of "wide". Only meaningful for side="left"/"right"; "top" is
+  // always full-width.
   width = "narrow",
 }: {
   open: boolean;
   onClose: () => void;
-  side: "left" | "right";
+  side: "left" | "right" | "top";
   label: string;
   children: React.ReactNode;
   width?: "narrow" | "wide";
@@ -73,6 +74,33 @@ export default function Drawer({
     };
   }, [open, onClose]);
 
+  const panelShapeClass =
+    side === "top"
+      ? // Full-width, sized to its content up to a cap rather than the
+        // sidebars' h-full — a panel that drops down over the page rather
+        // than a rail running its whole height.
+        "left-0 right-0 top-0 max-h-[80dvh] w-full rounded-b-3xl shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
+      : side === "left"
+        ? `top-0 left-0 h-full shadow-[8px_0_40px_rgba(0,0,0,0.12)] ${
+            width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
+          }`
+        : `top-0 right-0 h-full shadow-[-8px_0_40px_rgba(0,0,0,0.12)] ${
+            width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
+          }`;
+
+  const panelTransformClass =
+    side === "top"
+      ? open
+        ? "translate-y-0"
+        : "-translate-y-full"
+      : side === "left"
+        ? open
+          ? "translate-x-0"
+          : "-translate-x-full"
+        : open
+          ? "translate-x-0"
+          : "translate-x-full";
+
   return (
     // overflow-hidden so the closed panel — parked just outside the viewport
     // — doesn't leak its box shadow back onto the screen edge.
@@ -93,17 +121,7 @@ export default function Drawer({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className={`absolute top-0 flex h-full flex-col bg-[#FAF8F0] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-          width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
-        } ${
-          side === "left"
-            ? `left-0 shadow-[8px_0_40px_rgba(0,0,0,0.12)] ${
-                open ? "translate-x-0" : "-translate-x-full"
-              }`
-            : `right-0 shadow-[-8px_0_40px_rgba(0,0,0,0.12)] ${
-                open ? "translate-x-0" : "translate-x-full"
-              }`
-        }`}
+        className={`absolute flex flex-col overflow-y-auto bg-[#FAF8F0] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelTransformClass}`}
       >
         {children}
       </aside>

@@ -5,7 +5,7 @@ import { CATEGORIES, type Product, type SortValue } from "./products";
 // category names over a hairline, with the active one darkened and
 // underlined. Scrolls sideways on narrow screens rather than wrapping.
 const tabBase =
-  "-mb-px cursor-pointer whitespace-nowrap border-b-2 pb-2.5 text-[13px] transition-colors";
+  "-mb-px cursor-pointer whitespace-nowrap border-b-2 pb-3 text-[16px] transition-colors";
 const tabActive = "border-[#3E4A30] font-medium text-[#3E4A30]";
 const tabIdle = "border-transparent text-[#6F6A5C] hover:text-[#3E4A30]";
 

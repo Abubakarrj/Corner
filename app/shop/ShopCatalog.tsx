@@ -8,7 +8,7 @@ import SortDropdown from "./SortDropdown";
 
 function GridIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden>
       <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" fill="currentColor" />
       <rect x="9" y="1.5" width="5.5" height="5.5" rx="1" fill="currentColor" />
       <rect x="1.5" y="9" width="5.5" height="5.5" rx="1" fill="currentColor" />
@@ -19,7 +19,7 @@ function GridIcon() {
 
 function ListIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden>
       <rect x="1.5" y="2.5" width="13" height="2.2" rx="1.1" fill="currentColor" />
       <rect x="1.5" y="6.9" width="13" height="2.2" rx="1.1" fill="currentColor" />
       <rect x="1.5" y="11.3" width="13" height="2.2" rx="1.1" fill="currentColor" />
@@ -56,7 +56,7 @@ export default function ShopCatalog({
               onClick={() => setView("grid")}
               aria-label="Grid view"
               aria-pressed={view === "grid"}
-              className={`flex h-9 w-9 cursor-pointer items-center justify-center transition-colors ${
+              className={`flex h-11 w-11 cursor-pointer items-center justify-center transition-colors ${
                 view === "grid"
                   ? "bg-[#3E4A30] text-[#F3F1E5]"
                   : "text-[#3E4A30] hover:bg-[#EFEBDD]"
@@ -69,7 +69,7 @@ export default function ShopCatalog({
               onClick={() => setView("list")}
               aria-label="List view"
               aria-pressed={view === "list"}
-              className={`flex h-9 w-9 cursor-pointer items-center justify-center border-l border-[#DDD6C2] transition-colors ${
+              className={`flex h-11 w-11 cursor-pointer items-center justify-center border-l border-[#DDD6C2] transition-colors ${
                 view === "list"
                   ? "bg-[#3E4A30] text-[#F3F1E5]"
                   : "text-[#3E4A30] hover:bg-[#EFEBDD]"
@@ -80,7 +80,7 @@ export default function ShopCatalog({
           </div>
         </div>
 
-        <p className="text-[12px] text-[#6F6A5C]" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
+        <p className="text-[15px] text-[#6F6A5C]" style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
           {products.length} item{products.length === 1 ? "" : "s"}
         </p>
       </div>

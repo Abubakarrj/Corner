@@ -1,12 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { CATEGORIES } from "./products";
+import { Suspense, useEffect, useState } from "react";
 import { useCart } from "./CartContext";
 import Drawer from "./Drawer";
 import CartDrawer from "./CartDrawer";
+import MenuCategoryLinks from "./MenuCategoryLinks";
 import { OPEN_BASKET_EVENT } from "./openBasket";
 
 const BRAND_RED = "#BE1923";
@@ -119,10 +118,12 @@ export default function ShopHeader() {
         </button>
       </header>
 
+      {/* Drops down from the top over the page, per the reference nav,
+          rather than sliding in from the side. */}
       <Drawer
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        side="left"
+        side="top"
         label="Menu"
       >
         <div className="flex items-center justify-between px-6 py-5">
@@ -145,42 +146,25 @@ export default function ShopHeader() {
         </div>
 
         {/* Deliberately small serif links in olive — the Flamingo-style
-            menu from the user's reference, not the big bold sans links
-            this drawer launched with. */}
-        <nav className="flex-1 overflow-y-auto px-6 pt-4">
+            menu from the user's reference — with a grey highlight behind
+            whichever one matches the page currently open, per the
+            wholesale-catalog reference's grey "Catalog" row. */}
+        <nav className="px-6 pt-2">
           <p
-            className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]"
+            className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             The Pantry
           </p>
-          <div className="flex flex-col divide-y divide-[#E7E2D2]">
-            <Link
-              href="/shop"
-              onClick={() => setMenuOpen(false)}
-              className="cursor-pointer py-3 text-[15px] text-[#3E4A30] transition-opacity hover:opacity-70"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-            >
-              All Products
-            </Link>
-            {CATEGORIES.map((category) => (
-              <Link
-                key={category}
-                href={`/shop?category=${encodeURIComponent(category)}`}
-                onClick={() => setMenuOpen(false)}
-                className="cursor-pointer py-3 text-[15px] text-[#3E4A30] transition-opacity hover:opacity-70"
-                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
-              >
-                {category}
-              </Link>
-            ))}
-          </div>
+          <Suspense fallback={null}>
+            <MenuCategoryLinks onNavigate={() => setMenuOpen(false)} />
+          </Suspense>
         </nav>
 
         {/* Extra bottom padding clears the home-indicator gesture area
             under viewport-fit=cover; env() is 0 anywhere that isn't set. */}
         <div
-          className="flex flex-col gap-2 border-t border-[#E7E2D2] px-6 pt-5"
+          className="mt-2 flex flex-col gap-2 border-t border-[#E7E2D2] px-6 pt-5"
           style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
         >
           <a

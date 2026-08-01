@@ -90,7 +90,7 @@ export default function SortDropdown({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex h-9 cursor-pointer items-center gap-2 rounded-full border border-[#DDD6C2] px-3.5 text-[12px] text-[#3E4A30] transition-colors hover:border-[#3E4A30]"
+        className="flex h-11 cursor-pointer items-center gap-2 rounded-full border border-[#DDD6C2] px-4 text-[15px] text-[#3E4A30] transition-colors hover:border-[#3E4A30]"
       >
         Sort: {activeLabel}
         <ChevronIcon open={open} />
@@ -108,7 +108,7 @@ export default function SortDropdown({
               role="option"
               aria-selected={option.value === activeSort}
               onClick={() => setOpen(false)}
-              className="flex cursor-pointer items-center justify-between px-4 py-2 text-[13px] text-[#3E4A30] transition-colors hover:bg-[#EFEBDD]"
+              className="flex cursor-pointer items-center justify-between px-4 py-2.5 text-[15px] text-[#3E4A30] transition-colors hover:bg-[#EFEBDD]"
             >
               {option.label}
               {option.value === activeSort ? <CheckIcon /> : null}
