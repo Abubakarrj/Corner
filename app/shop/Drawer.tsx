@@ -79,14 +79,28 @@ export default function Drawer({
       ? // Full-width, sized to its content up to a cap rather than the
         // sidebars' h-full — a panel that drops down over the page rather
         // than a rail running its whole height.
-        "left-0 right-0 top-0 max-h-[80dvh] w-full rounded-b-3xl shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
+        "left-0 right-0 top-0 max-h-[80dvh] w-full rounded-b-3xl"
       : side === "left"
-        ? `top-0 left-0 h-full shadow-[8px_0_40px_rgba(0,0,0,0.12)] ${
+        ? `top-0 left-0 h-full ${
             width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
           }`
-        : `top-0 right-0 h-full shadow-[-8px_0_40px_rgba(0,0,0,0.12)] ${
+        : `top-0 right-0 h-full ${
             width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
           }`;
+
+  // Only painted while the panel is actually on screen. A closed panel is
+  // parked just outside the viewport, and a 40px blur reaches back across
+  // that edge — which rendered as a dark band along the top (or side) of
+  // every page. The container's overflow-hidden does not save us here: it
+  // clips at the viewport box, so it stops the shadow spilling outward
+  // while leaving the half that falls inward fully visible.
+  const panelShadowClass = !open
+    ? ""
+    : side === "top"
+      ? "shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
+      : side === "left"
+        ? "shadow-[8px_0_40px_rgba(0,0,0,0.12)]"
+        : "shadow-[-8px_0_40px_rgba(0,0,0,0.12)]";
 
   const panelTransformClass =
     side === "top"
@@ -102,8 +116,9 @@ export default function Drawer({
           : "translate-x-full";
 
   return (
-    // overflow-hidden so the closed panel — parked just outside the viewport
-    // — doesn't leak its box shadow back onto the screen edge.
+    // overflow-hidden keeps the closed panel, parked outside the viewport,
+    // from extending the scrollable area. It does not contain the panel's
+    // shadow — see panelShadowClass above for that.
     <div
       className={`fixed inset-0 z-[220] overflow-hidden ${open ? "" : "pointer-events-none"}`}
       inert={!open}
@@ -124,7 +139,7 @@ export default function Drawer({
         // Same reasoning as ShopHeader's inset: every variant is anchored to
         // the viewport's top edge, which extends under the notch, so the
         // panel carries the inset itself to keep its first row clear.
-        className={`absolute flex flex-col overflow-y-auto bg-[#FAF8F0] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelTransformClass}`}
+        className={`absolute flex flex-col overflow-y-auto bg-[#FAF8F0] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelShadowClass} ${panelTransformClass}`}
       >
         {children}
       </aside>
