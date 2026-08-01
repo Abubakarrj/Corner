@@ -17,7 +17,7 @@ export default function CategoryNav({
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <Link
-        href="/"
+        href="/shop"
         style={
           activeCategory
             ? { borderColor: "#E2E2E2", color: "#2D2D2D" }
@@ -32,7 +32,7 @@ export default function CategoryNav({
         return (
           <Link
             key={category}
-            href={`/?category=${encodeURIComponent(category)}`}
+            href={`/shop?category=${encodeURIComponent(category)}`}
             style={
               isActive
                 ? { borderColor: BRAND_RED, backgroundColor: BRAND_RED, color: "#ffffff" }

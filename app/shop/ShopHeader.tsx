@@ -2,11 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { CATEGORIES } from "./products";
 import { useCart } from "./CartContext";
+import Drawer from "./Drawer";
+import CartDrawer from "./CartDrawer";
+import { OPEN_BASKET_EVENT } from "./openBasket";
 
 const BRAND_RED = "#BE1923";
+
+// Every link in the shop is rooted at /shop, never at / — the storefront is
+// served at thecornerbagel.com/shop, where a subdomain-rooted link like
+// /product/x would 404 (or land on the marketing site). On
+// shop.thecornerbagel.com these same /shop/... paths pass straight through
+// proxy.ts untouched, so one set of hrefs works on both hosts.
 
 function HamburgerIcon() {
   return (
@@ -18,7 +27,7 @@ function HamburgerIcon() {
   );
 }
 
-function CartIcon() {
+function BasketIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
       <path
@@ -37,106 +46,151 @@ function CartIcon() {
   );
 }
 
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+      <path
+        d="M3.5 3.5l11 11M14.5 3.5l-11 11"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function ShopHeader() {
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
   const { itemCount } = useCart();
 
+  // Adding to the basket anywhere in the shop slides the basket open as the
+  // confirmation — see openBasket.ts.
   useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+    const onOpenBasket = () => {
+      setMenuOpen(false);
+      setBasketOpen(true);
     };
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (panelRef.current?.contains(target)) return;
-      if (buttonRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [open]);
+    window.addEventListener(OPEN_BASKET_EVENT, onOpenBasket);
+    return () => window.removeEventListener(OPEN_BASKET_EVENT, onOpenBasket);
+  }, []);
 
   return (
-    <header
-      className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#E2E2E2] bg-white px-4 sm:px-6"
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-    >
-      <div className="relative">
+    <>
+      <header
+        className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#E2E2E2] bg-white px-4 sm:px-6"
+        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+      >
         <button
-          ref={buttonRef}
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setMenuOpen(true)}
           aria-label="Menu"
-          aria-expanded={open}
+          aria-expanded={menuOpen}
           className="flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
         >
           <HamburgerIcon />
         </button>
 
-        {open ? (
-          <div
-            ref={panelRef}
-            role="menu"
-            className="absolute left-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-2xl bg-white py-2 shadow-[0_8px_30px_rgba(0,0,0,0.15)]"
+        <Link href="/shop" className="cursor-pointer" aria-label="Corner Bagel Pantry">
+          <Image
+            src="/logo.svg"
+            alt="Corner Bagel"
+            width={8369}
+            height={3233}
+            unoptimized
+            priority
+            className="h-6 w-auto object-contain sm:h-7"
+          />
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setBasketOpen(true)}
+          aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+          aria-expanded={basketOpen}
+          className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
+        >
+          <BasketIcon />
+          {itemCount > 0 ? (
+            <span
+              style={{ backgroundColor: BRAND_RED }}
+              className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+            >
+              {itemCount}
+            </span>
+          ) : null}
+        </button>
+      </header>
+
+      <Drawer
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        side="left"
+        label="Menu"
+      >
+        <div className="flex items-center justify-between px-6 py-5">
+          <Image
+            src="/logo.svg"
+            alt="Corner Bagel"
+            width={8369}
+            height={3233}
+            unoptimized
+            className="h-5 w-auto object-contain"
+          />
+          <button
+            type="button"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
+            className="flex h-9 w-9 cursor-pointer items-center justify-center text-[#575757] transition-opacity hover:opacity-60"
           >
+            <CloseIcon />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-6 pt-4">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#8A8A8A]">
+            The Pantry
+          </p>
+          <div className="flex flex-col divide-y divide-[#F0F0F0]">
             <Link
-              href="/"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className="block px-5 py-2.5 text-[15px] font-medium text-[#2D2D2D] transition-colors hover:bg-[#F7F7F7]"
+              href="/shop"
+              onClick={() => setMenuOpen(false)}
+              className="cursor-pointer py-3.5 text-[20px] font-bold text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
+              style={{ letterSpacing: "-0.02em" }}
             >
               All Products
             </Link>
             {CATEGORIES.map((category) => (
               <Link
                 key={category}
-                href={`/?category=${encodeURIComponent(category)}`}
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                className="block px-5 py-2.5 text-[15px] text-[#2D2D2D] transition-colors hover:bg-[#F7F7F7]"
+                href={`/shop?category=${encodeURIComponent(category)}`}
+                onClick={() => setMenuOpen(false)}
+                className="cursor-pointer py-3.5 text-[20px] font-bold text-[#2D2D2D] transition-colors hover:text-[#BE1923]"
+                style={{ letterSpacing: "-0.02em" }}
               >
                 {category}
               </Link>
             ))}
           </div>
-        ) : null}
-      </div>
+        </nav>
 
-      <Link href="/" className="cursor-pointer" aria-label="Corner Bagel Pantry">
-        <Image
-          src="/logo.svg"
-          alt="Corner Bagel"
-          width={8369}
-          height={3233}
-          unoptimized
-          priority
-          className="h-6 w-auto object-contain sm:h-7"
-        />
-      </Link>
-
-      <Link
-        href="/cart"
-        aria-label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
-        className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-      >
-        <CartIcon />
-        {itemCount > 0 ? (
-          <span
-            style={{ backgroundColor: BRAND_RED }}
-            className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+        <div className="flex flex-col gap-2 border-t border-[#F0F0F0] px-6 py-5">
+          <a
+            href="https://thecornerbagel.com"
+            className="cursor-pointer text-[13px] text-[#8A8A8A] transition-colors hover:text-[#BE1923]"
           >
-            {itemCount}
-          </span>
-        ) : null}
-      </Link>
-    </header>
+            ← Back to Corner Bagel
+          </a>
+          <a
+            href="mailto:cornerbagel@publicentity.co"
+            className="cursor-pointer text-[13px] text-[#8A8A8A] underline transition-colors hover:text-[#BE1923]"
+          >
+            cornerbagel@publicentity.co
+          </a>
+        </div>
+      </Drawer>
+
+      <CartDrawer open={basketOpen} onClose={() => setBasketOpen(false)} />
+    </>
   );
 }

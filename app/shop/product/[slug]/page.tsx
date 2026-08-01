@@ -16,7 +16,7 @@ export default async function ProductPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
       <Link
-        href="/"
+        href="/shop"
         className="mb-6 inline-block cursor-pointer text-[13px] text-[#575757] underline"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >

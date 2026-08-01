@@ -83,14 +83,14 @@ export default function CheckoutPage() {
           <p className="text-[14px] text-[#575757]">
             Order placed — we&rsquo;ll be in touch to confirm and take payment.
           </p>
-          <Link href="/" className="mt-3 inline-block cursor-pointer text-[14px] underline">
+          <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Back to the pantry
           </Link>
         </div>
       ) : rows.length === 0 ? (
         <div>
           <p className="text-[14px] text-[#575757]">Your cart is empty.</p>
-          <Link href="/" className="mt-3 inline-block cursor-pointer text-[14px] underline">
+          <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Browse the pantry
           </Link>
         </div>

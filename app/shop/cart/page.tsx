@@ -31,7 +31,7 @@ export default function CartPage() {
       {rows.length === 0 ? (
         <div>
           <p className="text-[14px] text-[#575757]">Your cart is empty.</p>
-          <Link href="/" className="mt-3 inline-block cursor-pointer text-[14px] underline">
+          <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Browse the pantry
           </Link>
         </div>
@@ -40,7 +40,7 @@ export default function CartPage() {
           <div className="flex flex-col divide-y divide-[#E2E2E2]">
             {rows.map(({ line, product }) => (
               <div key={line.slug} className="flex gap-4 py-4">
-                <Link href={`/product/${product.slug}`} className="shrink-0 cursor-pointer">
+                <Link href={`/shop/product/${product.slug}`} className="shrink-0 cursor-pointer">
                   <ProductImage
                     swatch={product.swatch}
                     name={product.name}
@@ -51,7 +51,7 @@ export default function CartPage() {
                 <div className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-2">
                     <Link
-                      href={`/product/${product.slug}`}
+                      href={`/shop/product/${product.slug}`}
                       className="cursor-pointer text-[14px] font-medium text-[#2D2D2D] hover:underline"
                     >
                       {product.name}
@@ -65,12 +65,12 @@ export default function CartPage() {
                   </span>
 
                   <div className="mt-auto flex items-center gap-3 pt-2">
-                    <div className="flex items-center border border-[#E2E2E2]">
+                    <div className="flex items-center rounded-full border border-[#E2E2E2]">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity - 1)}
-                        className="h-8 w-8 cursor-pointer text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
                       >
                         −
                       </button>
@@ -81,7 +81,7 @@ export default function CartPage() {
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
                         onClick={() => setQuantity(line.slug, line.quantity + 1)}
-                        className="h-8 w-8 cursor-pointer text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#2D2D2D] transition-opacity hover:opacity-60"
                       >
                         +
                       </button>
@@ -107,7 +107,7 @@ export default function CartPage() {
           </div>
 
           <Link
-            href="/checkout"
+            href="/shop/checkout"
             style={{ backgroundColor: BRAND_RED }}
             className="mt-4 block w-full cursor-pointer py-3.5 text-center text-[15px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
           >

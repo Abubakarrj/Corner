@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import Image from "next/image";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { COOKIE_CONSENT_CHANGED_EVENT } from "../CookieConsent";
 
 const BRAND_RED = "#BE1923";
@@ -42,9 +43,42 @@ function ChatBubbleIcon() {
         strokeWidth="1.6"
         strokeLinejoin="round"
       />
+      <circle cx="8.5" cy="9.5" r="1" fill="white" />
+      <circle cx="12" cy="9.5" r="1" fill="white" />
+      <circle cx="15.5" cy="9.5" r="1" fill="white" />
     </svg>
   );
 }
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="M5 5l10 10M15 5L5 15"
+        stroke="white"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SentCheckIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+      <path
+        d="M4.5 11.5l4.5 4.5 8.5-9.5"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const fieldClass =
+  "rounded-xl border border-[#E2E2E2] px-3.5 py-2.5 text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D] sm:text-[14px]";
 
 // A placeholder chat widget — no live agent behind it yet. Leaving a message
 // here logs it (same "log now, wire the real vendor later" pattern as the
@@ -63,6 +97,15 @@ export default function ChatWidget() {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   const valid =
     name.trim().length > 0 &&
@@ -96,8 +139,13 @@ export default function ChatWidget() {
   }
 
   return (
+    // pointer-events-none on the container: with the panel always mounted
+    // for its open/close animation, the container's (invisible) box spans
+    // the panel's full footprint even while closed, and would otherwise
+    // swallow clicks meant for the page under it. Only the launcher and the
+    // open panel opt back in.
     <div
-      className={`fixed right-5 z-[150] flex flex-col items-end transition-[bottom] duration-200 sm:right-6 ${
+      className={`pointer-events-none fixed right-5 z-[150] flex flex-col items-end transition-[bottom] duration-200 sm:right-6 ${
         // Clears the cookie banner's measured height (~120px mobile, ~69px
         // desktop) plus a gap, while it's up; settles into the corner once
         // it's dismissed.
@@ -105,89 +153,138 @@ export default function ChatWidget() {
       }`}
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
-      {open ? (
-        <div className="mb-3 w-[calc(100vw-2.5rem)] max-w-[320px] overflow-hidden rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.2)]">
-          <div
-            style={{ backgroundColor: BRAND_RED }}
-            className="flex items-center justify-between px-4 py-3"
-          >
-            <span className="text-[14px] font-bold text-white">Chat</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat"
-              className="cursor-pointer text-white transition-opacity hover:opacity-70"
+      {/* Always mounted so it can animate closed as well as open; inert
+          keeps focus and clicks out while it's hidden. */}
+      <div
+        inert={!open}
+        role="dialog"
+        aria-label="Chat"
+        className={`mb-3 w-[calc(100vw-2.5rem)] max-w-[340px] origin-bottom-right overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-200 ease-out ${
+          open
+            ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
+            : "pointer-events-none translate-y-2 scale-95 opacity-0"
+        }`}
+      >
+        <div
+          style={{ backgroundColor: BRAND_RED }}
+          className="flex items-center gap-3 px-5 py-4"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+            <Image
+              src="/icon.svg"
+              alt=""
+              width={26}
+              height={26}
+              unoptimized
+              className="object-contain"
+            />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-[15px] font-bold leading-tight text-white"
+              style={{ letterSpacing: "-0.02em" }}
             >
-              ✕
-            </button>
+              Corner Bagel
+            </p>
+            <p className="text-[12px] leading-tight text-white/80">
+              We reply by email, usually same day
+            </p>
           </div>
-
-          <div className="p-4">
-            {status === "sent" ? (
-              <p className="text-[13px] text-[#575757]">
-                Thanks — we&rsquo;ll email you back shortly.
-              </p>
-            ) : (
-              <>
-                <p className="mb-3 text-[13px] text-[#575757]">
-                  Leave a message and we&rsquo;ll email you back.
-                </p>
-                <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
-                  <input
-                    type="text"
-                    aria-label="Name"
-                    placeholder="Name"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      setError(null);
-                    }}
-                    className="rounded-lg border border-[#E2E2E2] px-3 py-2 text-[13px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D]"
-                  />
-                  <input
-                    type="email"
-                    inputMode="email"
-                    aria-label="Email address"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setError(null);
-                    }}
-                    className="rounded-lg border border-[#E2E2E2] px-3 py-2 text-[13px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D]"
-                  />
-                  <textarea
-                    aria-label="Message"
-                    placeholder="How can we help?"
-                    value={message}
-                    onChange={(e) => {
-                      setMessage(e.target.value);
-                      setError(null);
-                    }}
-                    rows={3}
-                    className="resize-none rounded-lg border border-[#E2E2E2] px-3 py-2 text-[13px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A] focus:border-[#2D2D2D]"
-                  />
-
-                  {error ? (
-                    <p role="alert" style={{ color: BRAND_RED }} className="text-[11px]">
-                      {error}
-                    </p>
-                  ) : null}
-
-                  <button
-                    type="submit"
-                    disabled={!valid || status === "sending"}
-                    style={{ backgroundColor: BRAND_RED }}
-                    className="mt-1 cursor-pointer rounded-lg py-2 text-[13px] font-bold uppercase tracking-[0.04em] text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
-                  >
-                    {status === "sending" ? "Sending…" : "Send"}
-                  </button>
-                </form>
-              </>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close chat"
+            className="cursor-pointer transition-opacity hover:opacity-70"
+          >
+            <CloseIcon />
+          </button>
         </div>
-      ) : null}
+
+        <div className="p-4">
+          {status === "sent" ? (
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <span
+                style={{ backgroundColor: BRAND_RED }}
+                className="flex h-11 w-11 items-center justify-center rounded-full"
+              >
+                <SentCheckIcon />
+              </span>
+              <div>
+                <p className="text-[14px] font-medium text-[#2D2D2D]">
+                  Message received
+                </p>
+                <p className="mt-1 text-[13px] text-[#8A8A8A]">
+                  We&rsquo;ll email you back shortly.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setStatus("idle");
+                }}
+                className="cursor-pointer text-[12px] text-[#575757] underline transition-opacity hover:opacity-70"
+              >
+                Send another message
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2.5">
+              <input
+                type="text"
+                autoComplete="name"
+                aria-label="Name"
+                placeholder="Name"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
+                className={fieldClass}
+              />
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                aria-label="Email address"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+                className={fieldClass}
+              />
+              <textarea
+                aria-label="Message"
+                placeholder="How can we help?"
+                value={message}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  setError(null);
+                }}
+                rows={3}
+                className={`resize-none ${fieldClass}`}
+              />
+
+              {error ? (
+                <p role="alert" style={{ color: BRAND_RED }} className="text-[11px]">
+                  {error}
+                </p>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={!valid || status === "sending"}
+                style={{ backgroundColor: BRAND_RED }}
+                className="mt-0.5 cursor-pointer rounded-xl py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
+              >
+                {status === "sending" ? "Sending…" : "Send message"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
 
       <button
         type="button"
@@ -195,9 +292,26 @@ export default function ChatWidget() {
         aria-label={open ? "Close chat" : "Open chat"}
         aria-expanded={open}
         style={{ backgroundColor: BRAND_RED }}
-        className="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-opacity hover:opacity-90"
+        className="pointer-events-auto relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
       >
-        <ChatBubbleIcon />
+        {/* The two glyphs crossfade and quarter-turn into each other, so the
+            launcher visibly becomes the close control rather than jumping. */}
+        <span
+          aria-hidden
+          className={`absolute transition-all duration-200 ${
+            open ? "rotate-90 opacity-0" : "rotate-0 opacity-100"
+          }`}
+        >
+          <ChatBubbleIcon />
+        </span>
+        <span
+          aria-hidden
+          className={`absolute transition-all duration-200 ${
+            open ? "rotate-0 opacity-100" : "-rotate-90 opacity-0"
+          }`}
+        >
+          <CloseIcon />
+        </span>
       </button>
     </div>
   );
