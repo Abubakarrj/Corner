@@ -108,3 +108,46 @@ export function getProduct(slug: string): Product | undefined {
 export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
+
+export const SORT_OPTIONS = [
+  { value: "featured", label: "Featured" },
+  { value: "name-asc", label: "Name: A to Z" },
+  { value: "name-desc", label: "Name: Z to A" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "newest", label: "Newest" },
+  { value: "bestsellers", label: "Best Sellers" },
+] as const;
+
+export type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+
+export function isSortValue(value: string | undefined): value is SortValue {
+  return SORT_OPTIONS.some((option) => option.value === value);
+}
+
+// "Featured" is the catalog's own hand-arranged order (PRODUCTS above), so
+// it's the identity case. "Newest" has no real added-at timestamp to sort
+// by yet — it stands in with the catalog's order reversed (last-defined
+// reads as most-recent) until products carry real dates.
+export function sortProducts(products: Product[], sort: SortValue): Product[] {
+  const sorted = [...products];
+  switch (sort) {
+    case "name-asc":
+      return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    case "name-desc":
+      return sorted.sort((a, b) => b.name.localeCompare(a.name));
+    case "price-asc":
+      return sorted.sort((a, b) => a.priceCents - b.priceCents);
+    case "price-desc":
+      return sorted.sort((a, b) => b.priceCents - a.priceCents);
+    case "newest":
+      return sorted.reverse();
+    case "bestsellers":
+      return sorted.sort(
+        (a, b) => Number(b.tag === "Bestseller") - Number(a.tag === "Bestseller"),
+      );
+    case "featured":
+    default:
+      return sorted;
+  }
+}

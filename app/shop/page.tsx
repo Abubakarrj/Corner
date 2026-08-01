@@ -1,17 +1,19 @@
-import { CATEGORIES, PRODUCTS } from "./products";
-import ProductCard from "./ProductCard";
+import { CATEGORIES, PRODUCTS, isSortValue, sortProducts } from "./products";
 import CategoryNav from "./CategoryNav";
+import ShopCatalog from "./ShopCatalog";
 
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; sort?: string }>;
 }) {
-  const { category } = await searchParams;
+  const { category, sort } = await searchParams;
   const activeCategory = CATEGORIES.find((c) => c === category);
-  const products = activeCategory
+  const activeSort = isSortValue(sort) ? sort : "featured";
+  const filtered = activeCategory
     ? PRODUCTS.filter((product) => product.category === activeCategory)
     : PRODUCTS;
+  const products = sortProducts(filtered, activeSort);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
@@ -30,25 +32,9 @@ export default async function ShopPage({
         What we use behind the counter, enjoyed at the comfort of your home.
       </p>
 
-      <CategoryNav activeCategory={activeCategory} />
+      <CategoryNav activeCategory={activeCategory} activeSort={activeSort} />
 
-      <p
-        className="mb-4 text-right text-[12px] text-[#6F6A5C]"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-      >
-        {products.length} item{products.length === 1 ? "" : "s"}
-      </p>
-
-      {/* Held at 2 columns through sm so tiles don't shrink below a
-          comfortable tap target on a phone; from md on, more columns (not
-          bigger tiles) is what should absorb the extra width, otherwise a
-          wide screen just makes everything oversized instead of showing
-          more of the catalog at once. */}
-      <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-        {products.map((product) => (
-          <ProductCard key={product.slug} product={product} />
-        ))}
-      </div>
+      <ShopCatalog products={products} activeCategory={activeCategory} activeSort={activeSort} />
     </div>
   );
 }
