@@ -90,7 +90,7 @@ export default function SortDropdown({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="flex cursor-pointer items-center gap-2 rounded-full border border-[#DDD6C2] px-3.5 py-1.5 text-[12px] text-[#3E4A30] transition-colors hover:border-[#3E4A30]"
+        className="flex h-9 cursor-pointer items-center gap-2 rounded-full border border-[#DDD6C2] px-3.5 text-[12px] text-[#3E4A30] transition-colors hover:border-[#3E4A30]"
       >
         Sort: {activeLabel}
         <ChevronIcon open={open} />

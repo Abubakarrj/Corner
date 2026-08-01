@@ -56,7 +56,7 @@ export default function ShopCatalog({
               onClick={() => setView("grid")}
               aria-label="Grid view"
               aria-pressed={view === "grid"}
-              className={`flex h-8 w-9 cursor-pointer items-center justify-center transition-colors ${
+              className={`flex h-9 w-9 cursor-pointer items-center justify-center transition-colors ${
                 view === "grid"
                   ? "bg-[#3E4A30] text-[#F3F1E5]"
                   : "text-[#3E4A30] hover:bg-[#EFEBDD]"
@@ -69,7 +69,7 @@ export default function ShopCatalog({
               onClick={() => setView("list")}
               aria-label="List view"
               aria-pressed={view === "list"}
-              className={`flex h-8 w-9 cursor-pointer items-center justify-center border-l border-[#DDD6C2] transition-colors ${
+              className={`flex h-9 w-9 cursor-pointer items-center justify-center border-l border-[#DDD6C2] transition-colors ${
                 view === "list"
                   ? "bg-[#3E4A30] text-[#F3F1E5]"
                   : "text-[#3E4A30] hover:bg-[#EFEBDD]"

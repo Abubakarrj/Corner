@@ -100,18 +100,6 @@ export default function ShopHeader() {
           <HamburgerIcon />
         </button>
 
-        <Link href="/shop" className="cursor-pointer" aria-label="Corner Bagel Pantry">
-          <Image
-            src="/logo.svg"
-            alt="Corner Bagel"
-            width={8369}
-            height={3233}
-            unoptimized
-            priority
-            className="h-6 w-auto object-contain sm:h-7"
-          />
-        </Link>
-
         <button
           type="button"
           onClick={() => setBasketOpen(true)}
