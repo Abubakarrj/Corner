@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
+import FreeShippingBar from "./FreeShippingBar";
+import CrossSellStrip from "./CrossSellStrip";
 import { useCart } from "./CartContext";
-import { formatPrice, getProduct } from "./products";
+import { formatPrice, getCrossSellProducts, getProduct } from "./products";
 
 function CloseIcon() {
   return (
@@ -106,6 +108,8 @@ export default function CartDrawer({
         </div>
       ) : (
         <>
+          <FreeShippingBar subtotalCents={subtotalCents} />
+
           <div className="flex-1 divide-y divide-[#E7E2D2] overflow-y-auto px-6">
             {rows.map(({ line, product }) => (
               <div key={line.slug} className="flex gap-4 py-5">
@@ -172,6 +176,11 @@ export default function CartDrawer({
               </div>
             ))}
           </div>
+
+          <CrossSellStrip
+            products={getCrossSellProducts(lines.map((line) => line.slug))}
+            onNavigate={onClose}
+          />
 
           {/* Extra bottom padding clears the home-indicator gesture area
               under viewport-fit=cover; env() is 0 anywhere that isn't set,

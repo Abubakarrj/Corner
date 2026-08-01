@@ -105,6 +105,21 @@ export function getProduct(slug: string): Product | undefined {
   return PRODUCTS.find((product) => product.slug === slug);
 }
 
+// A placeholder threshold for the basket's free-shipping progress bar —
+// there's no real shipping-rate table yet, so $50 is a stand-in round
+// number. Swap once real shipping costs are known.
+export const FREE_SHIPPING_THRESHOLD_CENTS = 5000;
+
+// Picks products for the basket drawer's cross-sell strip: whatever isn't
+// already in the basket, tagged items ("New"/"Bestseller") first since
+// those are the ones actually worth surfacing, catalog order otherwise.
+export function getCrossSellProducts(excludeSlugs: string[], limit = 4): Product[] {
+  const excluded = new Set(excludeSlugs);
+  return PRODUCTS.filter((product) => !excluded.has(product.slug))
+    .sort((a, b) => Number(Boolean(b.tag)) - Number(Boolean(a.tag)))
+    .slice(0, limit);
+}
+
 export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
