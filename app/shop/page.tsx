@@ -27,7 +27,7 @@ export default async function ShopPage({
         className="mb-6 text-[13px] text-[#6F6A5C]"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
-        What we use behind the counter, in jars you can take home.
+        What we use behind the counter, enjoyed at the comfort of your home.
       </p>
 
       <CategoryNav activeCategory={activeCategory} />
