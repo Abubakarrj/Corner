@@ -173,7 +173,13 @@ export default function CartDrawer({
             ))}
           </div>
 
-          <div className="border-t border-[#E7E2D2] px-6 pb-5 pt-4">
+          {/* Extra bottom padding clears the home-indicator gesture area
+              under viewport-fit=cover; env() is 0 anywhere that isn't set,
+              so it's inert elsewhere. */}
+          <div
+            className="border-t border-[#E7E2D2] px-6 pt-4"
+            style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+          >
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
               <span

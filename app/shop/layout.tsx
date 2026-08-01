@@ -13,12 +13,21 @@ export const metadata: Metadata = {
   description: "Sauces, pickles, and pantry staples from Corner Bagel.",
 };
 
-// Colours the browser chrome (the iOS Safari status-bar area above the
-// page) to match the shop's cream instead of defaulting to white. Scoped
-// to /shop — the marketing site is white, and this nested-segment export
-// only applies to routes under it.
+// Colours the browser chrome cream instead of the default white. Scoped to
+// /shop — the marketing site is white, and this nested-segment export only
+// applies to routes under it.
+//
+// themeColor alone only reaches Safari's own toolbar (the address-bar
+// strip at the bottom). The status-bar strip at the very top (time,
+// signal, battery) is different: by default the page's viewport stops
+// below it, so that area is just empty browser chrome, not page — no
+// background-color of ours can reach it. viewportFit: "cover" extends the
+// page underneath it instead, which is what lets our cream background
+// show through there too (see the safe-area padding below, which then
+// keeps the header itself from sliding under the notch).
 export const viewport: Viewport = {
   themeColor: "#F7F4EB",
+  viewportFit: "cover",
 };
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
@@ -31,8 +40,11 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       <style>{`html, body { background-color: #F7F4EB; }`}</style>
       {/* Warm cream ground, per the reference designs the shop is styled
           after — the marketing site stays white; this palette is the
-          shop's own. */}
-      <div className="flex min-h-dvh flex-col bg-[#F7F4EB]">
+          shop's own. pt-[env(safe-area-inset-top)] holds the header below
+          the notch/status bar now that the page extends underneath it —
+          without it, the header would slide up under the notch instead of
+          just the background colour extending there. */}
+      <div className="flex min-h-dvh flex-col bg-[#F7F4EB] pt-[env(safe-area-inset-top)]">
         <ShopHeader />
         <main className="flex-1">{children}</main>
         <ChatWidget />

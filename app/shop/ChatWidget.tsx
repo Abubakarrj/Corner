@@ -241,8 +241,13 @@ export default function ChatWidget() {
       className={`pointer-events-none fixed right-5 z-[150] flex flex-col items-end transition-[bottom] duration-200 sm:right-6 ${
         // Clears the cookie banner's measured height (~120px mobile, ~69px
         // desktop) plus a gap, while it's up; settles into the corner once
-        // it's dismissed.
-        bannerVisible ? "bottom-[136px] sm:bottom-24" : "bottom-5 sm:bottom-6"
+        // it's dismissed. Each offset adds env(safe-area-inset-bottom) on
+        // top of its usual value — inert on ordinary pages, but keeps the
+        // launcher clear of the home-indicator area now that /shop's
+        // viewport-fit=cover puts it in play.
+        bannerVisible
+          ? "bottom-[calc(136px+env(safe-area-inset-bottom))] sm:bottom-[calc(96px+env(safe-area-inset-bottom))]"
+          : "bottom-[calc(20px+env(safe-area-inset-bottom))] sm:bottom-[calc(24px+env(safe-area-inset-bottom))]"
       }`}
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >

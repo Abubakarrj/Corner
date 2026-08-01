@@ -61,8 +61,15 @@ export default function CookieConsent() {
     <div
       role="region"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-[200] flex flex-col items-center justify-between gap-3 border-t border-[#E2E2E2] bg-[#F7F7F7] px-5 py-4 sm:flex-row sm:px-8"
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+      // The extra bottom padding is inert (env() resolves to 0) everywhere
+      // except the shop, which opts into viewport-fit=cover — there, it
+      // keeps this bar clear of the home-indicator gesture area instead of
+      // sitting flush against it.
+      className="fixed inset-x-0 bottom-0 z-[200] flex flex-col items-center justify-between gap-3 border-t border-[#E2E2E2] bg-[#F7F7F7] px-5 pt-4 sm:flex-row sm:px-8"
+      style={{
+        fontFamily: "var(--font-geist-sans), sans-serif",
+        paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+      }}
     >
       <p className="m-0 text-center text-[13px] text-[#575757] sm:text-left">
         By continuing to use this site, you{" "}

@@ -100,13 +100,16 @@ export default function ShopHeader() {
           <HamburgerIcon />
         </button>
 
-        <Link
-          href="/shop"
-          className="cursor-pointer text-[19px] font-semibold text-[#3E4A30] sm:text-[21px]"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: "-0.01em" }}
-          aria-label="Corner Bagel Pantry"
-        >
-          Our Pantry
+        <Link href="/shop" className="cursor-pointer" aria-label="Corner Bagel Pantry">
+          <Image
+            src="/logo.svg"
+            alt="Corner Bagel"
+            width={8369}
+            height={3233}
+            unoptimized
+            priority
+            className="h-6 w-auto object-contain sm:h-7"
+          />
         </Link>
 
         <button
@@ -186,7 +189,12 @@ export default function ShopHeader() {
           </div>
         </nav>
 
-        <div className="flex flex-col gap-2 border-t border-[#E7E2D2] px-6 py-5">
+        {/* Extra bottom padding clears the home-indicator gesture area
+            under viewport-fit=cover; env() is 0 anywhere that isn't set. */}
+        <div
+          className="flex flex-col gap-2 border-t border-[#E7E2D2] px-6 pt-5"
+          style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+        >
           <a
             href="https://thecornerbagel.com"
             className="cursor-pointer text-[12px] text-[#8A8672] transition-colors hover:text-[#3E4A30]"
