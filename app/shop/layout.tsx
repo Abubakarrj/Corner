@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { CartProvider } from "./CartContext";
 import ShopHeader from "./ShopHeader";
 import ChatWidget from "./ChatWidget";
@@ -13,9 +13,22 @@ export const metadata: Metadata = {
   description: "Sauces, pickles, and pantry staples from Corner Bagel.",
 };
 
+// Colours the browser chrome (the iOS Safari status-bar area above the
+// page) to match the shop's cream instead of defaulting to white. Scoped
+// to /shop — the marketing site is white, and this nested-segment export
+// only applies to routes under it.
+export const viewport: Viewport = {
+  themeColor: "#F7F4EB",
+};
+
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
     <CartProvider>
+      {/* The root <html>/<body> are white (the marketing site's ground).
+          Repaint them cream while a shop route is mounted, so iOS
+          rubber-band overscroll past the page's edges shows cream too —
+          themeColor above only covers the status-bar chrome. */}
+      <style>{`html, body { background-color: #F7F4EB; }`}</style>
       {/* Warm cream ground, per the reference designs the shop is styled
           after — the marketing site stays white; this palette is the
           shop's own. */}
