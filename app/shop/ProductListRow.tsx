@@ -5,6 +5,7 @@ import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
 import { requestOpenBasket } from "./openBasket";
+import { DISPLAY_FONT } from "./shopControls";
 
 // The row shown in list view — a compact alternative to ProductCard's tile:
 // thumbnail, name + category, description, then price and add-to-basket
@@ -31,7 +32,7 @@ export default function ProductListRow({ product }: { product: Product }) {
           <Link
             href={`/shop/product/${product.slug}`}
             className="cursor-pointer text-[15px] leading-[1.3] text-[#3E4A30] transition-opacity hover:opacity-70"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            style={{ fontFamily: DISPLAY_FONT }}
           >
             {product.name}
           </Link>

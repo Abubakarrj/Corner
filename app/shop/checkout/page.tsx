@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "../CartContext";
 import { formatPrice, getProduct } from "../products";
+import { DISPLAY_FONT } from "../shopControls";
 
 const BRAND_RED = "#BE1923";
 
@@ -76,7 +77,7 @@ export default function CheckoutPage() {
     >
       <h1
         className="mb-6 text-[18px] font-bold text-[#3E4A30]"
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        style={{ fontFamily: DISPLAY_FONT }}
       >
         Checkout
       </h1>
@@ -182,7 +183,7 @@ export default function CheckoutPage() {
               <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
               <span
                 className="text-[14px] font-bold text-[#3E4A30]"
-                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                style={{ fontFamily: DISPLAY_FONT }}
               >
                 {formatPrice(subtotalCents)}
               </span>

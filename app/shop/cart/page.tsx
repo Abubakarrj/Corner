@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCart } from "../CartContext";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
+import { DISPLAY_FONT } from "../shopControls";
 
 export default function CartPage() {
   const { lines, setQuantity, removeItem, subtotalCents } = useCart();
@@ -21,7 +22,7 @@ export default function CartPage() {
     >
       <h1
         className="mb-6 text-[18px] font-bold text-[#3E4A30]"
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        style={{ fontFamily: DISPLAY_FONT }}
       >
         Cart
       </h1>
@@ -101,7 +102,7 @@ export default function CartPage() {
             <span className="text-[14px] font-medium text-[#3E4A30]">Subtotal</span>
             <span
               className="text-[16px] font-bold text-[#3E4A30]"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              style={{ fontFamily: DISPLAY_FONT }}
             >
               {formatPrice(subtotalCents)}
             </span>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CATEGORIES } from "./products";
+import { DISPLAY_FONT } from "./shopControls";
 
 // A grey highlight behind whichever entry matches the page currently open,
 // per the reference nav (the grey rounded rect behind "Catalog"). Reading
@@ -28,7 +29,7 @@ export default function MenuCategoryLinks({ onNavigate }: { onNavigate: () => vo
         href="/shop"
         onClick={onNavigate}
         className={rowClass(!activeCategory)}
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        style={{ fontFamily: DISPLAY_FONT }}
       >
         All Products
       </Link>
@@ -38,7 +39,7 @@ export default function MenuCategoryLinks({ onNavigate }: { onNavigate: () => vo
           href={`/shop?category=${encodeURIComponent(category)}`}
           onClick={onNavigate}
           className={rowClass(category === activeCategory)}
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          style={{ fontFamily: DISPLAY_FONT }}
         >
           {category}
         </Link>

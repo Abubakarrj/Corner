@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { COOKIE_CONSENT_CHANGED_EVENT } from "../CookieConsent";
+import { DISPLAY_FONT } from "./shopControls";
 
 // Produce palette — deep olive carries the widget, sage is the visitor's
 // bubble, and the old brand red survives only as the error-text colour.
@@ -280,7 +281,7 @@ export default function ChatWidget() {
           <div className="min-w-0 flex-1">
             <p
               className="text-[15px] font-bold leading-tight text-white"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              style={{ fontFamily: DISPLAY_FONT }}
             >
               Corner Bagel
             </p>
@@ -303,7 +304,7 @@ export default function ChatWidget() {
         <div ref={threadRef} className="max-h-[50vh] overflow-y-auto p-4">
           <p
             className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8672]"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            style={{ fontFamily: DISPLAY_FONT }}
           >
             Corner Bagel
           </p>

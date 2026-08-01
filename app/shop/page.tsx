@@ -1,6 +1,7 @@
 import { CATEGORIES, PRODUCTS, isSortValue, sortProducts } from "./products";
 import CategoryNav from "./CategoryNav";
 import ShopCatalog from "./ShopCatalog";
+import { DISPLAY_FONT } from "./shopControls";
 
 export default async function ShopPage({
   searchParams,
@@ -22,11 +23,12 @@ export default async function ShopPage({
   return (
     <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-14">
       <header className="mb-9">
-        {/* Bold serif carries the hierarchy — the size stays restrained so
-            the page doesn't read oversized (a specific request). */}
+        {/* Bold display type carries the hierarchy — the size stays
+            restrained so the page doesn't read oversized (a specific
+            request). */}
         <h1
           className="text-[22px] leading-tight text-[#3E4A30]"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700 }}
+          style={{ fontFamily: DISPLAY_FONT, fontWeight: 700 }}
         >
           From Our Kitchen To Yours
         </h1>

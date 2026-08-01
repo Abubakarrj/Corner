@@ -16,6 +16,12 @@
 //   11px  toolbar controls + item count   <- this file
 //   10px  uppercase CTA / tag pills
 
+// The shop's heading face (Instrument Sans, loaded in app/layout.tsx). Every
+// heading, product name, and drawer title goes through this constant so the
+// face can be swapped in one place — it replaced a Georgia serif that was
+// hardcoded across a dozen files.
+export const DISPLAY_FONT = "var(--font-display), sans-serif";
+
 export const CONTROL_HEIGHT = "h-8";
 
 // The outline-pill shell: sort button and the toggle's container both use

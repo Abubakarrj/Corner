@@ -7,6 +7,7 @@ import Drawer from "./Drawer";
 import CartDrawer from "./CartDrawer";
 import MenuCategoryLinks from "./MenuCategoryLinks";
 import { OPEN_BASKET_EVENT } from "./openBasket";
+import { DISPLAY_FONT } from "./shopControls";
 
 const BRAND_RED = "#BE1923";
 
@@ -157,14 +158,14 @@ export default function ShopHeader() {
           </button>
         </div>
 
-        {/* Deliberately small serif links in olive — the Flamingo-style
+        {/* Deliberately small links in olive — the Flamingo-style
             menu from the user's reference — with a grey highlight behind
             whichever one matches the page currently open, per the
             wholesale-catalog reference's grey "Catalog" row. */}
         <nav className="px-6 pt-2">
           <p
             className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            style={{ fontFamily: DISPLAY_FONT }}
           >
             The Pantry
           </p>

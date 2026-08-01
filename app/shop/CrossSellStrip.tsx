@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
+import { DISPLAY_FONT } from "./shopControls";
 
 function PlusIcon() {
   return (
@@ -36,7 +37,7 @@ export default function CrossSellStrip({
     <div className="border-b border-[#E7E2D2] px-6 py-4">
       <p
         className="mb-3 text-[13px] text-[#3E4A30]"
-        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+        style={{ fontFamily: DISPLAY_FONT }}
       >
         You might also like
       </p>

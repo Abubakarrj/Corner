@@ -5,10 +5,11 @@ import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
 import { requestOpenBasket } from "./openBasket";
+import { DISPLAY_FONT } from "./shopControls";
 
 // Card layout follows the reference (Flamingo Estate's "Summer Favorites"
 // cards): rounded tile with a merchandising pill in its top-left corner,
-// serif product name, short description, and a full-width rounded-pill
+// display-face product name, short description, and a full-width rounded-pill
 // button with "ADD TO BASKET" on the left and the price on the right.
 //
 // h-full + mt-auto on the button is what keeps every CTA in a grid row on
@@ -47,7 +48,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <Link
           href={`/shop/product/${product.slug}`}
           className="mt-3.5 cursor-pointer text-[15px] leading-[1.3] text-[#3E4A30] transition-opacity hover:opacity-70"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          style={{ fontFamily: DISPLAY_FONT }}
         >
           {product.name}
         </Link>

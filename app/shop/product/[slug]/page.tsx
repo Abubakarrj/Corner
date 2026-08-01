@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
 import AddToCartForm from "./AddToCartForm";
+import { DISPLAY_FONT } from "../../shopControls";
 
 export default async function ProductPage({
   params,
@@ -52,7 +53,7 @@ export default async function ProductPage({
           </p>
           <h1
             className="mt-1 text-[20px] leading-tight text-[#3E4A30]"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            style={{ fontFamily: DISPLAY_FONT }}
           >
             {product.name}
           </h1>
