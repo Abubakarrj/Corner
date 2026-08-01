@@ -446,34 +446,25 @@ export default function ChatWidget() {
         </form>
       </div>
 
+      {/* The launcher used to morph into an ✕ while the panel was open, which
+          put two close buttons on screen for the same panel — this one and
+          the ✕ in the panel's own header. The header ✕ is the one people
+          look for, so the launcher hides instead. `invisible` rather than
+          `hidden` keeps its box in the column, so the panel doesn't jump
+          down by the launcher's height when it opens. */}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close chat" : "Open chat"}
+        onClick={() => setOpen(true)}
+        aria-label="Open chat"
         aria-expanded={open}
-        // Deep olive launcher — same glyph as before, recoloured with the
-        // rest of the widget for the produce palette.
+        aria-hidden={open}
+        tabIndex={open ? -1 : undefined}
         style={{ backgroundColor: OLIVE }}
-        className="pointer-events-auto relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
+        className={`relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105 ${
+          open ? "invisible" : "pointer-events-auto"
+        }`}
       >
-        {/* The two glyphs crossfade and quarter-turn into each other, so the
-            launcher visibly becomes the close control rather than jumping. */}
-        <span
-          aria-hidden
-          className={`absolute transition-all duration-200 ${
-            open ? "rotate-90 opacity-0" : "rotate-0 opacity-100"
-          }`}
-        >
-          <ChatBubbleIcon />
-        </span>
-        <span
-          aria-hidden
-          className={`absolute transition-all duration-200 ${
-            open ? "rotate-0 opacity-100" : "-rotate-90 opacity-0"
-          }`}
-        >
-          <CloseIcon />
-        </span>
+        <ChatBubbleIcon />
       </button>
     </div>
   );
