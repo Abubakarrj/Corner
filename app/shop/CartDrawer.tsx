@@ -69,7 +69,7 @@ export default function CartDrawer({
           className="text-[15px] font-bold text-[#3E4A30]"
           style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
         >
-          Your basket
+          Your Basket
           {itemCount > 0 ? (
             <span className="ml-2 font-normal text-[#8A8A8A]">({itemCount})</span>
           ) : null}
