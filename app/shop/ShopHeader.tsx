@@ -27,35 +27,30 @@ function HamburgerIcon() {
   );
 }
 
-// An actual market basket — arched handle over a rimmed, tapered body with
-// ribs — rather than the generic shopping-bag glyph it replaced.
+// A solid market basket, matching the reference glyph the user supplied:
+// filled trapezoid body with three rounded slots, wide rounded rim, and a
+// triangular handle with a pinhole at the apex. The drawer's empty-state
+// icon (CartDrawer's EmptyBasketIcon) is this same drawing greyed out —
+// keep the two in step.
 function BasketIcon() {
   return (
-    <svg width="21" height="21" viewBox="0 0 21 21" fill="none" aria-hidden>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M7 7.75c0-3 1.4-5 3.5-5s3.5 2 3.5 5"
+        d="M9 8.6 12 4l3 4.6"
         stroke="#2D2D2D"
-        strokeWidth="1.4"
+        strokeWidth="2.4"
         strokeLinecap="round"
-      />
-      <path
-        d="M3 7.75h15"
-        stroke="#2D2D2D"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
-      <path
-        d="M4.3 7.75h12.4l-1.1 8.4a1.7 1.7 0 0 1-1.68 1.48H7.08A1.7 1.7 0 0 1 5.4 16.15l-1.1-8.4Z"
-        stroke="#2D2D2D"
-        strokeWidth="1.4"
         strokeLinejoin="round"
       />
+      <rect x="3" y="8" width="18" height="3.4" rx="1.7" fill="#2D2D2D" />
       <path
-        d="M8.1 10.75l.3 3.5M12.9 10.75l-.3 3.5"
-        stroke="#2D2D2D"
-        strokeWidth="1.2"
-        strokeLinecap="round"
+        d="M5 11.4h14l-.95 7.4a2.2 2.2 0 0 1-2.18 1.9H8.13a2.2 2.2 0 0 1-2.18-1.9L5 11.4Z"
+        fill="#2D2D2D"
       />
+      <circle cx="12" cy="5.1" r="0.65" fill="white" />
+      <rect x="7.55" y="13" width="1.9" height="5.2" rx="0.95" fill="white" />
+      <rect x="11.05" y="13" width="1.9" height="5.2" rx="0.95" fill="white" />
+      <rect x="14.55" y="13" width="1.9" height="5.2" rx="0.95" fill="white" />
     </svg>
   );
 }

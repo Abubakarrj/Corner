@@ -45,18 +45,17 @@ const TOPICS = [
   "Other",
 ] as const;
 
+// The minimal square speech bubble from the user's reference — clean
+// outline, tail at the bottom-left, no dots.
 function ChatBubbleIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-8Z"
+        d="M5 6A1.5 1.5 0 0 1 6.5 4.5h11A1.5 1.5 0 0 1 19 6v7.5a1.5 1.5 0 0 1-1.5 1.5H8.8L5 18.6V6Z"
         stroke="white"
-        strokeWidth="1.6"
+        strokeWidth="1.7"
         strokeLinejoin="round"
       />
-      <circle cx="8.5" cy="9.5" r="1" fill="white" />
-      <circle cx="12" cy="9.5" r="1" fill="white" />
-      <circle cx="15.5" cy="9.5" r="1" fill="white" />
     </svg>
   );
 }
@@ -370,7 +369,9 @@ export default function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close chat" : "Open chat"}
         aria-expanded={open}
-        style={{ backgroundColor: BRAND_RED }}
+        // Ink rather than brand red, matching the launcher in the user's
+        // reference; the panel header keeps the red.
+        style={{ backgroundColor: "#2D2D2D" }}
         className="pointer-events-auto relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105"
       >
         {/* The two glyphs crossfade and quarter-turn into each other, so the
