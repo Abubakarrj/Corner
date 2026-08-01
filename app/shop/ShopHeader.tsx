@@ -95,7 +95,11 @@ export default function ShopHeader() {
         className="sticky top-0 z-40 border-b border-[#E4DECE] bg-[#F7F4EB] pt-[env(safe-area-inset-top)]"
         style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+        {/* Shorter on mobile than desktop, because mobile is exactly where
+            the safe-area inset above stacks on top of this row: a 64px row
+            under a ~59px notch strip makes for a ~123px bar that eats the
+            viewport. Desktop has no inset, so it keeps the roomier row. */}
+        <div className="flex h-[52px] items-center justify-between px-4 sm:h-16 sm:px-6">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
