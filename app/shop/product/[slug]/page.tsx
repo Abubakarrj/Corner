@@ -23,7 +23,13 @@ export default async function ProductPage({
         ← Back to the pantry
       </Link>
 
-      <div className="grid gap-8 sm:grid-cols-2">
+      {/* A fixed-width image column (not a 50/50 split) — this is a
+          placeholder colour swatch, not photography yet, and a 50/50 grid
+          let it grow to fill half the page on a wide screen, which read as
+          oversized for what's currently just a flat colour. Fixed at 320px
+          regardless of container width, rather than a max-width that a
+          narrower column could already sit under without ever engaging. */}
+      <div className="grid gap-8 sm:grid-cols-[320px_1fr]">
         <ProductImage
           swatch={product.swatch}
           name={product.name}
