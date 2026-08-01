@@ -10,6 +10,10 @@ import { isShopHost } from "./shopHost";
 // shop.localhost is included so this is testable in local dev without real
 // DNS: run the app and visit http://shop.localhost:3000 (or whatever port).
 
+// Served from the marketing tree on every host, never rewritten — see the
+// note in the pass-through check below.
+const POLICY_PATHS = ["/privacy-policy", "/cookie-policy"];
+
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   if (!isShopHost(host)) return NextResponse.next();
@@ -20,10 +24,17 @@ export function proxy(request: NextRequest) {
   // logo.svg, bagel-*.png, ...) that both the main site and shop pages
   // reference by absolute path — none of those live under /shop, so leave
   // them alone.
+  //
+  // The two policy pages are exempt for the same reason: the cookie banner is
+  // site-wide, so it renders on this subdomain too, and its "consent" link
+  // has to land somewhere real. There is no /shop/cookie-policy to rewrite
+  // to, and duplicating a legal page under the shop tree to satisfy the
+  // rewrite would mean two copies to keep in sync.
   if (
     pathname.startsWith("/shop") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
+    POLICY_PATHS.includes(pathname) ||
     /\.[a-zA-Z0-9]+$/.test(pathname)
   ) {
     return NextResponse.next();

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "cb-cookie-consent-v1";
@@ -73,8 +74,19 @@ export default function CookieConsent() {
     >
       <p className="m-0 text-center text-[13px] text-[#575757] sm:text-left">
         By continuing to use this site, you{" "}
-        <span style={{ color: BRAND_RED }}>consent</span> to our use of
-        cookies.
+        {/* "consent" was already painted brand red, which reads as a link
+            whether or not it is one. It now is one: it opens the cookie
+            policy. proxy.ts passes /cookie-policy through unrewritten so
+            this still resolves on the shop subdomain, where this banner
+            also renders. */}
+        <Link
+          href="/cookie-policy"
+          style={{ color: BRAND_RED }}
+          className="cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
+        >
+          consent
+        </Link>{" "}
+        to our use of cookies.
       </p>
       <button
         type="button"

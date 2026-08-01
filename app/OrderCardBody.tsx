@@ -21,10 +21,19 @@ export const orderTextStyle = {
 // -0.03em tracking allow — those are display settings that make a paragraph
 // hard to follow. 30em (~55 characters a line) so a centred line stays
 // comfortable to read.
+//
+// textWrap is pinned to "wrap" rather than left to `text-pretty`. Pretty is
+// a hint, and browsers honour it differently: Chromium only reworks the last
+// couple of lines, while Safari rebalances the whole paragraph and pulls
+// every line in. That made the two paragraphs here — same max-width, same
+// class list — render at visibly different measures on iOS, the first one
+// running the full column and the second inset on both sides. Plain wrapping
+// is the only way both fill the same column in every browser.
 const bodyStyle = {
   letterSpacing: "-0.005em",
   maxWidth: "30em",
-};
+  textWrap: "wrap",
+} as const;
 
 // The order card's content — every child that gives the card its size.
 export default function OrderCardBody() {
@@ -37,10 +46,8 @@ export default function OrderCardBody() {
         Right Around The Corner
       </p>
 
-      {/* text-pretty stops the browser leaving a one-word last line, which is
-          what makes a centred paragraph look ragged. */}
       <p
-        className="m-0 mx-auto mb-[1em] text-pretty leading-[1.7] sm:leading-[1.8]"
+        className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
         Corner Bagel brings east coast bagel craftsmanship to a laid-back way
@@ -48,7 +55,7 @@ export default function OrderCardBody() {
         to achieve a crisp crust with a perfectly chewy interior.
       </p>
       <p
-        className="m-0 mx-auto mb-[1em] text-pretty leading-[1.7] sm:leading-[1.8]"
+        className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
         We source produce from local farmers markets and pair it with
@@ -57,7 +64,7 @@ export default function OrderCardBody() {
         care.
       </p>
       <p
-        className="m-0 mx-auto mb-[2em] text-pretty leading-[1.7] sm:leading-[1.8]"
+        className="m-0 mx-auto mb-[2em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
         Right around the corner.

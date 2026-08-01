@@ -7,7 +7,10 @@ export default function PrivacyPolicyPage() {
 
   return (
     <section
-      className="min-h-screen w-full bg-white text-[#575757] px-6 py-12 md:py-20"
+      // Bottom padding clears the fixed cookie banner — same reasoning as
+      // /cookie-policy, where the note lives. Without it the "Go Back" link
+      // at the foot of the page sits behind the banner.
+      className="min-h-screen w-full bg-white text-[#575757] px-6 pt-12 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pt-20"
       style={sansStyle}
     >
       <div className="max-w-2xl mx-auto">
