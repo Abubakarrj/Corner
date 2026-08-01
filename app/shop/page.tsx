@@ -19,7 +19,7 @@ export default async function ShopPage({
           page doesn't read oversized (a specific request; keep it small). */}
       <h1
         className="mb-1 text-[20px] font-bold text-[#3E4A30]"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif", letterSpacing: "-0.03em" }}
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
       >
         The Pantry
       </h1>

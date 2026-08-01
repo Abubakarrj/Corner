@@ -160,7 +160,10 @@ export default function ShopHeader() {
             menu from the user's reference, not the big bold sans links
             this drawer launched with. */}
         <nav className="flex-1 overflow-y-auto px-6 pt-4">
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]">
+          <p
+            className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#8A8672]"
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          >
             The Pantry
           </p>
           <div className="flex flex-col divide-y divide-[#E7E2D2]">

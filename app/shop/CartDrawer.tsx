@@ -67,7 +67,7 @@ export default function CartDrawer({
       <div className="flex items-center justify-between border-b border-[#E7E2D2] px-6 py-4">
         <h2
           className="text-[15px] font-bold text-[#3E4A30]"
-          style={{ letterSpacing: "-0.03em" }}
+          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
         >
           Your basket
           {itemCount > 0 ? (
@@ -176,7 +176,10 @@ export default function CartDrawer({
           <div className="border-t border-[#E7E2D2] px-6 pb-5 pt-4">
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
-              <span className="text-[14px] font-bold text-[#3E4A30]">
+              <span
+                className="text-[14px] font-bold text-[#3E4A30]"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
                 {formatPrice(subtotalCents)}
               </span>
             </div>

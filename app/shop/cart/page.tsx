@@ -21,7 +21,7 @@ export default function CartPage() {
     >
       <h1
         className="mb-6 text-[18px] font-bold text-[#3E4A30]"
-        style={{ letterSpacing: "-0.03em" }}
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
       >
         Cart
       </h1>
@@ -99,7 +99,10 @@ export default function CartPage() {
 
           <div className="mt-6 flex items-center justify-between border-t border-[#E4DECE] pt-4">
             <span className="text-[14px] font-medium text-[#3E4A30]">Subtotal</span>
-            <span className="text-[16px] font-bold text-[#3E4A30]">
+            <span
+              className="text-[16px] font-bold text-[#3E4A30]"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >
               {formatPrice(subtotalCents)}
             </span>
           </div>

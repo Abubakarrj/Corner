@@ -74,7 +74,10 @@ export default function CheckoutPage() {
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
       style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
-      <h1 className="mb-6 text-[18px] font-bold text-[#3E4A30]" style={{ letterSpacing: "-0.03em" }}>
+      <h1
+        className="mb-6 text-[18px] font-bold text-[#3E4A30]"
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+      >
         Checkout
       </h1>
 
@@ -177,7 +180,10 @@ export default function CheckoutPage() {
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-[#E4DECE] pt-3">
               <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
-              <span className="text-[14px] font-bold text-[#3E4A30]">
+              <span
+                className="text-[14px] font-bold text-[#3E4A30]"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+              >
                 {formatPrice(subtotalCents)}
               </span>
             </div>

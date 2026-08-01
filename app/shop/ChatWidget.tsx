@@ -275,7 +275,7 @@ export default function ChatWidget() {
           <div className="min-w-0 flex-1">
             <p
               className="text-[15px] font-bold leading-tight text-white"
-              style={{ letterSpacing: "-0.02em" }}
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >
               Corner Bagel
             </p>
@@ -296,7 +296,10 @@ export default function ChatWidget() {
         {/* The thread. Bot messages on the left, the visitor's replies on
             the right, newest kept in view. */}
         <div ref={threadRef} className="max-h-[50vh] overflow-y-auto p-4">
-          <p className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8672]">
+          <p
+            className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8672]"
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          >
             Corner Bagel
           </p>
           <div className="mb-2 ml-9">
