@@ -40,27 +40,15 @@ export default function OrderCardBody() {
       {/* text-pretty stops the browser leaving a one-word last line, which is
           what makes a centred paragraph look ragged. */}
       <p
-        className="m-0 mx-auto mb-[1em] text-pretty leading-[1.7] sm:leading-[1.8]"
-        style={bodyStyle}
-      >
-        Corner Bagel brings East Coast bagel craftsmanship to a laid-back
-        way of life.
-      </p>
-      <p
-        className="m-0 mx-auto mb-[1em] text-pretty leading-[1.7] sm:leading-[1.8]"
-        style={bodyStyle}
-      >
-        Our bagels are naturally fermented, kettle-boiled bagels baked for a
-        crisp crust and chewy interior.
-      </p>
-      <p
         className="m-0 mx-auto mb-[2em] text-pretty leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        We source fresh produce from local farmers markets and pair it with
-        thoughtfully selected ingredients, house-made spreads, and seasonal
-        flavors. Simple, intentional, and made fresh, right around the
-        corner.
+        Corner Bagel brings East Coast bagel craftsmanship to a laid-back
+        way of life. Our bagels are naturally fermented, kettle-boiled
+        bagels baked for a crisp crust and chewy interior. We source fresh
+        produce from local farmers markets and pair it with thoughtfully
+        selected ingredients, house-made spreads, and seasonal flavors.
+        Simple, intentional, and made fresh, right around the corner.
       </p>
 
       <p className="m-0 mb-[0.3em] whitespace-nowrap">
