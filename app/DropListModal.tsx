@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { hasConsented, subscribeConsentChanged } from "./CookieConsent";
 
 // The drop-list signup modal. It lives in the root layout so it can appear over
 // any page, blurring whatever is behind it.
@@ -55,39 +56,62 @@ function readStoredState(): StoredState | null {
   }
 }
 
-// The modal opens on whichever comes first: this timer, or the visitor
-// scrolling in either direction.
-const OPEN_DELAY_MS = 3000;
+// When the modal is allowed to ask, per route.
+//
+// This used to be a flat 3s timer OR any scroll/wheel/touchmove gesture,
+// whichever came first. Both cues were too eager to be worth much: a single
+// 1px wheel tick opened it in under 100ms, and on the landing page — a fixed
+// viewport holding nothing but the logo — the modal covered the mark before
+// the visitor had learned what the business was. An email asked for that
+// early converts badly and collects worse addresses, and a full-screen
+// interstitial over the main content right after arrival is also the exact
+// pattern Google demotes on mobile search, which for a neighbourhood shop is
+// the channel that matters most.
+//
+// Neither page scrolls at any common viewport (measured: scrollHeight equals
+// the viewport at 375, 393, and 1280 wide), so scroll depth isn't available
+// as an engagement signal the way it would be on a normal content page —
+// which is what the old gesture listener was working around. Dwell is what's
+// left, so dwell is what's used, at a length that means something:
+//
+//   /       15s. Nothing to read here, so this only says "didn't bounce."
+//   /order  20s. Roughly the reading time of the copy on that page, so it
+//           lands about when someone finishes it rather than interrupting.
+//
+// These keys double as the route allowlist — a route absent from this table
+// never opens the modal. Stated as an allowlist rather than a list of pages
+// to suppress: it used to name /privacy-policy as the one exception, and
+// adding /cookie-policy meant the pop-up started springing up over a legal
+// page nobody had thought to exclude yet. This way a new page has to be
+// opted in, so the default for anything added later is "no marketing pop-up"
+// instead of "pop-up until someone notices."
+//
+// The shop subdomain is excluded structurally rather than here:
+// app/(marketing)/layout.tsx is what mounts this component, and /shop is a
+// separate top-level segment outside that route group, so it never renders —
+// no path check needed, which matters because a rewrite would make one
+// unreliable anyway.
+const DWELL_MS: Record<string, number> = {
+  "/": 15000,
+  "/order": 20000,
+};
 
-// Scrolling counts as the cue, but the landing and order pages don't actually
-// scroll — they're a fixed viewport with `overflow-hidden`. So the gesture is
-// what's listened for, not just the resulting scroll position: a wheel turn or
-// a drag registers on those pages even though nothing moves.
-const OPEN_EVENTS = ["scroll", "wheel", "touchmove"] as const;
+// Desktop gets a second, better cue: the pointer leaving the top edge of the
+// viewport, toward the tab bar or the close button. Someone on their way out
+// costs nothing to ask — the visit is over either way — which makes this the
+// one moment where an interruption is close to free.
+//
+// There is no mobile equivalent worth having. The usual proxies are a fast
+// upward scroll (impossible here — nothing scrolls) or pagehide (fires too
+// late to render anything), so mobile relies on dwell alone rather than on a
+// signal that would fire at the wrong time.
+const EXIT_INTENT_MARGIN_PX = 8;
 
 // The legal terms behind the disclosure live on Public Entity's site, not this
 // one — both are sections of the same page there. They open in a new tab so
 // that reading them doesn't throw away a half-typed number.
 const TERMS_HREF = "https://publicentity.co/privacy-policy#terms";
 const PRIVACY_HREF = "https://publicentity.co/privacy-policy#privacy";
-
-// The only two routes this opens on. An allowlist rather than a list of
-// pages to suppress: this used to name /privacy-policy as the one exception,
-// and adding /cookie-policy meant the pop-up started springing up over a
-// legal page nobody had thought to exclude yet. Stated this way, a new page
-// has to be opted in, so the default for anything added later is "no
-// marketing pop-up" instead of "pop-up until someone notices."
-//
-// A marketing interruption over the policy someone is actively reading is
-// the wrong moment for it regardless — and on the cookie policy especially,
-// since the cookie banner is what sent them there.
-//
-// The shop subdomain gets the same treatment, but isn't handled here —
-// app/(marketing)/layout.tsx is what mounts this component, and /shop is a
-// separate top-level segment outside that route group, so it never renders.
-// That's structural, and doesn't depend on a path check that a rewrite would
-// make unreliable anyway.
-const MODAL_PATHS = ["/", "/order"];
 
 // Must match HONEYPOT_FIELD in app/api/drop-list/route.ts. A real visitor
 // never sees or reaches this field — it's positioned off-screen rather than
@@ -109,8 +133,20 @@ function isValidEmail(input: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 }
 
+// Server snapshot reports "consented" so the server-rendered HTML and the
+// client's first paint agree — same reasoning as CookieConsent's own. It
+// only gates a timer that can't run during SSR anyway.
+function getConsentServerSnapshot() {
+  return true;
+}
+
 export default function DropListModal() {
   const pathname = usePathname();
+  const consented = useSyncExternalStore(
+    subscribeConsentChanged,
+    hasConsented,
+    getConsentServerSnapshot,
+  );
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending">("idle");
@@ -126,15 +162,24 @@ export default function DropListModal() {
 
   const valid = isValidEmail(email);
 
-  // Joining is final. Dismissing or saying "already on the list" isn't —
-  // both just push the next attempt out by the cooldown schedule above, and
-  // bump the count that schedule reads from.
+  // Joining is final, and so is "already on the list" — both mean this
+  // visitor is on the list, and the only difference is which system knows
+  // it. That second one used to be treated as a dismissal, so someone who
+  // told us they were already subscribed got asked again in 3 days, then 7,
+  // then 14, then every month forever. There is no version of that with an
+  // upside: they have already converted, and the schedule only ever reached
+  // the people most engaged with the brand.
+  //
+  // A plain dismissal still isn't terminal. That one really does mean "not
+  // right now," so it pushes the next attempt out by the cooldown schedule
+  // above and bumps the count that schedule reads from.
   const close = useCallback((outcome: "dismissed" | "joined" | "already") => {
     setOpen(false);
     answeredRef.current = true;
     try {
       const prior = readStoredState();
-      const count = outcome === "joined" ? (prior?.count ?? 0) : (prior?.count ?? 0) + 1;
+      const count =
+        outcome === "dismissed" ? (prior?.count ?? 0) + 1 : (prior?.count ?? 0);
       const state: StoredState = { outcome, count, lastShownAt: Date.now() };
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
@@ -143,18 +188,28 @@ export default function DropListModal() {
     }
   }, []);
 
-  // Open on the timer or on a scroll, whichever lands first — for a visitor
-  // who has never seen it, or one whose cooldown from the last dismissal has
-  // elapsed. A join is the one outcome that ends this for good.
+  // Open on whichever cue lands first — the dwell timer for this route, or
+  // the pointer leaving the top of the viewport — for a visitor who has never
+  // seen it, or whose cooldown from the last dismissal has elapsed. Being on
+  // the list already, by either route, ends this for good.
   useEffect(() => {
-    if (!MODAL_PATHS.includes(pathname)) return;
+    const dwellMs = DWELL_MS[pathname];
+    if (dwellMs === undefined) return;
     // Answering is remembered for the session as well as on disk, so a browser
     // that refuses localStorage still can't have the modal spring back after a
     // navigation within the same visit.
     if (answeredRef.current) return;
 
+    // Nothing starts while the cookie banner is still up. It's docked to the
+    // bottom of the same viewport, so opening over it would put two
+    // interruptions on screen at once on a first visit — and the consent bar
+    // is the one that has to be answerable. `consented` comes from the store
+    // below, so dismissing the banner re-runs this effect and starts the
+    // clock then instead.
+    if (!consented) return;
+
     const state = readStoredState();
-    if (state?.outcome === "joined") {
+    if (state?.outcome === "joined" || state?.outcome === "already") {
       answeredRef.current = true;
       return;
     }
@@ -162,9 +217,7 @@ export default function DropListModal() {
 
     const stop = () => {
       window.clearTimeout(timer);
-      for (const event of OPEN_EVENTS) {
-        window.removeEventListener(event, openNow);
-      }
+      document.removeEventListener("mouseout", onMouseOut);
     };
     // Whichever cue arrives first retires the other.
     const openNow = () => {
@@ -172,12 +225,21 @@ export default function DropListModal() {
       stop();
     };
 
-    const timer = window.setTimeout(openNow, OPEN_DELAY_MS);
-    for (const event of OPEN_EVENTS) {
-      window.addEventListener(event, openNow, { passive: true });
-    }
+    // Exit intent: the pointer crossing the top edge on its way to the tab
+    // bar. relatedTarget being null is what distinguishes leaving the
+    // document from merely moving between two elements inside it, and the
+    // clientY check keeps a drift out of the left, right, or bottom edge —
+    // none of which mean "leaving" — from counting.
+    const onMouseOut = (event: MouseEvent) => {
+      if (event.relatedTarget !== null) return;
+      if (event.clientY > EXIT_INTENT_MARGIN_PX) return;
+      openNow();
+    };
+
+    const timer = window.setTimeout(openNow, dwellMs);
+    document.addEventListener("mouseout", onMouseOut);
     return stop;
-  }, [pathname]);
+  }, [pathname, consented]);
 
   // While the modal is up: lock the page behind it, focus the field, close on
   // Escape, and keep Tab inside the dialog.

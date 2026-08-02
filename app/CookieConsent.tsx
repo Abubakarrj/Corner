@@ -18,7 +18,7 @@ export const COOKIE_CONSENT_CHANGED_EVENT = "cb-cookie-consent-changed";
 // without a setState-inside-an-effect render loop. getServerSnapshot always
 // reports "consented" (hidden), so the server-rendered HTML and the client's
 // first paint agree; React swaps in the real answer right after hydration.
-function hasConsented(): boolean {
+export function hasConsented(): boolean {
   try {
     return window.localStorage.getItem(STORAGE_KEY) !== null;
   } catch {
@@ -26,6 +26,17 @@ function hasConsented(): boolean {
     // than not at all.
     return false;
   }
+}
+
+// Subscribes to the window event above, for components that need to know
+// whether this banner is currently on screen. The module-local `listeners`
+// set below only serves this component's own instance; anything outside it
+// has to go through the event. DropListModal uses this to hold its timer
+// until the banner is gone, so a first-time visitor never gets a marketing
+// pop-up stacked on top of a consent bar.
+export function subscribeConsentChanged(callback: () => void) {
+  window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, callback);
+  return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, callback);
 }
 
 const listeners = new Set<() => void>();
