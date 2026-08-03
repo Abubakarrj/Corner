@@ -73,7 +73,6 @@ export default function CheckoutPage() {
   return (
     <div
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <h1
         className="mb-6 text-[18px] font-bold text-[#3E4A30]"

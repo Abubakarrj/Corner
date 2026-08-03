@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Sans } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "./CookieConsent";
 
@@ -13,15 +13,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// The shop's heading face, replacing the Georgia serif that was standing in
-// for one. Only /shop references it (via DISPLAY_FONT in shopControls.ts) —
-// the marketing site's type is unchanged — but it's loaded here because
-// next/font wants its variable on <html>.
-const displaySans = Instrument_Sans({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
+// Instrument Sans used to be loaded here as the shop's heading face, under
+// --font-display. The shop is on a Helvetica system stack now (see SHOP_FONT
+// in app/shop/shopControls.ts), so nothing referenced that variable any more
+// and it was a webfont being downloaded for nothing. Geist stays — the
+// marketing site's type is unchanged.
 
 export const metadata: Metadata = {
   title: "The Corner Bagel",
@@ -45,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${displaySans.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>

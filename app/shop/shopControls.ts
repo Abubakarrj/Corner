@@ -16,11 +16,31 @@
 //   11px  toolbar controls + item count   <- this file
 //   10px  uppercase CTA / tag pills
 
-// The shop's heading face (Instrument Sans, loaded in app/layout.tsx). Every
-// heading, product name, and drawer title goes through this constant so the
-// face can be swapped in one place — it replaced a Georgia serif that was
-// hardcoded across a dozen files.
-export const DISPLAY_FONT = "var(--font-display), sans-serif";
+// The shop's typeface: Helvetica, with the fallbacks that make that a real
+// answer rather than a wish.
+//
+// Helvetica is licensed, not a webfont — it can't be downloaded to a device
+// that doesn't already have it, so this is a system stack and what a visitor
+// actually sees depends on their device:
+//
+//   iPhone / iPad / Mac   Helvetica Neue — the genuine article
+//   Windows               Arial, which substitutes automatically
+//   Android               Roboto, via the generic sans-serif
+//
+// That's the normal trade for Helvetica and it holds up: Arial is metrically
+// compatible with Helvetica, so line breaks and control widths don't shift
+// between the two — a layout tuned on one doesn't come apart on the other.
+// Roboto is a little narrower but close enough not to reflow anything.
+//
+// Buying a licensed Helvetica webfont from Monotype is the only way to get
+// it on every device; short of that, this is the stack.
+export const SHOP_FONT = '"Helvetica Neue", Helvetica, Arial, sans-serif';
+
+// Headings, product names, and drawer titles. Now the same face as the body
+// — Helvetica carries both, with weight doing the separating — but kept as
+// its own constant so a distinct display face can come back in one line.
+// It has already been a Georgia serif and then Instrument Sans.
+export const DISPLAY_FONT = SHOP_FONT;
 
 export const CONTROL_HEIGHT = "h-8";
 

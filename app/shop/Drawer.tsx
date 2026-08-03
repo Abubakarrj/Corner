@@ -122,7 +122,6 @@ export default function Drawer({
     <div
       className={`fixed inset-0 z-[220] overflow-hidden ${open ? "" : "pointer-events-none"}`}
       inert={!open}
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <div
         onClick={onClose}

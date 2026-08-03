@@ -1,6 +1,8 @@
+import { SHOP_FONT } from "./shopControls";
+
 // Stands in for product photography we don't have yet. Restyled to match
 // the reference catalogs the shop is modeled on: a warm beige tile with a
-// large, faint serif initial, instead of the old flat colour block. The
+// large, faint initial, instead of the old flat colour block. The
 // product's swatch colour survives as the tint of the initial, so items
 // stay tellable apart at a glance without breaking the cream palette.
 //
@@ -34,7 +36,13 @@ export default function ProductImage({
           textAnchor="middle"
           dominantBaseline="central"
           fontSize="44"
-          fontFamily="Georgia, 'Times New Roman', serif"
+          // SVG text doesn't inherit the layout's font the way the rest of
+          // the page does, so the stack is named here too. This initial was
+          // a Georgia serif, from back when the headings were serif; with
+          // the shop on Helvetica a serif letter on every tile is the only
+          // thing left contradicting it.
+          fontFamily={SHOP_FONT}
+          fontWeight="500"
           fill={swatch}
           opacity="0.35"
         >

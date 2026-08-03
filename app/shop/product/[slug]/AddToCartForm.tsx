@@ -19,7 +19,7 @@ export default function AddToCartForm({
   const [quantity, setQuantity] = useState(1);
 
   return (
-    <div style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
+    <div>
       <div className="flex items-center gap-3">
         <div className="flex shrink-0 items-center rounded-full border border-[#3E4A30]/30">
           <button

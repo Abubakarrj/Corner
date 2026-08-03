@@ -68,7 +68,6 @@ export default function ShopHeader() {
           would scroll away and leave the bar under the status bar. */}
       <header
         className="sticky top-0 z-40 border-b border-[#E4DECE] bg-[#F7F4EB] pt-[env(safe-area-inset-top)]"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
         {/* Shorter on mobile than desktop, because mobile is exactly where
             the safe-area inset above stacks on top of this row: a 64px row

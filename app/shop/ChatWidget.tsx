@@ -245,7 +245,6 @@ export default function ChatWidget() {
           ? "bottom-[calc(136px+env(safe-area-inset-bottom))] sm:bottom-[calc(96px+env(safe-area-inset-bottom))]"
           : "bottom-[calc(20px+env(safe-area-inset-bottom))] sm:bottom-[calc(24px+env(safe-area-inset-bottom))]"
       }`}
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       {/* Always mounted so it can animate closed as well as open; inert
           keeps focus and clicks out while it's hidden. */}

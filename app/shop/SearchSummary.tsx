@@ -14,7 +14,6 @@ export default function SearchSummary({
   return (
     <div
       className="mb-5 border-b border-[#E4DECE] pb-4"
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <p className="text-[15px] text-[#3E4A30]" style={{ fontFamily: DISPLAY_FONT }}>
         {count > 0 ? "Results for" : "No results for"}{" "}

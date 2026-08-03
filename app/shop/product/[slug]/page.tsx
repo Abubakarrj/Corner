@@ -19,7 +19,6 @@ export default async function ProductPage({
       <Link
         href="/shop"
         className="mb-6 inline-block cursor-pointer text-[13px] text-[#6F6A5C] underline"
-        style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
       >
         ← Back to the pantry
       </Link>
@@ -40,14 +39,13 @@ export default async function ProductPage({
           {product.tag ? (
             <span
               className="absolute left-3 top-3 rounded-full bg-[#3E4A30] px-2.5 py-0.5 text-[10px] font-medium text-[#F3F1E5]"
-              style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
             >
               {product.tag}
             </span>
           ) : null}
         </div>
 
-        <div style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}>
+        <div>
           <p className="text-[10px] uppercase tracking-[0.08em] text-[#6F6A5C]">
             {product.category}
           </p>

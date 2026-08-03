@@ -23,7 +23,6 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div
       className="group flex h-full flex-col"
-      style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
     >
       <Link
         href={`/shop/product/${product.slug}`}

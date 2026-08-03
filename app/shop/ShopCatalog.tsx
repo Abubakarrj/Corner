@@ -86,10 +86,7 @@ export default function ShopCatalog({
           </div>
         </div>
 
-        <p
-          className="text-[11px] text-[#8A8672]"
-          style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-        >
+        <p className="text-[11px] text-[#8A8672]">
           {products.length} item{products.length === 1 ? "" : "s"}
         </p>
       </div>
