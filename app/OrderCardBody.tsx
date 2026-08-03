@@ -39,9 +39,14 @@ const bodyStyle = {
 export default function OrderCardBody() {
   return (
     <>
+      {/* 1.15x the body size, down from 1.35x. The heading sat a third
+          larger than the copy under it, which reads as a page title — but
+          this is a short card, and the paragraphs are the content. Bold and
+          a slight step up is enough separation at this length; the extra
+          size was only making the block top-heavy. */}
       <p
         className="m-0 mb-[0.75em] whitespace-nowrap"
-        style={{ fontWeight: 700, fontSize: `calc(${cardFontSize} * 1.35)` }}
+        style={{ fontWeight: 700, fontSize: `calc(${cardFontSize} * 1.15)` }}
       >
         Right Around The Corner
       </p>
@@ -50,9 +55,8 @@ export default function OrderCardBody() {
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Corner Bagel brings east coast bagel craftsmanship to a laid-back way
-        of life. Every bagel is naturally fermented, kettle-boiled, and baked
-        to achieve a crisp crust with a perfectly chewy interior.
+        Every bagel is naturally fermented, kettle-boiled, and baked to
+        achieve a crisp crust with a perfectly chewy interior.
       </p>
       <p
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
