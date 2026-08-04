@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
+import AddressSearch, { type ResolvedAddress } from "./AddressSearch";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import { LOCATIONS, type StoreLocation } from "./locations";
@@ -15,7 +16,7 @@ import { LOCATIONS, type StoreLocation } from "./locations";
 // rules are the same two border weights the catalog uses. The reference's
 // geometry is untouched — only its colours and typeface change, so the
 // finder and the pantry read as one product.
-const { cream, olive, onOlive, border, controlBorder } = PALETTE;
+const { cream, olive, onOlive, border, controlBorder, muted } = PALETTE;
 
 // Leaflet touches window at import time, so the map can only ever be a
 // client-side chunk — ssr:false is load-bearing, not a preference. The
@@ -108,11 +109,11 @@ export default function LocationFinder() {
     router.push("/shop");
   }
 
-  function submitDeliveryAddress(event: React.FormEvent) {
-    event.preventDefault();
-    const address = query.trim();
-    if (mode !== "delivery" || address.length === 0) return;
-    setFulfillment({ mode: "delivery", address });
+  // Only ever called with an address Google resolved and the server confirmed
+  // is inside the delivery radius — see AddressSearch and /api/places. There
+  // is deliberately no path from raw typed text to a delivery order any more.
+  function chooseAddress(resolved: ResolvedAddress) {
+    setFulfillment({ mode: "delivery", address: resolved.address });
     router.push("/shop");
   }
 
@@ -122,14 +123,15 @@ export default function LocationFinder() {
     setToastDismissed(false);
   }
 
-  const deliveryReady = mode === "delivery" && query.trim().length > 0;
+  // Delivery's prompt stands until an address is picked from the results —
+  // the picker itself is what commits, so there's no Continue button to press
+  // against text nobody has verified.
   const showToast =
-    !toastDismissed && (mode === "delivery" || visible.length === 0);
+    !toastDismissed &&
+    (mode === "delivery" ? query.trim().length === 0 : visible.length === 0);
   const toastText =
     mode === "delivery"
-      ? deliveryReady
-        ? "Deliver to this address?"
-        : "Enter an address above to get started."
+      ? "Enter an address above to get started."
       : mode === "outpost"
         ? "No outposts here yet."
         : "No shops here yet.";
@@ -190,7 +192,7 @@ export default function LocationFinder() {
           </Link>
         </div>
 
-        <form onSubmit={submitDeliveryAddress} className="px-5 pb-[17px] pt-[26px]">
+        <div className="relative px-5 pb-[17px] pt-[26px]">
           <input
             type="text"
             inputMode="search"
@@ -206,7 +208,27 @@ export default function LocationFinder() {
             className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#3E4A30] outline-none placeholder:text-[#8A8672]"
             style={{ borderBottom: `1px solid ${controlBorder}` }}
           />
-        </form>
+          {/* CLEAR, as in the reference — a long address is tedious to
+              backspace out of on a phone. */}
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-5 top-[26px] cursor-pointer text-[13px] font-bold uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
+              style={{ color: muted }}
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+
+        {mode === "delivery" ? (
+          <AddressSearch
+            value={query}
+            onValueChange={setQuery}
+            onResolved={chooseAddress}
+          />
+        ) : null}
       </header>
 
       <StoreMap
@@ -224,16 +246,6 @@ export default function LocationFinder() {
           style={{ backgroundColor: "#EFEBDD", borderColor: border }}
         >
           <p className="m-0 text-[14px] text-[#3E4A30]">{toastText}</p>
-          {deliveryReady ? (
-            <button
-              type="button"
-              onClick={submitDeliveryAddress}
-              style={{ backgroundColor: olive, color: onOlive }}
-              className="shrink-0 cursor-pointer rounded-full px-4 py-2 text-[13px] font-bold transition-opacity hover:opacity-90"
-            >
-              Continue
-            </button>
-          ) : null}
           <button
             type="button"
             onClick={() => setToastDismissed(true)}
