@@ -57,6 +57,48 @@ const NAV: { id: TabId; label: string; href: string | null }[] = [
 // gets the end state with no travel.
 const MOTION = "transition-all duration-300 ease-out motion-reduce:transition-none";
 
+// Crumbs thrown off the seam as the bagel parts. Positions are on the split
+// line, directions fan out from it, and the small delays mean they don't all
+// leave at once — a single burst reads as a glitch, a stagger reads as
+// crumbs. Mounted only while the tab is active, so the animation replays
+// every time you come back to it rather than firing once on load.
+const CRUMBS = [
+  { x: 11.4, y: 6.2, dx: "-7px", dy: "-5px", r: 1.05, delay: 0 },
+  { x: 12.7, y: 8.4, dx: "8px", dy: "-3px", r: 0.8, delay: 60 },
+  { x: 11.2, y: 12, dx: "-9px", dy: "1px", r: 0.95, delay: 30 },
+  { x: 12.8, y: 15.4, dx: "9px", dy: "3px", r: 0.75, delay: 90 },
+  { x: 11.6, y: 18, dx: "-6px", dy: "5px", r: 0.9, delay: 120 },
+  { x: 12.4, y: 4.6, dx: "3px", dy: "-7px", r: 0.7, delay: 150 },
+] as const;
+
+function Crumbs() {
+  return (
+    <g aria-hidden>
+      {CRUMBS.map((crumb, index) => (
+        <circle
+          key={index}
+          cx={crumb.x}
+          cy={crumb.y}
+          r={crumb.r}
+          fill="currentColor"
+          className="animate-crumb"
+          style={
+            {
+              "--crumb-x": crumb.dx,
+              "--crumb-y": crumb.dy,
+              animationDelay: `${crumb.delay}ms`,
+              // Without this the percentage transform-origin resolves
+              // against the whole SVG viewport rather than the crumb.
+              transformBox: "fill-box",
+              transformOrigin: "center",
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </g>
+  );
+}
+
 function NavIcon({ id, active }: { id: TabId; active: boolean }) {
   const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none" } as const;
   const filled = active ? "currentColor" : "transparent";
@@ -119,6 +161,7 @@ function NavIcon({ id, active }: { id: TabId; active: boolean }) {
             fill="currentColor"
           />
         </g>
+        {active ? <Crumbs /> : null}
       </svg>
     );
 
