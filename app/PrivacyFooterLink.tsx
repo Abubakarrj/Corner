@@ -3,18 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Hidden on /locations. That page is a full-screen finder with its own
-// bottom tab bar, and this link is fixed to the same bottom-right corner —
-// it landed on top of the "Contact" tab. Route-scoping it here follows what
-// CornerBagelIcon already does for the same reason.
+// Hidden on the app-shell routes — the full-screen ones that carry their own
+// bottom tab bar (app/(marketing)/TabBar.tsx). This link is fixed to the same
+// bottom-right corner, so on those pages it lands on top of the last tab.
+// Route-scoping it here follows what CornerBagelIcon already does for the
+// same reason. Add a route to this list whenever it starts rendering TabBar.
+//
+// /shop needs no entry: it sits outside the marketing route group, so it
+// never renders this component at all.
 //
 // Visibility on the shop subdomain is decided by the caller — app/layout.tsx
 // — server-side via the Host header. See the comment there for why.
-const HIDDEN_ON = ["/locations"];
+const TAB_BAR_ROUTES = ["/locations", "/membership"];
 
 export default function PrivacyFooterLink() {
   const pathname = usePathname();
-  if (HIDDEN_ON.includes(pathname)) return null;
+  if (TAB_BAR_ROUTES.includes(pathname)) return null;
 
   return (
     <div
