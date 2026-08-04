@@ -7,7 +7,7 @@ import TabBar from "../TabBar";
 
 // The same produce palette as the finder and the pantry, so all three read
 // as one product rather than three visits to different sites.
-const { cream, surface, olive, onOlive, border, controlBorder } = PALETTE;
+const { cream, surface, olive, onOlive, border, controlBorder, muted } = PALETTE;
 
 // Must match HONEYPOT_FIELD in app/api/membership/route.ts. Off-screen rather
 // than display:none, since some bots skip fields a naive check would catch.
@@ -18,26 +18,41 @@ type Tab = "join" | "signin";
 // Membership, reached from the Reorder tab — signing in is what makes
 // reordering possible, so that's the door it opens.
 //
-// There are no passwords here, and that is deliberate rather than
-// unfinished: Corner Bagel has no auth backend yet, and a password field
-// wired to a placeholder endpoint would collect real credentials people reuse
-// elsewhere and put them somewhere that cannot keep them. Signing in requests
-// a link by email instead, which is both safe to stub today and a pattern
-// worth keeping once there is a real backend.
+// Laid out to the supplied login reference: heading, one line of subtitle,
+// outlined rounded-rect fields with their labels floated onto the border,
+// two underlined links, and a full-width pill button. Two departures from
+// that reference, both deliberate:
 //
-// IMPORTANT: /api/membership only logs. Nobody is enrolled and no link is
-// sent until it's pointed at a real provider — Loops is already wired for the
-// drop-list (see app/api/drop-list/route.ts) and is the obvious place to
-// start.
+//  1. The button is Corner Bagel olive, not the reference's terracotta. The
+//     structure is what's being copied; another brand's accent colour landing
+//     in the middle of this palette would be the one thing on the screen that
+//     doesn't belong to us.
+//
+//  2. THE PASSWORD NEVER LEAVES THE DEVICE. The field is here because the
+//     reference has it, and it's required before the button enables, but the
+//     value is not put in the request — /api/membership doesn't accept one
+//     (see the note at the top of that file) and there is no auth backend to
+//     hand it to. Sending it would put a credential people reuse elsewhere
+//     into a request log for no benefit at all. When real auth arrives, this
+//     is the line to change, together with that route.
+//
+// IMPORTANT, and following from the above: nothing here authenticates anyone.
+// /api/membership only logs. "Login" produces the same we'll-be-in-touch stub
+// the previous version of this screen did — the screen is finished, the
+// system behind it is not.
 export default function MembershipForm() {
-  const [tab, setTab] = useState<Tab>("join");
+  // The reference is a login screen and Reorder means "sign in to reorder",
+  // so signing in is the state this opens in; joining is one tap away.
+  const [tab, setTab] = useState<Tab>("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
 
+  const joining = tab === "join";
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const ready = tab === "join" ? name.trim().length > 0 && emailValid : emailValid;
+  const ready = emailValid && password.length > 0 && (!joining || name.trim().length > 0);
 
   function switchTab(next: Tab) {
     setTab(next);
@@ -55,9 +70,10 @@ export default function MembershipForm() {
       const response = await fetch("/api/membership", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // No password in this body, on purpose — see the note above.
         body: JSON.stringify({
           intent: tab,
-          name: tab === "join" ? name : undefined,
+          name: joining ? name : undefined,
           email,
           [HONEYPOT_FIELD]: form.get(HONEYPOT_FIELD) ?? "",
         }),
@@ -73,18 +89,17 @@ export default function MembershipForm() {
     }
   }
 
-  const fieldClass =
-    "w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#3E4A30] outline-none placeholder:text-[#8A8672]";
-
   return (
     <div
       className="flex h-dvh w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
-      {/* Same header rhythm as the location finder — 21px above a 34px pill
-          row — so the two screens read as one app. */}
+      {/* Same 21px top rhythm as the location finder, so the two screens read
+          as one app. The pill toggle that used to sit here is gone — the
+          reference switches modes with the link under the fields, and two
+          controls for one choice is one too many. */}
       <header className="shrink-0 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-2 px-4 pt-[21px]">
+        <div className="px-4 pt-[21px]">
           <Link
             href="/locations"
             aria-label="Back"
@@ -101,59 +116,41 @@ export default function MembershipForm() {
               />
             </svg>
           </Link>
-
-          <div className="flex flex-1 items-center justify-center gap-2">
-            {([
-              { id: "join", label: "Join" },
-              { id: "signin", label: "Sign in" },
-            ] as const).map(({ id, label }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => switchTab(id)}
-                aria-pressed={tab === id}
-                style={{
-                  backgroundColor: tab === id ? olive : "transparent",
-                  color: tab === id ? onOlive : olive,
-                  borderColor: tab === id ? olive : controlBorder,
-                }}
-                className="flex h-[34px] cursor-pointer items-center rounded-full border px-5 text-[15px] leading-none transition-colors duration-150"
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Balances the back button so the pills sit centred. */}
-          <span className="h-9 w-9 shrink-0" aria-hidden />
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-6 pb-8 pt-8">
+      <main className="min-h-0 flex-1 overflow-y-auto px-6 pb-8 pt-6">
         <div className="mx-auto max-w-sm">
-          <h1 className="m-0 text-[26px] font-bold leading-tight text-[#3E4A30]">
-            {tab === "join" ? "Corner Bagel membership" : "Welcome back"}
+          <h1
+            className="m-0 text-[34px] font-medium leading-[1.05] tracking-[-0.02em]"
+            style={{ color: olive }}
+          >
+            {joining ? "Join" : "Login"}
           </h1>
-          <p className="m-0 mt-2 text-[14px] leading-[1.5] text-[#6F6A5C]">
-            {tab === "join"
-              ? "Save your usual, reorder in a tap, and hear about drops before anyone else."
-              : "Enter the email on your membership and we'll send you a sign-in link."}
+          <p className="m-0 mt-2 text-[14px] leading-[1.5]" style={{ color: muted }}>
+            {joining
+              ? "Create your Corner Bagel account."
+              : "Sign into your Corner Bagel account."}
           </p>
 
           {status === "done" ? (
-            <div className="mt-8 rounded-2xl border p-5" style={{ borderColor: border, backgroundColor: surface }}>
-              <p className="m-0 text-[15px] font-bold text-[#3E4A30]">
-                {tab === "join" ? "You're on the list." : "Check your email."}
+            <div
+              className="mt-8 rounded-2xl border p-5"
+              style={{ borderColor: border, backgroundColor: surface }}
+            >
+              <p className="m-0 text-[15px] font-medium" style={{ color: olive }}>
+                Thanks — we have your address.
               </p>
-              <p className="m-0 mt-1.5 text-[13px] leading-[1.5] text-[#6F6A5C]">
-                {tab === "join"
-                  ? "We'll be in touch at " + email.trim() + " as membership opens up."
-                  : "If that address has a membership, a sign-in link is on its way."}
+              <p className="m-0 mt-1.5 text-[13px] leading-[1.5]" style={{ color: muted }}>
+                {joining
+                  ? `We'll be in touch at ${email.trim()} as membership opens up.`
+                  : "Accounts aren't live yet, so there's nothing to sign into — we've noted the address and will write when there is."}
               </p>
               <button
                 type="button"
                 onClick={() => switchTab(tab)}
-                className="mt-4 cursor-pointer text-[13px] text-[#6F6A5C] underline transition-opacity hover:opacity-70"
+                className="mt-4 cursor-pointer text-[13px] underline transition-opacity hover:opacity-70"
+                style={{ color: muted }}
               >
                 Back
               </button>
@@ -161,7 +158,7 @@ export default function MembershipForm() {
           ) : (
             // key on the tab so switching clears the fields rather than
             // carrying a half-typed join into a sign-in.
-            <form key={tab} onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-6">
+            <form key={tab} onSubmit={onSubmit} noValidate className="mt-9 flex flex-col">
               {/* A field no real visitor can see or reach. */}
               <input
                 type="text"
@@ -172,39 +169,70 @@ export default function MembershipForm() {
                 style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
               />
 
-              {tab === "join" ? (
-                <input
+              {joining ? (
+                <Field
+                  label="Name"
                   type="text"
                   autoComplete="name"
-                  aria-label="Name"
-                  placeholder="Name"
                   value={name}
-                  onChange={(event) => {
-                    setName(event.target.value);
+                  onChange={(next) => {
+                    setName(next);
                     setError(null);
                   }}
-                  className={fieldClass}
-                  style={{ borderBottom: `1px solid ${controlBorder}` }}
                 />
               ) : null}
 
-              <input
+              <Field
+                label="Email"
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                aria-label="Email address"
-                placeholder="Email address"
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
+                onChange={(next) => {
+                  setEmail(next);
                   setError(null);
                 }}
-                className={fieldClass}
-                style={{ borderBottom: `1px solid ${controlBorder}` }}
               />
 
+              <Field
+                label="Password"
+                type="password"
+                autoComplete={joining ? "new-password" : "current-password"}
+                value={password}
+                onChange={(next) => {
+                  setPassword(next);
+                  setError(null);
+                }}
+              />
+
+              <div className="mt-5 flex flex-col items-start gap-2.5">
+                {joining ? null : (
+                  <button
+                    type="button"
+                    // Nothing to reset while there are no accounts. It stays
+                    // in the layout because the reference has it and it's
+                    // where people look; it says so rather than pretending.
+                    onClick={() =>
+                      setError("Accounts aren't live yet, so there's no password to reset.")
+                    }
+                    className="cursor-pointer text-[14px] underline underline-offset-2 transition-opacity hover:opacity-70"
+                    style={{ color: olive }}
+                  >
+                    Forgot your password?
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => switchTab(joining ? "signin" : "join")}
+                  className="cursor-pointer text-[14px] underline underline-offset-2 transition-opacity hover:opacity-70"
+                  style={{ color: olive }}
+                >
+                  {joining ? "Already have an account?" : "Don't have an account yet?"}
+                </button>
+              </div>
+
               {error ? (
-                <p role="alert" className="m-0 text-[13px]" style={{ color: "#BE1923" }}>
+                <p role="alert" className="m-0 mt-5 text-[13px]" style={{ color: "#BE1923" }}>
                   {error}
                 </p>
               ) : null}
@@ -213,31 +241,54 @@ export default function MembershipForm() {
                 type="submit"
                 disabled={!ready || status === "sending"}
                 style={{ backgroundColor: olive, color: onOlive }}
-                className="mt-2 cursor-pointer rounded-full py-3.5 text-[15px] font-bold transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
+                className="mt-8 cursor-pointer rounded-full py-4 text-[16px] font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
               >
-                {status === "sending"
-                  ? "Sending…"
-                  : tab === "join"
-                    ? "Join"
-                    : "Email me a sign-in link"}
+                {status === "sending" ? "Sending…" : joining ? "Join" : "Login"}
               </button>
-
-              <p className="m-0 text-center text-[13px] text-[#6F6A5C]">
-                {tab === "join" ? "Already a member? " : "New here? "}
-                <button
-                  type="button"
-                  onClick={() => switchTab(tab === "join" ? "signin" : "join")}
-                  className="cursor-pointer underline transition-opacity hover:opacity-70"
-                >
-                  {tab === "join" ? "Sign in" : "Join"}
-                </button>
-              </p>
             </form>
           )}
         </div>
       </main>
 
       <TabBar active="reorder" />
+    </div>
+  );
+}
+
+// An outlined field with its label sitting on the top border, as in the
+// reference. The label is a real <label> rather than a placeholder, so it
+// stays legible once there's a value in the box and assistive tech gets it
+// either way. The asterisk is decoration on top of `required`, so it's
+// hidden from the accessible name.
+function Field({
+  label,
+  value,
+  onChange,
+  ...input
+}: {
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+  const id = `field-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  return (
+    <div className="relative mt-7 first:mt-0">
+      <label
+        htmlFor={id}
+        className="absolute -top-[8px] left-4 px-1.5 text-[13px] leading-none"
+        style={{ backgroundColor: cream, color: muted }}
+      >
+        {label} <span aria-hidden>*</span>
+      </label>
+      <input
+        {...input}
+        id={id}
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-xl border bg-transparent px-4 py-3.5 text-[16px] leading-[20px] outline-none transition-colors focus:border-[#3E4A30]"
+        style={{ borderColor: controlBorder, color: olive }}
+      />
     </div>
   );
 }

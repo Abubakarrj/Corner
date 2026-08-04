@@ -21,7 +21,10 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-white p-6">
-      <Link href="/about" className="cursor-pointer">
+      {/* The logo is the front door into the app: tapping it opens the map,
+          which is where an order starts. It used to open /about — that copy
+          is still there, reachable from the About tab once you're inside. */}
+      <Link href="/locations" className="cursor-pointer">
         <div className="relative h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 lg:h-72 lg:w-72">
           <Image
             src="/logo.svg"

@@ -34,8 +34,8 @@ export default function FreeShippingBar({ subtotalCents }: { subtotalCents: numb
         ) : (
           <>
             You&rsquo;re{" "}
-            <span className="font-bold">{formatPrice(remainingCents)}</span> away from{" "}
-            <span className="font-bold">free shipping</span>
+            <span className="font-medium">{formatPrice(remainingCents)}</span> away from{" "}
+            <span className="font-medium">free shipping</span>
           </>
         )}
       </p>

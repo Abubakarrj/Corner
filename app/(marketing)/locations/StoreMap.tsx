@@ -171,7 +171,7 @@ export default function StoreMap({
             icon={pinIcon(location.kind)}
           >
             <Popup>
-              <span className="block text-[13px] font-bold text-[#3E4A30]">
+              <span className="block text-[13px] font-medium text-[#3E4A30]">
                 {location.name}
               </span>
               <span className="mt-0.5 block text-[12px] text-[#6F6A5C]">
@@ -187,7 +187,7 @@ export default function StoreMap({
                 type="button"
                 onClick={() => onChoose(location)}
                 style={{ backgroundColor: olive }}
-                className="mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-bold text-[#F3F1E5] transition-opacity hover:opacity-90"
+                className="mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-medium text-[#F3F1E5] transition-opacity hover:opacity-90"
               >
                 Order from here
               </button>
@@ -282,7 +282,7 @@ export default function StoreMap({
                     className="min-w-0 flex-1 cursor-pointer text-left"
                   >
                     <span
-                      className="block truncate text-[19px] font-bold leading-tight"
+                      className="block truncate text-[17px] font-medium leading-tight"
                       style={{ color: olive }}
                     >
                       {location.name}
@@ -306,7 +306,7 @@ export default function StoreMap({
                       color: chosenId === location.id ? onOlive : olive,
                       borderColor: olive,
                     }}
-                    className="shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-bold transition-colors duration-200 ease-out hover:bg-[#EFEBDD] motion-reduce:transition-none"
+                    className="shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-medium transition-colors duration-200 ease-out hover:bg-[#EFEBDD] motion-reduce:transition-none"
                   >
                     Order
                   </button>

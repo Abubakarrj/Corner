@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
+import GiftAuthModal from "./GiftAuthModal";
 import GiftCardArt from "./GiftCardArt";
 import { CATEGORIES, GIFT_CARDS, type Category } from "./giftCards";
 
@@ -11,15 +12,18 @@ const { cream, olive, onOlive, controlBorder, muted } = PALETTE;
 // The gift screen, built to the reference: a heading, a redeem line, a row of
 // category pills that scrolls sideways, and the card designs stacked below.
 //
-// Choosing a card doesn't go anywhere yet, and neither does "Redeem Now".
-// Both need gift-card commerce — issuing a card, taking payment, storing a
-// balance, redeeming against it — and none of that exists. The cards are
-// buttons so the layout, the press state, and the filtering are the finished
-// thing, but there's no amount-and-recipient step behind them.
+// Tapping a card asks you to sign in (GiftAuthModal). "Redeem Now" still
+// doesn't go anywhere: both it and the step past the sign-in need gift-card
+// commerce — issuing a card, taking payment, storing a balance, redeeming
+// against it — and none of that exists yet.
 export default function GiftGallery() {
   // null is "All" — the reference has no All pill, it simply starts unfiltered
   // with every design showing, and tapping the selected pill again clears it.
   const [category, setCategory] = useState<Category | null>(null);
+  // The card waiting on a sign-in, or null when the sheet is closed. Kept as
+  // the card's id rather than a bare boolean because the step after signing
+  // in — amount and recipient — will need to know which design it was.
+  const [pendingCard, setPendingCard] = useState<string | null>(null);
 
   const cards = useMemo(
     () =>
@@ -38,10 +42,10 @@ export default function GiftGallery() {
         <div className="mx-auto max-w-lg">
           <div className="px-5 pt-8">
             <h1
-              className="m-0 text-[30px] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[34px]"
+              className="m-0 text-[24px] font-medium leading-[1.15] tracking-[-0.02em] sm:text-[27px]"
               style={{ color: olive }}
             >
-              Send a gift
+              Send a little something around the corner
             </h1>
             <p className="m-0 mt-3 text-[15px]" style={{ color: olive }}>
               Have a gift card?{" "}
@@ -73,7 +77,7 @@ export default function GiftGallery() {
                       color: active ? onOlive : olive,
                       borderColor: active ? olive : controlBorder,
                     }}
-                    className="flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-bold uppercase leading-none tracking-[0.08em] transition-colors duration-150"
+                    className="flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em] transition-colors duration-150"
                   >
                     {name}
                   </button>
@@ -88,6 +92,7 @@ export default function GiftGallery() {
                 key={card.id}
                 type="button"
                 aria-label={card.label}
+                onClick={() => setPendingCard(card.id)}
                 // 1.35:1, measured off the reference — taller than a credit
                 // card, which is what gives the artwork room to be artwork.
                 className="relative aspect-[1.35] w-full cursor-pointer overflow-hidden rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-transform duration-200 hover:scale-[1.01] active:scale-[0.995]"
@@ -106,6 +111,8 @@ export default function GiftGallery() {
       </main>
 
       <TabBar active="gift" />
+
+      <GiftAuthModal open={pendingCard !== null} onClose={() => setPendingCard(null)} />
     </div>
   );
 }

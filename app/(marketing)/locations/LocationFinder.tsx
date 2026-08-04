@@ -232,7 +232,7 @@ export default function LocationFinder() {
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-5 top-[26px] cursor-pointer text-[13px] font-bold uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
+              className="absolute right-5 top-[26px] cursor-pointer text-[13px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
               style={{ color: muted }}
             >
               Clear

@@ -218,7 +218,7 @@ export default function SearchResults({
                   backgroundColor: active ? olive : "transparent",
                   color: active ? onOlive : faint,
                 }}
-                className="cursor-pointer rounded-full px-5 py-2.5 text-[15px] font-bold leading-none transition-colors"
+                className="cursor-pointer rounded-full px-5 py-2.5 text-[15px] font-medium leading-none transition-colors"
               >
                 {label} ({count})
               </button>
@@ -229,7 +229,7 @@ export default function SearchResults({
 
       {rangeNotice ? (
         <div className="py-3">
-          <p className="m-0 text-[14px] font-bold" style={{ color: olive }}>
+          <p className="m-0 text-[14px] font-medium" style={{ color: olive }}>
             That address is outside our delivery area.
           </p>
           <p className="m-0 mt-1 text-[13px]" style={{ color: muted }}>

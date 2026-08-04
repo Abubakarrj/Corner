@@ -69,7 +69,7 @@ export default function CartDrawer({
     <Drawer open={open} onClose={onClose} side="right" label="Basket" width="wide">
       <div className="flex items-center justify-between border-b border-[#E7E2D2] px-6 py-4">
         <h2
-          className="text-[15px] font-bold text-[#3E4A30]"
+          className="text-[15px] font-medium text-[#3E4A30]"
           style={{ fontFamily: DISPLAY_FONT }}
         >
           Your Basket
@@ -102,7 +102,7 @@ export default function CartDrawer({
             type="button"
             onClick={onClose}
             style={{ borderColor: "#3E4A30", color: "#3E4A30" }}
-            className="cursor-pointer rounded-full border px-5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] transition-opacity hover:opacity-70"
+            className="cursor-pointer rounded-full border px-5 py-2 text-[11px] font-medium uppercase tracking-[0.06em] transition-opacity hover:opacity-70"
           >
             Browse the pantry
           </button>
@@ -193,7 +193,7 @@ export default function CartDrawer({
             <div className="flex items-center justify-between">
               <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
               <span
-                className="text-[14px] font-bold text-[#3E4A30]"
+                className="text-[14px] font-medium text-[#3E4A30]"
                 style={{ fontFamily: DISPLAY_FONT }}
               >
                 {formatPrice(subtotalCents)}
@@ -206,7 +206,7 @@ export default function CartDrawer({
               href="/shop/checkout"
               onClick={onClose}
               style={{ backgroundColor: "#3E4A30" }}
-              className="mt-3 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
+              className="mt-3 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
             >
               Checkout
             </Link>

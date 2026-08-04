@@ -54,11 +54,11 @@ const TOPICS = [
 // outline, tail at the bottom-left, no dots.
 function ChatBubbleIcon() {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M5 6A1.5 1.5 0 0 1 6.5 4.5h11A1.5 1.5 0 0 1 19 6v7.5a1.5 1.5 0 0 1-1.5 1.5H8.8L5 18.6V6Z"
         stroke="white"
-        strokeWidth="1.7"
+        strokeWidth="1.9"
         strokeLinejoin="round"
       />
     </svg>
@@ -274,7 +274,7 @@ export default function ChatWidget() {
           </span>
           <div className="min-w-0 flex-1">
             <p
-              className="text-[15px] font-bold leading-tight text-white"
+              className="text-[15px] font-medium leading-tight text-white"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               Corner Bagel
@@ -297,7 +297,7 @@ export default function ChatWidget() {
             the right, newest kept in view. */}
         <div ref={threadRef} className="max-h-[50vh] overflow-y-auto p-4">
           <p
-            className="mb-1.5 ml-9 text-[11px] font-bold text-[#8A8672]"
+            className="mb-1.5 ml-9 text-[11px] font-medium text-[#8A8672]"
             style={{ fontFamily: DISPLAY_FONT }}
           >
             Corner Bagel
@@ -413,7 +413,12 @@ export default function ChatWidget() {
         aria-hidden={open}
         tabIndex={open ? -1 : undefined}
         style={{ backgroundColor: OLIVE }}
-        className={`relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-transform hover:scale-105 ${
+        // 44px, down from 56px. Not smaller than this: 44 is the floor for a
+        // reliable thumb target, and the launcher sits in the corner a thumb
+        // sweeps past — shaving the last few pixels off buys a little more
+        // catalog and costs mis-taps on the one control that isn't part of
+        // the page.
+        className={`relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full shadow-[0_3px_12px_rgba(0,0,0,0.22)] transition-transform hover:scale-105 ${
           open ? "invisible" : "pointer-events-auto"
         }`}
       >

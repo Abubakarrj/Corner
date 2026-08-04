@@ -82,7 +82,7 @@ export default function CheckoutPage() {
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
       <h1
-        className="mb-6 text-[18px] font-bold text-[#3E4A30]"
+        className="mb-6 text-[16px] font-medium text-[#3E4A30]"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         Checkout
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
           {fulfillment ? (
             <p className="mt-2 text-[14px] text-[#3E4A30]">
               {describeFulfillment(fulfillment).mode}:{" "}
-              <span className="font-bold">{describeFulfillment(fulfillment).where}</span>
+              <span className="font-medium">{describeFulfillment(fulfillment).where}</span>
             </p>
           ) : null}
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
@@ -168,7 +168,7 @@ export default function CheckoutPage() {
               type="submit"
               disabled={!valid || status === "sending"}
               style={{ backgroundColor: "#3E4A30" }}
-              className="mt-1 w-full cursor-pointer rounded-full py-3 text-[12px] font-bold uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
+              className="mt-1 w-full cursor-pointer rounded-full py-3 text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
             >
               {status === "sending" ? "Placing order…" : "Place order"}
             </button>
@@ -197,7 +197,7 @@ export default function CheckoutPage() {
             <div className="mt-3 flex items-center justify-between border-t border-[#E4DECE] pt-3">
               <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
               <span
-                className="text-[14px] font-bold text-[#3E4A30]"
+                className="text-[14px] font-medium text-[#3E4A30]"
                 style={{ fontFamily: DISPLAY_FONT }}
               >
                 {formatPrice(subtotalCents)}

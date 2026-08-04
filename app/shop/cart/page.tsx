@@ -20,7 +20,7 @@ export default function CartPage() {
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
       <h1
-        className="mb-6 text-[18px] font-bold text-[#3E4A30]"
+        className="mb-6 text-[16px] font-medium text-[#3E4A30]"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         Cart
@@ -100,7 +100,7 @@ export default function CartPage() {
           <div className="mt-6 flex items-center justify-between border-t border-[#E4DECE] pt-4">
             <span className="text-[14px] font-medium text-[#3E4A30]">Subtotal</span>
             <span
-              className="text-[16px] font-bold text-[#3E4A30]"
+              className="text-[15px] font-medium text-[#3E4A30]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               {formatPrice(subtotalCents)}
@@ -110,7 +110,7 @@ export default function CartPage() {
           <Link
             href="/shop/checkout"
             style={{ backgroundColor: "#3E4A30" }}
-            className="mt-4 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
+            className="mt-4 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
           >
             Checkout
           </Link>

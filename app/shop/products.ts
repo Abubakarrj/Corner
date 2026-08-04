@@ -1,8 +1,13 @@
-// Placeholder catalog — names, prices, and descriptions here are stand-ins
-// so the storefront has something real to render, not the actual menu.
-// Swap in real products, prices, and photography before this goes live; the
-// `swatch` color is filling in for product photography we don't have yet
-// (see ProductImage in ProductCard.tsx).
+// Two halves of one catalog.
+//
+// The first four categories are the counter menu — real names and real
+// prices, transcribed from the printed menu. The last four are the pantry,
+// which is still placeholder: those names, prices, and descriptions are
+// stand-ins so the storefront has something to render, and they should be
+// replaced before the pantry launches.
+//
+// The `swatch` color fills in for product photography we don't have for
+// either half yet (see ProductImage in ProductCard.tsx).
 
 export type Product = {
   slug: string;
@@ -17,7 +22,14 @@ export type Product = {
   tag?: "New" | "Bestseller";
 };
 
+// Menu first, pantry after — the tabs run in this order, and what someone
+// came for is a sandwich far more often than a jar of oil. The four pantry
+// tabs are the ones that were already here and stay.
 export const CATEGORIES = [
+  "Sandwiches",
+  "Bagels",
+  "Cream Cheese + More",
+  "Drinks",
   "Pickles & Ferments",
   "Oils & Vinegars",
   "Sauces & Spreads",
@@ -25,6 +37,181 @@ export const CATEGORIES = [
 ] as const;
 
 export const PRODUCTS: Product[] = [
+  // ——— The counter menu ———
+  {
+    slug: "baby-got-bec",
+    name: "Baby Got BEC",
+    priceCents: 1300,
+    category: "Sandwiches",
+    description: "Bacon, egg, and cheese.",
+    swatch: "#C4783A",
+  },
+  {
+    slug: "one-sec-please",
+    name: "One Sec Please",
+    priceCents: 1700,
+    category: "Sandwiches",
+    description: "Sausage, egg, and cheese.",
+    swatch: "#9E5432",
+  },
+  {
+    slug: "good-lox-today",
+    name: "Good Lox Today!",
+    priceCents: 2200,
+    category: "Sandwiches",
+    description: "Lox, cream cheese, red onion, capers, and dill.",
+    swatch: "#E08A7E",
+  },
+  {
+    // The menu sells one bagel at one price in three kinds. There is no
+    // options step in the cart yet, so the kinds are named in the copy
+    // rather than picked — a variant selector is the thing to build before
+    // anybody can actually order an everything over a plain.
+    slug: "single-bagel",
+    name: "Single Bagel",
+    priceCents: 325,
+    category: "Bagels",
+    description: "Plain, everything, or sesame.",
+    swatch: "#D9A85F",
+  },
+  {
+    slug: "cream-cheese-plain",
+    name: "Plain Cream Cheese",
+    priceCents: 325,
+    category: "Cream Cheese + More",
+    description: "House-whipped, and the one everything else is built on.",
+    swatch: "#F2EEE2",
+  },
+  {
+    slug: "cream-cheese-scallion",
+    name: "Scallion Cream Cheese",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "Whipped plain, loaded with fresh scallion.",
+    swatch: "#CFDCB4",
+  },
+  {
+    slug: "cream-cheese-jalapeno",
+    name: "Jalapeño Cream Cheese",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "Whipped plain with jalapeño through it.",
+    swatch: "#A9C46C",
+  },
+  {
+    slug: "cream-cheese-veggie",
+    name: "Veggie Cream Cheese",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "Whipped plain with vegetables folded in.",
+    swatch: "#C3CFA6",
+  },
+  {
+    slug: "cream-cheese-garlic-herb",
+    name: "Garlic & Herb Cream Cheese",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "Whipped plain with garlic and herbs.",
+    swatch: "#DCE0C4",
+  },
+  {
+    slug: "lox-spread",
+    name: "Lox Spread",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "Cream cheese whipped through with lox.",
+    swatch: "#F0B7A8",
+  },
+  {
+    slug: "cream-cheese-strawberry",
+    name: "Strawberry Cream Cheese",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "Whipped plain, sweetened with strawberry.",
+    swatch: "#E7A0AE",
+  },
+  {
+    slug: "cream-cheese-vegan-plain",
+    name: "Vegan Plain Cream Cheese",
+    priceCents: 400,
+    category: "Cream Cheese + More",
+    description: "The plain schmear, made without dairy.",
+    swatch: "#EDE7D6",
+  },
+  {
+    slug: "peanut-butter",
+    name: "Peanut Butter",
+    priceCents: 325,
+    category: "Cream Cheese + More",
+    description: "Spread thick, corner to corner.",
+    swatch: "#B07A3E",
+  },
+  {
+    slug: "jelly",
+    name: "Jelly",
+    priceCents: 200,
+    category: "Cream Cheese + More",
+    description: "On its own, or on top of the peanut butter.",
+    swatch: "#A9364B",
+  },
+  {
+    slug: "butter",
+    name: "Butter",
+    priceCents: 200,
+    category: "Cream Cheese + More",
+    description: "On a bagel straight out of the water and into the oven.",
+    swatch: "#EFCF7B",
+  },
+  {
+    slug: "hot-honey-schmear",
+    name: "Hot Honey",
+    priceCents: 175,
+    category: "Cream Cheese + More",
+    description: "Sweet first, then a slow build of heat.",
+    swatch: "#E0A825",
+  },
+  {
+    slug: "chili-crisp",
+    name: "Chili Crisp",
+    priceCents: 250,
+    category: "Cream Cheese + More",
+    description: "Crunchy, oily, and hotter than it looks.",
+    swatch: "#B8471F",
+  },
+  {
+    slug: "hot-chocolate",
+    name: "Hot Chocolate",
+    priceCents: 600,
+    category: "Drinks",
+    description: "For the walk back.",
+    swatch: "#5C3A28",
+  },
+  {
+    slug: "orange-juice",
+    name: "Orange Juice",
+    priceCents: 600,
+    category: "Drinks",
+    description: "Cold, and the right thing next to an egg sandwich.",
+    swatch: "#E88A21",
+  },
+  {
+    slug: "cloud-cold-brew",
+    name: "Cloud Cold Brew",
+    priceCents: 600,
+    category: "Drinks",
+    description: "Slow-steeped and poured over ice.",
+    swatch: "#4A3728",
+  },
+  {
+    slug: "cloud-tea",
+    name: "Cloud Tea",
+    priceCents: 600,
+    category: "Drinks",
+    description: "Brewed by the pot, served by the cup.",
+    swatch: "#B9762F",
+  },
+
+  // ——— The pantry (placeholder) ———
   {
     slug: "pickled-red-onions",
     name: "Pickled Red Onions",
@@ -72,8 +259,12 @@ export const PRODUCTS: Product[] = [
     swatch: "#D68A3C",
   },
   {
+    // "Jar" and "Tub" in the names here and below are doing real work: the
+    // counter sells hot honey and scallion schmear by the side, at counter
+    // prices, and two products called the same thing at $1.75 and $12 in one
+    // catalog is a support ticket waiting to happen.
     slug: "hot-honey",
-    name: "Hot Honey",
+    name: "Hot Honey Jar",
     priceCents: 1200,
     tag: "New",
     category: "Sauces & Spreads",
@@ -83,7 +274,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "scallion-cream-cheese",
-    name: "Scallion Cream Cheese",
+    name: "Scallion Cream Cheese Tub",
     priceCents: 700,
     category: "Sauces & Spreads",
     description:

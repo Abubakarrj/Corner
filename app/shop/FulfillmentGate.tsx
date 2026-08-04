@@ -40,7 +40,7 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
         <p
-          className="m-0 text-[22px] font-bold leading-tight"
+          className="m-0 text-[20px] font-medium leading-tight"
           style={{ color: olive }}
         >
           Where are we sending this?
@@ -55,7 +55,7 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
         <Link
           href="/locations"
           style={{ backgroundColor: olive, color: onOlive }}
-          className="mt-7 cursor-pointer rounded-full px-7 py-3 text-[14px] font-bold transition-opacity hover:opacity-90"
+          className="mt-7 cursor-pointer rounded-full px-7 py-3 text-[14px] font-medium transition-opacity hover:opacity-90"
         >
           Choose a location
         </Link>
@@ -81,7 +81,7 @@ export function FulfillmentBanner() {
       style={{ backgroundColor: cream, borderColor: border }}
     >
       <span
-        className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em]"
+        className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]"
         style={{ color: olive, borderColor: controlBorder }}
       >
         {mode}
