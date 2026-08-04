@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
-const BRAND_RED = "#BE1923";
-const CHROME = "#F4F4EC";
-const INK = "#1B1D16";
+// Same produce palette as the pantry: olive marks the active tab, cream is
+// the ground, and the rule above the bar is the shop's section border.
+const { cream, olive, border } = PALETTE;
 
 export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 
@@ -86,14 +87,14 @@ function NavIcon({ id }: { id: TabId }) {
 export default function TabBar({ active }: { active: TabId }) {
   return (
     <nav
-      className="shrink-0 border-t border-[#DEDED4] pb-[env(safe-area-inset-bottom)]"
-      style={{ backgroundColor: CHROME, fontFamily: "var(--font-geist-sans), sans-serif" }}
+      className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
+      style={{ backgroundColor: cream, borderColor: border, fontFamily: SHOP_FONT }}
       aria-label="Primary"
     >
       <ul className="m-0 flex list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
           const isActive = item.id === active;
-          const tone = isActive ? BRAND_RED : INK;
+          const tone = isActive ? olive : "#5F6553";
           const body = (
             <>
               <NavIcon id={item.id} />
@@ -102,7 +103,7 @@ export default function TabBar({ active }: { active: TabId }) {
                   under the label rather than a full-width indicator. */}
               <span
                 className="mt-1.5 block h-[2px] w-7 rounded-full"
-                style={{ backgroundColor: isActive ? BRAND_RED : "transparent" }}
+                style={{ backgroundColor: isActive ? olive : "transparent" }}
               />
             </>
           );

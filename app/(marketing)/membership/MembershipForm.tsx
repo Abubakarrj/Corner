@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 
-const BRAND_RED = "#BE1923";
-const CHROME = "#F4F4EC";
-const PILL_REST = "#E9E9E1";
-const INK = "#1B1D16";
-const HAIRLINE = "#B2B3A5";
+// The same produce palette as the finder and the pantry, so all three read
+// as one product rather than three visits to different sites.
+const { cream, surface, olive, onOlive, border, controlBorder } = PALETTE;
 
 // Must match HONEYPOT_FIELD in app/api/membership/route.ts. Off-screen rather
 // than display:none, since some bots skip fields a naive check would catch.
@@ -75,12 +74,12 @@ export default function MembershipForm() {
   }
 
   const fieldClass =
-    "w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#1B1D16] outline-none placeholder:text-[#44463E]";
+    "w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#3E4A30] outline-none placeholder:text-[#8A8672]";
 
   return (
     <div
       className="flex h-dvh w-full flex-col overflow-hidden"
-      style={{ backgroundColor: CHROME, fontFamily: "var(--font-geist-sans), sans-serif" }}
+      style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
       {/* Same header rhythm as the location finder — 21px above a 34px pill
           row — so the two screens read as one app. */}
@@ -89,13 +88,13 @@ export default function MembershipForm() {
           <Link
             href="/locations"
             aria-label="Back"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-70"
-            style={{ backgroundColor: PILL_REST }}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-[#EFEBDD]"
+            style={{ borderColor: controlBorder }}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
               <path
                 d="M12.5 4L6.5 10l6 6"
-                stroke={INK}
+                stroke={olive}
                 strokeWidth="1.7"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -114,10 +113,11 @@ export default function MembershipForm() {
                 onClick={() => switchTab(id)}
                 aria-pressed={tab === id}
                 style={{
-                  backgroundColor: tab === id ? BRAND_RED : PILL_REST,
-                  color: tab === id ? "#FFFFFF" : INK,
+                  backgroundColor: tab === id ? olive : "transparent",
+                  color: tab === id ? onOlive : olive,
+                  borderColor: tab === id ? olive : controlBorder,
                 }}
-                className="flex h-[34px] cursor-pointer items-center rounded-full px-5 text-[15px] leading-none transition-colors duration-150"
+                className="flex h-[34px] cursor-pointer items-center rounded-full border px-5 text-[15px] leading-none transition-colors duration-150"
               >
                 {label}
               </button>
@@ -131,21 +131,21 @@ export default function MembershipForm() {
 
       <main className="min-h-0 flex-1 overflow-y-auto px-6 pb-8 pt-8">
         <div className="mx-auto max-w-sm">
-          <h1 className="m-0 text-[26px] font-bold leading-tight text-[#1B1D16]">
+          <h1 className="m-0 text-[26px] font-bold leading-tight text-[#3E4A30]">
             {tab === "join" ? "Corner Bagel membership" : "Welcome back"}
           </h1>
-          <p className="m-0 mt-2 text-[14px] leading-[1.5] text-[#44463E]">
+          <p className="m-0 mt-2 text-[14px] leading-[1.5] text-[#6F6A5C]">
             {tab === "join"
               ? "Save your usual, reorder in a tap, and hear about drops before anyone else."
               : "Enter the email on your membership and we'll send you a sign-in link."}
           </p>
 
           {status === "done" ? (
-            <div className="mt-8 rounded-2xl border border-[#DEDED4] bg-white p-5">
-              <p className="m-0 text-[15px] font-bold text-[#1B1D16]">
+            <div className="mt-8 rounded-2xl border p-5" style={{ borderColor: border, backgroundColor: surface }}>
+              <p className="m-0 text-[15px] font-bold text-[#3E4A30]">
                 {tab === "join" ? "You're on the list." : "Check your email."}
               </p>
-              <p className="m-0 mt-1.5 text-[13px] leading-[1.5] text-[#44463E]">
+              <p className="m-0 mt-1.5 text-[13px] leading-[1.5] text-[#6F6A5C]">
                 {tab === "join"
                   ? "We'll be in touch at " + email.trim() + " as membership opens up."
                   : "If that address has a membership, a sign-in link is on its way."}
@@ -153,7 +153,7 @@ export default function MembershipForm() {
               <button
                 type="button"
                 onClick={() => switchTab(tab)}
-                className="mt-4 cursor-pointer text-[13px] text-[#44463E] underline transition-opacity hover:opacity-70"
+                className="mt-4 cursor-pointer text-[13px] text-[#6F6A5C] underline transition-opacity hover:opacity-70"
               >
                 Back
               </button>
@@ -184,7 +184,7 @@ export default function MembershipForm() {
                     setError(null);
                   }}
                   className={fieldClass}
-                  style={{ borderBottom: `1px solid ${HAIRLINE}` }}
+                  style={{ borderBottom: `1px solid ${controlBorder}` }}
                 />
               ) : null}
 
@@ -200,11 +200,11 @@ export default function MembershipForm() {
                   setError(null);
                 }}
                 className={fieldClass}
-                style={{ borderBottom: `1px solid ${HAIRLINE}` }}
+                style={{ borderBottom: `1px solid ${controlBorder}` }}
               />
 
               {error ? (
-                <p role="alert" className="m-0 text-[13px]" style={{ color: BRAND_RED }}>
+                <p role="alert" className="m-0 text-[13px]" style={{ color: "#BE1923" }}>
                   {error}
                 </p>
               ) : null}
@@ -212,8 +212,8 @@ export default function MembershipForm() {
               <button
                 type="submit"
                 disabled={!ready || status === "sending"}
-                style={{ backgroundColor: BRAND_RED }}
-                className="mt-2 cursor-pointer rounded-full py-3.5 text-[15px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
+                style={{ backgroundColor: olive, color: onOlive }}
+                className="mt-2 cursor-pointer rounded-full py-3.5 text-[15px] font-bold transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
               >
                 {status === "sending"
                   ? "Sending…"
@@ -222,7 +222,7 @@ export default function MembershipForm() {
                     : "Email me a sign-in link"}
               </button>
 
-              <p className="m-0 text-center text-[13px] text-[#44463E]">
+              <p className="m-0 text-center text-[13px] text-[#6F6A5C]">
                 {tab === "join" ? "Already a member? " : "New here? "}
                 <button
                   type="button"

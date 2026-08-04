@@ -4,18 +4,16 @@ import type { LatLngBounds } from "leaflet";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import { LOCATIONS, type StoreLocation } from "./locations";
 
-const BRAND_RED = "#BE1923";
-
-// Sampled off the reference frame rather than guessed: the chrome is a warm
-// off-white, the resting pills a half-step darker, and the rule under the
-// search field a desaturated grey-green.
-const CHROME = "#F4F4EC";
-const PILL_REST = "#E9E9E1";
-const INK = "#1B1D16";
-const HAIRLINE = "#B2B3A5";
+// Dressed in the shop's produce palette rather than the reference's own
+// greys: deep olive carries the active state, cream is the ground, and the
+// rules are the same two border weights the catalog uses. The reference's
+// geometry is untouched — only its colours and typeface change, so the
+// finder and the pantry read as one product.
+const { cream, olive, onOlive, border, controlBorder } = PALETTE;
 
 // Leaflet touches window at import time, so the map can only ever be a
 // client-side chunk — ssr:false is load-bearing, not a preference. The
@@ -48,7 +46,7 @@ function BackIcon() {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
       <path
         d="M12.5 4L6.5 10l6 6"
-        stroke={INK}
+        stroke={olive}
         strokeWidth="1.7"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -60,7 +58,7 @@ function BackIcon() {
 function CloseIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M5 5l10 10M15 5L5 15" stroke={INK} strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M5 5l10 10M15 5L5 15" stroke={olive} strokeWidth="1.7" strokeLinecap="round" />
     </svg>
   );
 }
@@ -114,7 +112,7 @@ export default function LocationFinder() {
     // coming and going rather than the page growing a scrollbar.
     <div
       className="flex h-dvh w-full flex-col overflow-hidden"
-      style={{ backgroundColor: CHROME, fontFamily: "var(--font-geist-sans), sans-serif" }}
+      style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
       {/* Spacings measured off the reference frame rather than eyeballed: at
           its 440px width the pill row is 34px tall sitting 21px down, the
@@ -125,8 +123,8 @@ export default function LocationFinder() {
           <Link
             href="/"
             aria-label="Back"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-70"
-            style={{ backgroundColor: PILL_REST }}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-[#EFEBDD]"
+            style={{ borderColor: controlBorder }}
           >
             <BackIcon />
           </Link>
@@ -142,10 +140,11 @@ export default function LocationFinder() {
                   onClick={() => changeMode(id)}
                   aria-pressed={active}
                   style={{
-                    backgroundColor: active ? BRAND_RED : PILL_REST,
-                    color: active ? "#FFFFFF" : INK,
+                    backgroundColor: active ? olive : "transparent",
+                    color: active ? onOlive : olive,
+                    borderColor: active ? olive : controlBorder,
                   }}
-                  className="flex h-[34px] cursor-pointer items-center rounded-full px-4 text-[15px] leading-none transition-colors duration-150 sm:px-5"
+                  className="flex h-[34px] cursor-pointer items-center rounded-full border px-4 text-[15px] leading-none transition-colors duration-150 sm:px-5"
                 >
                   {label}
                 </button>
@@ -156,8 +155,8 @@ export default function LocationFinder() {
           <Link
             href="/"
             aria-label="Close"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-70"
-            style={{ backgroundColor: PILL_REST }}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-[#EFEBDD]"
+            style={{ borderColor: controlBorder }}
           >
             <CloseIcon />
           </Link>
@@ -176,8 +175,8 @@ export default function LocationFinder() {
               setBounds(null);
             }}
             // 16px so iOS doesn't zoom the viewport on focus.
-            className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#1B1D16] outline-none placeholder:text-[#44463E]"
-            style={{ borderBottom: `1px solid ${HAIRLINE}` }}
+            className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#3E4A30] outline-none placeholder:text-[#8A8672]"
+            style={{ borderBottom: `1px solid ${controlBorder}` }}
           />
         </div>
       </header>
@@ -192,18 +191,18 @@ export default function LocationFinder() {
           as in the reference — it pushes the map up instead of covering it. */}
       {showToast ? (
         <div
-          className="flex shrink-0 items-center justify-between gap-3 px-5 py-4"
-          style={{ backgroundColor: "#E8E8E0" }}
+          className="flex shrink-0 items-center justify-between gap-3 border-t px-5 py-4"
+          style={{ backgroundColor: "#EFEBDD", borderColor: border }}
         >
-          <p className="m-0 text-[14px] text-[#1B1D16]">{toastText}</p>
+          <p className="m-0 text-[14px] text-[#3E4A30]">{toastText}</p>
           <button
             type="button"
             onClick={() => setToastDismissed(true)}
             aria-label="Dismiss"
-            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#9A9C90] transition-opacity hover:opacity-60"
+            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#B9B29C] transition-opacity hover:opacity-60"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path d="M3 3l6 6M9 3l-6 6" stroke="#1B1D16" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M3 3l6 6M9 3l-6 6" stroke="#3E4A30" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>
