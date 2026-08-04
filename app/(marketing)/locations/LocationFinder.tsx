@@ -107,11 +107,14 @@ export default function LocationFinder() {
     return searchLocations(query, mode === "pickup" ? "shop" : "outpost");
   }, [mode, query]);
 
-  // Both paths end the same way: record where the order is going, then open
-  // the menu. The shop is inert until this has happened — see the gate in
+  // Committing to a place: record where the order is going, then open the
+  // menu. The shop is inert until this has happened — see the gate in
   // app/shop/layout.tsx — because a bagel picked up in Koreatown and one
   // delivered to an apartment are different orders.
-  function chooseLocation(location: StoreLocation) {
+  //
+  // This is what the card's Order button and the pin's popup do, from either
+  // entry point. Pressing something that says "Order" should order.
+  function commitLocation(location: StoreLocation) {
     setFulfillment({
       mode: location.kind === "outpost" ? "outpost" : "pickup",
       locationId: location.id,
@@ -121,9 +124,30 @@ export default function LocationFinder() {
     router.push("/shop");
   }
 
+  // Picking a shop out of the search results, which means different things
+  // depending on what opened this screen.
+  //
+  // From Menu you are already ordering — the map is only in the way, so
+  // finding the shop by name or ZIP carries you straight through to it. From
+  // Home you are looking, not buying: the same tap centres the map on the
+  // shop and leaves you there, with the card's Order button as the separate,
+  // deliberate step. Same screen, same search, different intent behind it.
+  function pickLocation(location: StoreLocation) {
+    if (activeTab === "menu") {
+      commitLocation(location);
+      return;
+    }
+    setFocus(location.position);
+    setQuery("");
+  }
+
   // Only ever called with an address Google resolved and the server confirmed
-  // is inside the delivery radius — see AddressSearch and /api/places. There
+  // is inside the delivery radius — see SearchResults and /api/places. There
   // is deliberately no path from raw typed text to a delivery order any more.
+  // Delivery commits from either entry point, unlike picking a shop. An
+  // address isn't somewhere to browse — the map shows no pins in this mode,
+  // so there is nothing to stay and look at, and "deliver to here" is already
+  // the whole instruction.
   function chooseAddress(resolved: ResolvedPlace) {
     setFulfillment({ mode: "delivery", address: resolved.address });
     router.push("/shop");
@@ -241,7 +265,7 @@ export default function LocationFinder() {
           value={query}
           stores={matching}
           onValueChange={setQuery}
-          onPickStore={chooseLocation}
+          onPickStore={pickLocation}
           onPickPlace={(place) => setFocus([place.lat, place.lng])}
           onResolvedAddress={chooseAddress}
         />
@@ -251,7 +275,7 @@ export default function LocationFinder() {
         locations={visible}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
-        onChoose={chooseLocation}
+        onChoose={commitLocation}
         focus={focus}
       />
 
