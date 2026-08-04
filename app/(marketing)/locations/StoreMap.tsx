@@ -110,11 +110,31 @@ export default function StoreMap({
   // reference's does — offering to re-search an area nobody has changed is
   // noise.
   const [moved, setMoved] = useState(false);
-  // Which location the card at the foot of the map is showing. Reset by the
-  // key on this component in LocationFinder whenever the visible set changes,
-  // so it can never point past the end of a shorter list.
+  // Which card the rail is centred on, for the dots and for panning the map
+  // to match. Derived from scroll position rather than driving it, so the
+  // finger stays in charge.
   const [cardIndex, setCardIndex] = useState(0);
-  const card = locations[cardIndex] ?? null;
+  const railRef = useRef<HTMLDivElement>(null);
+  const settle = useRef<number | undefined>(undefined);
+
+  function onRailScroll() {
+    const rail = railRef.current;
+    if (!rail) return;
+    // Debounced to the end of the gesture: panning the map on every scroll
+    // frame fights the swipe and burns tile requests.
+    window.clearTimeout(settle.current);
+    settle.current = window.setTimeout(() => {
+      const width = rail.clientWidth;
+      if (width === 0) return;
+      const index = Math.round(rail.scrollLeft / width);
+      const location = locations[index];
+      if (!location) return;
+      setCardIndex(index);
+      // panTo, not flyTo: the card and the map should move together, and a
+      // long animated flight on every swipe is seasick.
+      mapRef.current?.panTo(location.position, { animate: true, duration: 0.35 });
+    }, 120);
+  }
 
   return (
     <div className="relative min-h-0 flex-1">
@@ -218,72 +238,79 @@ export default function StoreMap({
           </button>
         </div>
 
-        {/* Steps through the locations under the card, as in the reference's
-            list button — with one shop it has nothing to step to, so it only
-            appears when there's more than one. */}
-        {locations.length > 1 ? (
-          <button
-            type="button"
-            onClick={() => setCardIndex((i) => (i + 1) % locations.length)}
-            aria-label="Next location"
-            className="pointer-events-auto absolute right-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-[#FDFCF7] shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
-            style={{ bottom: card ? 128 : 56 }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M4 7h16M4 12h16M4 17h16"
-                stroke={olive}
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        ) : null}
-
         <span
           className="pointer-events-none absolute left-3 rounded-full bg-[#FDFCF7]/90 px-3 py-1 text-[11px] text-[#6F6A5C]"
-          style={{ bottom: card ? 128 : 12 }}
+          style={{ bottom: locations.length > 0 ? 136 : 12 }}
         >
           {TILE_ATTRIBUTION}
         </span>
 
-        {/* The store card from the reference: the shop, its address, and the
-            way in. It sits over the foot of the map rather than in a popup so
-            it's readable without hunting for a pin — which matters most on
-            the first visit, when the map is still showing the whole country. */}
-        {card ? (
-          <div className="pointer-events-auto absolute inset-x-3 bottom-3">
-            <div
-              className="flex items-center gap-3 rounded-2xl bg-[#FDFCF7] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
-            >
-              <button
-                type="button"
-                onClick={() => onChoose(card)}
-                className="min-w-0 flex-1 cursor-pointer text-left"
+        {/* The store cards, as a rail you swipe rather than one card with a
+            button to advance it. Five shops in a ZIP is five swipes, which is
+            how every map app behaves and what the thumb expects.
+            
+            Native scroll with snap points, not a JS carousel: it inherits
+            momentum, rubber-banding, trackpads, keyboard arrows and
+            screen-reader focus scrolling for free, and none of those are
+            worth reimplementing. */}
+        {locations.length > 0 ? (
+          <div
+            ref={railRef}
+            onScroll={onRailScroll}
+            className="pointer-events-auto absolute inset-x-0 bottom-3 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {locations.map((location) => (
+              <div
+                key={location.id}
+                className="w-full shrink-0 snap-center"
               >
-                <span
-                  className="block truncate text-[19px] font-bold leading-tight"
-                  style={{ color: olive }}
-                >
-                  {card.name}
-                </span>
-                <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
-                  {card.address}
-                </span>
-                <span className="block truncate text-[14px]" style={{ color: muted }}>
-                  {card.city}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onChoose(card)}
-                aria-label={`Order from ${card.name}`}
-                style={{ backgroundColor: olive, color: onOlive }}
-                className="shrink-0 cursor-pointer rounded-full px-4 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90"
-              >
-                Order
-              </button>
-            </div>
+                <div className="flex items-center gap-3 rounded-2xl bg-[#FDFCF7] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+                  <button
+                    type="button"
+                    onClick={() => onChoose(location)}
+                    className="min-w-0 flex-1 cursor-pointer text-left"
+                  >
+                    <span
+                      className="block truncate text-[19px] font-bold leading-tight"
+                      style={{ color: olive }}
+                    >
+                      {location.name}
+                    </span>
+                    <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
+                      {location.address}
+                    </span>
+                    <span className="block truncate text-[14px]" style={{ color: muted }}>
+                      {location.city}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onChoose(location)}
+                    aria-label={`Order from ${location.name}`}
+                    style={{ backgroundColor: olive, color: onOlive }}
+                    className="shrink-0 cursor-pointer rounded-full px-4 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90"
+                  >
+                    Order
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {/* Which of them you're on. Only earns its place once there's more
+            than one — a single dot says nothing. */}
+        {locations.length > 1 ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-[118px] flex justify-center gap-1.5">
+            {locations.map((location, index) => (
+              <span
+                key={location.id}
+                className="block h-1.5 w-1.5 rounded-full transition-colors"
+                style={{
+                  backgroundColor: index === cardIndex ? olive : "rgba(62,74,48,0.28)",
+                }}
+              />
+            ))}
           </div>
         ) : null}
       </div>
