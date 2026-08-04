@@ -9,7 +9,7 @@ import { setFulfillment } from "../../fulfillment";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
-import { LOCATIONS, type StoreLocation } from "./locations";
+import { LOCATIONS, searchLocations, type StoreLocation } from "./locations";
 
 // Dressed in the shop's produce palette rather than the reference's own
 // greys: deep olive carries the active state, cream is the ground, and the
@@ -100,16 +100,7 @@ export default function LocationFinder() {
   // only place one belongs.
   const matching: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    const kind = mode === "pickup" ? "shop" : "outpost";
-    const text = query.trim().toLowerCase();
-    if (!text) return [];
-    return LOCATIONS.filter(
-      (location) =>
-        location.kind === kind &&
-        `${location.name} ${location.address} ${location.city}`
-          .toLowerCase()
-          .includes(text),
-    );
+    return searchLocations(query, mode === "pickup" ? "shop" : "outpost");
   }, [mode, query]);
 
   // Both paths end the same way: record where the order is going, then open

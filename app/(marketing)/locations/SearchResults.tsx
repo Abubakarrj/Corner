@@ -70,7 +70,14 @@ export default function SearchResults({
   onResolvedAddress: (place: ResolvedPlace) => void;
 }) {
   const isDelivery = mode === "delivery";
-  const [tab, setTab] = useState<"places" | "stores">("places");
+  // Which tab is showing is derived, not stored, so it can follow the query
+  // without an effect resetting it: our own shops win by default whenever
+  // they match, since someone typing "ktown" wants the shop, not the
+  // neighbourhood. A tab the visitor actually picked overrides that — but
+  // only for the query they picked it on, so the next search starts fresh.
+  const [chosenTab, setChosenTab] = useState<{ forQuery: string; tab: "places" | "stores" } | null>(
+    null,
+  );
   const [suggestions, setSuggestions] = useState<{ forQuery: string; items: Suggestion[] }>({
     forQuery: "",
     items: [],
@@ -185,6 +192,8 @@ export default function SearchResults({
     return null;
   }
 
+  const defaultTab = stores.length > 0 ? "stores" : "places";
+  const tab = chosenTab?.forQuery === query ? chosenTab.tab : defaultTab;
   const showStores = !isDelivery && tab === "stores";
   const rows = showStores ? stores : items;
 
@@ -204,7 +213,7 @@ export default function SearchResults({
                 key={id}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setTab(id)}
+                onClick={() => setChosenTab({ forQuery: query, tab: id })}
                 style={{
                   backgroundColor: active ? olive : "transparent",
                   color: active ? onOlive : faint,

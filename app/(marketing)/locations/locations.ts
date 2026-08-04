@@ -14,6 +14,12 @@ export type StoreLocation = {
   hours: string;
   // [latitude, longitude]
   position: [number, number];
+  // The other things people call this place. A shop's official name is
+  // rarely what someone types: "Koreatown" gets typed "ktown", "k town" and
+  // "kt", and plenty of people search the neighbourhood by the ZIP or by
+  // "LA" and expect the shop there to come up. None of that is derivable
+  // from the name and address, so it's listed.
+  aliases: string[];
 };
 
 // The shop, and the kitchen every delivery leaves from.
@@ -37,9 +43,84 @@ export const KOREATOWN: StoreLocation = {
   city: "Los Angeles, CA 90005",
   hours: "Hours to come",
   position: [34.0578, -118.296],
+  aliases: [
+    "ktown",
+    "k town",
+    "k-town",
+    "kt",
+    "korea town",
+    "korean town",
+    "la",
+    "los angeles",
+    "90005",
+    "90006",
+    "90020",
+    "wilshire center",
+    "mid wilshire",
+    "8th street",
+    "8th st",
+    "w 8th",
+    "downtown la",
+    "dtla",
+  ],
 };
 
 export const LOCATIONS: StoreLocation[] = [KOREATOWN];
+
+// What every shop answers to, regardless of which one it is. Kept apart from
+// each location's own aliases so a second shop inherits them instead of
+// copying them — "corner bagel koreatown" should find the Koreatown shop,
+// and so should "corner bagel" plus whatever comes next.
+const BRAND_ALIASES = ["corner", "corner bagel", "bagel", "bagels", "cornerbagel"];
+
+// Matching a typed query against our own locations, the same way the pantry's
+// product search works (searchProducts in app/shop/products.ts): split the
+// query into words, require every word to match something, and score by how
+// good each match was so the best row sorts first.
+//
+// Requiring every word is what keeps "koreatown chicago" from returning the
+// LA shop just because one word landed. Scoring is what puts a name match
+// above a ZIP match when both hit.
+export function searchLocations(
+  query: string,
+  kind: LocationKind,
+  pool: StoreLocation[] = LOCATIONS,
+): StoreLocation[] {
+  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+
+  const scored: { location: StoreLocation; score: number; order: number }[] = [];
+
+  pool.forEach((location, order) => {
+    if (location.kind !== kind) return;
+
+    const name = location.name.toLowerCase();
+    const nameWords = name.split(/\s+/);
+    const address = location.address.toLowerCase();
+    const city = location.city.toLowerCase();
+    const aliases = [...location.aliases, ...BRAND_ALIASES].map((a) => a.toLowerCase());
+
+    let score = 0;
+    for (const word of words) {
+      if (name.startsWith(word)) score += 100;
+      else if (nameWords.some((w) => w.startsWith(word))) score += 60;
+      else if (name.includes(word)) score += 30;
+      // An alias that starts with the word beats one that merely contains it,
+      // so "kt" reaches "ktown" rather than only ever matching by luck.
+      else if (aliases.some((alias) => alias.startsWith(word))) score += 45;
+      else if (aliases.some((alias) => alias.includes(word))) score += 20;
+      else if (address.includes(word)) score += 15;
+      else if (city.includes(word)) score += 10;
+      else return; // this word matched nothing — the location is out
+    }
+
+    scored.push({ location, score, order });
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .map((hit) => hit.location);
+}
 
 // Deliveries leave from the shop, so the radius is measured from its door.
 // If a second kitchen ever delivers, this becomes a per-location decision
