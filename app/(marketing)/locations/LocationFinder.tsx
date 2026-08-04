@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
-import AddressSearch, { type ResolvedAddress } from "./AddressSearch";
+import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import { LOCATIONS, type StoreLocation } from "./locations";
@@ -71,29 +71,46 @@ export default function LocationFinder() {
   const [mode, setMode] = useState<Mode>("pickup");
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
+  // Where a searched city, state, or ZIP landed, for the map to fly to.
+  const [focus, setFocus] = useState<[number, number] | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
 
   // Pickup shows our own shops, Outpost shows the counters that carry our
   // sandwiches, and Delivery shows nothing on the map until an address is
   // entered — it's asking where the visitor is, not where we are.
+  // Two different filters, which used to be one and shouldn't have been.
+  //
+  // `visible` is what the map shows: every location of this mode's kind,
+  // narrowed only by "Search area". It deliberately ignores the query, because
+  // the query is a place name — picking "Los Angeles, CA, USA" from the
+  // results would otherwise substring-match against a shop whose address
+  // reads "CA 90005", find nothing, and empty the map at the exact moment
+  // the visitor asked to look there.
   const visible: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
     const kind = mode === "pickup" ? "shop" : "outpost";
     const byKind = LOCATIONS.filter((location) => location.kind === kind);
-    const text = query.trim().toLowerCase();
-    const matched = text
-      ? byKind.filter((location) =>
-          `${location.name} ${location.address} ${location.city}`
-            .toLowerCase()
-            .includes(text),
-        )
-      : byKind;
-    // "Search area" narrows to what the map is currently showing. Cleared
-    // whenever the mode or the query changes, since both mean a new search.
     return bounds
-      ? matched.filter((location) => bounds.contains(location.position))
-      : matched;
-  }, [mode, query, bounds]);
+      ? byKind.filter((location) => bounds.contains(location.position))
+      : byKind;
+  }, [mode, bounds]);
+
+  // `matching` is the Shops tab in the results: our own locations whose name
+  // or address contains what's typed. That is a text search, and it's the
+  // only place one belongs.
+  const matching: StoreLocation[] = useMemo(() => {
+    if (mode === "delivery") return [];
+    const kind = mode === "pickup" ? "shop" : "outpost";
+    const text = query.trim().toLowerCase();
+    if (!text) return [];
+    return LOCATIONS.filter(
+      (location) =>
+        location.kind === kind &&
+        `${location.name} ${location.address} ${location.city}`
+          .toLowerCase()
+          .includes(text),
+    );
+  }, [mode, query]);
 
   // Both paths end the same way: record where the order is going, then open
   // the menu. The shop is inert until this has happened — see the gate in
@@ -112,7 +129,7 @@ export default function LocationFinder() {
   // Only ever called with an address Google resolved and the server confirmed
   // is inside the delivery radius — see AddressSearch and /api/places. There
   // is deliberately no path from raw typed text to a delivery order any more.
-  function chooseAddress(resolved: ResolvedAddress) {
+  function chooseAddress(resolved: ResolvedPlace) {
     setFulfillment({ mode: "delivery", address: resolved.address });
     router.push("/shop");
   }
@@ -120,6 +137,8 @@ export default function LocationFinder() {
   function changeMode(next: Mode) {
     setMode(next);
     setBounds(null);
+    setFocus(null);
+    setQuery("");
     setToastDismissed(false);
   }
 
@@ -222,13 +241,15 @@ export default function LocationFinder() {
           ) : null}
         </div>
 
-        {mode === "delivery" ? (
-          <AddressSearch
-            value={query}
-            onValueChange={setQuery}
-            onResolved={chooseAddress}
-          />
-        ) : null}
+        <SearchResults
+          mode={mode}
+          value={query}
+          stores={matching}
+          onValueChange={setQuery}
+          onPickStore={chooseLocation}
+          onPickPlace={(place) => setFocus([place.lat, place.lng])}
+          onResolvedAddress={chooseAddress}
+        />
       </header>
 
       <StoreMap
@@ -236,6 +257,7 @@ export default function LocationFinder() {
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
         onChoose={chooseLocation}
+        focus={focus}
       />
 
       {/* The toast sits between the map and the nav rather than over the map,

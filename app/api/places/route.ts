@@ -34,17 +34,32 @@ function apiKey(): string | null {
   return key && key.trim().length > 0 ? key.trim() : null;
 }
 
-async function autocomplete(input: string, sessionToken: string, key: string) {
+// Two searches, because the field promises two things. "Search store, city,
+// state, or zip" means an address-shaped query and a place-shaped one are
+// both valid, and Places won't return them together: street_address and
+// locality are different primary types, and asking for both in one call
+// gets a list where cities drown out house numbers or the reverse.
+const TYPES = {
+  // Delivery: somewhere a bag can actually be handed over.
+  address: ["street_address", "premise", "subpremise"],
+  // Pickup and Outpost: somewhere to point the map. Cities, neighbourhoods,
+  // states, and ZIPs — the geography half of "city, state, or zip".
+  region: ["locality", "sublocality", "administrative_area_level_1", "postal_code"],
+} as const;
+
+async function autocomplete(
+  input: string,
+  sessionToken: string,
+  key: string,
+  kind: keyof typeof TYPES,
+) {
   const response = await fetch(AUTOCOMPLETE_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
     body: JSON.stringify({
       input,
       sessionToken,
-      // Street addresses only. Without this a query like "8th" comes back
-      // full of businesses and neighbourhoods, none of which anyone can be
-      // delivered to.
-      includedPrimaryTypes: ["street_address", "premise", "subpremise"],
+      includedPrimaryTypes: [...TYPES[kind]],
       includedRegionCodes: ["us"],
       locationBias: {
         circle: {
@@ -118,8 +133,9 @@ async function details(placeId: string, sessionToken: string, key: string) {
     lat,
     lng,
     miles,
-    // The answer the client actually acts on. Computed here so it can't be
-    // bypassed by editing what the browser sends on.
+    // The answer delivery acts on. Computed here so it can't be bypassed by
+    // editing what the browser sends on. A region lookup gets it too and
+    // ignores it — it's just the distance from the shop either way.
     inRange: miles <= DELIVERY_RADIUS_MILES,
   };
 }
@@ -150,6 +166,7 @@ export async function POST(request: Request) {
   const body = payload as {
     action?: unknown;
     input?: unknown;
+    kind?: unknown;
     placeId?: unknown;
     sessionToken?: unknown;
   } | null;
@@ -165,8 +182,9 @@ export async function POST(request: Request) {
   try {
     if (body?.action === "autocomplete") {
       const input = typeof body.input === "string" ? body.input.trim() : "";
+      const kind = body.kind === "region" ? "region" : "address";
       if (input.length < 3) return Response.json({ suggestions: [] });
-      const result = await autocomplete(input, sessionToken, key);
+      const result = await autocomplete(input, sessionToken, key, kind);
       if (!result.ok) {
         return Response.json({ error: "Address search failed." }, { status: 502 });
       }

@@ -7,7 +7,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { PALETTE } from "../../shop/shopControls";
 import { INITIAL_BOUNDS, type StoreLocation } from "./locations";
 
-const { olive } = PALETTE;
+const { olive, onOlive, muted } = PALETTE;
 
 // A real slippy map rather than a picture of one — it pans, it zooms, and
 // "Search area" means something because there are real bounds to read.
@@ -42,6 +42,16 @@ function pinIcon(kind: StoreLocation["kind"]) {
   });
 }
 
+// Recentres when a searched place resolves. Keyed off the coordinates rather
+// than a callback so repeating the same search doesn't re-fly the map.
+function FlyTo({ focus }: { focus: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (focus) map.flyTo(focus, 12, { duration: 0.8 });
+  }, [map, focus]);
+  return null;
+}
+
 // Bridges the map instance out to the chrome around it, so the zoom buttons,
 // the locate button, and "Search area" can drive a map they don't own.
 function MapBridge({
@@ -65,7 +75,7 @@ function MapBridge({
 function LocateIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="3.2" fill="{olive}" />
+      <circle cx="12" cy="12" r="3.2" fill={olive} />
       <circle cx="12" cy="12" r="7" stroke={olive} strokeWidth="1.8" />
       <path
         d="M12 1.5v3.2M12 19.3v3.2M22.5 12h-3.2M4.7 12H1.5"
@@ -82,6 +92,7 @@ export default function StoreMap({
   showSearchArea,
   onSearchArea,
   onChoose,
+  focus,
 }: {
   locations: StoreLocation[];
   // Delivery has no "search this area" — there is nothing to search until an
@@ -91,12 +102,19 @@ export default function StoreMap({
   // Committing to a location is the whole point of this screen: the menu
   // can't price or route an order without knowing where it's going.
   onChoose: (location: StoreLocation) => void;
+  // Where a searched city, state, or ZIP landed.
+  focus: [number, number] | null;
 }) {
   const mapRef = useRef<L.Map | null>(null);
   // Shown only once the visitor has actually moved the map, the way the
   // reference's does — offering to re-search an area nobody has changed is
   // noise.
   const [moved, setMoved] = useState(false);
+  // Which location the card at the foot of the map is showing. Reset by the
+  // key on this component in LocationFinder whenever the visible set changes,
+  // so it can never point past the end of a shorter list.
+  const [cardIndex, setCardIndex] = useState(0);
+  const card = locations[cardIndex] ?? null;
 
   return (
     <div className="relative min-h-0 flex-1">
@@ -108,6 +126,7 @@ export default function StoreMap({
         style={{ background: "#E7EBD8" }}
       >
         <TileLayer url={TILE_URL} />
+        <FlyTo focus={focus} />
         <MapBridge
           onReady={(map) => {
             mapRef.current = map;
@@ -199,9 +218,74 @@ export default function StoreMap({
           </button>
         </div>
 
-        <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-[#FDFCF7]/90 px-3 py-1 text-[11px] text-[#6F6A5C]">
+        {/* Steps through the locations under the card, as in the reference's
+            list button — with one shop it has nothing to step to, so it only
+            appears when there's more than one. */}
+        {locations.length > 1 ? (
+          <button
+            type="button"
+            onClick={() => setCardIndex((i) => (i + 1) % locations.length)}
+            aria-label="Next location"
+            className="pointer-events-auto absolute right-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-[#FDFCF7] shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+            style={{ bottom: card ? 128 : 56 }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M4 7h16M4 12h16M4 17h16"
+                stroke={olive}
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        ) : null}
+
+        <span
+          className="pointer-events-none absolute left-3 rounded-full bg-[#FDFCF7]/90 px-3 py-1 text-[11px] text-[#6F6A5C]"
+          style={{ bottom: card ? 128 : 12 }}
+        >
           {TILE_ATTRIBUTION}
         </span>
+
+        {/* The store card from the reference: the shop, its address, and the
+            way in. It sits over the foot of the map rather than in a popup so
+            it's readable without hunting for a pin — which matters most on
+            the first visit, when the map is still showing the whole country. */}
+        {card ? (
+          <div className="pointer-events-auto absolute inset-x-3 bottom-3">
+            <div
+              className="flex items-center gap-3 rounded-2xl bg-[#FDFCF7] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]"
+            >
+              <button
+                type="button"
+                onClick={() => onChoose(card)}
+                className="min-w-0 flex-1 cursor-pointer text-left"
+              >
+                <span
+                  className="block truncate text-[19px] font-bold leading-tight"
+                  style={{ color: olive }}
+                >
+                  {card.name}
+                </span>
+                <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
+                  {card.address}
+                </span>
+                <span className="block truncate text-[14px]" style={{ color: muted }}>
+                  {card.city}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onChoose(card)}
+                aria-label={`Order from ${card.name}`}
+                style={{ backgroundColor: olive, color: onOlive }}
+                className="shrink-0 cursor-pointer rounded-full px-4 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90"
+              >
+                Order
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
