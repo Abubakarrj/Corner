@@ -21,7 +21,7 @@ const NAV: { id: TabId; label: string; href: string | null }[] = [
   { id: "menu", label: "Menu", href: "/shop" },
   { id: "reorder", label: "Reorder", href: "/membership" },
   { id: "gift", label: "Gift", href: null },
-  { id: "about", label: "About", href: "/order" },
+  { id: "about", label: "About", href: "/about" },
 ];
 
 function NavIcon({ id }: { id: TabId }) {

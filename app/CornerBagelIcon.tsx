@@ -13,7 +13,8 @@ import {
   pageWrapper,
 } from "./bagelLayout";
 
-// The corner bagel icon, restored on /order at the request of the user, who
+// The corner bagel icon, restored on the about page at the request of the
+// user, who
 // wanted it back in its original corner rather than removed. Used to link to
 // /about; now links home instead, since /about no longer exists.
 //
@@ -26,7 +27,7 @@ import {
 // asked for.
 export default function CornerBagelIcon() {
   const pathname = usePathname();
-  if (pathname !== "/order") return null;
+  if (pathname !== "/about") return null;
 
   return (
     <div

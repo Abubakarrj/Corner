@@ -1,10 +1,10 @@
-// Positioning math the corner icon on /order is built from.
+// Positioning math the corner icon on /about is built from.
 //
 // This used to be the /bagel page's own geometry — the icon replicated that
 // page's layout (page wrapper, frame, caption) and hung itself off the
 // caption, so it would land exactly where the real caption's bagel photo
 // sat. /bagel no longer exists, but the same viewport-relative math still
-// produces the corner position the icon is meant to sit in on /order, so
+// produces the corner position the icon is meant to sit in on /about, so
 // it's kept here rather than re-derived. Everything below is pure CSS driven
 // by the viewport alone: no state, no content.
 //

@@ -7,8 +7,8 @@
 // 13px on a phone, growing to 17px by desktop width.
 const cardFontSize = "clamp(13px, 0.44vw + 11.35px, 17px)";
 
-// The text style the order card is measured and rendered with.
-export const orderTextStyle = {
+// The text style the about card is measured and rendered with.
+export const aboutTextStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
   fontWeight: 400,
   fontSize: cardFontSize,
@@ -35,8 +35,8 @@ const bodyStyle = {
   textWrap: "wrap",
 } as const;
 
-// The order card's content — every child that gives the card its size.
-export default function OrderCardBody() {
+// The about card's content — every child that gives the card its size.
+export default function AboutCardBody() {
   return (
     <>
       {/* 1.15x the body size, down from 1.35x. The heading sat a third

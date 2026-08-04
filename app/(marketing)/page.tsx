@@ -21,7 +21,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <div className="flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-white p-6">
-      <Link href="/order" className="cursor-pointer">
+      <Link href="/about" className="cursor-pointer">
         <div className="relative h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 lg:h-72 lg:w-72">
           <Image
             src="/logo.svg"

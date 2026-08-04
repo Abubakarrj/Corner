@@ -75,7 +75,7 @@ function readStoredState(): StoredState | null {
 // left, so dwell is what's used, at a length that means something:
 //
 //   /       15s. Nothing to read here, so this only says "didn't bounce."
-//   /order  20s. Roughly the reading time of the copy on that page, so it
+//   /about  20s. Roughly the reading time of the copy on that page, so it
 //           lands about when someone finishes it rather than interrupting.
 //
 // These keys double as the route allowlist — a route absent from this table
@@ -93,7 +93,7 @@ function readStoredState(): StoredState | null {
 // unreliable anyway.
 const DWELL_MS: Record<string, number> = {
   "/": 15000,
-  "/order": 20000,
+  "/about": 20000,
 };
 
 // Desktop gets a second, better cue: the pointer leaving the top edge of the
