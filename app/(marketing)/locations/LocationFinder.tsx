@@ -213,19 +213,23 @@ export default function LocationFinder() {
   );
 }
 
-// The five-item tab bar from the reference, structurally 1:1 — icon over
-// label, the active one tinted and underlined.
+// The five-item tab bar — icon over label, the active one tinted and
+// underlined.
 //
-// Only Locations goes anywhere: this is the sole page of the set that exists.
-// The rest are here because the reference has five, and they are marked
-// disabled rather than dressed up as links so nothing looks tappable that
-// isn't. Point them at real routes as those get built.
+// Menu is the active tab rather than a "Locations" one, matching the
+// reference: the finder isn't its own destination, it's the step where an
+// order picks a store, so the section it belongs to stays lit. That also
+// means Menu needs no href here — it's the page you're on.
+//
+// Reorder and Gift have no destinations yet. They're marked disabled rather
+// than dressed up as links, so nothing looks tappable that isn't; point them
+// at real routes as those get built.
 const NAV = [
   { id: "home", label: "Home", href: "/" },
-  { id: "menu", label: "Menu", href: null },
-  { id: "locations", label: "Locations", href: "/locations", active: true },
-  { id: "pantry", label: "Pantry", href: "/shop" },
-  { id: "contact", label: "Contact", href: "/order" },
+  { id: "menu", label: "Menu", href: null, active: true },
+  { id: "reorder", label: "Reorder", href: null },
+  { id: "gift", label: "Gift", href: null },
+  { id: "about", label: "About", href: "/order" },
 ] as const;
 
 function NavIcon({ id }: { id: string }) {
@@ -243,24 +247,37 @@ function NavIcon({ id }: { id: string }) {
         <path d="M6 8.2c1.6-1.4 10.4-1.4 12 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       </svg>
     );
-  if (id === "locations")
+  // Heart for Reorder and a wrapped box for Gift, as in the reference.
+  if (id === "reorder")
     return (
       <svg {...common} aria-hidden>
-        <path d="M12 21s7-6.4 7-11a7 7 0 1 0-14 0c0 4.6 7 11 7 11Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+        <path
+          d="M12 20s-7.4-4.6-7.4-9.6a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 5-7.4 9.6-7.4 9.6Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
       </svg>
     );
-  if (id === "pantry")
+  if (id === "gift")
     return (
       <svg {...common} aria-hidden>
-        <path d="M9 8.6 12 4l3 4.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M4 8.6h16l-1.3 11a1.6 1.6 0 0 1-1.6 1.4H6.9a1.6 1.6 0 0 1-1.6-1.4L4 8.6Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        <rect x="3.4" y="9.4" width="17.2" height="11.2" rx="1.4" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M2.6 9.4h18.8M12 9.4V20.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <path
+          d="M12 9.4S10.9 4 8.6 4a2.2 2.2 0 0 0 0 4.4h6.8a2.2 2.2 0 0 0 0-4.4C13.1 4 12 9.4 12 9.4Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
       </svg>
     );
+  // About.
   return (
     <svg {...common} aria-hidden>
-      <rect x="3.2" y="5.2" width="17.6" height="13.6" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="m4 7 8 5.6L20 7" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="8.4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 11v5.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="7.9" r="1" fill="currentColor" />
     </svg>
   );
 }
@@ -294,16 +311,21 @@ function BottomNav() {
               {item.href ? (
                 <Link
                   href={item.href}
-                  aria-current={active ? "page" : undefined}
                   style={{ color: tone }}
                   className="flex cursor-pointer flex-col items-center pb-[7px] transition-opacity hover:opacity-70"
                 >
                   {body}
                 </Link>
               ) : (
+                // Two different reasons a tab isn't a link, and they must not
+                // look alike: the active tab is the page you're already on,
+                // so it stays at full strength and announces itself as
+                // current; Reorder and Gift are dimmed because they have
+                // nowhere to go yet.
                 <span
-                  aria-disabled="true"
-                  style={{ color: tone, opacity: 0.45 }}
+                  aria-current={active ? "page" : undefined}
+                  aria-disabled={active ? undefined : "true"}
+                  style={{ color: tone, opacity: active ? 1 : 0.45 }}
                   className="flex flex-col items-center pb-[7px]"
                 >
                   {body}
