@@ -6,7 +6,20 @@ import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
 // Same produce palette as the pantry: olive marks the active tab, cream is
 // the ground, and the rule above the bar is the shop's section border.
-const { cream, olive, border } = PALETTE;
+const { cream, olive, border, faint } = PALETTE;
+
+// Resting tabs sit at the palette's faint tier — the same tone the catalog
+// already uses for its item count and secondary copy — and the current one
+// steps up to full olive with its underline. The gap is deliberately wider
+// than the reference's, where inactive and active are nearly the same
+// lightness and only the hue separates them; that reads as five equal tabs
+// with one tinted, rather than one you're on and four you could go to.
+//
+// Worth knowing: faint on cream measures 3.3:1, which clears WCAG AA for
+// icons and other UI but is under the 4.5:1 wanted for text at this size.
+// #6B6E64 would make it 4.8:1 while still reading clearly duller than olive,
+// if that trade matters more than the contrast between states.
+const TAB_REST = faint;
 
 export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 
@@ -108,7 +121,7 @@ export default function TabBar({ active }: { active: TabId }) {
         {NAV.map((item) => {
           const href = item.id === "menu" ? menuHref : item.href;
           const isActive = item.id === active;
-          const tone = isActive ? olive : "#5F6553";
+          const tone = isActive ? olive : TAB_REST;
           const body = (
             <>
               <NavIcon id={item.id} />
