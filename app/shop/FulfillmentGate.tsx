@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { describeFulfillment, useFulfillment } from "../fulfillment";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
 import { PALETTE } from "./shopControls";
 
 const { olive, onOlive, cream, border, muted, controlBorder } = PALETTE;
@@ -18,7 +20,21 @@ const { olive, onOlive, cream, border, muted, controlBorder } = PALETTE;
 // Rendered inside the shop layout, so it covers the catalog, the product
 // pages, the cart and checkout alike rather than each of them checking.
 export default function FulfillmentGate({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const fulfillment = useFulfillment();
+
+  // Landing here without a destination — a bookmark, a shared link, a
+  // back button — sends you to the map, which is the one place the choice is
+  // made. Anything else would be a second screen asking the same question,
+  // and the rule is that until we know how the food is coming or going, you
+  // are on the map.
+  //
+  // peek rather than the hook: the hook reports null for one render after
+  // hydration, and redirecting on that would bounce someone who already has
+  // a location.
+  useEffect(() => {
+    if (peekFulfillment() === null) router.replace("/locations?for=menu");
+  }, [router]);
 
   if (!fulfillment) {
     return (
@@ -33,7 +49,8 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
           className="m-0 mt-3 max-w-xs text-[14px] leading-[1.5]"
           style={{ color: muted }}
         >
-          Pick a shop, an outpost, or a delivery address and the menu opens up.
+          Taking you to the map to pick a shop, an outpost, or a delivery
+          address. The link below does the same, if it doesn&rsquo;t.
         </p>
         <Link
           href="/locations"

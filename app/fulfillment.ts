@@ -95,6 +95,18 @@ export function useFulfillment(): Fulfillment | null {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+// The value right now, outside React.
+//
+// useFulfillment reports null for one render after hydration — that's what
+// getServerSnapshot is for, and it's the right answer for rendering. It is
+// the wrong answer for deciding whether to redirect: acting on it would
+// bounce someone who has a perfectly good location. This reads the store
+// itself, which localStorage already filled at module load, so it's true
+// from the first tick.
+export function peekFulfillment(): Fulfillment | null {
+  return current;
+}
+
 // One line naming the destination, for the shop's header and the order
 // confirmation — the answer to "where is this going?".
 export function describeFulfillment(fulfillment: Fulfillment): {
