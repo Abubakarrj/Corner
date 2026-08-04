@@ -107,9 +107,16 @@ function NavIcon({ id }: { id: TabId }) {
 
 export default function TabBar({ active }: { active: TabId }) {
   const fulfillment = useFulfillment();
-  // Sending someone to a gated shop just to be told to pick a location is a
-  // wasted tap; send them where the choice is made instead.
-  const menuHref = fulfillment ? "/shop" : "/locations";
+  // Until the shop knows whether the food is being collected, handed over at
+  // an outpost, or driven somewhere, it can't price or route anything — so
+  // Menu opens the map instead of a gated shop that would only send them
+  // back here.
+  //
+  // ?for=menu is how the map knows which tab to light. Home and Menu land on
+  // the same screen at this point, and without it the bar would say Home to
+  // someone who just tapped Menu — which reads as the tap having missed,
+  // rather than as the first step of ordering.
+  const menuHref = fulfillment ? "/shop" : "/locations?for=menu";
 
   return (
     <nav

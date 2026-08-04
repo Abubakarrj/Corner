@@ -3,7 +3,7 @@
 import type { LatLngBounds } from "leaflet";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
@@ -68,6 +68,10 @@ function CloseIcon() {
 
 export default function LocationFinder() {
   const router = useRouter();
+  // Home and Menu both open this screen; ?for=menu is how it knows which of
+  // them to light in the tab bar. Anything else — a direct visit, the Home
+  // tab — reads as Home.
+  const activeTab = useSearchParams().get("for") === "menu" ? "menu" : "home";
   const [mode, setMode] = useState<Mode>("pickup");
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
@@ -272,8 +276,9 @@ export default function LocationFinder() {
         </div>
       ) : null}
 
-      {/* Home is this page — the finder is the front door, not a sub-page. */}
-      <TabBar active="home" />
+      {/* The finder is the front door for Home, and the first step for Menu.
+          Which one lit it is the only difference. */}
+      <TabBar active={activeTab} />
     </div>
   );
 }

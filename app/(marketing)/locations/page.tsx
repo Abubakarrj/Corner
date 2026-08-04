@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import LocationFinder from "./LocationFinder";
 
 export const metadata = {
@@ -7,5 +8,14 @@ export const metadata = {
 };
 
 export default function LocationsPage() {
-  return <LocationFinder />;
+  // The finder reads ?for= to know whether Home or Menu sent it here, and
+  // useSearchParams without a boundary would opt this whole route out of
+  // prerendering. The fallback is the page's own cream, so the swap isn't
+  // visible — the map is a client-only chunk that arrives a beat later
+  // regardless.
+  return (
+    <Suspense fallback={<div className="h-dvh w-full" style={{ backgroundColor: "#F7F4EB" }} />}>
+      <LocationFinder />
+    </Suspense>
+  );
 }
