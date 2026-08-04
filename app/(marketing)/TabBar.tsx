@@ -46,8 +46,20 @@ const NAV: { id: TabId; label: string; href: string | null }[] = [
   { id: "about", label: "About", href: "/about" },
 ];
 
-function NavIcon({ id }: { id: TabId }) {
+// Each icon has a resting outline and a filled or opened state for the tab
+// you're on, and animates between them. currentColor throughout, so the tone
+// change in the parent carries the icons with it for free.
+//
+// The transitions are on the SVG's own properties — fill and transform —
+// rather than swapping one icon for another, because React keeps the same
+// DOM node across a route change and a swap would just pop. Reduced motion
+// gets the end state with no travel.
+const MOTION = "transition-all duration-300 ease-out motion-reduce:transition-none";
+
+function NavIcon({ id, active }: { id: TabId; active: boolean }) {
   const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none" } as const;
+  const filled = active ? "currentColor" : "transparent";
+
   if (id === "home")
     return (
       <svg {...common} aria-hidden>
@@ -56,22 +68,59 @@ function NavIcon({ id }: { id: TabId }) {
           stroke="currentColor"
           strokeWidth="1.6"
           strokeLinejoin="round"
+          fill={filled}
+          className={MOTION}
         />
       </svg>
     );
+
+  // A bagel, which splits down the middle when this is the tab you're on.
+  //
+  // Two drawings crossfading rather than one that opens: a half-ring has to
+  // be stroked along its flat edge, so a single pair sitting closed shows a
+  // seam top and bottom and reads as a power symbol. The whole ring carries
+  // the resting state, the halves carry the split, and they trade places as
+  // the halves part.
   if (id === "menu")
     return (
       <svg {...common} aria-hidden>
-        <path
-          d="M4 11.5h16a8 8 0 0 1-8 7.5 8 8 0 0 1-8-7.5Z"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
-        />
-        <path d="M6 8.2c1.6-1.4 10.4-1.4 12 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <g className={MOTION} style={{ opacity: active ? 0 : 1 }}>
+          <circle cx="12" cy="12" r="8.4" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="12" cy="12" r="3.4" stroke="currentColor" strokeWidth="1.6" />
+        </g>
+        <g
+          className={MOTION}
+          style={{
+            opacity: active ? 1 : 0,
+            transform: active ? "translateX(-1.7px)" : "none",
+          }}
+        >
+          <path
+            d="M12 3.6A8.4 8.4 0 0 0 12 20.4V15.4a3.4 3.4 0 0 1 0-6.8Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+            fill="currentColor"
+          />
+        </g>
+        <g
+          className={MOTION}
+          style={{
+            opacity: active ? 1 : 0,
+            transform: active ? "translateX(1.7px)" : "none",
+          }}
+        >
+          <path
+            d="M12 3.6A8.4 8.4 0 0 1 12 20.4V15.4a3.4 3.4 0 0 0 0-6.8Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+            fill="currentColor"
+          />
+        </g>
       </svg>
     );
-  // Heart for Reorder and a wrapped box for Gift, as in the reference.
+
   if (id === "reorder")
     return (
       <svg {...common} aria-hidden>
@@ -80,27 +129,81 @@ function NavIcon({ id }: { id: TabId }) {
           stroke="currentColor"
           strokeWidth="1.6"
           strokeLinejoin="round"
+          fill={filled}
+          className={MOTION}
         />
       </svg>
     );
+
+  // The lid lifts and tilts off the box when this tab is the one you're on.
   if (id === "gift")
     return (
       <svg {...common} aria-hidden>
-        <rect x="3.4" y="9.4" width="17.2" height="11.2" rx="1.4" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M2.6 9.4h18.8M12 9.4V20.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-        <path
-          d="M12 9.4S10.9 4 8.6 4a2.2 2.2 0 0 0 0 4.4h6.8a2.2 2.2 0 0 0 0-4.4C13.1 4 12 9.4 12 9.4Z"
+        <rect
+          x="4.6"
+          y="11.6"
+          width="14.8"
+          height="9"
+          rx="1.2"
           stroke="currentColor"
           strokeWidth="1.6"
-          strokeLinejoin="round"
+          fill={filled}
+          className={MOTION}
         />
+        <path d="M12 11.6V20.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        <g
+          className={MOTION}
+          style={{
+            transform: active ? "translateY(-2.6px) rotate(-9deg)" : "none",
+            transformOrigin: "12px 10px",
+          }}
+        >
+          <rect
+            x="3.4"
+            y="8"
+            width="17.2"
+            height="3.6"
+            rx="1"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            fill={filled}
+            className={MOTION}
+          />
+          <path
+            d="M12 8S10.9 3.4 8.6 3.4a2.2 2.2 0 0 0 0 4.4h6.8a2.2 2.2 0 0 0 0-4.4C13.1 3.4 12 8 12 8Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+        </g>
       </svg>
     );
+
   return (
     <svg {...common} aria-hidden>
-      <circle cx="12" cy="12" r="8.4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 11v5.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      <circle cx="12" cy="7.9" r="1" fill="currentColor" />
+      <circle
+        cx="12"
+        cy="12"
+        r="8.4"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        fill={filled}
+        className={MOTION}
+      />
+      <path
+        d="M12 11v5.4"
+        stroke={active ? PALETTE.cream : "currentColor"}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        className={MOTION}
+      />
+      <circle
+        cx="12"
+        cy="7.9"
+        r="1"
+        fill={active ? PALETTE.cream : "currentColor"}
+        className={MOTION}
+      />
     </svg>
   );
 }
@@ -131,7 +234,7 @@ export default function TabBar({ active }: { active: TabId }) {
           const tone = isActive ? olive : TAB_REST;
           const body = (
             <>
-              <NavIcon id={item.id} />
+              <NavIcon id={item.id} active={isActive} />
               <span className="mt-1.5 text-[13px] leading-none">{item.label}</span>
               {/* The active underline, as in the reference: a short rule
                   under the label rather than a full-width indicator. */}

@@ -114,8 +114,19 @@ export default function StoreMap({
   // to match. Derived from scroll position rather than driving it, so the
   // finger stays in charge.
   const [cardIndex, setCardIndex] = useState(0);
+  // Which card's Order button has been pressed. The button is white at rest
+  // and fills olive when it's chosen, and this holds that state long enough
+  // to be seen: the tap navigates away, so without the beat the confirmation
+  // would be a frame of colour nobody registers.
+  const [chosenId, setChosenId] = useState<string | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const settle = useRef<number | undefined>(undefined);
+
+  function order(location: StoreLocation) {
+    if (chosenId) return;
+    setChosenId(location.id);
+    window.setTimeout(() => onChoose(location), 220);
+  }
 
   function onRailScroll() {
     const rail = railRef.current;
@@ -267,7 +278,7 @@ export default function StoreMap({
                 <div className="flex items-center gap-3 rounded-2xl bg-[#FDFCF7] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                   <button
                     type="button"
-                    onClick={() => onChoose(location)}
+                    onClick={() => order(location)}
                     className="min-w-0 flex-1 cursor-pointer text-left"
                   >
                     <span
@@ -283,12 +294,19 @@ export default function StoreMap({
                       {location.city}
                     </span>
                   </button>
+                  {/* White until it's the one chosen, then it fills olive.
+                      Flat olive from the start gave no way to tell a press
+                      had registered. */}
                   <button
                     type="button"
-                    onClick={() => onChoose(location)}
+                    onClick={() => order(location)}
                     aria-label={`Order from ${location.name}`}
-                    style={{ backgroundColor: olive, color: onOlive }}
-                    className="shrink-0 cursor-pointer rounded-full px-4 py-2.5 text-[13px] font-bold transition-opacity hover:opacity-90"
+                    style={{
+                      backgroundColor: chosenId === location.id ? olive : "#FFFFFF",
+                      color: chosenId === location.id ? onOlive : olive,
+                      borderColor: olive,
+                    }}
+                    className="shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-bold transition-colors duration-200 ease-out hover:bg-[#EFEBDD] motion-reduce:transition-none"
                   >
                     Order
                   </button>
