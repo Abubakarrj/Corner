@@ -15,13 +15,16 @@ export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 //
 // Home is the map — the finder is the front door, not a sub-page of one.
 // Menu is the pantry. Reorder is membership: signing in is what makes
-// reordering possible, so that's the door it opens. Gift has no destination
-// yet and is dimmed rather than dressed up as a link.
+// reordering possible, so that's the door it opens. Gift is the gift-card
+// gallery.
+//
+// Every tab has a destination now, so nothing is dimmed — the disabled
+// branch below stays because a new tab will arrive before its page does.
 const NAV: { id: TabId; label: string; href: string | null }[] = [
   { id: "home", label: "Home", href: "/locations" },
   { id: "menu", label: "Menu", href: "/shop" },
   { id: "reorder", label: "Reorder", href: "/membership" },
-  { id: "gift", label: "Gift", href: null },
+  { id: "gift", label: "Gift", href: "/gift" },
   { id: "about", label: "About", href: "/about" },
 ];
 

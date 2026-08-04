@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
 //
 // Visibility on the shop subdomain is decided by the caller — app/layout.tsx
 // — server-side via the Host header. See the comment there for why.
-const TAB_BAR_ROUTES = ["/locations", "/membership"];
+const TAB_BAR_ROUTES = ["/locations", "/membership", "/gift"];
 
 export default function PrivacyFooterLink() {
   const pathname = usePathname();
