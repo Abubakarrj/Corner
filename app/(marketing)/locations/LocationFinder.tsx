@@ -3,7 +3,9 @@
 import type { LatLngBounds } from "leaflet";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { setFulfillment } from "../../fulfillment";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import { LOCATIONS, type StoreLocation } from "./locations";
@@ -64,6 +66,7 @@ function CloseIcon() {
 }
 
 export default function LocationFinder() {
+  const router = useRouter();
   const [mode, setMode] = useState<Mode>("pickup");
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<LatLngBounds | null>(null);
@@ -91,17 +94,42 @@ export default function LocationFinder() {
       : matched;
   }, [mode, query, bounds]);
 
+  // Both paths end the same way: record where the order is going, then open
+  // the menu. The shop is inert until this has happened — see the gate in
+  // app/shop/layout.tsx — because a bagel picked up in Koreatown and one
+  // delivered to an apartment are different orders.
+  function chooseLocation(location: StoreLocation) {
+    setFulfillment({
+      mode: location.kind === "outpost" ? "outpost" : "pickup",
+      locationId: location.id,
+      label: location.name,
+      detail: `${location.address}, ${location.city}`,
+    });
+    router.push("/shop");
+  }
+
+  function submitDeliveryAddress(event: React.FormEvent) {
+    event.preventDefault();
+    const address = query.trim();
+    if (mode !== "delivery" || address.length === 0) return;
+    setFulfillment({ mode: "delivery", address });
+    router.push("/shop");
+  }
+
   function changeMode(next: Mode) {
     setMode(next);
     setBounds(null);
     setToastDismissed(false);
   }
 
+  const deliveryReady = mode === "delivery" && query.trim().length > 0;
   const showToast =
-    !toastDismissed && (mode === "delivery" ? query.trim() === "" : visible.length === 0);
+    !toastDismissed && (mode === "delivery" || visible.length === 0);
   const toastText =
     mode === "delivery"
-      ? "Enter an address above to get started."
+      ? deliveryReady
+        ? "Deliver to this address?"
+        : "Enter an address above to get started."
       : mode === "outpost"
         ? "No outposts here yet."
         : "No shops here yet.";
@@ -162,7 +190,7 @@ export default function LocationFinder() {
           </Link>
         </div>
 
-        <div className="px-5 pb-[17px] pt-[26px]">
+        <form onSubmit={submitDeliveryAddress} className="px-5 pb-[17px] pt-[26px]">
           <input
             type="text"
             inputMode="search"
@@ -178,13 +206,14 @@ export default function LocationFinder() {
             className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#3E4A30] outline-none placeholder:text-[#8A8672]"
             style={{ borderBottom: `1px solid ${controlBorder}` }}
           />
-        </div>
+        </form>
       </header>
 
       <StoreMap
         locations={visible}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
+        onChoose={chooseLocation}
       />
 
       {/* The toast sits between the map and the nav rather than over the map,
@@ -195,6 +224,16 @@ export default function LocationFinder() {
           style={{ backgroundColor: "#EFEBDD", borderColor: border }}
         >
           <p className="m-0 text-[14px] text-[#3E4A30]">{toastText}</p>
+          {deliveryReady ? (
+            <button
+              type="button"
+              onClick={submitDeliveryAddress}
+              style={{ backgroundColor: olive, color: onOlive }}
+              className="shrink-0 cursor-pointer rounded-full px-4 py-2 text-[13px] font-bold transition-opacity hover:opacity-90"
+            >
+              Continue
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setToastDismissed(true)}

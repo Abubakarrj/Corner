@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useFulfillment } from "../fulfillment";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
 // Same produce palette as the pantry: olive marks the active tab, cream is
@@ -14,14 +15,18 @@ export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 // now, and a tab bar that differs between screens is worse than none.
 //
 // Home is the map — the finder is the front door, not a sub-page of one.
-// Menu is the pantry. Reorder is membership: signing in is what makes
-// reordering possible, so that's the door it opens. Gift is the gift-card
-// gallery.
+// Menu is the pantry, but only once an order has somewhere to go: until a
+// shop, an outpost, or a delivery address is chosen, Menu leads back to the
+// map, because the shop can't price or route an order without knowing where
+// it's headed (see app/fulfillment.ts and the gate in app/shop/layout.tsx).
+// Reorder is membership: signing in is what makes reordering possible, so
+// that's the door it opens. Gift is the gift-card gallery.
 //
 // Every tab has a destination now, so nothing is dimmed — the disabled
 // branch below stays because a new tab will arrive before its page does.
 const NAV: { id: TabId; label: string; href: string | null }[] = [
   { id: "home", label: "Home", href: "/locations" },
+  // href is overridden at render — see menuHref below.
   { id: "menu", label: "Menu", href: "/shop" },
   { id: "reorder", label: "Reorder", href: "/membership" },
   { id: "gift", label: "Gift", href: "/gift" },
@@ -88,6 +93,11 @@ function NavIcon({ id }: { id: TabId }) {
 }
 
 export default function TabBar({ active }: { active: TabId }) {
+  const fulfillment = useFulfillment();
+  // Sending someone to a gated shop just to be told to pick a location is a
+  // wasted tap; send them where the choice is made instead.
+  const menuHref = fulfillment ? "/shop" : "/locations";
+
   return (
     <nav
       className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
@@ -96,6 +106,7 @@ export default function TabBar({ active }: { active: TabId }) {
     >
       <ul className="m-0 flex list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
+          const href = item.id === "menu" ? menuHref : item.href;
           const isActive = item.id === active;
           const tone = isActive ? olive : "#5F6553";
           const body = (
@@ -113,9 +124,9 @@ export default function TabBar({ active }: { active: TabId }) {
 
           return (
             <li key={item.id} className="flex-1">
-              {item.href ? (
+              {href ? (
                 <Link
-                  href={item.href}
+                  href={href}
                   aria-current={isActive ? "page" : undefined}
                   style={{ color: tone }}
                   className="flex cursor-pointer flex-col items-center pb-[7px] transition-opacity hover:opacity-70"

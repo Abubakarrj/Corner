@@ -81,12 +81,16 @@ export default function StoreMap({
   locations,
   showSearchArea,
   onSearchArea,
+  onChoose,
 }: {
   locations: StoreLocation[];
   // Delivery has no "search this area" — there is nothing to search until an
   // address is entered — so the button is the caller's decision, not ours.
   showSearchArea: boolean;
   onSearchArea: (bounds: L.LatLngBounds) => void;
+  // Committing to a location is the whole point of this screen: the menu
+  // can't price or route an order without knowing where it's going.
+  onChoose: (location: StoreLocation) => void;
 }) {
   const mapRef = useRef<L.Map | null>(null);
   // Shown only once the visitor has actually moved the map, the way the
@@ -124,7 +128,19 @@ export default function StoreMap({
                 {location.address}
                 <br />
                 {location.city}
+                <br />
+                {location.hours}
               </span>
+              {/* The commitment point. Everything else on this screen is
+                  browsing; this is where the order gets a destination. */}
+              <button
+                type="button"
+                onClick={() => onChoose(location)}
+                style={{ backgroundColor: olive }}
+                className="mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-bold text-[#F3F1E5] transition-opacity hover:opacity-90"
+              >
+                Order from here
+              </button>
             </Popup>
           </Marker>
         ))}

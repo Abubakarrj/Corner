@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "../CartContext";
 import { formatPrice, getProduct } from "../products";
+import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { DISPLAY_FONT } from "../shopControls";
 
 const BRAND_RED = "#BE1923";
@@ -15,6 +16,7 @@ const inputClass =
 
 export default function CheckoutPage() {
   const { lines, subtotalCents, clear } = useCart();
+  const fulfillment = useFulfillment();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -47,6 +49,11 @@ export default function CheckoutPage() {
           name,
           email,
           phone,
+          // Where it's going. The gate in the shop layout means this is
+          // always set by the time anyone reaches checkout, but it's sent
+          // as-is rather than assumed — the kitchen needs it more than the
+          // basket does.
+          fulfillment,
           items: rows.map(({ line, product }) => ({
             slug: product.slug,
             name: product.name,
@@ -86,6 +93,15 @@ export default function CheckoutPage() {
           <p className="text-[14px] text-[#6F6A5C]">
             Order placed — we&rsquo;ll be in touch to confirm and take payment.
           </p>
+          {/* Repeated back on the confirmation, because this is the last
+              moment someone can catch a wrong destination before the kitchen
+              acts on it. */}
+          {fulfillment ? (
+            <p className="mt-2 text-[14px] text-[#3E4A30]">
+              {describeFulfillment(fulfillment).mode}:{" "}
+              <span className="font-bold">{describeFulfillment(fulfillment).where}</span>
+            </p>
+          ) : null}
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Back to the pantry
           </Link>

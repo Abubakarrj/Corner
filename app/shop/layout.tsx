@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { CartProvider } from "./CartContext";
 import ShopHeader from "./ShopHeader";
 import ChatWidget from "./ChatWidget";
+import FulfillmentGate, { FulfillmentBanner } from "./FulfillmentGate";
 import { SHOP_FONT } from "./shopControls";
 
 // Everything under here is reachable two ways: through the shop subdomain
@@ -57,8 +58,16 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
         className="flex min-h-dvh flex-col bg-[#F7F4EB]"
         style={{ fontFamily: SHOP_FONT }}
       >
+        {/* The gate wraps everything below the header: no basket, no product
+            page, no checkout until the order has a destination. The header
+            stays outside it so the search and basket chrome don't flicker in
+            and out, and the banner under it is the standing answer to "where
+            is this going?". */}
         <ShopHeader />
-        <main className="flex-1">{children}</main>
+        <FulfillmentBanner />
+        <main className="flex-1">
+          <FulfillmentGate>{children}</FulfillmentGate>
+        </main>
         <ChatWidget />
       </div>
     </CartProvider>
