@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useFulfillment } from "../fulfillment";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
 // Same produce palette as the pantry: olive marks the active tab, cream is
@@ -27,11 +26,12 @@ export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 // rather than inside the location finder because more than one page shows it
 // now, and a tab bar that differs between screens is worse than none.
 //
-// Home is the map — the finder is the front door, not a sub-page of one.
-// Menu is the pantry, but only once an order has somewhere to go: until a
-// shop, an outpost, or a delivery address is chosen, Menu leads back to the
-// map, because the shop can't price or route an order without knowing where
-// it's headed (see app/fulfillment.ts and the gate in app/shop/layout.tsx).
+// Home and Menu both open the map. Menu never goes straight to /shop, even
+// when a destination is already stored: the map is where you say how the food
+// is coming or going, and the shop is what you get once you have. Tapping
+// Menu means "start an order", and that starts there — the way through is
+// choosing a shop or an address, not the tab.
+//
 // Reorder is membership: signing in is what makes reordering possible, so
 // that's the door it opens. Gift is the gift-card gallery.
 //
@@ -39,8 +39,9 @@ export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 // branch below stays because a new tab will arrive before its page does.
 const NAV: { id: TabId; label: string; href: string | null }[] = [
   { id: "home", label: "Home", href: "/locations" },
-  // href is overridden at render — see menuHref below.
-  { id: "menu", label: "Menu", href: "/shop" },
+  // ?for=menu is how the map knows to light Menu rather than Home — they
+  // are the same screen reached two ways.
+  { id: "menu", label: "Menu", href: "/locations?for=menu" },
   { id: "reorder", label: "Reorder", href: "/membership" },
   { id: "gift", label: "Gift", href: "/gift" },
   { id: "about", label: "About", href: "/about" },
@@ -209,18 +210,6 @@ function NavIcon({ id, active }: { id: TabId; active: boolean }) {
 }
 
 export default function TabBar({ active }: { active: TabId }) {
-  const fulfillment = useFulfillment();
-  // Until the shop knows whether the food is being collected, handed over at
-  // an outpost, or driven somewhere, it can't price or route anything — so
-  // Menu opens the map instead of a gated shop that would only send them
-  // back here.
-  //
-  // ?for=menu is how the map knows which tab to light. Home and Menu land on
-  // the same screen at this point, and without it the bar would say Home to
-  // someone who just tapped Menu — which reads as the tap having missed,
-  // rather than as the first step of ordering.
-  const menuHref = fulfillment ? "/shop" : "/locations?for=menu";
-
   return (
     <nav
       className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
@@ -229,7 +218,7 @@ export default function TabBar({ active }: { active: TabId }) {
     >
       <ul className="m-0 flex list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
-          const href = item.id === "menu" ? menuHref : item.href;
+          const { href } = item;
           const isActive = item.id === active;
           const tone = isActive ? olive : TAB_REST;
           const body = (
