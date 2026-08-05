@@ -6,7 +6,7 @@ import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { totalsFor } from "../money";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
-import { recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
+import { orderTotals, recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
 import { Check, Disclosure, Field, Money, Section } from "./CheckoutSections";
@@ -120,6 +120,12 @@ export default function CheckoutPage() {
           optionsLabel: chosen.join(" · "),
         })),
         subtotalCents,
+        // Snapshotted so the tracker and the account history show what was
+        // actually owed, rather than re-deriving a number that leaves the tip
+        // out and calls the subtotal a total.
+        taxCents: totals.taxCents,
+        tipCents: totals.tipCents,
+        totalCents: totals.totalCents,
         fulfillmentMode: where?.mode ?? "Pickup",
         fulfillmentWhere: where?.where ?? "Corner Bagel",
       });
@@ -133,7 +139,13 @@ export default function CheckoutPage() {
   }
 
   if (status === "placed") {
-    return <Placed order={placed} where={where} totals={totals} />;
+    // The recorded order's own totals, not the live ones. `totals` is derived
+    // from the cart, and placing the order clears the cart — so reading it
+    // here printed a $0.00 subtotal and a $0.00 tax under the tip, on the one
+    // screen whose entire job is telling somebody what they owe. A
+    // confirmation has to describe what happened, not recompute from state
+    // that has since moved on.
+    return <Placed order={placed} where={where} />;
   }
 
   if (rows.length === 0) {
@@ -356,12 +368,11 @@ export default function CheckoutPage() {
 function Placed({
   order,
   where,
-  totals,
 }: {
   order: PlacedOrder | null;
   where: { mode: string; where: string } | null;
-  totals: ReturnType<typeof totalsFor>;
 }) {
+  const bill = order ? orderTotals(order) : null;
   return (
     <div className="cb-rise mx-auto max-w-lg px-4 py-10 text-center sm:px-6">
       <span
@@ -397,14 +408,16 @@ function Placed({
         )}
       </p>
 
-      <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft p-4 text-left">
-        <Money label="Subtotal" amount={formatPrice(totals.subtotalCents)} />
-        <Money label="Tax" amount={formatPrice(totals.taxCents)} />
-        {totals.tipCents > 0 ? <Money label="Tip" amount={formatPrice(totals.tipCents)} /> : null}
-        <div className="mt-1 border-t border-line pt-2">
-          <Money label="Due at the window" amount={formatPrice(totals.totalCents)} strong />
+      {bill ? (
+        <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft p-4 text-left">
+          <Money label="Subtotal" amount={formatPrice(bill.subtotalCents)} />
+          <Money label="Tax" amount={formatPrice(bill.taxCents)} />
+          {bill.tipCents > 0 ? <Money label="Tip" amount={formatPrice(bill.tipCents)} /> : null}
+          <div className="mt-1 border-t border-line pt-2">
+            <Money label="Due at the window" amount={formatPrice(bill.totalCents)} strong />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {order ? (
         <ButtonLink href={`/shop/order/${order.id}`} className="mt-6 w-full max-w-[280px]">

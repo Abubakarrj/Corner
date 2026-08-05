@@ -69,7 +69,13 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
             one is going. */}
         <OrderStatusBar />
         <FulfillmentBanner />
-        <main className="flex-1">
+        {/* The bottom padding clears the chat launcher, which is fixed in the
+            bottom-right corner of every shop page. Without it the last thing
+            on a page sits under the launcher: on a product page that was the
+            Add to basket button — the page's whole purpose, behind a floating
+            circle. 76px is the launcher's 44 plus its 20 of offset and a gap,
+            and the safe-area inset that the launcher also carries. */}
+        <main className="flex-1 pb-[calc(76px+env(safe-area-inset-bottom))]">
           <FulfillmentGate>{children}</FulfillmentGate>
         </main>
         <ChatWidget />

@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { SelectedOptions } from "./shop/products";
+import { taxFor } from "./shop/money";
 
 // ⚠️ THIS IS NOT AUTHENTICATION. ⚠️
 //
@@ -52,10 +53,42 @@ export type PlacedOrder = {
   placedAt: number;
   items: PlacedOrderItem[];
   subtotalCents: number;
+  // What the order actually came to. Snapshotted alongside the subtotal
+  // because checkout charges subtotal + tax + tip, and for a while the
+  // tracker read `subtotalCents` and printed it under the word "Total" — so
+  // the same order showed one number on the confirmation and a smaller one
+  // when you went back to look at it.
+  //
+  // Optional because orders placed before this existed are already sitting in
+  // people's localStorage. Read them through orderTotals() below rather than
+  // directly, which fills the gap instead of showing a blank.
+  taxCents?: number;
+  tipCents?: number;
+  totalCents?: number;
   fulfillmentMode: string;
   fulfillmentWhere: string;
   status: OrderStatus;
 };
+
+// The bill for an order, whether or not it was stored with one. An order from
+// before the totals were snapshotted has its tax re-derived — the rate hasn't
+// changed, so that reproduces what was charged — and no tip, which is the one
+// part that genuinely can't be recovered.
+export function orderTotals(order: PlacedOrder): {
+  subtotalCents: number;
+  taxCents: number;
+  tipCents: number;
+  totalCents: number;
+} {
+  const taxCents = order.taxCents ?? taxFor(order.subtotalCents);
+  const tipCents = order.tipCents ?? 0;
+  return {
+    subtotalCents: order.subtotalCents,
+    taxCents,
+    tipCents,
+    totalCents: order.totalCents ?? order.subtotalCents + taxCents + tipCents,
+  };
+}
 
 // ——— Account ———
 

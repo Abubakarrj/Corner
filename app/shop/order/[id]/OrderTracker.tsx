@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   findOrder,
   formatOrderDate,
+  orderTotals,
   progressFor,
   useOrders,
   type PlacedOrder,
@@ -167,6 +168,7 @@ export default function OrderTracker({ id }: { id: string }) {
 }
 
 function Receipt({ order }: { order: PlacedOrder }) {
+  const bill = orderTotals(order);
   return (
     <div
       className="mt-8 rounded-2xl border p-5"
@@ -209,20 +211,48 @@ function Receipt({ order }: { order: PlacedOrder }) {
         ))}
       </div>
 
-      <div
-        className="mt-4 flex items-center justify-between border-t pt-3"
-        style={{ borderColor: border }}
-      >
-        <span className="text-[14px] font-medium" style={{ color: olive }}>
-          Total
-        </span>
-        <span className="text-[15px] font-medium" style={{ color: olive }}>
-          {formatPrice(order.subtotalCents)}
-        </span>
+      {/* The bill as it was charged. This used to be one row reading "Total"
+          against order.subtotalCents, which is not the total — checkout adds
+          tax and whatever tip was left, so the same order showed one number on
+          the confirmation and a smaller one here. */}
+      <div className="mt-4 border-t pt-3" style={{ borderColor: border }}>
+        <Line label="Subtotal" amount={formatPrice(bill.subtotalCents)} />
+        <Line label="Tax" amount={formatPrice(bill.taxCents)} />
+        {bill.tipCents > 0 ? <Line label="Tip" amount={formatPrice(bill.tipCents)} /> : null}
+        <div className="mt-1.5 border-t pt-2" style={{ borderColor: border }}>
+          <Line label="Total" amount={formatPrice(bill.totalCents)} strong />
+        </div>
       </div>
       <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
         Payment is taken by the shop when they confirm.
       </p>
+    </div>
+  );
+}
+
+function Line({
+  label,
+  amount,
+  strong,
+}: {
+  label: string;
+  amount: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1">
+      <span
+        className={strong ? "text-[14px] font-medium" : "text-[13px]"}
+        style={{ color: strong ? olive : muted }}
+      >
+        {label}
+      </span>
+      <span
+        className={strong ? "text-[15px] font-medium" : "text-[13px]"}
+        style={{ color: olive }}
+      >
+        {amount}
+      </span>
     </div>
   );
 }

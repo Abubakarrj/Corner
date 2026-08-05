@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import {
   describeOrderItems,
   formatOrderDate,
+  orderTotals,
   progressFor,
   signOut,
   summarizeUsuals,
@@ -303,8 +304,10 @@ function OrderCard({ order }: { order: PlacedOrder }) {
         </p>
 
         <div className="mt-2 flex items-end justify-between gap-3">
+          {/* What it came to, not what the food cost — the same number the
+              tracker and the confirmation show. */}
           <span className="text-[15px]" style={{ color: olive }}>
-            {formatPrice(order.subtotalCents)}
+            {formatPrice(orderTotals(order).totalCents)}
           </span>
           {live ? (
             <ButtonLink href={`/shop/order/${order.id}`} size="sm">
