@@ -11,7 +11,7 @@ import {
 } from "../../../account";
 import { SHOP_EMAIL } from "../../../shopFacts";
 import { ButtonLink } from "../../../ui/Button";
-import { formatPrice } from "../../products";
+import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
 import { DISPLAY_FONT, PALETTE } from "../../shopControls";
 
@@ -188,7 +188,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
         {order.items.map((item, index) => (
           <div key={`${item.slug}-${index}`} className="flex items-center gap-3">
             <ProductImage
-              swatch="var(--cb-tile)"
+              swatch={getProduct(item.slug)?.swatch ?? "var(--cb-faint)"}
               name={item.name}
               className="h-10 w-10 shrink-0 rounded-lg"
             />

@@ -2,9 +2,15 @@ import { SHOP_FONT } from "./shopControls";
 
 // Stands in for product photography we don't have yet. Restyled to match
 // the reference catalogs the shop is modeled on: a warm beige tile with a
-// large, faint initial, instead of the old flat colour block. The
-// product's swatch colour survives as the tint of the initial, so items
-// stay tellable apart at a glance without breaking the cream palette.
+// large initial, instead of the old flat colour block. The product's swatch
+// colour is the letter, so items stay tellable apart at a glance without
+// breaking the cream palette.
+//
+// The letters used to be a 0.35-opacity tint, and the pale swatches
+// disappeared into the tile — "PC" on Plain Cream Cheese was a near-white
+// letter on a beige square. Now the swatches are saturated and the letters
+// are near-solid: every one of the 27 clears 3:1 against the tile in both
+// themes (see .cb-initials in globals.css for the dark half).
 //
 // The initial is SVG text rather than a sized span so it scales with the
 // tile — the same component renders 64px basket thumbnails and the 320px
@@ -45,7 +51,7 @@ export default function ProductImage({
       aria-label={name}
       className={`overflow-hidden bg-tile ${className}`}
     >
-      <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden>
+      <svg viewBox="0 0 100 100" className="cb-initials h-full w-full" aria-hidden>
         <text
           x="50"
           y="52"
@@ -62,7 +68,9 @@ export default function ProductImage({
           fontFamily={SHOP_FONT}
           fontWeight="500"
           fill={swatch}
-          opacity="0.35"
+          // Not fully solid — a hair of the tile through the letter keeps it
+          // reading as a placeholder rather than as a logo.
+          opacity="0.9"
         >
           {initialsFor(name)}
         </text>

@@ -301,14 +301,6 @@ export default function ChatWidget() {
             <BagelAvatar />
             <p className={botBubbleClass}>Hey, how can I help?</p>
           </div>
-          {/* Said once, up front, rather than under every reply: a label on
-              each bubble is noise, and the thing worth disclosing is that
-              nobody is reading this — not that a given sentence was
-              generated. */}
-          <p className="ml-9 mt-1 text-[11px] text-quieter">
-            AI assistant &middot; not a person
-          </p>
-
           {showChips ? (
             <div className="mt-4 flex flex-wrap justify-end gap-2">
               {TOPICS.map((option) => (

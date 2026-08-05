@@ -4,6 +4,14 @@ const nextConfig: NextConfig = {
   experimental: {
     viewTransition: true,
   },
+  // Riley's briefing is a Markdown file read at runtime rather than imported,
+  // so nothing in the module graph points at it and the build's file tracing
+  // would leave it behind. Without this the chat route throws on its first
+  // request in a traced deployment (standalone output, Vercel) while working
+  // perfectly in dev — the worst shape a bug can have.
+  outputFileTracingIncludes: {
+    "/api/shop-chat": ["./app/api/shop-chat/riley-guide.md"],
+  },
   async redirects() {
     return [
       // /order was the about page, from back when there was nowhere else for

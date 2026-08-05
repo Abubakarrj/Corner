@@ -175,7 +175,7 @@ export default function AccountPage() {
                       style={{ borderColor: border, backgroundColor: surface }}
                     >
                       <ProductImage
-                        swatch={product?.swatch ?? "var(--cb-tile)"}
+                        swatch={product?.swatch ?? "var(--cb-faint)"}
                         name={usual.name}
                         className="aspect-square w-full rounded-xl"
                       />
@@ -268,7 +268,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
       style={{ borderColor: border, backgroundColor: surface }}
     >
       <ProductImage
-        swatch={product?.swatch ?? "var(--cb-tile)"}
+        swatch={product?.swatch ?? "var(--cb-faint)"}
         name={first?.name ?? order.id}
         className="h-16 w-16 shrink-0 rounded-xl"
       />
