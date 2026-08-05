@@ -24,10 +24,11 @@ import { setThemePreference, THEME_OPTIONS, useThemePreference } from "../theme"
 // stored preference — see app/theme.ts.
 //
 // They sit on different grounds, which is what `shell` is for. The shop is a
-// cream app and its cards are --cb-surface, a half-step up from that ground.
-// The marketing home is white, and a --cb-surface pill on it reads as a cream
-// chip on a white page — close enough to look like a mistake rather than a
-// choice. So the shell names its ground instead of assuming one.
+// cream app: its ground is --cb-cream, its cards are --cb-surface a half-step
+// up, and its rules are the warm --cb-line-soft that goes with them. The
+// marketing home is white, and the whole warm set reads as tan on it — the
+// fill as a cream chip on a white page, and the border as a tan ring around
+// it. So `shell` picks the ground *and* the rule that belongs with it.
 export default function ThemeToggle({
   className = "",
   shell = "surface",
@@ -41,8 +42,8 @@ export default function ThemeToggle({
     <div
       role="radiogroup"
       aria-label="Appearance"
-      className={`inline-flex h-7 items-center rounded-full border border-line-soft p-[2px] ${
-        shell === "page" ? "bg-page" : "bg-surface"
+      className={`inline-flex h-7 items-center rounded-full border p-[2px] ${
+        shell === "page" ? "border-line-grey bg-page" : "border-line-soft bg-surface"
       } ${className}`}
     >
       {THEME_OPTIONS.map(({ id, label }) => {
@@ -57,7 +58,10 @@ export default function ThemeToggle({
             className={`cb-press h-[22px] cursor-pointer rounded-full px-2.5 text-[11px] font-medium leading-none transition-colors ${
               active
                 ? "bg-ink text-on-ink"
-                : "bg-transparent text-muted hover:text-ink"
+                : // The resting labels follow the shell too. --cb-muted is a
+                  // warm grey that belongs with the cream app; on white it's
+                  // the last tan left in the chip once the border is neutral.
+                  `bg-transparent hover:text-ink ${shell === "page" ? "text-quiet" : "text-muted"}`
             }`}
           >
             {label}

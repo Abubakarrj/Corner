@@ -22,10 +22,12 @@ import { readFileSync, writeFileSync } from "node:fs";
 //   shape is centred on it, then scaled to fill the frame the way an app icon
 //   should.
 //
-//   Fills the hole. The bagel's hole is a subpath that knocks through to
-//   whatever is behind, and on a white ground that reads as a white blob
-//   floating inside the tan — a glow, not a hole. It gets its own flat tone,
-//   a step down from the body. Still flat: two solid colours, no gradient.
+//   Draws an edge. The brand tan measures 1.42:1 against white — almost no
+//   contrast at all — so a flat tan silhouette on a white tile reads as a
+//   faint glow rather than a mark, and sits on a home screen looking washed
+//   out next to every other icon. A crust-coloured outline and a filled hole
+//   give it the definition the colour alone can't. Still flat: three solid
+//   colours, no gradient anywhere.
 //
 //   Supersamples. Rendered at 4x and downscaled with high-quality smoothing,
 //   so the curve edges are clean rather than carrying the fringe you get from
@@ -33,9 +35,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const OUT = new URL("../public/", import.meta.url).pathname;
 const BODY = "#EFD6A6";
-// One flat step down from the body. Dark enough to read as a hole at 40px on
-// a home screen, close enough in hue that the icon still reads as one object.
-const HOLE = "#CDB88D";
+// The crust: the outline and the hole, in one warm brown. 3.4:1 against white
+// and 2.4:1 against the body, which is enough to hold the shape at the 60px an
+// icon actually gets on a home screen.
+const CRUST = "#AC7F3A";
 const BACKDROP = "#FFFFFF";
 
 const source = readFileSync(`${OUT}/icon.svg`, "utf8");
@@ -50,10 +53,15 @@ if (cut === -1) throw new Error("expected the hole to be a second subpath");
 const body = d.slice(0, cut + 1);
 const hole = d.slice(cut + 1);
 
-// How much of the frame the bagel fills. 0.74 leaves a margin that survives
-// iOS's corner rounding and Android's maskable crop without the mark looking
-// marooned in the middle.
-const FILL = 0.74;
+// How much of the frame the bagel fills, outline included. 0.78 sits it in the
+// same weight class as the icons around it on a home screen — the earlier 0.74
+// of a silhouette with no edge read as a small pale smudge — while leaving a
+// margin that survives iOS's corner rounding and Android's maskable crop.
+const FILL = 0.78;
+// Outline weight, as a fraction of the frame. Scales with the icon, so the
+// 16px favicon and the 512px one carry the same drawing rather than the small
+// one losing its edge.
+const STROKE = 0.022;
 const SUPERSAMPLE = 4;
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
@@ -71,15 +79,18 @@ const box = await page.evaluate(() => {
 
 // A square viewBox centred on that extent, sized so the longer side of the
 // bagel takes FILL of it.
-const span = Math.max(box.width, box.height) / FILL;
+// The stroke straddles the path, so half of it sits outside the bounding box.
+// Solving for the span that puts the *outlined* shape at FILL, rather than the
+// bare path, keeps the margin honest.
+const span = Math.max(box.width, box.height) / (FILL - STROKE);
 const vx = box.x + box.width / 2 - span / 2;
 const vy = box.y + box.height / 2 - span / 2;
 
 function svg(size) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${vx} ${vy} ${span} ${span}" shape-rendering="geometricPrecision">
   <rect x="${vx}" y="${vy}" width="${span}" height="${span}" fill="${BACKDROP}"/>
-  <path d="${body}" fill="${BODY}"/>
-  <path d="${hole}" fill="${HOLE}"/>
+  <path d="${body}" fill="${BODY}" stroke="${CRUST}" stroke-width="${span * STROKE}" stroke-linejoin="round"/>
+  <path d="${hole}" fill="${CRUST}"/>
 </svg>`;
 }
 
