@@ -1,14 +1,20 @@
+import { SHOP_HOURS } from "../../shopFacts";
+
 // The two kinds of place an order can come out of, which is what the Pickup /
 // Catering split in the finder is: a shop is a counter you walk up to, a
 // catering kitchen is one set up to build a tray for an office or an event.
 // Delivery isn't a kind of place — it's a mode that asks for the visitor's
 // address instead — so it has no entries here.
 //
-// Nothing is a "catering" kind yet, which is why that tab shows an empty map.
-// Adding one is a matter of an entry below; deciding what it means to order
-// from it — minimums, lead time, a headcount instead of a quantity — is the
-// part that needs answers before the tab does anything useful.
+// Nothing is a "catering" *kind* — catering comes out of the shop, flagged
+// per location below. The kind stays in the model for the day there's a
+// kitchen that only caters.
 export type LocationKind = "shop" | "catering";
+
+// Imported rather than repeated: the hours were "Hours to come" here while
+// three other screens said nothing at all, which is how a shop ends up
+// telling people two different things.
+export { SHOP_HOURS } from "../../shopFacts";
 
 export type StoreLocation = {
   id: string;
@@ -25,6 +31,11 @@ export type StoreLocation = {
   // "LA" and expect the shop there to come up. None of that is derivable
   // from the name and address, so it's listed.
   aliases: string[];
+  // Whether this place can put together a catering order. Separate from
+  // `kind` because catering isn't a different address — it's the same counter
+  // doing a different job, and modelling it as a second location would put a
+  // duplicate pin on the map at the same coordinates.
+  catering?: boolean;
 };
 
 // The shop, and the kitchen every delivery leaves from.
@@ -46,8 +57,9 @@ export const KOREATOWN: StoreLocation = {
   kind: "shop",
   address: "3064 W 8th St",
   city: "Los Angeles, CA 90005",
-  hours: "Hours to come",
+  hours: SHOP_HOURS,
   position: [34.0578, -118.296],
+  catering: true,
   aliases: [
     "ktown",
     "k town",
@@ -91,13 +103,17 @@ export function searchLocations(
   kind: LocationKind,
   pool: StoreLocation[] = LOCATIONS,
 ): StoreLocation[] {
+  // Catering matches on capability rather than kind: the Koreatown shop
+  // caters, and searching for it under Catering has to find it.
+  const wanted = (location: StoreLocation) =>
+    kind === "catering" ? location.catering === true : location.kind === kind;
   const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
 
   const scored: { location: StoreLocation; score: number; order: number }[] = [];
 
   pool.forEach((location, order) => {
-    if (location.kind !== kind) return;
+    if (!wanted(location)) return;
 
     const name = location.name.toLowerCase();
     const nameWords = name.split(/\s+/);

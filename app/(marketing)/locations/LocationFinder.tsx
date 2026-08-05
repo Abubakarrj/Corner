@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
+import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
@@ -78,6 +79,9 @@ export default function LocationFinder() {
   // Where a searched city, state, or ZIP landed, for the map to fly to.
   const [focus, setFocus] = useState<[number, number] | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
+  // The shop whose catering sheet is up, or null. Catering doesn't open the
+  // menu — see CateringModal.
+  const [cateringFor, setCateringFor] = useState<StoreLocation | null>(null);
 
   // Pickup shows the shops you can walk up to, Catering shows the kitchens
   // that build trays, and Delivery shows nothing on the map until an address
@@ -92,8 +96,9 @@ export default function LocationFinder() {
   // the visitor asked to look there.
   const visible: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    const kind = mode === "pickup" ? "shop" : "catering";
-    const byKind = LOCATIONS.filter((location) => location.kind === kind);
+    const byKind = LOCATIONS.filter((location) =>
+      mode === "catering" ? location.catering === true : location.kind === "shop",
+    );
     return bounds
       ? byKind.filter((location) => bounds.contains(location.position))
       : byKind;
@@ -117,8 +122,14 @@ export default function LocationFinder() {
   // behave identically here; the only thing that differs between them is
   // which tab is lit, since they're the same screen reached two ways.
   function chooseLocation(location: StoreLocation) {
+    // Catering is a conversation, not a basket. Choosing a shop under that
+    // mode opens the request sheet instead of committing a destination.
+    if (mode === "catering") {
+      setCateringFor(location);
+      return;
+    }
     setFulfillment({
-      mode: location.kind === "catering" ? "catering" : "pickup",
+      mode: "pickup",
       locationId: location.id,
       label: location.name,
       detail: `${location.address}, ${location.city}`,
@@ -135,6 +146,7 @@ export default function LocationFinder() {
 
   function changeMode(next: Mode) {
     setMode(next);
+    setCateringFor(null);
     setBounds(null);
     setFocus(null);
     setQuery("");
@@ -151,7 +163,7 @@ export default function LocationFinder() {
     mode === "delivery"
       ? "Enter an address above to get started."
       : mode === "catering"
-        ? "No catering locations here yet."
+        ? "No catering here yet."
         : "No shops here yet.";
 
   return (
@@ -282,6 +294,8 @@ export default function LocationFinder() {
 
       {/* The finder is the front door for Home, and the first step for Menu.
           Which one lit it is the only difference. */}
+      <CateringModal location={cateringFor} onClose={() => setCateringFor(null)} />
+
       <TabBar active={activeTab} />
     </div>
   );

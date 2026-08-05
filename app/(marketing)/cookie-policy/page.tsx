@@ -47,7 +47,7 @@ function Section({
 }) {
   return (
     <div>
-      <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">{title}</h2>
+      <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">{title}</h2>
       {children}
     </div>
   );
@@ -70,7 +70,7 @@ export default function CookiePolicyPage() {
     >
       <div className="max-w-2xl mx-auto">
         <div className="mb-10 text-center">
-          <h1 className="font-semibold text-[32px] text-[#2D2D2D] mb-2">
+          <h1 className="font-medium text-[32px] text-[#2D2D2D] mb-2">
             Cookie Policy
           </h1>
           <p className="text-[14px]">Operated by Public Entity Holdings</p>
@@ -127,7 +127,7 @@ export default function CookiePolicyPage() {
             <div className="space-y-3">
               {CATEGORIES.map((category) => (
                 <p key={category.name}>
-                  <span className="font-semibold text-[#2D2D2D]">
+                  <span className="font-medium text-[#2D2D2D]">
                     {category.name}:
                   </span>{" "}
                   {category.body}
@@ -247,7 +247,7 @@ export default function CookiePolicyPage() {
         </div>
 
         <div className="mt-12 text-center pt-8 border-t border-gray-100">
-          <Link href="/" className="font-semibold text-[#2D2D2D] hover:underline">
+          <Link href="/" className="font-medium text-[#2D2D2D] hover:underline">
             &larr; Go Back
           </Link>
         </div>

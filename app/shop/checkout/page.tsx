@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
-import { recordOrder } from "../../account";
+import { recordOrder, type PlacedOrder } from "../../account";
 import { DISPLAY_FONT } from "../shopControls";
 
 const BRAND_RED = "#BE1923";
@@ -22,6 +22,9 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "placed">("idle");
+  // The order that was just placed, so the confirmation can link to its
+  // tracker. recordOrder returns it with its server-less id already minted.
+  const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const rows = useCartRows();
@@ -79,7 +82,7 @@ export default function CheckoutPage() {
       // show up as one that happened, and on this device only — there's no
       // server-side order history to read back.
       const where = fulfillment ? describeFulfillment(fulfillment) : null;
-      recordOrder({
+      const record = recordOrder({
         items: rows.map(({ line, product, unitCents, chosen }) => ({
           slug: product.slug,
           name: product.name,
@@ -92,6 +95,7 @@ export default function CheckoutPage() {
         fulfillmentMode: where?.mode ?? "Pickup",
         fulfillmentWhere: where?.where ?? "Corner Bagel",
       });
+      setPlaced(record);
       setStatus("placed");
       clear();
     } catch (submitError) {
@@ -106,28 +110,71 @@ export default function CheckoutPage() {
     <div
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
-      <h1
-        className="mb-6 text-[16px] font-medium text-[#3E4A30]"
-        style={{ fontFamily: DISPLAY_FONT }}
-      >
-        Checkout
-      </h1>
+      {status === "placed" ? null : (
+        <h1
+          className="mb-6 text-[16px] font-medium text-[#3E4A30]"
+          style={{ fontFamily: DISPLAY_FONT }}
+        >
+          Checkout
+        </h1>
+      )}
 
       {status === "placed" ? (
-        <div>
-          <p className="text-[14px] text-[#6F6A5C]">
-            Order placed — we&rsquo;ll be in touch to confirm and take payment.
+        // The confirmation is a jumping-off point, not an end state: a food
+        // order's next question is always "where is it", so the tracker is
+        // the primary action and the menu is the way back.
+        <div className="py-4 text-center">
+          <span
+            aria-hidden
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+            style={{ backgroundColor: "#DFE8D2" }}
+          >
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+              <path
+                d="M6 13.4l4.6 4.6L20 8.6"
+                stroke="#3E4A30"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <p
+            className="mt-4 text-[22px] font-medium leading-tight text-[#3E4A30]"
+            style={{ fontFamily: DISPLAY_FONT }}
+          >
+            You&rsquo;re all set
           </p>
-          {/* Repeated back on the confirmation, because this is the last
-              moment someone can catch a wrong destination before the kitchen
-              acts on it. */}
-          {fulfillment ? (
-            <p className="mt-2 text-[14px] text-[#3E4A30]">
-              {describeFulfillment(fulfillment).mode}:{" "}
-              <span className="font-medium">{describeFulfillment(fulfillment).where}</span>
-            </p>
+          {/* The destination, repeated: this is the last moment somebody can
+              catch a wrong one before the kitchen acts on it. */}
+          <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-[#6F6A5C]">
+            {fulfillment ? (
+              <>
+                {describeFulfillment(fulfillment).mode} from{" "}
+                <span className="font-medium text-[#3E4A30]">
+                  {describeFulfillment(fulfillment).where}
+                </span>
+                . The shop confirms and takes payment.
+              </>
+            ) : (
+              <>The shop confirms and takes payment.</>
+            )}
+          </p>
+
+          {placed ? (
+            <Link
+              href={`/shop/order/${placed.id}`}
+              style={{ backgroundColor: "#3E4A30" }}
+              className="mt-6 inline-block w-full max-w-xs cursor-pointer rounded-full py-3.5 text-[13px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
+            >
+              Track order
+            </Link>
           ) : null}
-          <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
+
+          <Link
+            href="/shop"
+            className="mt-4 block cursor-pointer text-[14px] underline text-[#6F6A5C]"
+          >
             Back to the menu
           </Link>
         </div>

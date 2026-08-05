@@ -50,14 +50,14 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
           style={{ color: muted }}
         >
           Taking you to the map to pick a shop, arrange catering, or set a
-          delivery address. The link below does the same, if it doesn&rsquo;t.
+          delivery address. The button below does the same, if it doesn&rsquo;t.
         </p>
         <Link
           href="/locations"
           style={{ backgroundColor: olive, color: onOlive }}
           className="mt-7 cursor-pointer rounded-full px-7 py-3 text-[14px] font-medium transition-opacity hover:opacity-90"
         >
-          Choose a location
+          Choose where it&rsquo;s going
         </Link>
       </div>
     );

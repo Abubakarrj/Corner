@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import {
   describeOrderItems,
   formatOrderDate,
+  progressFor,
   signOut,
   summarizeUsuals,
   useAccount,
@@ -21,14 +22,15 @@ import { DISPLAY_FONT, PALETTE } from "../shopControls";
 
 const { olive, muted, faint, border, surface, controlBorder } = PALETTE;
 
-// Chip colours per status. Only "placed" is ever reached today — see the
-// note on OrderStatus in app/account.ts — but the whole set is here so the
-// day a POS starts reporting progress, this doesn't need touching.
+// Chip colours per status. The stage is estimated from the clock rather than
+// reported — see the warning on OrderStatus in app/account.ts — but the whole
+// set is here so the day a POS starts reporting, this doesn't need touching.
 const STATUS_STYLE: Record<OrderStatus, { bg: string; fg: string; border: string }> = {
   placed: { bg: "transparent", fg: muted, border: controlBorder },
   "in-the-kitchen": { bg: "#F1EAD8", fg: "#8A6D1F", border: "#E4D6AE" },
-  "out-for-delivery": { bg: "#F7DED4", fg: "#B4552C", border: "#F0C9B8" },
-  delivered: { bg: "#DFE8D2", fg: "#41632A", border: "#CBDABA" },
+  ready: { bg: "#DFE8D2", fg: "#41632A", border: "#CBDABA" },
+  "on-the-way": { bg: "#F7DED4", fg: "#B4552C", border: "#F0C9B8" },
+  complete: { bg: "transparent", fg: muted, border: controlBorder },
 };
 
 function StatusChip({ status }: { status: OrderStatus }) {
@@ -41,6 +43,16 @@ function StatusChip({ status }: { status: OrderStatus }) {
       {STATUS_LABEL[status]}
     </span>
   );
+}
+
+// "Good morning" until noon, "Good afternoon" until 5, "Good evening" after.
+// Read from the visitor's own clock, not the shop's: a greeting is about the
+// time where they are, unlike the opening hours, which are about the shop.
+function greeting(now: Date = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 function SectionHeading({
@@ -105,14 +117,26 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-8 sm:px-6 sm:py-10">
-      <div className="flex items-start justify-between gap-4">
+    <div className="mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
+      {/* The shop header above this has a search field and a basket and no way
+          back to the catalog, so without this the account is a room with no
+          door — the tab bar isn't on shop routes. */}
+      <Link
+        href="/shop"
+        className="inline-block cursor-pointer text-[13px] underline"
+        style={{ color: muted }}
+      >
+        ← Back to the menu
+      </Link>
+
+      <div className="mt-5 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1
-            className="text-[20px] font-medium"
+            className="text-[24px] font-medium leading-tight tracking-[-0.01em]"
             style={{ color: olive, fontFamily: DISPLAY_FONT }}
           >
-            {account.name || "Your account"}
+            {greeting()}
+            {account.name ? `, ${account.name.split(" ")[0]}` : ""}
           </h1>
           <p className="mt-0.5 truncate text-[13px]" style={{ color: muted }}>
             {account.email}
@@ -213,7 +237,10 @@ export default function AccountPage() {
                   style={{ borderColor: border, backgroundColor: surface }}
                 >
                   <span className="min-w-0 truncate text-[14px]" style={{ color: olive }}>
-                    {order.id} {STATUS_LABEL[order.status].toLowerCase()}
+                    {order.id} &middot;{" "}
+                    {STATUS_LABEL[
+                      progressFor(order).stages[progressFor(order).current].status
+                    ].toLowerCase()}
                   </span>
                   <span className="shrink-0 text-[13px]" style={{ color: muted }}>
                     {formatOrderDate(order.placedAt)}
@@ -224,10 +251,7 @@ export default function AccountPage() {
           </section>
 
           <section className="mt-9">
-            {/* "All locations" in the reference is a filter. It's a label
-                here: one shop, so there is nothing to filter between. It
-                becomes a control when there's a second. */}
-            <SectionHeading aside="All locations">Recent orders</SectionHeading>
+            <SectionHeading>Recent orders</SectionHeading>
             <div className="flex flex-col gap-3">
               {orders.map((order) => (
                 <OrderCard key={order.id} order={order} />
@@ -244,6 +268,10 @@ function OrderCard({ order }: { order: PlacedOrder }) {
   const { addItem } = useCart();
   const first = order.items[0];
   const product = first ? getProduct(first.slug) : undefined;
+  // An order still in flight offers tracking; a settled one offers a reorder.
+  // Showing both on every row makes neither read as the thing to do.
+  const progress = progressFor(order);
+  const live = !progress.settled;
 
   return (
     <div
@@ -261,7 +289,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
           <span className="text-[14px]" style={{ color: olive }}>
             {order.id}
           </span>
-          <StatusChip status={order.status} />
+          <StatusChip status={progress.stages[progress.current].status} />
         </div>
 
         <p className="mt-1 line-clamp-1 text-[14px]" style={{ color: olive }}>
@@ -275,22 +303,32 @@ function OrderCard({ order }: { order: PlacedOrder }) {
           <span className="text-[15px]" style={{ color: olive }}>
             {formatPrice(order.subtotalCents)}
           </span>
-          <button
-            type="button"
-            // Puts the whole order back in the basket. Items the menu has
-            // since dropped are skipped by addItem rather than failing the
-            // reorder — the rest of a lunch is better than none of it.
-            onClick={() => {
-              for (const item of order.items) {
-                addItem(item.slug, item.quantity, item.options);
-              }
-              requestOpenBasket();
-            }}
-            className="shrink-0 cursor-pointer rounded-full border px-4 py-2 text-[13px] transition-colors hover:bg-[#EFEBDD]"
-            style={{ borderColor: controlBorder, color: olive }}
-          >
-            Reorder
-          </button>
+          {live ? (
+            <Link
+              href={`/shop/order/${order.id}`}
+              style={{ backgroundColor: olive, color: "#F3F1E5" }}
+              className="shrink-0 cursor-pointer rounded-full px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
+            >
+              Track order
+            </Link>
+          ) : (
+            <button
+              type="button"
+              // Puts the whole order back in the basket. Items the menu has
+              // since dropped are skipped by addItem rather than failing the
+              // reorder — the rest of a lunch is better than none of it.
+              onClick={() => {
+                for (const item of order.items) {
+                  addItem(item.slug, item.quantity, item.options);
+                }
+                requestOpenBasket();
+              }}
+              className="shrink-0 cursor-pointer rounded-full border px-4 py-2 text-[13px] transition-colors hover:bg-[#EFEBDD]"
+              style={{ borderColor: controlBorder, color: olive }}
+            >
+              Reorder
+            </button>
+          )}
         </div>
       </div>
     </div>

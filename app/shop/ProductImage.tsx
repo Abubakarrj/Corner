@@ -14,6 +14,22 @@ import { SHOP_FONT } from "./shopControls";
 // (ProductCard, the product page, the drawers) takes the same shape, so
 // that swap is contained to this one file.
 
+// Two letters, not one. "Tomato, Please" is TP; "Baby Got BEC" is BG. A
+// single initial collided constantly — four items began with C, three with
+// P — so the tiles stopped telling anything apart, which is the only job
+// they have until there are photographs.
+//
+// Two words give one letter each; one word gives its first two.
+export function initialsFor(name: string): string {
+  const words = name
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
+
 export default function ProductImage({
   swatch,
   name,
@@ -35,7 +51,9 @@ export default function ProductImage({
           y="52"
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize="44"
+          // Down from 44 now that it's two letters — a pair at the old size
+          // ran past the tile's edges on the 64px basket thumbnails.
+          fontSize="34"
           // SVG text doesn't inherit the layout's font the way the rest of
           // the page does, so the stack is named here too. This initial was
           // a Georgia serif, from back when the headings were serif; with
@@ -46,7 +64,7 @@ export default function ProductImage({
           fill={swatch}
           opacity="0.35"
         >
-          {name.charAt(0)}
+          {initialsFor(name)}
         </text>
       </svg>
     </div>

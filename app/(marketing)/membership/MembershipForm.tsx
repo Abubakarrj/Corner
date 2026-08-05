@@ -14,7 +14,9 @@ const { cream, surface, olive, onOlive, border, controlBorder, muted } = PALETTE
 // than display:none, since some bots skip fields a naive check would catch.
 const HONEYPOT_FIELD = "company";
 
-type Tab = "join" | "signin";
+// Three screens, one form. Recovering a password is the same layout with one
+// field, so it's a mode rather than a route.
+type Tab = "join" | "signin" | "recover";
 
 // Membership, reached from the Reorder tab — signing in is what makes
 // reordering possible, so that's the door it opens.
@@ -52,8 +54,12 @@ export default function MembershipForm() {
   const [error, setError] = useState<string | null>(null);
 
   const joining = tab === "join";
+  const recovering = tab === "recover";
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const ready = emailValid && password.length > 0 && (!joining || name.trim().length > 0);
+  const ready =
+    emailValid &&
+    (recovering || password.length > 0) &&
+    (!joining || name.trim().length > 0);
 
   function switchTab(next: Tab) {
     setTab(next);
@@ -91,7 +97,7 @@ export default function MembershipForm() {
       // the local part of the address greets people as "ada", which is worse
       // than not greeting them by name at all. The account page falls back to
       // the address.
-      signIn({ name: joining ? name : "", email });
+      if (!recovering) signIn({ name: joining ? name : "", email });
       setStatus("done");
     } catch (submitError) {
       setStatus("idle");
@@ -110,8 +116,18 @@ export default function MembershipForm() {
           controls for one choice is one too many. */}
       <header className="shrink-0 pt-[env(safe-area-inset-top)]">
         <div className="px-4 pt-[21px]">
+          {/* From Recover, back means the login screen — not out of the flow
+              entirely, which is what a bare href would do. */}
           <Link
-            href="/locations"
+            href={recovering ? "/membership" : "/locations"}
+            onClick={
+              recovering
+                ? (event) => {
+                    event.preventDefault();
+                    switchTab("signin");
+                  }
+                : undefined
+            }
             aria-label="Back"
             className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-[#EFEBDD]"
             style={{ borderColor: controlBorder }}
@@ -135,13 +151,15 @@ export default function MembershipForm() {
             className="m-0 text-[34px] font-medium leading-[1.05] tracking-[-0.02em]"
             style={{ color: olive }}
           >
-            {joining ? "Join" : "Login"}
+            {joining ? "Join" : recovering ? "Recover password" : "Login"}
           </h1>
-          <p className="m-0 mt-2 text-[14px] leading-[1.5]" style={{ color: muted }}>
-            {joining
-              ? "Create your Corner Bagel account."
-              : "Sign into your Corner Bagel account."}
-          </p>
+          {recovering ? null : (
+            <p className="m-0 mt-2 text-[14px] leading-[1.5]" style={{ color: muted }}>
+              {joining
+                ? "Create your Corner Bagel account."
+                : "Sign into your Corner Bagel account."}
+            </p>
+          )}
 
           {status === "done" ? (
             <div
@@ -149,21 +167,42 @@ export default function MembershipForm() {
               style={{ borderColor: border, backgroundColor: surface }}
             >
               <p className="m-0 text-[15px] font-medium" style={{ color: olive }}>
-                You&rsquo;re in.
+                {recovering ? "Nothing to reset yet." : "You\u2019re in."}
               </p>
               <p className="m-0 mt-1.5 text-[13px] leading-[1.5]" style={{ color: muted }}>
-                Your usuals and your order history live in your account on this
-                device. Full membership — carrying it between devices, and
-                everything that needs a real sign-in — opens up soon, and
-                we&rsquo;ll write to {email.trim()} when it does.
+                {recovering ? (
+                  <>
+                    Accounts aren&rsquo;t live yet, so there&rsquo;s no password
+                    stored to reset. We&rsquo;ve noted {email.trim()} and
+                    we&rsquo;ll write when they are.
+                  </>
+                ) : (
+                  <>
+                    Your usuals and your order history live in your account on
+                    this device. Full membership — carrying it between devices,
+                    and everything that needs a real sign-in — opens up soon,
+                    and we&rsquo;ll write to {email.trim()} when it does.
+                  </>
+                )}
               </p>
-              <Link
-                href="/shop/account"
-                style={{ backgroundColor: olive, color: onOlive }}
-                className="mt-4 inline-block cursor-pointer rounded-full px-5 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90"
-              >
-                Go to your account
-              </Link>
+              {recovering ? (
+                <button
+                  type="button"
+                  onClick={() => switchTab("signin")}
+                  className="mt-4 cursor-pointer text-[13px] underline transition-opacity hover:opacity-70"
+                  style={{ color: muted }}
+                >
+                  Back to login
+                </button>
+              ) : (
+                <Link
+                  href="/shop/account"
+                  style={{ backgroundColor: olive, color: onOlive }}
+                  className="mt-4 inline-block cursor-pointer rounded-full px-5 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90"
+                >
+                  Go to your account
+                </Link>
+              )}
             </div>
           ) : (
             // key on the tab so switching clears the fields rather than
@@ -204,27 +243,24 @@ export default function MembershipForm() {
                 }}
               />
 
-              <Field
-                label="Password"
-                type="password"
-                autoComplete={joining ? "new-password" : "current-password"}
-                value={password}
-                onChange={(next) => {
-                  setPassword(next);
-                  setError(null);
-                }}
-              />
+              {recovering ? null : (
+                <Field
+                  label="Password"
+                  type="password"
+                  autoComplete={joining ? "new-password" : "current-password"}
+                  value={password}
+                  onChange={(next) => {
+                    setPassword(next);
+                    setError(null);
+                  }}
+                />
+              )}
 
               <div className="mt-5 flex flex-col items-start gap-2.5">
-                {joining ? null : (
+                {joining || recovering ? null : (
                   <button
                     type="button"
-                    // Nothing to reset while there are no accounts. It stays
-                    // in the layout because the reference has it and it's
-                    // where people look; it says so rather than pretending.
-                    onClick={() =>
-                      setError("Accounts aren't live yet, so there's no password to reset.")
-                    }
+                    onClick={() => switchTab("recover")}
                     className="cursor-pointer text-[14px] underline underline-offset-2 transition-opacity hover:opacity-70"
                     style={{ color: olive }}
                   >
@@ -253,7 +289,13 @@ export default function MembershipForm() {
                 style={{ backgroundColor: olive, color: onOlive }}
                 className="mt-8 cursor-pointer rounded-full py-4 text-[16px] font-medium transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
               >
-                {status === "sending" ? "Sending…" : joining ? "Join" : "Login"}
+                {status === "sending"
+                  ? "Sending…"
+                  : joining
+                    ? "Join"
+                    : recovering
+                      ? "Recover password"
+                      : "Login"}
               </button>
             </form>
           )}

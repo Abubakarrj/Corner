@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "./CookieConsent";
@@ -20,8 +20,33 @@ const geistMono = Geist_Mono({
 // marketing site's type is unchanged.
 
 export const metadata: Metadata = {
-  title: "The Corner Bagel",
-  description: "The Corner Bagel",
+  title: "Corner Bagel",
+  description: "Order bagels, sandwiches, spreads and drinks from Corner Bagel.",
+  // Added to the home screen on an iPhone, this is what makes it open like an
+  // app rather than a bookmark: a PNG icon (iOS ignores SVG for
+  // apple-touch-icon, which is why the bagel is rastered into
+  // public/apple-touch-icon.png), a standalone display mode, and a short
+  // name so the label under the icon isn't truncated.
+  applicationName: "Corner Bagel",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Corner Bagel",
+    // "default" rather than translucent: the shop already extends under the
+    // status bar via viewport-fit=cover, and a translucent bar there would
+    // put the time on top of the header's controls.
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+};
+
+// Paints the browser chrome cream site-wide. /shop overrides this with its
+// own viewport export to add viewport-fit=cover; the colour is the same.
+export const viewport: Viewport = {
+  themeColor: "#F7F4EB",
 };
 
 // Deliberately bare otherwise — no floating chrome (corner icon, email

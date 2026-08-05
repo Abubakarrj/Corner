@@ -41,12 +41,12 @@ export default function AboutCardBody() {
     <>
       {/* 1.15x the body size, down from 1.35x. The heading sat a third
           larger than the copy under it, which reads as a page title — but
-          this is a short card, and the paragraphs are the content. Bold and
-          a slight step up is enough separation at this length; the extra
+          this is a short card, and the paragraphs are the content. Medium
+          and a slight step up is enough separation at this length; the extra
           size was only making the block top-heavy. */}
       <p
         className="m-0 mb-[0.75em] whitespace-nowrap"
-        style={{ fontWeight: 700, fontSize: `calc(${cardFontSize} * 1.15)` }}
+        style={{ fontWeight: 500, fontSize: `calc(${cardFontSize} * 1.15)` }}
       >
         Right Around The Corner
       </p>
@@ -55,23 +55,35 @@ export default function AboutCardBody() {
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Every bagel is naturally fermented, kettle-boiled, and baked to
-        achieve a crisp crust with a perfectly chewy interior.
+        Corner Bagel was created with the belief that the best neighborhood
+        places are simple, thoughtful, and made to be part of everyday life. We
+        bring together naturally fermented, kettle-boiled bagels, house-made
+        spreads, carefully sourced ingredients, and genuine hospitality to
+        create food that&rsquo;s satisfying without being complicated.
       </p>
       <p
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        We source produce from local farmers markets and pair it with
-        thoughtfully selected ingredients, house-made spreads, and seasonal
-        flavors. Everything we serve is intentional, simple, and crafted with
-        care.
+        Our menu is intentionally focused. Rather than offering everything, we
+        choose to do a handful of things exceptionally well. Every bagel,
+        sandwich, and spread is prepared with care so you can enjoy a meal that
+        feels both familiar and memorable.
+      </p>
+      <p
+        className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
+        style={bodyStyle}
+      >
+        Whether you&rsquo;re grabbing breakfast before work, meeting a friend
+        over coffee, or bringing a dozen bagels home to your family, we&rsquo;re
+        honored that you chose to spend a small part of your day with us.
       </p>
       <p
         className="m-0 mx-auto mb-[2em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Right around the corner.
+        Thank you for supporting a neighborhood business. We look forward to
+        welcoming you back, right around the corner.
       </p>
 
       <p className="m-0 mb-[0.3em] whitespace-nowrap">

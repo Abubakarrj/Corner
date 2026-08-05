@@ -95,14 +95,13 @@ export default function GiftAuthModal({
           className="m-0 mt-6 text-center text-[21px] font-medium leading-[1.2] tracking-[-0.01em]"
           style={{ color: olive }}
         >
-          Excellent choice, let&rsquo;s get that into your account
+          Sign in to continue gifting
         </p>
         <p
           className="m-0 mt-2.5 text-center text-[14px] leading-[1.5]"
           style={{ color: muted }}
         >
-          We&rsquo;ll keep your card with your account, so you can send it,
-          resend it, and see when it&rsquo;s opened.
+          Excellent choice, let&rsquo;s get that into your account.
         </p>
 
         <Link

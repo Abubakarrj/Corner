@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import LocationFinder from "./LocationFinder";
 
 export const metadata = {
-  title: "Locations — Corner Bagel",
+  title: "Find us — Corner Bagel",
   description:
     "Find a Corner Bagel shop, arrange catering, or set a delivery address.",
 };

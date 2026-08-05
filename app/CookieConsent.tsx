@@ -103,7 +103,7 @@ export default function CookieConsent() {
         type="button"
         onClick={acknowledge}
         style={{ backgroundColor: BRAND_RED }}
-        className="shrink-0 cursor-pointer px-6 py-2 text-[13px] font-bold uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+        className="shrink-0 cursor-pointer px-6 py-2 text-[13px] font-medium uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
       >
         OK
       </button>

@@ -204,7 +204,7 @@ export default function SearchResults({
       {!isDelivery ? (
         <div className="flex items-center gap-3 pb-1 pt-4">
           {([
-            ["places", "Locations", items.length],
+            ["places", "Places", items.length],
             // "Shops" under Pickup, "Kitchens" under Catering — the tab counts
             // ours, and which of ours depends on the mode.
             ["stores", mode === "catering" ? "Kitchens" : "Shops", stores.length],

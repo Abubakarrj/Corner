@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage() {
         {/* --- PRIVACY POLICY SECTION --- */}
         <div id="privacy" className="scroll-mt-10">
           <div className="mb-10 text-center">
-            <h1 className="font-semibold text-[32px] text-[#2D2D2D] mb-2">
+            <h1 className="font-medium text-[32px] text-[#2D2D2D] mb-2">
               Privacy Policy
             </h1>
             <p className="text-[14px]">Effective Date: July 8, 2026</p>
@@ -31,17 +31,17 @@ export default function PrivacyPolicyPage() {
               order, join our mailing list, participate in promotions, or
               otherwise interact with our business.
             </p>
-            <p className="font-semibold text-[#2D2D2D]">
+            <p className="font-medium text-[#2D2D2D]">
               By using our website or services, you agree to this Privacy Policy.
             </p>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Information We Collect
               </h2>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-[#2D2D2D] mb-1">
+                  <h3 className="font-medium text-[#2D2D2D] mb-1">
                     Information You Provide
                   </h3>
                   <p>We may collect:</p>
@@ -56,7 +56,7 @@ export default function PrivacyPolicyPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-[#2D2D2D] mb-1">
+                  <h3 className="font-medium text-[#2D2D2D] mb-1">
                     Information Collected Automatically
                   </h3>
                   <p>When you visit our website, we may collect:</p>
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 How We Use Your Information
               </h2>
               <p>We use your information to:</p>
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Marketing Communications
               </h2>
               <p>
@@ -114,7 +114,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Cookies & Tracking
               </h2>
               <p>Our website may use cookies and similar technologies to:</p>
@@ -131,24 +131,24 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Payment Information
               </h2>
               <p>
                 Payments are processed through trusted third-party payment
                 providers.
               </p>
-              <p className="mt-2 font-semibold text-[#2D2D2D]">
+              <p className="mt-2 font-medium text-[#2D2D2D]">
                 Corner Bagel does not store complete payment card numbers on our
                 servers.
               </p>
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Sharing of Information
               </h2>
-              <p className="font-semibold text-[#2D2D2D]">
+              <p className="font-medium text-[#2D2D2D]">
                 We do not sell your personal information.
               </p>
               <p className="mt-2">
@@ -171,7 +171,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Data Security
               </h2>
               <p>
@@ -185,7 +185,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Data Retention
               </h2>
               <p>We retain personal information only as long as necessary to:</p>
@@ -199,7 +199,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Your Privacy Rights
               </h2>
               <p>
@@ -226,7 +226,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Children’s Privacy
               </h2>
               <p>
@@ -239,7 +239,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Third-Party Links
               </h2>
               <p>
@@ -250,7 +250,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Updates
               </h2>
               <p>
@@ -262,7 +262,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-semibold text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
                 Contact
               </h2>
               <p>
@@ -283,7 +283,7 @@ export default function PrivacyPolicyPage() {
         <div className="mt-12 text-center pt-8 border-t border-gray-100">
           <Link
             href="/"
-            className="font-semibold text-[#2D2D2D] hover:underline"
+            className="font-medium text-[#2D2D2D] hover:underline"
           >
             &larr; Go Back
           </Link>

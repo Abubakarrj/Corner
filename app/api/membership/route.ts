@@ -7,9 +7,12 @@
 // and "signin" becomes a magic-link send. Until then nothing on the team's
 // side receives any of it.
 //
-// Note what this route does NOT accept: a password. The form doesn't collect
-// one, and this shouldn't start taking one before there is somewhere that can
-// actually store credentials safely.
+// Note what this route does NOT accept: a password. The form collects one on
+// the Login and Join screens but never sends it (see the note in
+// MembershipForm), and this shouldn't start taking one before there is
+// somewhere that can store credentials safely. "recover" is the same shape —
+// an address noted, no reset link sent, because there is no password stored
+// to reset.
 
 // Must match HONEYPOT_FIELD in the form.
 const HONEYPOT_FIELD = "company";
@@ -42,7 +45,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: true }, { status: 200 });
   }
 
-  if (intent !== "join" && intent !== "signin") {
+  if (intent !== "join" && intent !== "signin" && intent !== "recover") {
     return Response.json({ error: "Unknown request." }, { status: 400 });
   }
   if (!isValidEmail(email)) {

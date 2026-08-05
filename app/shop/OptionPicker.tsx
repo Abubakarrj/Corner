@@ -82,7 +82,10 @@ export default function OptionPicker({
               )}
               {group.choices.map((choice) => (
                 <option key={choice.id} value={choice.id}>
-                  {choice.priceCents > 0
+                  {/* The surcharge is only worth showing when it's an add-on.
+                      A gift card's amounts are the price itself, so "$50
+                      +$25.00" would read as a fee on top of the card. */}
+                  {choice.priceCents > 0 && !group.alwaysShow
                     ? `${choice.label} +${formatPrice(choice.priceCents)}`
                     : choice.label}
                 </option>

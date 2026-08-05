@@ -3,6 +3,7 @@ import { CartProvider } from "./CartContext";
 import ShopHeader from "./ShopHeader";
 import ChatWidget from "./ChatWidget";
 import FulfillmentGate, { FulfillmentBanner } from "./FulfillmentGate";
+import OrderStatusBar from "./OrderStatusBar";
 import { SHOP_FONT } from "./shopControls";
 
 // Everything under here is reachable two ways: through the shop subdomain
@@ -64,6 +65,9 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
             and out, and the banner under it is the standing answer to "where
             is this going?". */}
         <ShopHeader />
+        {/* Above the destination banner: a live order outranks where the next
+            one is going. */}
+        <OrderStatusBar />
         <FulfillmentBanner />
         <main className="flex-1">
           <FulfillmentGate>{children}</FulfillmentGate>

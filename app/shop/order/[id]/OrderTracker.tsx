@@ -1,0 +1,231 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  findOrder,
+  formatOrderDate,
+  progressFor,
+  useOrders,
+  type PlacedOrder,
+} from "../../../account";
+import { SHOP_EMAIL } from "../../../shopFacts";
+import { formatPrice } from "../../products";
+import ProductImage from "../../ProductImage";
+import { DISPLAY_FONT, PALETTE } from "../../shopControls";
+
+const { olive, onOlive, muted, faint, border, surface, controlBorder, sage } = PALETTE;
+
+// The order-tracking screen, in the shape a food-delivery app uses: a headline
+// that says where the order is, a bar that fills, the stages under it, then
+// the receipt.
+//
+// ⚠️ The stage is an ESTIMATE derived from the clock — nothing reports real
+// progress yet (see the warning on OrderStatus in app/account.ts). The screen
+// says so rather than implying a kitchen display somewhere is driving it, and
+// it never claims the order was handed over: only the counter knows that.
+export default function OrderTracker({ id }: { id: string }) {
+  const orders = useOrders();
+  const order = findOrder(orders, id);
+
+  // Re-render on a timer so the bar creeps and the stage advances while the
+  // screen is open, the way a delivery app's does. 15s rather than 1s: the
+  // stages are minutes apart, and a per-second repaint of a page nobody is
+  // interacting with is a waste of a phone's battery.
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => tick((n) => n + 1), 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  if (!order) {
+    return (
+      <div className="mx-auto max-w-2xl px-5 py-12 text-center sm:px-6">
+        <p className="text-[16px] font-medium" style={{ color: olive }}>
+          We can&rsquo;t find that order.
+        </p>
+        <p className="mx-auto mt-2 max-w-xs text-[14px] leading-[1.5]" style={{ color: muted }}>
+          Orders are kept on the device they were placed from, so one placed on
+          another phone won&rsquo;t show here.
+        </p>
+        <Link
+          href="/shop"
+          style={{ backgroundColor: olive, color: onOlive }}
+          className="mt-6 inline-block cursor-pointer rounded-full px-6 py-3 text-[13px] font-medium uppercase tracking-[0.06em] transition-opacity hover:opacity-90"
+        >
+          Back to the menu
+        </Link>
+      </div>
+    );
+  }
+
+  const progress = progressFor(order);
+  const stage = progress.stages[progress.current];
+
+  return (
+    <div className="mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
+      <Link
+        href="/shop"
+        className="inline-block cursor-pointer text-[13px] underline"
+        style={{ color: muted }}
+      >
+        ← Back to the menu
+      </Link>
+
+      <h1
+        className="mt-5 text-[26px] font-medium leading-[1.15] tracking-[-0.02em]"
+        style={{ color: olive, fontFamily: DISPLAY_FONT }}
+      >
+        {stage.label}
+      </h1>
+      <p className="mt-1.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
+        {stage.detail}
+      </p>
+
+      {/* The bar. Its width is the estimate's progress, not a measurement —
+          the line under it says which. */}
+      <div
+        className="mt-5 h-2 overflow-hidden rounded-full"
+        style={{ backgroundColor: "#E7E2D2" }}
+        role="progressbar"
+        aria-valuenow={Math.round(progress.fraction * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="Order progress"
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-700 ease-out"
+          style={{ width: `${Math.max(6, progress.fraction * 100)}%`, backgroundColor: olive }}
+        />
+      </div>
+
+      <p className="mt-2 text-[13px]" style={{ color: faint }}>
+        {progress.etaLabel
+          ? `${progress.etaLabel} · estimated`
+          : "The shop will confirm when it's ready — we can't see the counter from here."}
+      </p>
+
+      {/* The stages, as a list rather than a horizontal stepper: four labels
+          across a phone either truncate or shrink below reading size. */}
+      <ol className="mt-7 flex list-none flex-col gap-0 p-0">
+        {progress.stages.map((entry, index) => {
+          const done = index < progress.current;
+          const active = index === progress.current;
+          const last = index === progress.stages.length - 1;
+          return (
+            <li key={entry.status} className="flex gap-3.5">
+              <div className="flex flex-col items-center">
+                <span
+                  aria-hidden
+                  className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2"
+                  style={{
+                    borderColor: done || active ? olive : controlBorder,
+                    backgroundColor: done ? olive : active ? sage : "transparent",
+                  }}
+                />
+                {last ? null : (
+                  <span
+                    aria-hidden
+                    className="my-1 w-[2px] flex-1 rounded-full"
+                    style={{ backgroundColor: done ? olive : controlBorder }}
+                  />
+                )}
+              </div>
+              <div className={last ? "pb-0" : "pb-5"}>
+                <p
+                  className="m-0 text-[14px]"
+                  style={{
+                    color: done || active ? olive : faint,
+                    fontWeight: active ? 500 : 400,
+                  }}
+                >
+                  {entry.label}
+                </p>
+                {active ? (
+                  <p className="m-0 mt-0.5 text-[13px] leading-[1.45]" style={{ color: muted }}>
+                    {entry.detail}
+                  </p>
+                ) : null}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <Receipt order={order} />
+
+      <p className="mt-6 text-[13px] leading-[1.5]" style={{ color: muted }}>
+        Something wrong with this order?{" "}
+        <a
+          href={`mailto:${SHOP_EMAIL}?subject=${encodeURIComponent(`Order ${order.id}`)}`}
+          className="cursor-pointer underline underline-offset-2"
+          style={{ color: olive }}
+        >
+          Email the shop
+        </a>
+        .
+      </p>
+    </div>
+  );
+}
+
+function Receipt({ order }: { order: PlacedOrder }) {
+  return (
+    <div
+      className="mt-8 rounded-2xl border p-5"
+      style={{ borderColor: border, backgroundColor: surface }}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[14px] font-medium" style={{ color: olive }}>
+          {order.id}
+        </span>
+        <span className="text-[13px]" style={{ color: faint }}>
+          {formatOrderDate(order.placedAt)}
+        </span>
+      </div>
+      <p className="mt-0.5 text-[13px]" style={{ color: muted }}>
+        {order.fulfillmentMode} · {order.fulfillmentWhere}
+      </p>
+
+      <div className="mt-4 flex flex-col gap-3">
+        {order.items.map((item, index) => (
+          <div key={`${item.slug}-${index}`} className="flex items-center gap-3">
+            <ProductImage
+              swatch="#ECE6D8"
+              name={item.name}
+              className="h-10 w-10 shrink-0 rounded-lg"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="m-0 text-[14px]" style={{ color: olive }}>
+                {item.quantity}× {item.name}
+              </p>
+              {item.optionsLabel ? (
+                <p className="m-0 text-[12px]" style={{ color: muted }}>
+                  {item.optionsLabel}
+                </p>
+              ) : null}
+            </div>
+            <span className="shrink-0 text-[14px]" style={{ color: olive }}>
+              {formatPrice(item.unitCents * item.quantity)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="mt-4 flex items-center justify-between border-t pt-3"
+        style={{ borderColor: border }}
+      >
+        <span className="text-[14px] font-medium" style={{ color: olive }}>
+          Total
+        </span>
+        <span className="text-[15px] font-medium" style={{ color: olive }}>
+          {formatPrice(order.subtotalCents)}
+        </span>
+      </div>
+      <p className="mt-1.5 text-[12px]" style={{ color: faint }}>
+        Payment is taken by the shop when they confirm.
+      </p>
+    </div>
+  );
+}

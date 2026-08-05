@@ -297,21 +297,9 @@ export default function ChatWidget() {
         {/* The thread. Bot messages on the left, the visitor's replies on
             the right, newest kept in view. */}
         <div ref={threadRef} className="max-h-[50vh] overflow-y-auto p-4">
-          <p
-            className="mb-1.5 ml-9 text-[11px] font-medium text-[#8A8672]"
-            style={{ fontFamily: DISPLAY_FONT }}
-          >
-            Riley
-          </p>
-          <div className="mb-2 ml-9">
-            <p className={botBubbleClass}>
-              Hi, I&rsquo;m Riley. I look after ordering and anything else
-              Corner Bagel.
-            </p>
-          </div>
           <div className="flex items-end gap-2">
             <BagelAvatar />
-            <p className={botBubbleClass}>What can I help you with?</p>
+            <p className={botBubbleClass}>Hey, how can I help?</p>
           </div>
           {/* Said once, up front, rather than under every reply: a label on
               each bubble is noise, and the thing worth disclosing is that

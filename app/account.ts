@@ -34,11 +34,18 @@ export type PlacedOrderItem = {
   optionsLabel: string;
 };
 
-// Where an order got to. Only "placed" is ever set today: nothing tells this
-// app when a bagel is handed over, so claiming "Delivered" would be a
-// decoration rather than a fact. The rest exist because the moment there's a
-// POS or a courier webhook, the chip that renders them is already written.
-export type OrderStatus = "placed" | "in-the-kitchen" | "out-for-delivery" | "delivered";
+// Where an order got to.
+//
+// ⚠️ NOTHING REPORTS REAL PROGRESS YET. No POS, no courier, no kitchen
+// display — so the stage a tracking screen shows is *derived from elapsed
+// time* against the estimates below, not read from anywhere. It is an
+// estimate presented as an estimate: the tracker says so on screen, and it
+// never claims an order was collected or handed over, because only a person
+// at the counter knows that.
+//
+// When there is a real feed, `progressFor` stops deriving and starts reading
+// a stored status, and everything above it is unchanged.
+export type OrderStatus = "placed" | "in-the-kitchen" | "ready" | "on-the-way" | "complete";
 
 export type PlacedOrder = {
   id: string;
@@ -276,8 +283,116 @@ export function describeOrderItems(order: PlacedOrder): string {
 }
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
-  placed: "Placed",
+  placed: "Order received",
   "in-the-kitchen": "In the kitchen",
-  "out-for-delivery": "Out for Delivery",
-  delivered: "Delivered",
+  ready: "Ready for pickup",
+  "on-the-way": "On the way",
+  complete: "Complete",
 };
+
+// ——— Tracking ———
+
+// How long each stage is expected to take, in minutes from when the order went
+// in. Guesses, and named as such: nobody has timed a Corner Bagel morning.
+// They're the one place to change when somebody has.
+const PREP_MINUTES = 12;
+const DELIVERY_MINUTES = 22;
+
+export type OrderStage = {
+  status: OrderStatus;
+  label: string;
+  // What's happening, in the customer's terms.
+  detail: string;
+};
+
+export type OrderProgress = {
+  stages: OrderStage[];
+  // Index into `stages` of the stage the order is estimated to be in.
+  current: number;
+  // 0–1, for the bar.
+  fraction: number;
+  // "Ready around 8:24am", or null once it's past the estimate.
+  etaLabel: string | null;
+  settled: boolean;
+};
+
+function isDelivery(order: PlacedOrder): boolean {
+  return order.fulfillmentMode.toLowerCase() === "delivery";
+}
+
+export function stagesFor(order: PlacedOrder): OrderStage[] {
+  const delivery = isDelivery(order);
+  return [
+    {
+      status: "placed",
+      label: STATUS_LABEL.placed,
+      detail: "We have your order and the shop is confirming it.",
+    },
+    {
+      status: "in-the-kitchen",
+      label: STATUS_LABEL["in-the-kitchen"],
+      detail: "Bagels are being toasted and built.",
+    },
+    delivery
+      ? {
+          status: "on-the-way",
+          label: STATUS_LABEL["on-the-way"],
+          detail: `Heading to ${order.fulfillmentWhere}.`,
+        }
+      : {
+          status: "ready",
+          label: STATUS_LABEL.ready,
+          detail: `Waiting for you at the counter.`,
+        },
+    {
+      status: "complete",
+      label: delivery ? "Delivered" : "Picked up",
+      detail: delivery ? "Enjoy it." : "Enjoy it.",
+    },
+  ];
+}
+
+function formatClock(timestamp: number): string {
+  return new Date(timestamp)
+    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+    .toLowerCase()
+    .replace(" ", "");
+}
+
+// The estimated stage, from the clock alone — see the warning on OrderStatus.
+//
+// It deliberately stops one short of the last stage: "Delivered" and "Picked
+// up" are claims about the physical world that a timer cannot make. The
+// tracker parks on the ready/on-the-way stage and says the shop will confirm.
+export function progressFor(order: PlacedOrder, now: number = Date.now()): OrderProgress {
+  const stages = stagesFor(order);
+  const delivery = isDelivery(order);
+  const totalMinutes = PREP_MINUTES + (delivery ? DELIVERY_MINUTES : 0);
+  const elapsed = Math.max(0, (now - order.placedAt) / 60000);
+
+  const current = elapsed < 2 ? 0 : elapsed < PREP_MINUTES ? 1 : 2;
+  const fraction = Math.min(1, elapsed / totalMinutes);
+  const settled = elapsed >= totalMinutes;
+
+  return {
+    stages,
+    current,
+    fraction,
+    etaLabel: settled
+      ? null
+      : `${delivery ? "Arriving" : "Ready"} around ${formatClock(order.placedAt + totalMinutes * 60000)}`,
+    settled,
+  };
+}
+
+export function findOrder(history: PlacedOrder[], id: string): PlacedOrder | undefined {
+  return history.find((order) => order.id === id);
+}
+
+// The order still worth watching, if there is one — what the shop's header
+// bar should offer to track. Anything past its estimate has nothing left to
+// say, so it drops off rather than sitting there stale.
+export function activeOrder(history: PlacedOrder[], now: number = Date.now()): PlacedOrder | null {
+  const recent = history.find((order) => !progressFor(order, now).settled);
+  return recent ?? null;
+}

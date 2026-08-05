@@ -1,13 +1,8 @@
-// Two halves of one catalog.
+// The catalog: the counter menu, transcribed from the printed board, plus
+// gift cards. Every name and price here is real.
 //
-// The first four categories are the counter menu — real names and real
-// prices, transcribed from the printed menu. The last four are the pantry,
-// which is still placeholder: those names, prices, and descriptions are
-// stand-ins so the storefront has something to render, and they should be
-// replaced before the pantry launches.
-//
-// The `swatch` color fills in for product photography we don't have for
-// either half yet (see ProductImage in ProductCard.tsx).
+// The `swatch` colour fills in for product photography we don't have yet —
+// it tints the initials on the placeholder tile (see ProductImage.tsx).
 
 // What a customer picks before an item can be made: which bagel, which
 // spread. A choice can carry a surcharge, which is what turns the board's
@@ -23,6 +18,10 @@ export type OptionGroup = {
   // while spread defaults to none, because the board is explicit that the
   // sandwich price does not include cream cheese.
   defaultChoiceId?: string;
+  // Show the chosen value on the basket line even when it's the free default.
+  // The rule that hides those exists to keep "No spread" off every row; a
+  // gift card's amount is the opposite case — it's the whole line.
+  alwaysShow?: boolean;
 };
 
 // groupId -> choiceId. Stored on the cart line, so two of the same sandwich
@@ -69,6 +68,21 @@ export const SPREAD_GROUP: OptionGroup = {
   ],
 };
 
+// Gift-card denominations. The base price is the smallest, and each larger
+// amount is the difference — so the running total on the button is the card's
+// face value, which is the only number anybody buying one cares about.
+export const GIFT_AMOUNT_GROUP: OptionGroup = {
+  id: "amount",
+  label: "Amount",
+  defaultChoiceId: "25",
+  alwaysShow: true,
+  choices: [
+    { id: "25", label: "$25", priceCents: 0 },
+    { id: "50", label: "$50", priceCents: 2500 },
+    { id: "100", label: "$100", priceCents: 7500 },
+  ],
+};
+
 export type Product = {
   slug: string;
   name: string;
@@ -87,8 +101,8 @@ export type Product = {
   // abbreviations, and the category words a menu name leaves out.
   aliases?: string[];
   // Optional merchandising pill shown on the catalog tile ("New",
-  // "Bestseller") — same treatment as the reference designs. Placeholder
-  // picks below, like everything else in this file.
+  // "Bestseller") — same treatment as the reference designs. Nothing carries
+  // one today; it's here for when the counter wants to push something.
   tag?: "New" | "Bestseller";
 };
 
@@ -155,9 +169,11 @@ export function describeOptions(product: Product, selected: SelectedOptions): st
   for (const group of product.options ?? []) {
     const choice = group.choices.find((c) => c.id === selected[group.id]);
     if (!choice) continue;
-    if (choice.priceCents === 0 && choice.id === group.defaultChoiceId) continue;
+    if (!group.alwaysShow && choice.priceCents === 0 && choice.id === group.defaultChoiceId) {
+      continue;
+    }
     parts.push(
-      choice.priceCents > 0
+      choice.priceCents > 0 && !group.alwaysShow
         ? `${choice.label} (+${formatPrice(choice.priceCents)})`
         : choice.label,
     );
@@ -179,18 +195,20 @@ export function lineKey(slug: string, selected: SelectedOptions | undefined): st
   return pairs.length > 0 ? `${slug}::${pairs.join(",")}` : slug;
 }
 
-// Menu first, pantry after — the tabs run in this order, and what someone
-// came for is a sandwich far more often than a jar of oil. The four pantry
-// tabs are the ones that were already here and stay.
+// What the shop sells, in the order the tabs run: the counter menu, then
+// gift cards.
+//
+// The four pantry categories that used to follow (Pickles & Ferments, Oils &
+// Vinegars, Sauces & Spreads, Pantry Staples) are gone along with their
+// placeholder products. They were stand-ins from before there was a real
+// menu, and a storefront half-filled with invented jars undercuts the half
+// that's true. When there's a pantry to sell, it comes back as real entries.
 export const CATEGORIES = [
   "Sandwiches",
   "Bagels",
-  "Cream Cheese + More",
+  "Spreads",
   "Drinks",
-  "Pickles & Ferments",
-  "Oils & Vinegars",
-  "Sauces & Spreads",
-  "Pantry Staples",
+  "Gift Cards",
 ] as const;
 
 export const PRODUCTS: Product[] = [
@@ -312,7 +330,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-plain",
     name: "Plain Cream Cheese",
     priceCents: 375,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "House-whipped, and the one everything else is built on.",
     swatch: "#F2EEE2",
     aliases: ["schmear", "cream cheese", "plain"],
@@ -321,7 +339,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-scallion",
     name: "Scallion Cream Cheese",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Whipped plain, loaded with fresh scallion.",
     swatch: "#CFDCB4",
     aliases: ["schmear", "cream cheese", "green onion"],
@@ -330,7 +348,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-jalapeno",
     name: "Jalapeño Cream Cheese",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Whipped plain with jalapeño through it.",
     swatch: "#A9C46C",
     aliases: ["schmear", "cream cheese", "jalapeno", "spicy"],
@@ -339,7 +357,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-veggie",
     name: "Veggie Cream Cheese",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Whipped plain with vegetables folded in.",
     swatch: "#C3CFA6",
     aliases: ["schmear", "cream cheese", "veg"],
@@ -348,7 +366,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-garlic-herb",
     name: "Garlic & Herb Cream Cheese",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Whipped plain with garlic and herbs.",
     swatch: "#DCE0C4",
     aliases: ["schmear", "cream cheese", "herbs"],
@@ -357,7 +375,7 @@ export const PRODUCTS: Product[] = [
     slug: "lox-spread",
     name: "Lox Spread",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Cream cheese whipped through with lox.",
     swatch: "#F0B7A8",
     aliases: ["schmear", "cream cheese", "salmon", "nova"],
@@ -366,7 +384,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-strawberry",
     name: "Strawberry Cream Cheese",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Whipped plain, sweetened with strawberry.",
     swatch: "#E7A0AE",
     aliases: ["schmear", "cream cheese", "sweet", "fruit"],
@@ -375,7 +393,7 @@ export const PRODUCTS: Product[] = [
     slug: "cream-cheese-vegan-plain",
     name: "Vegan Plain Cream Cheese",
     priceCents: 450,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "The plain schmear, made without dairy.",
     swatch: "#EDE7D6",
     aliases: [
@@ -391,7 +409,7 @@ export const PRODUCTS: Product[] = [
     slug: "peanut-butter",
     name: "Peanut Butter",
     priceCents: 375,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Spread thick, corner to corner.",
     swatch: "#B07A3E",
     aliases: ["pb", "pbj", "peanut", "nut butter"],
@@ -400,7 +418,7 @@ export const PRODUCTS: Product[] = [
     slug: "jelly",
     name: "Jelly",
     priceCents: 250,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "On its own, or on top of the peanut butter.",
     swatch: "#A9364B",
     aliases: ["jam", "pbj", "preserves"],
@@ -409,7 +427,7 @@ export const PRODUCTS: Product[] = [
     slug: "butter",
     name: "Butter",
     priceCents: 250,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "On a bagel straight out of the water and into the oven.",
     swatch: "#EFCF7B",
     aliases: ["buttered"],
@@ -418,7 +436,7 @@ export const PRODUCTS: Product[] = [
     slug: "hot-honey-schmear",
     name: "Hot Honey",
     priceCents: 200,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Sweet first, then a slow build of heat.",
     swatch: "#E0A825",
     aliases: ["honey", "spicy honey", "hot"],
@@ -427,19 +445,19 @@ export const PRODUCTS: Product[] = [
     slug: "chili-crisp",
     name: "Chili Crisp",
     priceCents: 300,
-    category: "Cream Cheese + More",
+    category: "Spreads",
     description: "Crunchy, oily, and hotter than it looks.",
     swatch: "#B8471F",
     aliases: ["chili", "chilli", "spicy", "crisp", "crunch"],
   },
   {
-    slug: "hot-chocolate",
-    name: "Hot Chocolate",
+    slug: "choco-milk",
+    name: "Choco Milk",
     priceCents: 700,
     category: "Drinks",
     description: "For the walk back.",
     swatch: "#5C3A28",
-    aliases: ["cocoa", "hot cocoa", "chocolate", "hot drink"],
+    aliases: ["hot chocolate", "cocoa", "chocolate milk", "chocolate"],
   },
   {
     slug: "orange-juice",
@@ -469,85 +487,24 @@ export const PRODUCTS: Product[] = [
     aliases: ["tea", "iced tea", "caffeine"],
   },
 
-  // ——— The pantry (placeholder) ———
+  // ——— Gift cards ———
+  //
+  // Sold like anything else on the menu, with the denomination as an option
+  // so one entry covers every amount and the tile prices itself as you
+  // choose. The designs on /gift are the same product with artwork attached
+  // to it; nothing here issues a balance yet — see the note in
+  // app/(marketing)/gift/GiftGallery.tsx.
   {
-    slug: "pickled-red-onions",
-    name: "Pickled Red Onions",
-    priceCents: 900,
-    tag: "Bestseller",
-    category: "Pickles & Ferments",
-    description:
-      "The same quick-pickled onions that go on the sandwiches — sharp, bright, and ready for anything you'd put a pickle on.",
-    swatch: "#C0546B",
+    slug: "gift-card",
+    name: "Gift Card",
+    priceCents: 2500,
+    category: "Gift Cards",
+    description: "Spends like cash, at the counter or in the app.",
+    swatch: "#BE1923",
+    aliases: ["gift", "gift certificate", "giftcard", "voucher", "present"],
+    options: [GIFT_AMOUNT_GROUP],
   },
-  {
-    slug: "house-giardiniera",
-    name: "House Giardiniera",
-    priceCents: 1100,
-    category: "Pickles & Ferments",
-    description:
-      "A crunchy, vinegar-forward mix of pickled vegetables, cut small enough to pile onto a sandwich or spoon straight out of the jar.",
-    swatch: "#8A9B4F",
-  },
-  {
-    slug: "house-olive-oil",
-    name: "House Olive Oil",
-    priceCents: 2400,
-    category: "Oils & Vinegars",
-    description:
-      "Our everyday finishing oil — good enough for the counter, sturdy enough for the pan.",
-    swatch: "#A8A13D",
-  },
-  {
-    slug: "chili-oil",
-    name: "Chili Oil",
-    priceCents: 1400,
-    category: "Oils & Vinegars",
-    description:
-      "Slow-steeped with dried chilies and aromatics. A spoonful wakes up eggs, bagels, or anything that needs a little heat.",
-    swatch: "#B8471F",
-  },
-  {
-    slug: "sandwich-sauce",
-    name: "Sandwich Sauce",
-    priceCents: 900,
-    category: "Sauces & Spreads",
-    description:
-      "The house sauce, bottled. Tangy, a little sweet, and the reason people ask what's on their sandwich.",
-    swatch: "#D68A3C",
-  },
-  {
-    // "Jar" and "Tub" in the names here and below are doing real work: the
-    // counter sells hot honey and scallion schmear by the side, at counter
-    // prices, and two products called the same thing at $1.75 and $12 in one
-    // catalog is a support ticket waiting to happen.
-    slug: "hot-honey",
-    name: "Hot Honey Jar",
-    priceCents: 1200,
-    tag: "New",
-    category: "Sauces & Spreads",
-    description:
-      "Local honey steeped with chilies — sweet first, then a slow build of heat. Great on anything that could use both.",
-    swatch: "#E0A825",
-  },
-  {
-    slug: "scallion-cream-cheese",
-    name: "Scallion Cream Cheese Tub",
-    priceCents: 700,
-    category: "Sauces & Spreads",
-    description:
-      "House-whipped, loaded with fresh scallion. The same tub we schmear behind the counter.",
-    swatch: "#DCE3C6",
-  },
-  {
-    slug: "everything-seasoning",
-    name: "Everything Bagel Seasoning",
-    priceCents: 800,
-    category: "Pantry Staples",
-    description:
-      "Sesame, poppy, garlic, onion, and flake salt — the blend that goes on every everything bagel, in a jar for your own kitchen.",
-    swatch: "#4A4038",
-  },
+
 ];
 
 export function getProduct(slug: string): Product | undefined {

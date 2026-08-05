@@ -17,7 +17,7 @@ export default function SearchSummary({
     >
       <p className="text-[15px] text-[#3E4A30]" style={{ fontFamily: DISPLAY_FONT }}>
         {count > 0 ? "Results for" : "No results for"}{" "}
-        <span className="font-semibold">&ldquo;{query}&rdquo;</span>
+        <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
       {count === 0 ? (
         <p className="mt-1 text-[12px] text-[#8A8672]">
