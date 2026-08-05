@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         reply:
-          "Chat isn't switched on yet, so there's nobody in this window right now. Email cornerbagel@publicentity.co and a person will get back to you.",
+          "Riley can't answer right now. Email cornerbagel@publicentity.co and a person will get back to you.",
         configured: false,
       },
       { status: 200 },

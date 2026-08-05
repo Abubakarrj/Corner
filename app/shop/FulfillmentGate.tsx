@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
 import { ButtonLink } from "../ui/Button";
@@ -21,9 +21,24 @@ const { ink, cream, border, muted, controlBorder } = PALETTE;
 //
 // Rendered inside the shop layout, so it covers the catalog, the product
 // pages, the cart and checkout alike rather than each of them checking.
+// Pages under /shop that aren't ordering, and so have no destination to ask
+// for. Signing in and looking at an order you already placed are both things
+// you do without a basket — gating them sends someone who just typed a code
+// out of their email to a map, which is how a successful sign-in used to end
+// up on /locations.
+const UNGATED = ["/shop/account", "/shop/order"];
+
+function ordering(pathname: string): boolean {
+  return !UNGATED.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 export default function FulfillmentGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const fulfillment = useFulfillment();
+  const gated = ordering(pathname);
 
   // Landing here without a destination — a bookmark, a shared link, a
   // back button — sends you to the map, which is the one place the choice is
@@ -35,10 +50,10 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
   // hydration, and redirecting on that would bounce someone who already has
   // a location.
   useEffect(() => {
-    if (peekFulfillment() === null) router.replace("/locations?for=menu");
-  }, [router]);
+    if (gated && peekFulfillment() === null) router.replace("/locations?for=menu");
+  }, [gated, router]);
 
-  if (!fulfillment) {
+  if (gated && !fulfillment) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
         <p

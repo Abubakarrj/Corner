@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { totalsFor } from "../money";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
+import { useCapabilities } from "../../capabilities";
 import { orderTotals, recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
@@ -21,11 +22,6 @@ import TipPicker from "./TipPicker";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Everything the shop takes payment for is taken at the window. See
-// PaymentSection and app/toast.ts for what turning this on involves — it is
-// not a flag to flip, it's a payment element to mount.
-const CARD_PAYMENT_ENABLED = false;
-
 function readyAt(minutes: number): string {
   const when = new Date(Date.now() + minutes * 60_000);
   return when.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -36,6 +32,7 @@ export default function CheckoutPage() {
   const fulfillment = useFulfillment();
   const rows = useCartRows();
   const opening = useOpening();
+  const { payments } = useCapabilities();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -55,6 +52,60 @@ export default function CheckoutPage() {
 
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
   const isDelivery = fulfillment?.mode === "delivery";
+  const deliveryAddress = fulfillment?.mode === "delivery" ? fulfillment.address : null;
+
+  // What the courier charges to take this order to this address, from Uber
+  // Direct via /api/delivery/quote. Fetched rather than assumed: a flat
+  // delivery fee is a bet that every address costs the same, and the shop
+  // covers the difference on the far ones.
+  //
+  // `null` while it's in flight, which is why the total is held back until it
+  // lands — showing a subtotal-only total on a delivery order and then adding
+  // six dollars at the last step is the oldest trick in online food, and it's
+  // not one this shop is going to do.
+  // Both are tagged with the address they belong to and read back only when
+  // that still matches — the same pattern the address search uses. Switching
+  // fulfillment mid-checkout would otherwise leave the previous address's fee
+  // on the screen while the new one is still in flight, and the moment to be
+  // showing a stale delivery fee is never.
+  const [quoted, setQuoted] = useState<{
+    forAddress: string;
+    quote: { quoteId: string; feeCents: number; etaMinutes: number | null } | null;
+    error: string | null;
+  } | null>(null);
+
+  const quote = quoted?.forAddress === deliveryAddress ? quoted.quote : null;
+  const quoteError = quoted?.forAddress === deliveryAddress ? quoted.error : null;
+
+  useEffect(() => {
+    if (!deliveryAddress) return;
+    let live = true;
+    void fetch("/api/delivery/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: deliveryAddress }),
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null);
+        if (!live) return;
+        setQuoted({
+          forAddress: deliveryAddress,
+          quote: response.ok ? body : null,
+          error: response.ok ? null : (body?.error ?? "We couldn't price that delivery."),
+        });
+      })
+      .catch(() => {
+        if (!live) return;
+        setQuoted({
+          forAddress: deliveryAddress,
+          quote: null,
+          error: "We couldn't price that delivery.",
+        });
+      });
+    return () => {
+      live = false;
+    };
+  }, [deliveryAddress]);
 
   // A row that never got its bagel chosen can't be made, and the endpoint
   // refuses it — so the button refuses first, and says where to fix it.
@@ -62,7 +113,11 @@ export default function CheckoutPage() {
   // Sold out since the basket was filled. A basket outlives the morning, so
   // this is ordinary rather than exceptional — it just can't be ordered.
   const unavailable = rows.filter((row) => row.gone);
-  const totals = totalsFor({ subtotalCents, tipCents });
+  const totals = totalsFor({
+    subtotalCents,
+    tipCents,
+    deliveryCents: quote?.feeCents ?? 0,
+  });
 
   const emailError = tried && !EMAIL.test(email.trim()) ? "Enter a valid email." : undefined;
   const firstNameError = tried && firstName.trim().length === 0 ? "Required." : undefined;
@@ -76,7 +131,10 @@ export default function CheckoutPage() {
     // Nothing gets made outside opening hours, so nothing gets ordered. The
     // app used to take the order at 3am on a Monday and promise it for
     // 3:12am, which sends somebody to a locked window.
-    opening.acceptingOrders;
+    opening.acceptingOrders &&
+    // A delivery order can't be placed until a courier has priced it. Placing
+    // it anyway would mean promising a delivery nobody has agreed to make.
+    (!isDelivery || quote !== null);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -95,6 +153,11 @@ export default function CheckoutPage() {
           email,
           phone,
           fulfillment,
+          // Uber's quote, so the courier booked on the far side is booked at
+          // the price shown here. The server re-quotes and compares rather
+          // than believing the fee — see /api/shop-order.
+          deliveryQuoteId: quote?.quoteId ?? null,
+          deliveryFeeCents: quote?.feeCents ?? 0,
           curbside: curbside && !isDelivery,
           utensils,
           note,
@@ -111,9 +174,9 @@ export default function CheckoutPage() {
           subtotalCents,
         }),
       });
+      const result = await response.json().catch(() => null);
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? "Something went wrong.");
+        throw new Error(result?.error ?? "Something went wrong.");
       }
 
       // The account page's history and its usuals list are built from this.
@@ -134,10 +197,16 @@ export default function CheckoutPage() {
         // actually owed, rather than re-deriving a number that leaves the tip
         // out and calls the subtotal a total.
         taxCents: totals.taxCents,
+        deliveryCents: totals.deliveryCents,
         tipCents: totals.tipCents,
         totalCents: totals.totalCents,
         fulfillmentMode: where?.mode ?? "Pickup",
         fulfillmentWhere: where?.where ?? "Corner Bagel",
+        // Uber's live view of the courier, when one was booked. The tracker
+        // links to it rather than pretending to know where the driver is.
+        ...(typeof result?.trackingUrl === "string"
+          ? { trackingUrl: result.trackingUrl }
+          : {}),
       });
       setPlaced(record);
       setStatus("placed");
@@ -238,12 +307,20 @@ export default function CheckoutPage() {
             <ClockIcon />
             <div className="min-w-0">
               <p className="m-0 text-[14px] text-ink">
-                {isDelivery ? "Delivery" : "Pickup"} around {readyAt(PREP_MINUTES)}
+                {/* On a delivery, the time is Uber's — it's their courier and
+                    their estimate of the drive. On a pickup it's the
+                    kitchen's prep time and nothing else. */}
+                {isDelivery ? "Delivery" : "Pickup"} around{" "}
+                {readyAt(isDelivery ? (quote?.etaMinutes ?? PREP_MINUTES) : PREP_MINUTES)}
               </p>
               {/* "Estimated" is doing real work here: nothing in this app can
                   see the kitchen, so this is arithmetic on the clock, and
                   saying otherwise would be a promise the shop didn't make. */}
-              <p className="m-0 text-[12px] text-muted">Estimated — the shop confirms.</p>
+              <p className="m-0 text-[12px] text-muted">
+                {isDelivery && quote
+                  ? "Estimated by the courier."
+                  : "Estimated — the shop confirms."}
+              </p>
             </div>
           </div>
 
@@ -332,7 +409,7 @@ export default function CheckoutPage() {
       ) : null}
 
       <Section title="Payment">
-        <PaymentSection tender={tender} onTender={setTender} cardEnabled={CARD_PAYMENT_ENABLED} />
+        <PaymentSection tender={tender} onTender={setTender} cardEnabled={payments} />
       </Section>
 
       <Section title="Add a tip">
@@ -367,11 +444,30 @@ export default function CheckoutPage() {
       <div className="border-t border-line pt-5">
         <Money label="Subtotal" amount={formatPrice(totals.subtotalCents)} />
         <Money label="Tax" amount={formatPrice(totals.taxCents)} />
+        {isDelivery ? (
+          <Money
+            label="Delivery"
+            amount={quote ? formatPrice(totals.deliveryCents) : "—"}
+          />
+        ) : null}
         {totals.tipCents > 0 ? <Money label="Tip" amount={formatPrice(totals.tipCents)} /> : null}
         <div className="mt-1 border-t border-line pt-2">
           <Money label="Total" amount={formatPrice(totals.totalCents)} strong />
         </div>
       </div>
+
+      {/* A courier that can't take the job is not an error the customer
+          caused, and it has a way out that isn't "try again" — so it says
+          what happened and points at pickup. */}
+      {quoteError ? (
+        <p role="alert" className="m-0 mt-4 text-[13px] text-brand-red">
+          {quoteError}{" "}
+          <Link href="/locations" className="cursor-pointer underline">
+            Switch to pickup
+          </Link>
+          .
+        </p>
+      ) : null}
 
       {error ? (
         <p role="alert" className="m-0 mt-4 text-[13px] text-brand-red">
@@ -386,7 +482,8 @@ export default function CheckoutPage() {
           status === "sending" ||
           incomplete.length > 0 ||
           unavailable.length > 0 ||
-          !opening.acceptingOrders
+          !opening.acceptingOrders ||
+          (isDelivery && quote === null)
         }
         className="mt-5"
       >
@@ -394,12 +491,21 @@ export default function CheckoutPage() {
           ? "Placing order…"
           : !opening.acceptingOrders
             ? "Closed"
-            : `Place order · ${formatPrice(totals.totalCents)}`}
+            : isDelivery && quote === null
+              ? quoteError
+                ? "Delivery unavailable"
+                : "Pricing delivery…"
+              : `Place order · ${formatPrice(totals.totalCents)}`}
       </Button>
 
+      {/* Says what actually happens, which depends on how the shop is set up
+          rather than on a hardcoded apology. Getting this wrong in the
+          reassuring direction — telling somebody they've paid when they
+          haven't — is the one failure mode worth designing against. */}
       <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
-        Nothing is charged here. We send this to the shop, they confirm it, and you
-        pay at the window.
+        {tender === "card"
+          ? "Your card is charged when the shop confirms the order."
+          : "You pay at the window when you collect."}
       </p>
     </form>
   );
@@ -442,11 +548,11 @@ function Placed({
       <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-muted">
         {where ? (
           <>
-            {where.mode} from <span className="font-medium text-ink">{where.where}</span>. The
-            shop confirms and takes payment.
+            {where.mode} from <span className="font-medium text-ink">{where.where}</span>.
+            We&rsquo;ll have it ready.
           </>
         ) : (
-          <>The shop confirms and takes payment.</>
+          <>We&rsquo;ll have it ready.</>
         )}
       </p>
 
@@ -454,9 +560,12 @@ function Placed({
         <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft p-4 text-left">
           <Money label="Subtotal" amount={formatPrice(bill.subtotalCents)} />
           <Money label="Tax" amount={formatPrice(bill.taxCents)} />
+          {bill.deliveryCents > 0 ? (
+            <Money label="Delivery" amount={formatPrice(bill.deliveryCents)} />
+          ) : null}
           {bill.tipCents > 0 ? <Money label="Tip" amount={formatPrice(bill.tipCents)} /> : null}
           <div className="mt-1 border-t border-line pt-2">
-            <Money label="Due at the window" amount={formatPrice(bill.totalCents)} strong />
+            <Money label="Total" amount={formatPrice(bill.totalCents)} strong />
           </div>
         </div>
       ) : null}

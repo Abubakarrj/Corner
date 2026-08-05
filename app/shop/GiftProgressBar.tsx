@@ -30,7 +30,7 @@ export default function GiftProgressBar({ subtotalCents }: { subtotalCents: numb
   const progress = Math.min(100, (subtotalCents / GIFT_THRESHOLD_CENTS) * 100);
 
   return (
-    <div className="border-b border-line-faint px-6 py-4">
+    <div className="shrink-0 border-b border-line-faint px-6 py-4">
       <p className="mb-2 flex items-center gap-1.5 text-[12px] text-ink">
         {unlocked ? (
           <>

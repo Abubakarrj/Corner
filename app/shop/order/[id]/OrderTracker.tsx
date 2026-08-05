@@ -220,14 +220,35 @@ function Receipt({ order }: { order: PlacedOrder }) {
       <div className="mt-4 border-t pt-3" style={{ borderColor: border }}>
         <Line label="Subtotal" amount={formatPrice(bill.subtotalCents)} />
         <Line label="Tax" amount={formatPrice(bill.taxCents)} />
+        {bill.deliveryCents > 0 ? (
+          <Line label="Delivery" amount={formatPrice(bill.deliveryCents)} />
+        ) : null}
         {bill.tipCents > 0 ? <Line label="Tip" amount={formatPrice(bill.tipCents)} /> : null}
         <div className="mt-1.5 border-t pt-2" style={{ borderColor: border }}>
           <Line label="Total" amount={formatPrice(bill.totalCents)} strong />
         </div>
       </div>
       <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
-        Payment is taken by the shop when they confirm.
+        {bill.deliveryCents > 0
+          ? "Pay the courier when it arrives."
+          : "Pay at the window when you collect."}
       </p>
+
+      {/* Uber's own tracking page. Linked rather than embedded, and rather
+          than rebuilt: the courier is theirs, the live position is theirs,
+          and a worse copy of a page that already exists is not worth
+          building. Only ever present on a delivery that got a courier. */}
+      {order.trackingUrl ? (
+        <a
+          href={order.trackingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="cb-press mt-3 flex w-full cursor-pointer items-center justify-center rounded-full border px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-raise"
+          style={{ borderColor: ink, color: ink }}
+        >
+          Follow the courier
+        </a>
+      ) : null}
     </div>
   );
 }

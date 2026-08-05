@@ -1,6 +1,5 @@
 "use client";
 
-import type { LatLngBounds } from "leaflet";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -14,7 +13,13 @@ import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
-import { LOCATIONS, searchLocations, type StoreLocation } from "./locations";
+import {
+  LOCATIONS,
+  searchLocations,
+  withinBounds,
+  type MapBounds,
+  type StoreLocation,
+} from "./locations";
 
 // Dressed in the shop's produce palette rather than the reference's own
 // greys: deep ink carries the active state, cream is the ground, and the
@@ -23,10 +28,12 @@ import { LOCATIONS, searchLocations, type StoreLocation } from "./locations";
 // finder and the pantry read as one product.
 const { cream, ink, onInk, border, controlBorder, muted } = PALETTE;
 
-// Leaflet touches window at import time, so the map can only ever be a
-// client-side chunk — ssr:false is load-bearing, not a preference. The
-// placeholder holds the map's space so the header and nav don't jump when it
-// arrives.
+// MapLibre touches window at import time, so the map can only ever be a
+// client-side chunk — ssr:false is load-bearing, not a preference. It's also
+// the biggest thing on this page by some way, and keeping it out of the
+// initial bundle is why the header and the search field are usable before the
+// basemap has arrived. The placeholder holds the map's space so nothing
+// jumps when it does.
 const StoreMap = dynamic(() => import("./StoreMap"), {
   ssr: false,
   loading: () => <div className="min-h-0 flex-1" style={{ background: "var(--cb-raise)" }} />,
@@ -57,7 +64,7 @@ export default function LocationFinder() {
   const activeTab = useSearchParams().get("for") === "menu" ? "menu" : "home";
   const [mode, setMode] = useState<Mode>("pickup");
   const [query, setQuery] = useState("");
-  const [bounds, setBounds] = useState<LatLngBounds | null>(null);
+  const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
   const [focus, setFocus] = useState<[number, number] | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
@@ -82,7 +89,7 @@ export default function LocationFinder() {
       mode === "catering" ? location.catering === true : location.kind === "shop",
     );
     return bounds
-      ? byKind.filter((location) => bounds.contains(location.position))
+      ? byKind.filter((location) => withinBounds(bounds, location.position))
       : byKind;
   }, [mode, bounds]);
 

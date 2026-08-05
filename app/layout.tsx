@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "./CookieConsent";
+import SessionSync from "./auth/SessionSync";
+import { CapabilitiesProvider } from "./capabilities";
 import { THEME_SCRIPT } from "./themeScript";
 
 const geistSans = Geist({
@@ -87,8 +89,11 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
-        {children}
-        <CookieConsent />
+        <CapabilitiesProvider>
+          {children}
+          <CookieConsent />
+          <SessionSync />
+        </CapabilitiesProvider>
       </body>
     </html>
   );

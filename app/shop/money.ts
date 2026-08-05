@@ -41,19 +41,28 @@ export type OrderTotals = {
   subtotalCents: number;
   discountCents: number;
   taxCents: number;
+  deliveryCents: number;
   tipCents: number;
   totalCents: number;
 };
 
 // The whole bill. Discount comes off the food first, so it reduces the tax
 // too — which is correct: you don't owe tax on money you didn't spend.
+//
+// The delivery fee is Uber Direct's quote for this address, passed in rather
+// than assumed: a flat rate is a bet that every address costs the same, and
+// the shop covers the difference on the far ones. It sits outside the taxable
+// base — a delivery charge by a third-party courier isn't part of the sale of
+// the food — and outside the tip, which is the kitchen's, not the courier's.
 export function totalsFor({
   subtotalCents,
   discountCents = 0,
+  deliveryCents = 0,
   tipCents = 0,
 }: {
   subtotalCents: number;
   discountCents?: number;
+  deliveryCents?: number;
   tipCents?: number;
 }): OrderTotals {
   // A discount can't take the order below zero, and it can't take the tax
@@ -62,11 +71,13 @@ export function totalsFor({
   const taxed = subtotalCents - discount;
   const taxCents = taxFor(taxed);
   const tip = Math.max(tipCents, 0);
+  const delivery = Math.max(deliveryCents, 0);
   return {
     subtotalCents,
     discountCents: discount,
     taxCents,
+    deliveryCents: delivery,
     tipCents: tip,
-    totalCents: taxed + taxCents + tip,
+    totalCents: taxed + taxCents + delivery + tip,
   };
 }

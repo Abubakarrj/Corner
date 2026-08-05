@@ -3,21 +3,22 @@
 import { useSyncExternalStore } from "react";
 import type { SelectedOptions } from "./shop/products";
 import { taxFor } from "./shop/money";
+import { PREP_MINUTES } from "./shopFacts";
 
-// ⚠️ THIS IS NOT AUTHENTICATION. ⚠️
+// Who's signed in, and what they've ordered.
 //
-// Corner Bagel has no auth backend and no server-side accounts — see the
-// note in app/(marketing)/membership/MembershipForm.tsx. What lives here is
-// a local record on one device: a name and an email somebody typed into that
-// form, and the orders they placed from this browser. It is set by that form
-// succeeding, and cleared by "Sign out".
+// The identity half is real now: Auth0, passwordless by email code, with the
+// session in an httpOnly cookie the browser can't read. This module is the
+// cache in front of it — it asks /api/auth/me once on load and holds the
+// answer — which is exactly what the old note here said it would become.
 //
-// That is enough to do the useful half of an account — show your usuals,
-// show what you ordered, let you reorder it — without pretending to know who
-// anybody is. It must never be used to gate anything private. There is no
-// password, no token, no server check; anyone with the device is "signed
-// in", and clearing site data signs them out. When real auth lands, this
-// file becomes a cache in front of it rather than the source of truth.
+// ⚠️ The *orders* half is still this device only. There is no orders backend,
+// so a history recorded here doesn't follow anybody to a second phone, and
+// clearing site data loses it. Nothing in the app claims otherwise.
+//
+// Neither half should gate anything genuinely private without a server check.
+// A cookie says who you are; this cache says who the last /api/auth/me call
+// said you were, and a page rendering off it is rendering off a hint.
 const ACCOUNT_KEY = "cb-account-v1";
 const ORDERS_KEY = "cb-orders-v1";
 
@@ -63,10 +64,18 @@ export type PlacedOrder = {
   // people's localStorage. Read them through orderTotals() below rather than
   // directly, which fills the gap instead of showing a blank.
   taxCents?: number;
+  // The courier's fee on a delivery order — Uber Direct's quote for that
+  // address, not a flat rate. Absent on pickup orders and on anything placed
+  // before delivery was priced.
+  deliveryCents?: number;
   tipCents?: number;
   totalCents?: number;
   fulfillmentMode: string;
   fulfillmentWhere: string;
+  // Uber's own tracking page for the courier, when there is one. Kept because
+  // it's the only live view of where the food is, and rebuilding a map of
+  // somebody else's driver would be a worse version of a page that exists.
+  trackingUrl?: string;
   status: OrderStatus;
 };
 
@@ -77,16 +86,20 @@ export type PlacedOrder = {
 export function orderTotals(order: PlacedOrder): {
   subtotalCents: number;
   taxCents: number;
+  deliveryCents: number;
   tipCents: number;
   totalCents: number;
 } {
   const taxCents = order.taxCents ?? taxFor(order.subtotalCents);
   const tipCents = order.tipCents ?? 0;
+  const deliveryCents = order.deliveryCents ?? 0;
   return {
     subtotalCents: order.subtotalCents,
     taxCents,
+    deliveryCents,
     tipCents,
-    totalCents: order.totalCents ?? order.subtotalCents + taxCents + tipCents,
+    totalCents:
+      order.totalCents ?? order.subtotalCents + taxCents + deliveryCents + tipCents,
   };
 }
 
@@ -170,6 +183,9 @@ export function peekAccount(): Account | null {
   return account;
 }
 
+// Called by the sign-in screen once the server has minted a session, so the
+// UI doesn't have to wait a round trip to know who you are. The cookie is the
+// truth; this is the echo.
 export function signIn(next: { name: string; email: string }) {
   account = {
     name: next.name.trim(),
@@ -184,11 +200,35 @@ export function signIn(next: { name: string; email: string }) {
   emit();
 }
 
-// Signs out and leaves the order history alone. The orders are this device's
-// record of what it bought — they aren't the account's property, and wiping
-// somebody's receipts because they tapped "sign out" is a surprise nobody
-// wants. clearOrders() is the separate, deliberate action.
-export function signOut() {
+// Asks the server who the cookie says we are, and reconciles.
+//
+// Runs once when the app mounts. Two things it fixes that a purely local
+// record can't: a session that expired or was signed out elsewhere still
+// looked signed in here, and a session that exists on a fresh device — the
+// cookie survives, localStorage doesn't — looked signed out.
+let synced = false;
+export async function syncSession(): Promise<void> {
+  if (synced) return;
+  synced = true;
+  try {
+    const response = await fetch("/api/auth/me", { cache: "no-store" });
+    if (!response.ok) return;
+    const body = (await response.json()) as {
+      user: { email: string; name: string } | null;
+      configured: boolean;
+    };
+    // Auth0 not configured: leave whatever is local alone rather than signing
+    // somebody out of a shop that has no sign-in yet.
+    if (!body.configured) return;
+    if (body.user) signIn(body.user);
+    else forgetLocalAccount();
+  } catch {
+    // Offline, or the route is down. The cached answer stands.
+  }
+}
+
+function forgetLocalAccount() {
+  if (account === null) return;
   account = null;
   try {
     window.localStorage.removeItem(ACCOUNT_KEY);
@@ -196,6 +236,18 @@ export function signOut() {
     // As above.
   }
   emit();
+}
+
+// Signs out and leaves the order history alone. The orders are this device's
+// record of what it bought — they aren't the account's property, and wiping
+// somebody's receipts because they tapped "sign out" is a surprise nobody
+// wants. clearOrders() is the separate, deliberate action.
+export function signOut() {
+  // Clears the cookie server-side as well as the local echo. Fire-and-forget
+  // on purpose: the UI should sign out instantly rather than wait on a round
+  // trip, and if the request fails the next syncSession() puts it right.
+  void fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+  forgetLocalAccount();
 }
 
 // ——— Orders ———
@@ -359,9 +411,11 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 // ——— Tracking ———
 
 // How long each stage is expected to take, in minutes from when the order went
-// in. Guesses, and named as such: nobody has timed a Corner Bagel morning.
-// They're the one place to change when somebody has.
-export const PREP_MINUTES = 12;
+// in. PREP_MINUTES is a fact about the shop and lives in shopFacts.ts, where
+// the closing-time check and the courier's pickup time read the same number.
+// The drive is a guess, and named as such: nobody has timed a Corner Bagel
+// morning. Uber's own ETA replaces it once a delivery is booked.
+export { PREP_MINUTES };
 const DELIVERY_MINUTES = 22;
 
 export type OrderStage = {

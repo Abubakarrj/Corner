@@ -375,3 +375,22 @@ body {
 .cb-press:active {
   transform: scale(0.97);
 }
+
+/* The map's popup, dressed in the app's own surfaces rather than MapLibre's
+   white-on-drop-shadow default — which in dark mode was a floodlight over a
+   dark basemap. The tip is the little triangle pointing at the pin, and it
+   has to be recoloured separately or it stays white under a themed body. */
+.cb-map-popup .maplibregl-popup-content {
+  background: var(--cb-surface);
+  color: var(--cb-ink);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  min-width: 190px;
+}
+.cb-map-popup .maplibregl-popup-tip {
+  border-top-color: var(--cb-surface);
+  border-bottom-color: var(--cb-surface);
+  border-left-color: var(--cb-surface);
+  border-right-color: var(--cb-surface);
+}

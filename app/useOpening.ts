@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { minutesUntilClose, openingStatus } from "./shopFacts";
+import { minutesUntilClose, openingStatus, PREP_MINUTES } from "./shopFacts";
 
 // Whether the counter is open, as something a component can render.
 //
@@ -22,10 +22,6 @@ export type Opening = {
   // the same as being able to take an order at 1:58pm.
   acceptingOrders: boolean;
 };
-
-// The last thing PREP takes. Imported as a number rather than from account.ts
-// to keep this module free of the order model — it's a fact about the shop.
-const PREP_MINUTES = 12;
 
 function compute(): Opening {
   const status = openingStatus();

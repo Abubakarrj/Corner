@@ -34,7 +34,7 @@ export default function CrossSellStrip({
   if (products.length === 0) return null;
 
   return (
-    <div className="border-b border-line-faint px-6 py-4">
+    <div className="shrink-0 border-b border-line-faint px-6 py-4">
       <p
         className="mb-3 text-[13px] text-ink"
         style={{ fontFamily: DISPLAY_FONT }}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatPrice } from "../../../shop/products";
 import { Button, ButtonLink } from "../../../ui/Button";
 import { PALETTE, SHOP_FONT } from "../../../shop/shopControls";
+import { useCapabilities } from "../../../capabilities";
 import { GIFT_CARDS } from "../giftCards";
 import GiftCardArt from "../GiftCardArt";
 import {
@@ -33,6 +34,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // one — and none of that means anything for a card that arrives by email. So
 // this is its own short flow with its own confirmation.
 export default function GiftPurchaseForm({ designId }: { designId: string }) {
+  const { payments } = useCapabilities();
   const design = useMemo(
     () => GIFT_CARDS.find((card) => card.id === designId) ?? GIFT_CARDS[0],
     [designId],
@@ -114,7 +116,7 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
   }
 
   if (step === "done") {
-    return <Sent order={order} totalCents={totalCents} design={design} />;
+    return <Sent order={order} totalCents={totalCents} design={design} paid={payments} />;
   }
 
   return (
@@ -345,19 +347,25 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
             </Block>
 
             <Block title="Payment">
-              {/* No card fields. A gift card is the one thing on this site
-                  that genuinely has to be paid for up front, which makes it
-                  the last place to put a hand-rolled card form — the number
-                  belongs in Toast's hosted element, not in this page. See
-                  app/toast.ts. */}
-              <div className="rounded-xl border border-line-soft p-4">
-                <p className="m-0 text-[14px] text-ink">Card payment isn&rsquo;t live yet</p>
-                <p className="m-0 mt-1 text-[12px] leading-[1.5] text-muted">
-                  Gift cards run through Toast, and this shop isn&rsquo;t connected to it
-                  yet. Place the request and the shop will send a payment link and
-                  issue the card by hand.
-                </p>
-              </div>
+              {/* No card fields of our own, ever. A gift card is the one thing
+                  here that genuinely has to be paid for up front, which makes
+                  it the last place to hand-roll a card form — the number
+                  belongs in the processor's hosted element, not in this page.
+                  See app/toast.ts. */}
+              {payments ? (
+                <div
+                  id="toast-payment-element"
+                  className="rounded-xl border border-line-soft p-4"
+                />
+              ) : (
+                <div className="rounded-xl border border-line-soft p-4">
+                  <p className="m-0 text-[14px] text-ink">Pay by link</p>
+                  <p className="m-0 mt-1 text-[12px] leading-[1.5] text-muted">
+                    We&rsquo;ll email you a payment link, and the card goes out as soon
+                    as it&rsquo;s paid.
+                  </p>
+                </div>
+              )}
             </Block>
 
             <div className="border-t border-line pt-4">
@@ -404,10 +412,12 @@ function Sent({
   order,
   totalCents,
   design,
+  paid,
 }: {
   order: GiftOrder;
   totalCents: number;
   design: (typeof GIFT_CARDS)[number];
+  paid: boolean;
 }) {
   return (
     <div
@@ -459,13 +469,13 @@ function Sent({
         </div>
       </div>
 
-      {/* The one thing that is not yet true, said here rather than buried:
-          nothing has been charged and no card has been issued, because
-          neither is built. Telling somebody their gift is sent when it isn't
-          is the failure mode this whole screen has to avoid. */}
+      {/* Said plainly rather than buried: telling somebody their gift is on
+          its way when it hasn't been paid for is the failure this screen has
+          to avoid. */}
       <p className="m-0 mx-auto mt-5 max-w-xs text-[12px] leading-[1.6] text-quiet">
-        Nothing has been charged yet. The shop will email you a payment link and
-        send the card once it&rsquo;s paid.
+        {paid
+          ? "A receipt is on its way to you."
+          : "We\u2019ll email you a payment link \u2014 the card goes out as soon as it\u2019s paid."}
       </p>
 
       <ButtonLink href="/gift" className="mt-6 w-full max-w-[280px]">

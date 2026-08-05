@@ -56,6 +56,40 @@ export function useThemePreference(): ThemePreference {
   return useSyncExternalStore(subscribe, readPreference, getServerSnapshot);
 }
 
+// What the preference actually resolved to, which is the question anything
+// outside CSS has to ask. A custom property answers it for anything styled by
+// a stylesheet, but a map basemap is a URL — you can't hand MapLibre
+// `var(--cb-cream)` and expect a dark style back — so this reads the
+// attribute the head script stamped.
+//
+// Subscribed to the same event, so flipping the switch or the phone flipping
+// itself at sunset both reach it.
+function readResolved(): "light" | "dark" {
+  return document.documentElement.getAttribute("data-theme") === "dark"
+    ? "dark"
+    : "light";
+}
+
+function subscribeResolved(callback: () => void) {
+  const unsubscribe = subscribe(callback);
+  // The head script writes data-theme in response to the system query as well
+  // as our event, and that path fires no event of its own — so watch the
+  // attribute too rather than trusting one of the two routes.
+  const observer = new MutationObserver(callback);
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+  return () => {
+    unsubscribe();
+    observer.disconnect();
+  };
+}
+
+export function useResolvedTheme(): "light" | "dark" {
+  return useSyncExternalStore(subscribeResolved, readResolved, () => "light");
+}
+
 export function setThemePreference(next: ThemePreference) {
   try {
     if (next === "system") window.localStorage.removeItem(THEME_STORAGE_KEY);

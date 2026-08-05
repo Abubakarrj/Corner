@@ -1,273 +1,265 @@
 "use client";
 
-import { BackIcon, IconButton } from "../../ui/IconButton";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { signIn } from "../../account";
-import { SHOP_EMAIL } from "../../shopFacts";
-import { Button, ButtonLink } from "../../ui/Button";
+import { Button } from "../../ui/Button";
+import { BackIcon, IconButton } from "../../ui/IconButton";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 
 const { cream } = PALETTE;
 
-// Must match HONEYPOT_FIELD in app/api/membership/route.ts. Off-screen rather
-// than display:none, since some bots skip fields a naive check would catch.
-const HONEYPOT_FIELD = "company";
-
-// Four screens, one form. They share a layout, a validator and a submit, and
-// differ in which fields show and where the links go — which is the whole
-// reason they're one component rather than four routes with four drifting
-// copies of the same field markup.
+// Signing in, without a password.
 //
-//   signin   email + password
-//   join     name + email + password
-//   recover  email only → "check your inbox"
-//   reset    the screen a reset link lands on: new password, twice
+// There is no password anywhere in this flow, and that's the design rather
+// than a stage of it: you type an email, Auth0 mails a six-digit code, you
+// type the code back. Nothing to leak, nothing to reset, nothing for this app
+// to be trusted with. The "Recover password" and "New password" screens that
+// used to live here are gone, because there is no password to recover — the
+// code *is* the recovery.
 //
-// `reset` is not reachable from inside the app, on purpose: the only honest
-// way in is a link in an email, and no email is sent yet. It's built and
-// routable (/membership?step=reset) so the flow is complete the day there's a
-// backend to send from.
-type Step = "signin" | "join" | "recover" | "reset";
+// Both halves of the exchange go through our own /api/auth routes, which hold
+// the Auth0 client secret. The browser never talks to Auth0 directly, so this
+// screen stays entirely ours: our type, our spacing, our copy, our errors.
+//
+// Login and Join are the same act. Auth0's email connection creates the user
+// on first code, so asking somebody whether they're new is asking a question
+// the system doesn't need answered — the two differ only in what the heading
+// promises.
+type Step = "email" | "code";
+type Intent = "signin" | "join";
 
-const COPY: Record<Step, { title: string; blurb?: string; submit: string }> = {
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const COPY: Record<Intent, { title: string; blurb: string }> = {
   signin: {
     title: "Login",
-    blurb: "Sign into your Corner Bagel account.",
-    submit: "Login",
+    blurb: "We'll email you a code — there's no password to remember.",
   },
   join: {
     title: "Join",
     blurb: "Save your usual, reorder in a tap, and hear about drops first.",
-    submit: "Create account",
-  },
-  recover: {
-    title: "Recover password",
-    blurb: "Enter the email on your account and we'll send a reset link.",
-    submit: "Send reset link",
-  },
-  reset: {
-    title: "New password",
-    blurb: "Choose something you don't use anywhere else.",
-    submit: "Save password",
   },
 };
 
-export default function MembershipForm({ initialStep = "signin" }: { initialStep?: Step }) {
-  const [step, setStep] = useState<Step>(initialStep);
-  const [name, setName] = useState("");
+export default function MembershipForm({
+  initialStep = "signin",
+}: {
+  initialStep?: Intent;
+}) {
+  const router = useRouter();
+  const [intent, setIntent] = useState<Intent>(initialStep);
+  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
+  const codeRef = useRef<HTMLInputElement>(null);
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const wantsName = step === "join";
-  const wantsEmail = step !== "reset";
-  const wantsPassword = step === "signin" || step === "join" || step === "reset";
+  // The code field takes focus when it appears. The keyboard is already up
+  // from the email step, and making somebody tap into the next box is a step
+  // that achieves nothing.
+  useEffect(() => {
+    if (step === "code") codeRef.current?.focus();
+  }, [step]);
 
-  // Long enough to be worth having, short enough not to lecture. Only enforced
-  // where a password is being *created* — rejecting an existing short one at
-  // the login screen tells an attacker something and helps nobody.
-  const passwordLongEnough = password.length >= 8;
-  const creating = step === "join" || step === "reset";
+  const copy = COPY[intent];
 
-  const ready =
-    (!wantsEmail || emailValid) &&
-    (!wantsName || name.trim().length > 0) &&
-    (!wantsPassword || (creating ? passwordLongEnough : password.length > 0)) &&
-    (step !== "reset" || confirm === password);
-
-  function go(next: Step) {
-    setStep(next);
-    setStatus("idle");
-    setError(null);
-    setPassword("");
-    setConfirm("");
-  }
-
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!ready || status !== "idle") return;
-    setStatus("sending");
+  async function sendCode(address: string): Promise<boolean> {
+    setBusy(true);
     setError(null);
     try {
-      const form = new FormData(event.currentTarget);
-      const response = await fetch("/api/membership", {
+      const response = await fetch("/api/auth/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // NO PASSWORD IN THIS BODY, on any step. There is no auth backend, and
-        // a credential in a request log is a credential leaked — most people
-        // reuse them. The fields exist because the screens need them; the
-        // values stay on the device. When real auth lands, this line and the
-        // endpoint change together.
-        body: JSON.stringify({
-          intent: step === "reset" ? "recover" : step,
-          name: wantsName ? name : undefined,
-          email,
-          [HONEYPOT_FIELD]: form.get(HONEYPOT_FIELD) ?? "",
-        }),
+        body: JSON.stringify({ email: address }),
       });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? "Something went wrong.");
-      }
-      // Signing in or joining records the name and email on this device so the
-      // shop can show usuals and history. NOT a login — see the warning at the
-      // top of app/account.ts. Recovering doesn't, because nothing was proved.
-      if (step === "signin" || step === "join") {
-        signIn({ name: wantsName ? name : "", email });
-      }
-      setStatus("done");
-    } catch (submitError) {
-      setStatus("idle");
-      setError(submitError instanceof Error ? submitError.message : "Something went wrong.");
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error ?? "We couldn't send that code.");
+      setStep("code");
+      setCode("");
+      return true;
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "Something went wrong.");
+      return false;
+    } finally {
+      setBusy(false);
     }
   }
 
-  const copy = COPY[step];
+  async function onSubmitEmail(event: React.FormEvent) {
+    event.preventDefault();
+    const address = email.trim().toLowerCase();
+    if (!EMAIL.test(address)) {
+      setError("Enter a valid email.");
+      return;
+    }
+    if (busy) return;
+    await sendCode(address);
+  }
+
+  async function onSubmitCode(event: React.FormEvent) {
+    event.preventDefault();
+    const digits = code.trim();
+    if (digits.length < 4) {
+      setError("Enter the code we emailed you.");
+      return;
+    }
+    if (busy) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), code: digits }),
+      });
+      const body = (await response.json().catch(() => null)) as {
+        error?: string;
+        user?: { email: string; name: string };
+      } | null;
+      if (!response.ok || !body?.user) {
+        throw new Error(body?.error ?? "We couldn't check that code.");
+      }
+      // The cookie is already set. This is the local echo, so the next screen
+      // knows who you are without waiting on a round trip.
+      signIn(body.user);
+      router.push("/shop/account");
+    } catch (verifyError) {
+      setError(verifyError instanceof Error ? verifyError.message : "Something went wrong.");
+      setCode("");
+      codeRef.current?.focus();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div
       className="flex h-dvh w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
-      {/* No back button on Login. You arrive here from the Reorder tab, so
-          there is nothing behind you — the one that used to sit here pointed
-          at the map, which is a back arrow to somewhere you have never been.
-          The tab bar is the way out. The inner steps do have somewhere to go
-          back to, and keep it. */}
+      {/* No back button on the first step — you arrive from the Reorder tab,
+          so there's nothing behind you. The code step does have somewhere to
+          go back to: the address you typed. */}
       <header className="shrink-0 pt-[env(safe-area-inset-top)]">
-        {step === "signin" ? null : (
+        {step === "code" ? (
           <div className="px-5 pt-4">
-            <BackButton onBack={() => go("signin")} />
+            <IconButton
+              label="Back"
+              onClick={() => {
+                setStep("email");
+                setError(null);
+                setResent(false);
+              }}
+            >
+              <BackIcon />
+            </IconButton>
           </div>
-        )}
+        ) : null}
       </header>
 
       <main
         className={`min-h-0 flex-1 overflow-y-auto px-5 pb-8 ${
-          step === "signin" ? "pt-8" : "pt-2"
+          step === "code" ? "pt-2" : "pt-8"
         }`}
       >
-        {/* Keyed on the step so each screen animates in as its own thing
-            rather than the fields silently swapping under a static heading. */}
         <div key={step} className="cb-rise mx-auto max-w-[380px]">
-          <h1 className="m-0 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink">
-            {copy.title}
-          </h1>
-          {copy.blurb ? (
-            <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">{copy.blurb}</p>
-          ) : null}
+          {step === "email" ? (
+            <>
+              <h1 className="m-0 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink">
+                {copy.title}
+              </h1>
+              <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">{copy.blurb}</p>
 
-          {status === "done" ? (
-            <Done step={step} email={email} onBack={() => go("signin")} />
-          ) : (
-            <form onSubmit={onSubmit} noValidate className="mt-7 flex flex-col">
-              {/* A field no real visitor can see or reach. */}
-              <input
-                type="text"
-                name={HONEYPOT_FIELD}
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
-              />
+              <form onSubmit={onSubmitEmail} noValidate className="mt-7 flex flex-col">
+                <Field
+                  label="Email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(next) => {
+                    setEmail(next);
+                    setError(null);
+                  }}
+                  hint={error ?? undefined}
+                />
 
-              <div className="flex flex-col gap-4">
-                {wantsName ? (
-                  <Field
-                    label="Name"
-                    type="text"
-                    autoComplete="name"
-                    value={name}
-                    onChange={(next) => {
-                      setName(next);
-                      setError(null);
-                    }}
-                  />
-                ) : null}
+                <Button type="submit" block className="mt-6" disabled={busy}>
+                  {busy ? "Sending…" : "Email me a code"}
+                </Button>
 
-                {wantsEmail ? (
-                  <Field
-                    label="Email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(next) => {
-                      setEmail(next);
-                      setError(null);
-                    }}
-                  />
-                ) : null}
-
-                {wantsPassword ? (
-                  <Field
-                    label={step === "reset" ? "New password" : "Password"}
-                    type="password"
-                    autoComplete={creating ? "new-password" : "current-password"}
-                    value={password}
-                    hint={
-                      creating && password.length > 0 && !passwordLongEnough
-                        ? "At least 8 characters."
-                        : undefined
-                    }
-                    onChange={(next) => {
-                      setPassword(next);
-                      setError(null);
-                    }}
-                  />
-                ) : null}
-
-                {step === "reset" ? (
-                  <Field
-                    label="Confirm password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={confirm}
-                    hint={
-                      confirm.length > 0 && confirm !== password
-                        ? "These don't match."
-                        : undefined
-                    }
-                    onChange={(next) => {
-                      setConfirm(next);
-                      setError(null);
-                    }}
-                  />
-                ) : null}
-              </div>
-
-              {error ? (
-                <p role="alert" className="m-0 mt-4 text-[13px] text-brand-red">
-                  {error}
+                <p className="m-0 mt-4 text-center text-[13px] text-muted">
+                  {intent === "signin" ? (
+                    <>
+                      New here?{" "}
+                      <Quiet onClick={() => setIntent("join")}>Create an account</Quiet>
+                    </>
+                  ) : (
+                    <>
+                      Already have one? <Quiet onClick={() => setIntent("signin")}>Log in</Quiet>
+                    </>
+                  )}
                 </p>
-              ) : null}
+              </form>
+            </>
+          ) : (
+            <>
+              <h1 className="m-0 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink">
+                Check your email
+              </h1>
+              <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">
+                We sent a code to{" "}
+                <span className="text-ink">{email.trim().toLowerCase()}</span>. It&rsquo;s
+                good for a few minutes.
+              </p>
 
-              <Button type="submit" block disabled={!ready || status === "sending"} className="mt-6">
-                {status === "sending" ? "One moment…" : copy.submit}
-              </Button>
+              <form onSubmit={onSubmitCode} noValidate className="mt-7 flex flex-col">
+                <Field
+                  ref={codeRef}
+                  label="Code"
+                  inputMode="numeric"
+                  // one-time-code lets iOS and Android offer the code straight
+                  // from the notification, which is most of the point of doing
+                  // this with a code rather than a link.
+                  autoComplete="one-time-code"
+                  maxLength={8}
+                  value={code}
+                  onChange={(next) => {
+                    setCode(next.replace(/\D/g, ""));
+                    setError(null);
+                  }}
+                  hint={error ?? undefined}
+                  className="text-center text-[22px] tracking-[0.3em]"
+                />
 
-              {/* One line of links, not a stack: two full-width underlined rows
-                  under a button read as three more buttons. */}
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[13px] text-muted">
-                {step === "signin" ? (
-                  <>
-                    <Quiet onClick={() => go("recover")}>Forgot password?</Quiet>
-                    <span aria-hidden>·</span>
-                    <Quiet onClick={() => go("join")}>Create an account</Quiet>
-                  </>
-                ) : null}
-                {step === "join" ? (
-                  <Quiet onClick={() => go("signin")}>Already have an account?</Quiet>
-                ) : null}
-                {step === "recover" ? (
-                  <Quiet onClick={() => go("signin")}>Back to login</Quiet>
-                ) : null}
-              </div>
-            </form>
+                <Button type="submit" block className="mt-6" disabled={busy}>
+                  {busy ? "Checking…" : "Continue"}
+                </Button>
+
+                <p className="m-0 mt-4 text-center text-[13px] text-muted">
+                  {resent ? (
+                    "Sent again — check your inbox."
+                  ) : (
+                    <>
+                      Didn&rsquo;t arrive?{" "}
+                      <Quiet
+                        onClick={async () => {
+                          const sent = await sendCode(email.trim().toLowerCase());
+                          if (sent) setResent(true);
+                        }}
+                      >
+                        Send another
+                      </Quiet>
+                    </>
+                  )}
+                </p>
+              </form>
+            </>
           )}
         </div>
       </main>
@@ -277,26 +269,17 @@ export default function MembershipForm({ initialStep = "signin" }: { initialStep
   );
 }
 
-function BackButton({ onBack }: { onBack: () => void }) {
-  // Always a step back inside the flow now — Recover and Join and New password
-  // all return to Login. It no longer has a link form, because the only thing
-  // that needed one was Login itself, and Login no longer has a back button.
-  //
-  // The shell is the shared one. This used to draw its own 40px circle filled
-  // with --cb-surface, which next to the map's unfilled 36px one — same
-  // control, same corner of the screen — read as a white disc on the cream.
-  return (
-    <IconButton label="Back" onClick={onBack}>
-      <BackIcon />
-    </IconButton>
-  );
-}
-
-function Quiet({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function Quiet({
+  onClick,
+  children,
+}: {
+  onClick: () => void | Promise<void>;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => void onClick()}
       className="cb-press cursor-pointer underline underline-offset-2 hover:text-ink"
     >
       {children}
@@ -304,73 +287,13 @@ function Quiet({ onClick, children }: { onClick: () => void; children: React.Rea
   );
 }
 
-// What each step says once it's submitted. All of them are honest about the
-// same underlying fact — there is no auth backend — but each says it in the
-// terms of what was just attempted, rather than one generic message.
-function Done({
-  step,
-  email,
-  onBack,
-}: {
-  step: Step;
-  email: string;
-  onBack: () => void;
-}) {
-  const address = email.trim();
-
-  if (step === "recover" || step === "reset") {
-    return (
-      <div className="cb-rise mt-7 rounded-2xl border border-line bg-surface p-5">
-        <p className="m-0 text-[15px] font-medium text-ink">
-          {step === "recover" ? "Check your inbox" : "Password saved"}
-        </p>
-        <p className="m-0 mt-1.5 text-[13px] leading-[1.5] text-muted">
-          {step === "recover" ? (
-            <>
-              If {address} has an account, a reset link is on its way.{" "}
-              <span className="font-medium text-ink">Accounts aren&rsquo;t live yet</span>
-              , so nothing is actually sent — we&rsquo;ve noted the address and
-              we&rsquo;ll write when they are. Email {SHOP_EMAIL} if you need
-              something sooner.
-            </>
-          ) : (
-            <>
-              Saved on this device. Passwords don&rsquo;t leave it yet, so this
-              won&rsquo;t carry to another phone until accounts are live.
-            </>
-          )}
-        </p>
-        <Button variant="quiet" size="sm" onClick={onBack} className="mt-4 -ml-4">
-          Back to login
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="cb-rise mt-7 rounded-2xl border border-line bg-surface p-5">
-      <p className="m-0 text-[15px] font-medium text-ink">You&rsquo;re in.</p>
-      <p className="m-0 mt-1.5 text-[13px] leading-[1.5] text-muted">
-        Your usuals and your order history live in your account on this device.
-        Full membership — carrying it between devices, and everything that needs
-        a real sign-in — opens up soon, and we&rsquo;ll write to {address} when
-        it does.
-      </p>
-      <ButtonLink href="/shop/account" size="sm" className="mt-4">
-        Go to your account
-      </ButtonLink>
-    </div>
-  );
-}
-
-// An outlined field with its label sitting on the top border. The label is a
-// real <label> rather than a placeholder, so it stays legible once there's a
-// value and assistive tech gets it either way.
 function Field({
   label,
   value,
   onChange,
   hint,
+  ref,
+  className = "",
   ...input
 }: {
   label: string;
@@ -379,7 +302,8 @@ function Field({
   // Shown under the field, for the one thing it needs to say right now. Not
   // for a standing rule — a hint that's always there is a label.
   hint?: string;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+  ref?: React.Ref<HTMLInputElement>;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "ref">) {
   const id = `field-${label.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <div>
@@ -392,11 +316,12 @@ function Field({
         </label>
         <input
           {...input}
+          ref={ref}
           id={id}
           required
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-xl border border-line-soft bg-transparent px-3.5 py-3 text-[16px] leading-[20px] text-ink outline-none transition-colors focus:border-ink"
+          className={`w-full rounded-xl border border-line-soft bg-transparent px-3.5 py-3 text-[16px] leading-[20px] text-ink outline-none transition-colors focus:border-ink ${className}`}
         />
       </div>
       {hint ? <p className="m-0 mt-1.5 pl-1 text-[12px] text-brand-red">{hint}</p> : null}

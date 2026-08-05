@@ -143,20 +143,48 @@ export function searchLocations(
     .map((hit) => hit.location);
 }
 
+// What the map is currently showing, in plain numbers.
+//
+// This used to be Leaflet's LatLngBounds passed straight out of the map
+// component. It isn't any more — the map is MapLibre now — and it shouldn't
+// have been either way: "which shops are on screen" is a question about
+// latitude and longitude, and typing it as one library's class made every
+// caller import that library to ask it.
+export type MapBounds = {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+};
+
+export function withinBounds(
+  bounds: MapBounds,
+  [lat, lng]: [number, number],
+): boolean {
+  return (
+    lat >= bounds.south && lat <= bounds.north && lng >= bounds.west && lng <= bounds.east
+  );
+}
+
 // Deliveries leave from the shop, so the radius is measured from its door.
 // If a second kitchen ever delivers, this becomes a per-location decision
 // rather than one origin.
 export const DELIVERY_ORIGIN = KOREATOWN;
 
-// How far we'll deliver, in miles. A guess — nobody has said — so it's named
-// here rather than buried in the check, and it's the one number to change
-// when the real answer arrives.
-export const DELIVERY_RADIUS_MILES = 5;
+// How far we'll deliver, in driving miles from the shop. Named here rather
+// than buried in the check, and it's the one number to change when the shop
+// decides differently. Uber Direct quotes the actual job on top of this — a
+// courier refusing a run is the harder limit, and it's the one that costs
+// money to hit, so this stays the cheap first filter.
+export const DELIVERY_RADIUS_MILES = 8;
 
-// Great-circle distance in miles. Deliberately not a road-network distance:
-// that needs a routing API, costs a call per address, and for a radius check
-// this size the difference rarely changes the answer. If it starts to,
-// swap this for Distance Matrix.
+// Great-circle distance in miles.
+//
+// No longer the radius check — that's Radar's driving distance now, measured
+// server-side in app/api/geo/route.ts, because five miles of Los Angeles
+// street grid is nothing like five miles of straight line. This stays as the
+// fallback for when routing is unreachable, and for anywhere a rough distance
+// is all that's wanted.
 export function milesBetween(
   [lat1, lon1]: [number, number],
   [lat2, lon2]: [number, number],

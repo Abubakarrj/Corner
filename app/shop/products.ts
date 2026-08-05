@@ -631,7 +631,9 @@ export function getProduct(slug: string): Product | undefined {
 // system rather than a person. When that day comes, the keychain becomes a
 // zero-price line the basket appends past this threshold.
 export const GIFT_THRESHOLD_CENTS = 4000;
-export const GIFT_NAME = "Corner keychain";
+// Capital K: it's the name of a thing the shop gives out, not a description
+// of a keychain that happens to be ours.
+export const GIFT_NAME = "Corner Keychain";
 
 // Picks products for the basket drawer's cross-sell strip: whatever isn't
 // already in the basket, tagged items ("New"/"Bestseller") first since

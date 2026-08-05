@@ -12,6 +12,13 @@ export const SHOP_HOURS = "Wed – Sun, 7am – 2pm";
 export const OPEN_HOUR = 7;
 export const CLOSE_HOUR = 14;
 
+// How long the kitchen needs before an order is ready. One number, here,
+// because it answers three separate questions that have to agree: whether
+// there's still time to take an order before close, when the tracker says
+// it'll be ready, and when a courier should turn up. It was written out
+// three times, and three copies of a number is two chances to change one.
+export const PREP_MINUTES = 12;
+
 // The days the window is open, as JavaScript weekdays (0 = Sunday). Monday
 // and Tuesday are closed. Kept as data rather than folded into isOpenNow so
 // that a screen can say *which* days without re-deriving them from the
@@ -21,6 +28,24 @@ export const OPEN_DAYS = [0, 3, 4, 5, 6];
 export const SHOP_ADDRESS = "3064 W 8th St";
 export const SHOP_CITY = "Los Angeles, CA 90005";
 export const SHOP_EMAIL = "cornerbagel@publicentity.co";
+
+// The same address broken into fields, and the number a courier calls when
+// they're outside. A courier dispatch API wants the parts, not the sentence:
+// "3064 W 8th St" on its own is ambiguous in a country with a W 8th St in
+// most of its cities, and a free-text address is where a delivery ends up in
+// the wrong Los Angeles. Derived from the two lines above so they can't
+// drift apart.
+export const SHOP_ADDRESS_PARTS = {
+  street: SHOP_ADDRESS,
+  city: "Los Angeles",
+  state: "CA",
+  zip: "90005",
+};
+
+// The shop's phone, as Uber Direct wants it (E.164). Placeholder until the
+// real line is given — it is only ever dialled by a courier standing at the
+// door, so a wrong number here is a delivery that stalls on the pavement.
+export const SHOP_PHONE = process.env.SHOP_PHONE ?? "+12135551234";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_LONG = [

@@ -77,13 +77,14 @@ export default function CookieConsent() {
     <div
       role="region"
       aria-label="Cookie consent"
-      // z-[1000] rather than the 200 this used to carry. Leaflet hands its
-      // own panes and controls z-indexes in the 400–800 band, and since
-      // .leaflet-container sets no z-index of its own it creates no stacking
-      // context — so those panes compete in the root stacking context and a
-      // bar at 200 renders *underneath the map*. On an installed PWA that
-      // looked like the banner was cut off at the bottom of the screen; it
-      // wasn't clipped, the map was painted over it.
+      // z-[1000] rather than the 200 this used to carry. Map libraries hand
+      // their own panes, canvases and controls z-indexes in the hundreds
+      // without setting one on the container — so nothing creates a stacking
+      // context, those panes compete in the root one, and a bar at 200
+      // renders *underneath the map*. On an installed PWA that looked like
+      // the banner was cut off at the bottom of the screen; it wasn't
+      // clipped, the map was painted over it. Still true of MapLibre, which
+      // is why the number stayed after the map changed libraries.
       className="fixed inset-x-0 z-[1000] flex flex-col items-center justify-between gap-3 border-t border-line-grey bg-raise px-5 pt-4 sm:flex-row sm:px-8"
       style={{
         fontFamily: "var(--font-geist-sans), sans-serif",

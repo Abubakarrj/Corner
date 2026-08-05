@@ -45,14 +45,10 @@ export default function PaymentSection({
       <Option
         id="card"
         checked={tender === "card"}
-        onSelect={() => cardEnabled && onTender("card")}
+        onSelect={() => onTender("card")}
         disabled={!cardEnabled}
         label="Pay now by card"
-        hint={
-          cardEnabled
-            ? undefined
-            : "Not switched on yet — card payment runs through Toast, and this shop isn't connected to it."
-        }
+        hint="Charged when the shop confirms your order."
       />
 
       {tender === "card" && cardEnabled ? (

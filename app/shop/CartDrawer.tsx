@@ -65,7 +65,12 @@ export default function CartDrawer({
 
   return (
     <Drawer open={open} onClose={onClose} side="right" label="Basket" width="wide">
-      <div className="flex items-center justify-between border-b border-line-faint px-6 py-4">
+      {/* shrink-0 on every band except the list. The panel is a fixed-height
+          column now (Drawer stopped scrolling as a second, outer scroller),
+          so without this the header, the gift bar, the cross-sell rail and
+          the checkout footer all compress to make room for a long basket
+          instead of the list scrolling. */}
+      <div className="flex shrink-0 items-center justify-between border-b border-line-faint px-6 py-4">
         <h2
           className="text-[15px] font-medium text-ink"
           style={{ fontFamily: DISPLAY_FONT }}
@@ -86,7 +91,7 @@ export default function CartDrawer({
       </div>
 
       {rows.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
           <EmptyBasketIcon />
           <div>
             <p className="text-[13px] font-medium text-ink">
@@ -104,7 +109,11 @@ export default function CartDrawer({
         <>
           <GiftProgressBar subtotalCents={subtotalCents} />
 
-          <div className="flex-1 divide-y divide-line-faint overflow-y-auto px-6">
+          {/* min-h-0 is what makes this the scroller. `flex-1` alone leaves
+              min-height: auto, which refuses to shrink below the height of
+              the rows — so the column overflowed and nothing here ever
+              scrolled. */}
+          <div className="min-h-0 flex-1 divide-y divide-line-faint overflow-y-auto overscroll-contain px-6">
             {rows.map(({ line, product, key, unitCents, chosen, complete }) => (
               <div key={key} className="flex gap-4 py-5">
                 <Link
@@ -204,7 +213,7 @@ export default function CartDrawer({
               under viewport-fit=cover; env() is 0 anywhere that isn't set,
               so it's inert elsewhere. */}
           <div
-            className="border-t border-line-faint px-6 pt-4"
+            className="shrink-0 border-t border-line-faint px-6 pt-4"
             style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
           >
             <div className="flex items-center justify-between">

@@ -2,28 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
-import type { StoreLocation } from "./locations";
+import { suggestAddresses, type Suggestion } from "../../radarPublic";
+import { DELIVERY_ORIGIN, type StoreLocation } from "./locations";
 
 const { ink, onInk, controlBorder, muted, faint, border } = PALETTE;
 
-export type Suggestion = { placeId: string; primary: string; secondary: string };
+export type { Suggestion };
 
 export type ResolvedPlace = {
   address: string;
   lat: number;
   lng: number;
+  // Driving miles from the shop, and the drive itself in minutes — Radar's
+  // routing answer, measured on the server. `minutes` is null only when the
+  // routing call failed and `miles` fell back to the straight line.
   miles: number;
+  minutes: number | null;
   inRange: boolean;
   radiusMiles: number;
 };
-
-// Google bills a run of autocomplete calls plus the one details call that
-// follows as a single session, keyed by this token — minted once per thing
-// the visitor is looking for, replaced as soon as one is chosen. Without it
-// every keystroke bills separately.
-function newSessionToken() {
-  return globalThis.crypto?.randomUUID?.() ?? `s-${Date.now()}-${Math.random()}`;
-}
 
 function Chevron() {
   return (
@@ -42,9 +39,16 @@ function Chevron() {
 // The results panel under the search field, per the reference.
 //
 // The field promises "store, city, state, or zip", which is two searches, so
-// there are two tabs with their counts: places from Google, and our own shops
+// there are two tabs with their counts: places from Radar, and our own shops
 // matched by name. Delivery has neither — it wants one address, so it shows a
 // plain list and no tabs.
+//
+// Suggestions come from Radar directly, out of the browser, on the
+// publishable key — there's no hop through our own server on a keystroke.
+// What gets *picked* does go to our server (/api/geo), which geocodes it
+// again from scratch and measures the drive from the shop. The suggestion is
+// a hint; the range check is a decision, and decisions aren't made on numbers
+// that passed through the client.
 //
 // Everything async carries the query it belongs to, and the render only shows
 // what still matches what's typed. That keeps stale results off the screen
@@ -88,12 +92,11 @@ export default function SearchResults({
   });
   const [error, setError] = useState<{ forQuery: string; message: string } | null>(null);
   // Keyed by the text put in the field when the suggestion was chosen, not by
-  // the resolved address — Google's formattedAddress is normalised and rarely
+  // the resolved address — Radar's formattedAddress is normalised and rarely
   // equals the suggestion text, which would hide this every time.
   const [outOfRange, setOutOfRange] = useState<
     { forQuery: string; resolved: ResolvedPlace } | null
   >(null);
-  const sessionToken = useRef(newSessionToken());
   const justChose = useRef(false);
 
   useEffect(() => {
@@ -104,37 +107,37 @@ export default function SearchResults({
     const input = value.trim();
     if (input.length < 3) return;
 
-    // Debounced: this is billed per call, and a fast typist would otherwise
-    // fire one for every letter.
+    // Debounced, and the in-flight request is aborted when the next letter
+    // lands — otherwise a slow answer to "300 W" can arrive after the answer
+    // to "300 W 8th" and overwrite it with staler suggestions.
+    const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setStatus({ forQuery: input, state: "searching" });
       setError(null);
       try {
-        const response = await fetch("/api/places", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "autocomplete",
-            input,
-            kind: isDelivery ? "address" : "region",
-            sessionToken: sessionToken.current,
-          }),
-        });
-        const body = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(body?.error ?? "Search failed.");
-        setSuggestions({ forQuery: input, items: body?.suggestions ?? [] });
+        const items = await suggestAddresses(
+          input,
+          isDelivery ? "address" : "region",
+          DELIVERY_ORIGIN.position,
+          controller.signal,
+        );
+        setSuggestions({ forQuery: input, items });
       } catch (searchError) {
+        if (controller.signal.aborted) return;
         setSuggestions({ forQuery: input, items: [] });
         setError({
           forQuery: input,
           message: searchError instanceof Error ? searchError.message : "Search failed.",
         });
       } finally {
-        setStatus({ forQuery: input, state: "idle" });
+        if (!controller.signal.aborted) setStatus({ forQuery: input, state: "idle" });
       }
-    }, 300);
+    }, 250);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [value, isDelivery]);
 
   async function choosePlace(suggestion: Suggestion) {
@@ -146,19 +149,15 @@ export default function SearchResults({
     setSuggestions({ forQuery: chosenText, items: [] });
     setError(null);
     try {
-      const response = await fetch("/api/places", {
+      const response = await fetch("/api/geo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "details",
-          placeId: suggestion.placeId,
-          sessionToken: sessionToken.current,
-        }),
+        // The address text, not the suggestion's coordinates. The server
+        // geocodes it itself — see /api/geo.
+        body: JSON.stringify({ action: "resolve", query: suggestion.id }),
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.error ?? "Couldn't read that.");
-      // The session ends with the details call — the next search is a new one.
-      sessionToken.current = newSessionToken();
       const resolved = body as ResolvedPlace;
 
       if (isDelivery) {
@@ -235,16 +234,16 @@ export default function SearchResults({
             That address is outside our delivery area.
           </p>
           <p className="m-0 mt-1 text-[13px]" style={{ color: muted }}>
-            {rangeNotice.address} is {rangeNotice.miles.toFixed(1)} miles out; we
-            deliver within {rangeNotice.radiusMiles}. Pickup is still open.
+            {rangeNotice.address} is {rangeNotice.miles.toFixed(1)} driving miles
+            out; we deliver within {rangeNotice.radiusMiles}. Pickup is still open.
           </p>
         </div>
       ) : message && !showStores ? (
         // Scoped to the Places tab, which is the only thing that can fail this
-        // way — `message` is the address lookup's error. Unscoped, a missing
-        // GOOGLE_PLACES_API_KEY replaced the *whole* panel with "Address
-        // search isn't configured", so typing a shop's own name under Pickup
-        // or Catering found nothing and blamed the address search for it.
+        // way — `message` is the address lookup's error. Unscoped, a lookup
+        // failure replaced the *whole* panel, so typing a shop's own name
+        // under Pickup or Catering found nothing and blamed the address
+        // search for it.
         <p className="m-0 py-3 text-[13px]" style={{ color: "var(--cb-red)" }}>
           {message}
         </p>
@@ -280,7 +279,7 @@ export default function SearchResults({
                 </li>
               ))
             : items.map((suggestion) => (
-                <li key={suggestion.placeId}>
+                <li key={suggestion.id}>
                   <button
                     type="button"
                     onClick={() => choosePlace(suggestion)}
