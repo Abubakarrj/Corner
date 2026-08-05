@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { BackIcon, IconButton, IconButtonLink } from "../../ui/IconButton";
 import { useState } from "react";
 import { signIn } from "../../account";
 import { SHOP_EMAIL } from "../../shopFacts";
@@ -267,30 +267,21 @@ export default function MembershipForm({ initialStep = "signin" }: { initialStep
 }
 
 function BackButton({ onBack }: { onBack?: () => void }) {
-  const icon = (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path
-        d="M12.5 4L6.5 10l6 6"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-  const className =
-    "cb-press flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-line-soft bg-surface text-ink hover:bg-raise";
-
   // Inside the flow, back means the previous screen; at the start of it, back
   // means out. A bare href from Recover would drop someone on the map.
+  //
+  // The shell is the shared one now. This used to draw its own 40px circle
+  // filled with --cb-surface, which next to the map's unfilled 36px one — same
+  // control, same corner of the screen — read as a white disc against the
+  // cream page.
   return onBack ? (
-    <button type="button" onClick={onBack} aria-label="Back" className={className}>
-      {icon}
-    </button>
+    <IconButton label="Back" onClick={onBack}>
+      <BackIcon />
+    </IconButton>
   ) : (
-    <Link href="/locations" aria-label="Back" className={className}>
-      {icon}
-    </Link>
+    <IconButtonLink label="Back" href="/locations">
+      <BackIcon />
+    </IconButtonLink>
   );
 }
 

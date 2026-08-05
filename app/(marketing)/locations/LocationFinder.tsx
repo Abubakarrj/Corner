@@ -2,10 +2,14 @@
 
 import type { LatLngBounds } from "leaflet";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
+import {
+  BackIcon,
+  CloseIcon,
+  IconButtonLink,
+} from "../../ui/IconButton";
 import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
@@ -44,28 +48,6 @@ const PLACEHOLDER: Record<Mode, string> = {
   delivery: "Enter delivery address",
   catering: "Search store, city, state, or zip",
 };
-
-function BackIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path
-        d="M12.5 4L6.5 10l6 6"
-        stroke={olive}
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M5 5l10 10M15 5L5 15" stroke={olive} strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export default function LocationFinder() {
   const router = useRouter();
@@ -197,14 +179,9 @@ export default function LocationFinder() {
           header is 133px overall. */}
       <header className="shrink-0 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-2 px-4 pt-[21px]">
-          <Link
-            href="/"
-            aria-label="Back"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
-            style={{ borderColor: controlBorder }}
-          >
+          <IconButtonLink href="/" label="Back">
             <BackIcon />
-          </Link>
+          </IconButtonLink>
 
           {/* The three modes, centred between the two circular buttons. */}
           <div className="flex flex-1 items-center justify-center gap-2">
@@ -229,14 +206,9 @@ export default function LocationFinder() {
             })}
           </div>
 
-          <Link
-            href="/"
-            aria-label="Close"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
-            style={{ borderColor: controlBorder }}
-          >
+          <IconButtonLink href="/" label="Close">
             <CloseIcon />
-          </Link>
+          </IconButtonLink>
         </div>
 
         <div className="relative px-5 pb-[17px] pt-[26px]">
