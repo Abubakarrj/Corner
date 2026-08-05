@@ -253,7 +253,7 @@ export default function AccountPage() {
 
       {/* Settings, such as they are. Sits outside the orders branch so it's
           reachable on a brand-new account too — the same control is on the
-          About tab for anyone not signed in. */}
+          home screen for anyone not signed in. */}
       <section className="mt-9 border-t pt-6" style={{ borderColor: border }}>
         <SectionHeading>Appearance</SectionHeading>
         <div className="flex items-center justify-between gap-4">

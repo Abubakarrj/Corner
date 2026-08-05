@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import ThemeToggle from "../ui/ThemeToggle";
 
 // The "SHOP PANTRY" button and its arrow annotation used to sit under the
 // logo here, linking to /shop. Pulled until the pantry is ready to launch —
@@ -47,6 +48,21 @@ export default function Home() {
         </div>
       </Link>
 
+      {/* Appearance, on the front door.
+          
+          It sits under the logo rather than floating in a corner because the
+          page is one centred object and a second one has to look placed, not
+          dropped. Clear of the privacy line in the bottom-right corner, which
+          is fixed rather than in flow. */}
+      <div className="mt-12 flex flex-col items-center gap-2.5">
+        <p
+          className="m-0 text-[11px] uppercase tracking-[0.1em] text-quiet"
+          style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
+        >
+          Appearance
+        </p>
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

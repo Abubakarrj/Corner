@@ -12,6 +12,9 @@ import { setThemePreference, THEME_OPTIONS, useThemePreference } from "../theme"
 //
 // Sized to the app's `sm` control height so it sits in a settings row next to
 // everything else without inventing a fourth button size.
+//
+// Two homes: the front door under the logo, and the shop's account page. Both
+// drive the same stored preference — see app/theme.ts.
 export default function ThemeToggle({ className = "" }: { className?: string }) {
   const preference = useThemePreference();
 

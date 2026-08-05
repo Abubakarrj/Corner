@@ -1,5 +1,4 @@
 import AboutCardBody, { aboutTextStyle } from "../../AboutCardBody";
-import ThemeToggle from "../../ui/ThemeToggle";
 
 export default function AboutPage() {
   return (
@@ -10,15 +9,6 @@ export default function AboutPage() {
     <div className="flex min-h-dvh w-full items-center justify-center bg-page px-6 py-12 sm:py-16">
       <div className="max-w-md w-full relative text-center flex flex-col" style={aboutTextStyle}>
         <AboutCardBody />
-
-        {/* Appearance lives here because this is the one screen anybody can
-            reach — it's a tab, and it needs no account. The shop's account
-            page carries the same control for people already in there; both
-            drive the same stored preference. */}
-        <div className="mt-10 flex flex-col items-center gap-3 border-t border-line pt-8">
-          <p className="m-0 text-[13px] text-muted">Appearance</p>
-          <ThemeToggle />
-        </div>
       </div>
     </div>
   );
