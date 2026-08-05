@@ -11,7 +11,7 @@ function PlusIcon() {
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
       <path
         d="M6 1.5v9M1.5 6h9"
-        stroke="#F3F1E5"
+        stroke="var(--cb-on-ink)"
         strokeWidth="1.8"
         strokeLinecap="round"
       />
@@ -34,9 +34,9 @@ export default function CrossSellStrip({
   if (products.length === 0) return null;
 
   return (
-    <div className="border-b border-[#E7E2D2] px-6 py-4">
+    <div className="border-b border-line-faint px-6 py-4">
       <p
-        className="mb-3 text-[13px] text-[#3E4A30]"
+        className="mb-3 text-[13px] text-ink"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         You might also like
@@ -62,7 +62,7 @@ export default function CrossSellStrip({
                     addItem(product.slug);
                   }}
                   aria-label={`Add ${product.name} to basket`}
-                  style={{ backgroundColor: "#3E4A30" }}
+                  style={{ backgroundColor: "var(--cb-ink)" }}
                   className="absolute bottom-1.5 right-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.25)] transition-opacity hover:opacity-90"
                 >
                   <PlusIcon />
@@ -72,11 +72,11 @@ export default function CrossSellStrip({
             <Link
               href={`/shop/product/${product.slug}`}
               onClick={onNavigate}
-              className="mt-1.5 block cursor-pointer truncate text-[11px] text-[#3E4A30] hover:underline"
+              className="mt-1.5 block cursor-pointer truncate text-[11px] text-ink hover:underline"
             >
               {product.name}
             </Link>
-            <span className="text-[11px] text-[#8A8672]">{formatPrice(product.priceCents)}</span>
+            <span className="text-[11px] text-faint">{formatPrice(product.priceCents)}</span>
           </div>
         ))}
       </div>

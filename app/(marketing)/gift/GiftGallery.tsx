@@ -77,7 +77,7 @@ export default function GiftGallery() {
                       color: active ? onOlive : olive,
                       borderColor: active ? olive : controlBorder,
                     }}
-                    className="flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em] transition-colors duration-150"
+                    className="cb-press flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em]"
                   >
                     {name}
                   </button>
@@ -86,7 +86,7 @@ export default function GiftGallery() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-5 px-5 pb-10 pt-6">
+          <div className="cb-stagger flex flex-col gap-5 px-5 pb-10 pt-6">
             {cards.map((card) => (
               <button
                 key={card.id}
@@ -95,7 +95,7 @@ export default function GiftGallery() {
                 onClick={() => setPendingCard(card.id)}
                 // 1.35:1, measured off the reference — taller than a credit
                 // card, which is what gives the artwork room to be artwork.
-                className="relative aspect-[1.35] w-full cursor-pointer overflow-hidden rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-transform duration-200 hover:scale-[1.01] active:scale-[0.995]"
+                className="cb-press relative aspect-[1.35] w-full cursor-pointer overflow-hidden rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.08)] hover:scale-[1.01]"
               >
                 <GiftCardArt art={card.art} />
               </button>

@@ -6,14 +6,15 @@ import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { recordOrder, type PlacedOrder } from "../../account";
+import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
 
-const BRAND_RED = "#BE1923";
+const BRAND_RED = "var(--cb-red)";
 
 const fieldWrapClass =
-  "flex items-center gap-2 rounded-xl border border-[#DDD6C2] px-4 py-3 focus-within:border-[#3E4A30]";
+  "flex items-center gap-2 rounded-xl border border-line-soft px-4 py-3 focus-within:border-ink";
 const inputClass =
-  "w-full min-w-0 bg-transparent text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A]";
+  "w-full min-w-0 bg-transparent text-[16px] text-ink outline-none placeholder:text-quieter";
 
 export default function CheckoutPage() {
   const { subtotalCents, clear } = useCart();
@@ -112,7 +113,7 @@ export default function CheckoutPage() {
     >
       {status === "placed" ? null : (
         <h1
-          className="mb-6 text-[16px] font-medium text-[#3E4A30]"
+          className="mb-6 text-[16px] font-medium text-ink"
           style={{ fontFamily: DISPLAY_FONT }}
         >
           Checkout
@@ -123,16 +124,16 @@ export default function CheckoutPage() {
         // The confirmation is a jumping-off point, not an end state: a food
         // order's next question is always "where is it", so the tracker is
         // the primary action and the menu is the way back.
-        <div className="py-4 text-center">
+        <div className="cb-rise py-4 text-center">
           <span
             aria-hidden
             className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-            style={{ backgroundColor: "#DFE8D2" }}
+            style={{ backgroundColor: "var(--cb-good-bg)" }}
           >
             <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
               <path
                 d="M6 13.4l4.6 4.6L20 8.6"
-                stroke="#3E4A30"
+                stroke="var(--cb-ink)"
                 strokeWidth="2.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -140,18 +141,18 @@ export default function CheckoutPage() {
             </svg>
           </span>
           <p
-            className="mt-4 text-[22px] font-medium leading-tight text-[#3E4A30]"
+            className="mt-4 text-[22px] font-medium leading-tight text-ink"
             style={{ fontFamily: DISPLAY_FONT }}
           >
             You&rsquo;re all set
           </p>
           {/* The destination, repeated: this is the last moment somebody can
               catch a wrong one before the kitchen acts on it. */}
-          <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-[#6F6A5C]">
+          <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-muted">
             {fulfillment ? (
               <>
                 {describeFulfillment(fulfillment).mode} from{" "}
-                <span className="font-medium text-[#3E4A30]">
+                <span className="font-medium text-ink">
                   {describeFulfillment(fulfillment).where}
                 </span>
                 . The shop confirms and takes payment.
@@ -162,25 +163,21 @@ export default function CheckoutPage() {
           </p>
 
           {placed ? (
-            <Link
-              href={`/shop/order/${placed.id}`}
-              style={{ backgroundColor: "#3E4A30" }}
-              className="mt-6 inline-block w-full max-w-xs cursor-pointer rounded-full py-3.5 text-[13px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
-            >
+            <ButtonLink href={`/shop/order/${placed.id}`} className="mt-6 w-full max-w-[280px]">
               Track order
-            </Link>
+            </ButtonLink>
           ) : null}
 
           <Link
             href="/shop"
-            className="mt-4 block cursor-pointer text-[14px] underline text-[#6F6A5C]"
+            className="cb-press mt-4 block cursor-pointer text-[14px] text-muted underline hover:text-ink"
           >
             Back to the menu
           </Link>
         </div>
       ) : rows.length === 0 ? (
         <div>
-          <p className="text-[14px] text-[#6F6A5C]">Your cart is empty.</p>
+          <p className="text-[14px] text-muted">Your cart is empty.</p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Browse the menu
           </Link>
@@ -246,45 +243,40 @@ export default function CheckoutPage() {
               </p>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={!valid || status === "sending"}
-              style={{ backgroundColor: "#3E4A30" }}
-              className="mt-1 w-full cursor-pointer rounded-full py-3 text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30"
-            >
+            <Button type="submit" block disabled={!valid || status === "sending"} className="mt-1">
               {status === "sending" ? "Placing order…" : "Place order"}
-            </button>
-            <p className="text-[11px] text-[#8A8A8A]">
+            </Button>
+            <p className="text-[11px] text-quiet">
               Payment isn&rsquo;t collected here yet — this submits your order for us to
               confirm and follow up on.
             </p>
           </form>
 
           <div className="sm:order-1">
-            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.06em] text-[#8A8A8A]">
+            <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.06em] text-quiet">
               Order summary
             </h2>
-            <div className="flex flex-col divide-y divide-[#E4DECE]">
+            <div className="flex flex-col divide-y divide-line">
               {rows.map(({ line, product, key, lineCents, chosen }) => (
                 <div key={key} className="flex items-start justify-between gap-3 py-2.5 text-[14px]">
-                  <span className="min-w-0 text-[#3E4A30]">
-                    {product.name} <span className="text-[#8A8A8A]">×{line.quantity}</span>
+                  <span className="min-w-0 text-ink">
+                    {product.name} <span className="text-quiet">×{line.quantity}</span>
                     {chosen.length > 0 ? (
-                      <span className="mt-0.5 block text-[12px] text-[#6F6A5C]">
+                      <span className="mt-0.5 block text-[12px] text-muted">
                         {chosen.join(" · ")}
                       </span>
                     ) : null}
                   </span>
-                  <span className="whitespace-nowrap text-[#3E4A30]">
+                  <span className="whitespace-nowrap text-ink">
                     {formatPrice(lineCents)}
                   </span>
                 </div>
               ))}
             </div>
-            <div className="mt-3 flex items-center justify-between border-t border-[#E4DECE] pt-3">
-              <span className="text-[13px] font-medium text-[#3E4A30]">Subtotal</span>
+            <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+              <span className="text-[13px] font-medium text-ink">Subtotal</span>
               <span
-                className="text-[14px] font-medium text-[#3E4A30]"
+                className="text-[14px] font-medium text-ink"
                 style={{ fontFamily: DISPLAY_FONT }}
               >
                 {formatPrice(subtotalCents)}

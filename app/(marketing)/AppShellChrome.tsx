@@ -9,5 +9,5 @@
 // Scoped to a layout rather than set globally because the marketing pages —
 // the landing mark, /about, the policy pages — are deliberately white.
 export default function AppShellChrome() {
-  return <style>{`html, body { background-color: #F7F4EB; }`}</style>;
+  return <style>{`html, body { background-color: var(--cb-cream); }`}</style>;
 }

@@ -18,7 +18,7 @@ export default async function ProductPage({
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
       <Link
         href="/shop"
-        className="mb-6 inline-block cursor-pointer text-[13px] text-[#6F6A5C] underline"
+        className="mb-6 inline-block cursor-pointer text-[13px] text-muted underline"
       >
         ← Back to the menu
       </Link>
@@ -38,7 +38,7 @@ export default async function ProductPage({
           />
           {product.tag ? (
             <span
-              className="absolute left-3 top-3 rounded-full bg-[#3E4A30] px-2.5 py-0.5 text-[10px] font-medium text-[#F3F1E5]"
+              className="absolute left-3 top-3 rounded-full bg-ink px-2.5 py-0.5 text-[10px] font-medium text-on-ink"
             >
               {product.tag}
             </span>
@@ -46,19 +46,19 @@ export default async function ProductPage({
         </div>
 
         <div>
-          <p className="text-[10px] uppercase tracking-[0.08em] text-[#6F6A5C]">
+          <p className="text-[10px] uppercase tracking-[0.08em] text-muted">
             {product.category}
           </p>
           <h1
-            className="mt-1 text-[20px] leading-tight text-[#3E4A30]"
+            className="mt-1 text-[20px] leading-tight text-ink"
             style={{ fontFamily: DISPLAY_FONT }}
           >
             {product.name}
           </h1>
-          <p className="mt-1 text-[14px] text-[#6F6A5C]">
+          <p className="mt-1 text-[14px] text-muted">
             {formatPrice(product.priceCents)}
           </p>
-          <p className="mt-4 text-[13px] leading-[1.6] text-[#3E4A30]">
+          <p className="mt-4 text-[13px] leading-[1.6] text-ink">
             {product.description}
           </p>
 

@@ -28,7 +28,7 @@ function pinIcon(kind: StoreLocation["kind"]) {
   // Olive for the shops and sage for catering kitchens — the same two greens the
   // pantry uses for primary and secondary, and both dark enough to read
   // against the map's pale land.
-  const fill = kind === "shop" ? olive : "#7E9160";
+  const fill = kind === "shop" ? olive : "var(--cb-sage)";
   return L.divIcon({
     className: "",
     html: `<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
@@ -154,7 +154,7 @@ export default function StoreMap({
         zoomControl={false}
         attributionControl={false}
         className="h-full w-full"
-        style={{ background: "#E7EBD8" }}
+        style={{ background: "var(--cb-raise)" }}
       >
         <TileLayer url={TILE_URL} />
         <FlyTo focus={focus} />
@@ -171,10 +171,10 @@ export default function StoreMap({
             icon={pinIcon(location.kind)}
           >
             <Popup>
-              <span className="block text-[13px] font-medium text-[#3E4A30]">
+              <span className="block text-[13px] font-medium text-ink">
                 {location.name}
               </span>
-              <span className="mt-0.5 block text-[12px] text-[#6F6A5C]">
+              <span className="mt-0.5 block text-[12px] text-muted">
                 {location.address}
                 <br />
                 {location.city}
@@ -187,7 +187,7 @@ export default function StoreMap({
                 type="button"
                 onClick={() => onChoose(location)}
                 style={{ backgroundColor: olive }}
-                className="mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-medium text-[#F3F1E5] transition-opacity hover:opacity-90"
+                className="cb-press mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-medium text-on-ink hover:opacity-90"
               >
                 Order from here
               </button>
@@ -206,7 +206,7 @@ export default function StoreMap({
               const map = mapRef.current;
               if (map) onSearchArea(map.getBounds());
             }}
-            className="pointer-events-auto absolute left-4 top-4 cursor-pointer rounded-full bg-[#FDFCF7] px-5 py-2.5 text-[14px] text-[#3E4A30] shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+            className="pointer-events-auto absolute left-4 top-4 cursor-pointer rounded-full bg-surface px-5 py-2.5 text-[14px] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
           >
             Search area
           </button>
@@ -223,19 +223,19 @@ export default function StoreMap({
             map.locate({ setView: true, maxZoom: 13 });
           }}
           aria-label="Use my location"
-          className="pointer-events-auto absolute right-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-[#FDFCF7] shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+          className="pointer-events-auto absolute right-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
         >
           <LocateIcon />
         </button>
 
         {/* Zoom pair, stacked and sharing one rounded shell with a divider
             between — as in the reference, where they read as one control. */}
-        <div className="pointer-events-auto absolute right-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl bg-[#FDFCF7] shadow-[0_2px_8px_rgba(0,0,0,0.16)]">
+        <div className="pointer-events-auto absolute right-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)]">
           <button
             type="button"
             onClick={() => mapRef.current?.zoomIn()}
             aria-label="Zoom in"
-            className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-[#3E4A30] transition-colors hover:bg-black/5"
+            className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
           >
             +
           </button>
@@ -243,14 +243,14 @@ export default function StoreMap({
             type="button"
             onClick={() => mapRef.current?.zoomOut()}
             aria-label="Zoom out"
-            className="flex h-11 cursor-pointer items-center justify-center border-t border-[#DDD6C2] text-[22px] leading-none text-[#3E4A30] transition-colors hover:bg-black/5"
+            className="flex h-11 cursor-pointer items-center justify-center border-t border-line-soft text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
           >
             −
           </button>
         </div>
 
         <span
-          className="pointer-events-none absolute left-3 rounded-full bg-[#FDFCF7]/90 px-3 py-1 text-[11px] text-[#6F6A5C]"
+          className="pointer-events-none absolute left-3 rounded-full bg-surface/90 px-3 py-1 text-[11px] text-muted"
           style={{ bottom: locations.length > 0 ? 136 : 12 }}
         >
           {TILE_ATTRIBUTION}
@@ -275,7 +275,7 @@ export default function StoreMap({
                 key={location.id}
                 className="w-full shrink-0 snap-center"
               >
-                <div className="flex items-center gap-3 rounded-2xl bg-[#FDFCF7] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+                <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                   <button
                     type="button"
                     onClick={() => order(location)}
@@ -302,11 +302,11 @@ export default function StoreMap({
                     onClick={() => order(location)}
                     aria-label={`Order from ${location.name}`}
                     style={{
-                      backgroundColor: chosenId === location.id ? olive : "#FFFFFF",
+                      backgroundColor: chosenId === location.id ? olive : "var(--cb-surface)",
                       color: chosenId === location.id ? onOlive : olive,
                       borderColor: olive,
                     }}
-                    className="shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-medium transition-colors duration-200 ease-out hover:bg-[#EFEBDD] motion-reduce:transition-none"
+                    className="cb-press shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-medium hover:bg-raise"
                   >
                     Order
                   </button>

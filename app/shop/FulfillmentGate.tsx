@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
+import { ButtonLink } from "../ui/Button";
 import { PALETTE } from "./shopControls";
 
-const { olive, onOlive, cream, border, muted, controlBorder } = PALETTE;
+const { olive, cream, border, muted, controlBorder } = PALETTE;
 
 // The shop is inert until an order has somewhere to go.
 //
@@ -52,13 +53,9 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
           Taking you to the map to pick a shop, arrange catering, or set a
           delivery address. The button below does the same, if it doesn&rsquo;t.
         </p>
-        <Link
-          href="/locations"
-          style={{ backgroundColor: olive, color: onOlive }}
-          className="mt-7 cursor-pointer rounded-full px-7 py-3 text-[14px] font-medium transition-opacity hover:opacity-90"
-        >
+        <ButtonLink href="/locations" className="mt-7">
           Choose where it&rsquo;s going
-        </Link>
+        </ButtonLink>
       </div>
     );
   }

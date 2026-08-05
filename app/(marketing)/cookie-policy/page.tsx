@@ -47,7 +47,7 @@ function Section({
 }) {
   return (
     <div>
-      <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">{title}</h2>
+      <h2 className="font-medium text-[18px] text-heading mb-3">{title}</h2>
       {children}
     </div>
   );
@@ -65,12 +65,12 @@ export default function CookiePolicyPage() {
       // phone, and it's how visitors reach this page in the first place — so
       // it's up when they arrive, and with symmetric padding the "Go Back"
       // link at the foot of the page renders entirely behind it.
-      className="min-h-screen w-full bg-white text-[#575757] px-6 pt-12 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pt-20"
+      className="min-h-screen w-full bg-page text-body px-6 pt-12 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pt-20"
       style={sansStyle}
     >
       <div className="max-w-2xl mx-auto">
         <div className="mb-10 text-center">
-          <h1 className="font-medium text-[32px] text-[#2D2D2D] mb-2">
+          <h1 className="font-medium text-[32px] text-heading mb-2">
             Cookie Policy
           </h1>
           <p className="text-[14px]">Operated by Public Entity Holdings</p>
@@ -86,7 +86,7 @@ export default function CookiePolicyPage() {
               policy should be read together with our{" "}
               <Link
                 href="/privacy-policy"
-                className="underline hover:text-[#062CB3] transition-colors"
+                className="underline hover:text-link transition-colors"
               >
                 Privacy Policy
               </Link>
@@ -127,7 +127,7 @@ export default function CookiePolicyPage() {
             <div className="space-y-3">
               {CATEGORIES.map((category) => (
                 <p key={category.name}>
-                  <span className="font-medium text-[#2D2D2D]">
+                  <span className="font-medium text-heading">
                     {category.name}:
                   </span>{" "}
                   {category.body}
@@ -234,7 +234,7 @@ export default function CookiePolicyPage() {
               Email:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="underline hover:text-[#062CB3] transition-colors"
+                className="underline hover:text-link transition-colors"
               >
                 {CONTACT_EMAIL}
               </a>
@@ -247,7 +247,7 @@ export default function CookiePolicyPage() {
         </div>
 
         <div className="mt-12 text-center pt-8 border-t border-gray-100">
-          <Link href="/" className="font-medium text-[#2D2D2D] hover:underline">
+          <Link href="/" className="font-medium text-heading hover:underline">
             &larr; Go Back
           </Link>
         </div>

@@ -153,7 +153,7 @@ export default function Drawer({
         // overscroll-contain stops a flick inside the basket from chaining to
         // the page underneath once the list hits its end — on iOS that
         // chaining is what makes a drawer feel like it's fighting back.
-        className={`absolute flex touch-pan-y flex-col overflow-y-auto overscroll-contain bg-[#FAF8F0] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelShadowClass} ${panelTransformClass}`}
+        className={`absolute flex touch-pan-y flex-col overflow-y-auto overscroll-contain bg-panel pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelShadowClass} ${panelTransformClass}`}
         // Keeps the panel on its own compositor layer for the whole slide, so
         // the transform doesn't force a repaint of its (long, image-bearing)
         // contents on each frame. Dropped when closed so an idle drawer isn't

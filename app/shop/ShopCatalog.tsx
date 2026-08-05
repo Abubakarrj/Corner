@@ -64,8 +64,8 @@ export default function ShopCatalog({
               aria-pressed={view === "grid"}
               className={`flex h-full w-9 cursor-pointer items-center justify-center transition-colors ${
                 view === "grid"
-                  ? "bg-[#3E4A30] text-[#F3F1E5]"
-                  : "text-[#3E4A30] hover:bg-[#EFEBDD]"
+                  ? "bg-ink text-on-ink"
+                  : "text-ink hover:bg-raise"
               }`}
             >
               <GridIcon />
@@ -75,10 +75,10 @@ export default function ShopCatalog({
               onClick={() => setView("list")}
               aria-label="List view"
               aria-pressed={view === "list"}
-              className={`flex h-full w-9 cursor-pointer items-center justify-center border-l border-[#DDD6C2] transition-colors ${
+              className={`flex h-full w-9 cursor-pointer items-center justify-center border-l border-line-soft transition-colors ${
                 view === "list"
-                  ? "bg-[#3E4A30] text-[#F3F1E5]"
-                  : "text-[#3E4A30] hover:bg-[#EFEBDD]"
+                  ? "bg-ink text-on-ink"
+                  : "text-ink hover:bg-raise"
               }`}
             >
               <ListIcon />
@@ -86,7 +86,7 @@ export default function ShopCatalog({
           </div>
         </div>
 
-        <p className="text-[11px] text-[#8A8672]">
+        <p className="text-[11px] text-faint">
           {products.length} item{products.length === 1 ? "" : "s"}
         </p>
       </div>
@@ -97,13 +97,13 @@ export default function ShopCatalog({
         // bigger tiles) is what should absorb the extra width. The row gap
         // runs much larger than the column gap so each card's copy reads as
         // belonging to the tile above it rather than floating between rows.
-        <div className="grid grid-cols-2 gap-x-5 gap-y-12 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+        <div className="cb-stagger grid grid-cols-2 gap-x-5 gap-y-12 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
           {products.map((product) => (
             <ProductCard key={product.slug} product={product} />
           ))}
         </div>
       ) : (
-        <div className="flex flex-col">
+        <div className="cb-stagger flex flex-col">
           {products.map((product) => (
             <ProductListRow key={product.slug} product={product} />
           ))}

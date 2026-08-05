@@ -67,7 +67,7 @@ function Bagels({ ink, ground }: { ink: string; ground: string }) {
 function Checker({ ink, ground, word }: { ink: string; ground: string; word: string }) {
   const squares = `repeating-conic-gradient(${ground} 0% 25%, transparent 0% 50%)`;
   return (
-    <div className="absolute inset-0" style={{ backgroundColor: "#F7F4EB" }}>
+    <div className="absolute inset-0" style={{ backgroundColor: "var(--cb-cream)" }}>
       <div
         className="absolute inset-0"
         style={{ backgroundImage: squares, backgroundSize: "40px 40px" }}

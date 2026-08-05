@@ -24,6 +24,11 @@ export default function PrivacyFooterLink() {
     <div
       className="fixed bottom-4 right-4 z-50 text-[12px] opacity-75 font-sans"
       style={{
+        // Literal white, not a token. mixBlendMode:difference against white
+        // is an inversion — it comes out dark on a light page and light on a
+        // dark one, which is exactly the behaviour wanted and is why this
+        // must NOT follow the theme. A themed value here blends near-black
+        // with a near-black page and disappears.
         color: "#ffffff",
         mixBlendMode: "difference",
         fontFamily: "var(--font-geist-sans), sans-serif",

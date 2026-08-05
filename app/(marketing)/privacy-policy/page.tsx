@@ -10,14 +10,14 @@ export default function PrivacyPolicyPage() {
       // Bottom padding clears the fixed cookie banner — same reasoning as
       // /cookie-policy, where the note lives. Without it the "Go Back" link
       // at the foot of the page sits behind the banner.
-      className="min-h-screen w-full bg-white text-[#575757] px-6 pt-12 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pt-20"
+      className="min-h-screen w-full bg-page text-body px-6 pt-12 pb-[calc(9rem+env(safe-area-inset-bottom))] md:pt-20"
       style={sansStyle}
     >
       <div className="max-w-2xl mx-auto">
         {/* --- PRIVACY POLICY SECTION --- */}
         <div id="privacy" className="scroll-mt-10">
           <div className="mb-10 text-center">
-            <h1 className="font-medium text-[32px] text-[#2D2D2D] mb-2">
+            <h1 className="font-medium text-[32px] text-heading mb-2">
               Privacy Policy
             </h1>
             <p className="text-[14px]">Effective Date: July 8, 2026</p>
@@ -31,17 +31,17 @@ export default function PrivacyPolicyPage() {
               order, join our mailing list, participate in promotions, or
               otherwise interact with our business.
             </p>
-            <p className="font-medium text-[#2D2D2D]">
+            <p className="font-medium text-heading">
               By using our website or services, you agree to this Privacy Policy.
             </p>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Information We Collect
               </h2>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-medium text-[#2D2D2D] mb-1">
+                  <h3 className="font-medium text-heading mb-1">
                     Information You Provide
                   </h3>
                   <p>We may collect:</p>
@@ -56,7 +56,7 @@ export default function PrivacyPolicyPage() {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="font-medium text-[#2D2D2D] mb-1">
+                  <h3 className="font-medium text-heading mb-1">
                     Information Collected Automatically
                   </h3>
                   <p>When you visit our website, we may collect:</p>
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 How We Use Your Information
               </h2>
               <p>We use your information to:</p>
@@ -93,7 +93,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Marketing Communications
               </h2>
               <p>
@@ -114,7 +114,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Cookies & Tracking
               </h2>
               <p>Our website may use cookies and similar technologies to:</p>
@@ -131,24 +131,24 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Payment Information
               </h2>
               <p>
                 Payments are processed through trusted third-party payment
                 providers.
               </p>
-              <p className="mt-2 font-medium text-[#2D2D2D]">
+              <p className="mt-2 font-medium text-heading">
                 Corner Bagel does not store complete payment card numbers on our
                 servers.
               </p>
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Sharing of Information
               </h2>
-              <p className="font-medium text-[#2D2D2D]">
+              <p className="font-medium text-heading">
                 We do not sell your personal information.
               </p>
               <p className="mt-2">
@@ -171,7 +171,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Data Security
               </h2>
               <p>
@@ -185,7 +185,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Data Retention
               </h2>
               <p>We retain personal information only as long as necessary to:</p>
@@ -199,7 +199,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Your Privacy Rights
               </h2>
               <p>
@@ -217,7 +217,7 @@ export default function PrivacyPolicyPage() {
                 To exercise these rights, please contact us at{" "}
                 <a
                   href="mailto:cornerbagel@publicentity.co"
-                  className="underline hover:text-[#062CB3] transition-colors"
+                  className="underline hover:text-link transition-colors"
                 >
                   cornerbagel@publicentity.co
                 </a>
@@ -226,7 +226,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Children’s Privacy
               </h2>
               <p>
@@ -239,7 +239,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Third-Party Links
               </h2>
               <p>
@@ -250,7 +250,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Updates
               </h2>
               <p>
@@ -262,7 +262,7 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div>
-              <h2 className="font-medium text-[18px] text-[#2D2D2D] mb-3">
+              <h2 className="font-medium text-[18px] text-heading mb-3">
                 Contact
               </h2>
               <p>
@@ -271,7 +271,7 @@ export default function PrivacyPolicyPage() {
                 Email:{" "}
                 <a
                   href="mailto:cornerbagel@publicentity.co"
-                  className="underline hover:text-[#062CB3] transition-colors"
+                  className="underline hover:text-link transition-colors"
                 >
                   cornerbagel@publicentity.co
                 </a>
@@ -283,7 +283,7 @@ export default function PrivacyPolicyPage() {
         <div className="mt-12 text-center pt-8 border-t border-gray-100">
           <Link
             href="/"
-            className="font-medium text-[#2D2D2D] hover:underline"
+            className="font-medium text-heading hover:underline"
           >
             &larr; Go Back
           </Link>

@@ -38,8 +38,8 @@ export default function OrderStatusBar() {
     >
       <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
         <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70 motion-reduce:animate-none" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-on-ink/70 motion-reduce:animate-none" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-on-ink" />
         </span>
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
           {stage.label}

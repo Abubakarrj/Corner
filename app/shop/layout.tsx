@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 // show through there too (see the safe-area padding below, which then
 // keeps the header itself from sliding under the notch).
 export const viewport: Viewport = {
-  themeColor: "#F7F4EB",
+  themeColor: "var(--cb-cream)",
   viewportFit: "cover",
 };
 
@@ -49,14 +49,14 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
           devices where real Helvetica lives. Declared on the wrapper, the
           whole tree inherits the right stack and there's one place to
           change it. */}
-      <style>{`html, body { background-color: #F7F4EB; }`}</style>
+      <style>{`html, body { background-color: var(--cb-cream); }`}</style>
       {/* Warm cream ground, per the reference designs the shop is styled
           after — the marketing site stays white; this palette is the shop's
           own. The notch/status-bar inset is handled by ShopHeader's own
           padding rather than here, since a sticky header has to carry that
           padding itself to stay clear once the page scrolls. */}
       <div
-        className="flex min-h-dvh flex-col bg-[#F7F4EB]"
+        className="flex min-h-dvh flex-col bg-cream"
         style={{ fontFamily: SHOP_FONT }}
       >
         {/* The gate wraps everything below the header: no basket, no product

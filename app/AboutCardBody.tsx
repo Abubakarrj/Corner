@@ -14,7 +14,7 @@ export const aboutTextStyle = {
   fontSize: cardFontSize,
   lineHeight: "100%",
   letterSpacing: "-0.03em",
-  color: "#000000",
+  color: "var(--cb-heading)",
 } as const;
 
 // Running copy wants more air than a heading's tight 100% leading and

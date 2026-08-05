@@ -7,7 +7,7 @@ import Link from "next/link";
 // only removes the front-door entry point. To restore, put back:
 //
 //   <div className="mt-6 flex flex-col items-center">
-//     <Link href="/shop" style={{ borderColor: "#BE1923", color: "#BE1923",
+//     <Link href="/shop" style={{ borderColor: "var(--cb-red)", color: "var(--cb-red)",
 //       fontFamily: "var(--font-geist-sans), sans-serif" }}
 //       className="w-48 cursor-pointer border-2 bg-white py-3.5 text-center
 //       text-[15px] font-bold tracking-[0.08em] transition-opacity
@@ -20,7 +20,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-white p-6">
+    <div className="flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-page p-6">
       {/* The logo is the front door into the app: tapping it opens the map,
           which is where an order starts. It used to open /about — that copy
           is still there, reachable from the About tab once you're inside. */}

@@ -44,28 +44,32 @@ export const DISPLAY_FONT = SHOP_FONT;
 
 // The produce palette, named once so the app-shell screens outside this
 // folder — the location finder and membership, in app/(marketing) — can
-// dress themselves in it rather than each keeping their own near-miss copy
-// of these hexes. That drift is exactly what the note at the top of this
-// file is about; the shop's own components still use the literals inline,
-// and moving them onto these names is a worthwhile follow-up.
+// dress themselves in it rather than each keeping their own near-miss copy.
+//
+// Every entry is a CSS custom property rather than a hex, so a phone that
+// switches to dark mode carries the whole product with it. The tokens
+// themselves, and why the dark set isn't the light set inverted, are in
+// app/globals.css.
 export const PALETTE = {
   // Page ground, and the colour /shop paints html/body to match.
-  cream: "#F7F4EB",
+  cream: "var(--cb-cream)",
   // A half-step up from the ground, for cards and floating controls.
-  surface: "#FDFCF7",
-  // The deep olive that carries the shop: active pills, headings, body text.
-  olive: "#3E4A30",
+  surface: "var(--cb-surface)",
+  // The brand green that carries the shop: active pills, headings, body text.
+  // In dark mode this flips to the light end of the same ramp — see the note
+  // in globals.css.
+  olive: "var(--cb-ink)",
   // Reads on olive.
-  onOlive: "#F3F1E5",
+  onOlive: "var(--cb-on-ink)",
   // Sage — the lighter produce green, for secondary marks.
-  sage: "#B7C9A2",
+  sage: "var(--cb-sage)",
   // Borders, in the two weights the shop uses: the heavier one separates
   // sections, the lighter one outlines controls.
-  border: "#E4DECE",
-  controlBorder: "#DDD6C2",
+  border: "var(--cb-line)",
+  controlBorder: "var(--cb-line-soft)",
   // Muted body copy, and the quietest tier above it.
-  muted: "#6F6A5C",
-  faint: "#8A8672",
+  muted: "var(--cb-muted)",
+  faint: "var(--cb-faint)",
 } as const;
 
 export const CONTROL_HEIGHT = "h-8";
@@ -73,4 +77,4 @@ export const CONTROL_HEIGHT = "h-8";
 // The outline-pill shell: sort button and the toggle's container both use
 // it so their border, radius, and height are identical by construction.
 export const CONTROL_PILL =
-  "h-8 rounded-full border border-[#DDD6C2] text-[11px] text-[#3E4A30]";
+  "h-8 rounded-full border border-line-soft text-[11px] text-ink";

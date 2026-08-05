@@ -9,8 +9,8 @@ import { CATEGORIES, type Product, type SortValue } from "./products";
 // underlined. Scrolls sideways on narrow screens rather than wrapping.
 const tabBase =
   "-mb-px shrink-0 snap-start cursor-pointer whitespace-nowrap border-b-2 pb-3 text-[16px] transition-colors";
-const tabActive = "border-[#3E4A30] font-medium text-[#3E4A30]";
-const tabIdle = "border-transparent text-[#6F6A5C] hover:text-[#3E4A30]";
+const tabActive = "border-ink font-medium text-ink";
+const tabIdle = "border-transparent text-muted hover:text-ink";
 
 export default function CategoryNav({
   activeCategory,
@@ -71,7 +71,7 @@ export default function CategoryNav({
     // "there's more", where one clipped by a margin just reads as broken.
     <div
       ref={scrollerRef}
-      className="mb-5 -mx-5 snap-x overflow-x-auto overscroll-x-contain border-b border-[#E4DECE] px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6"
+      className="mb-5 -mx-5 snap-x overflow-x-auto overscroll-x-contain border-b border-line px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6"
       style={{ touchAction: "pan-x", scrollPaddingLeft: "1.25rem" }}
     >
       <div className="flex w-max gap-7">

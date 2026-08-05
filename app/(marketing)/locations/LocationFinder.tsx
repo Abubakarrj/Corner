@@ -25,7 +25,7 @@ const { cream, olive, onOlive, border, controlBorder, muted } = PALETTE;
 // arrives.
 const StoreMap = dynamic(() => import("./StoreMap"), {
   ssr: false,
-  loading: () => <div className="min-h-0 flex-1" style={{ background: "#EAF0DC" }} />,
+  loading: () => <div className="min-h-0 flex-1" style={{ background: "var(--cb-raise)" }} />,
 });
 
 type Mode = "pickup" | "delivery" | "catering";
@@ -183,7 +183,7 @@ export default function LocationFinder() {
           <Link
             href="/"
             aria-label="Back"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-[#EFEBDD]"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
             style={{ borderColor: controlBorder }}
           >
             <BackIcon />
@@ -215,7 +215,7 @@ export default function LocationFinder() {
           <Link
             href="/"
             aria-label="Close"
-            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-[#EFEBDD]"
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
             style={{ borderColor: controlBorder }}
           >
             <CloseIcon />
@@ -235,7 +235,7 @@ export default function LocationFinder() {
               setBounds(null);
             }}
             // 16px so iOS doesn't zoom the viewport on focus.
-            className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-[#3E4A30] outline-none placeholder:text-[#8A8672]"
+            className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-ink outline-none placeholder:text-faint"
             style={{ borderBottom: `1px solid ${controlBorder}` }}
           />
           {/* CLEAR, as in the reference — a long address is tedious to
@@ -276,17 +276,17 @@ export default function LocationFinder() {
       {showToast ? (
         <div
           className="flex shrink-0 items-center justify-between gap-3 border-t px-5 py-4"
-          style={{ backgroundColor: "#EFEBDD", borderColor: border }}
+          style={{ backgroundColor: "var(--cb-raise)", borderColor: border }}
         >
-          <p className="m-0 text-[14px] text-[#3E4A30]">{toastText}</p>
+          <p className="m-0 text-[14px] text-ink">{toastText}</p>
           <button
             type="button"
             onClick={() => setToastDismissed(true)}
             aria-label="Dismiss"
-            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#B9B29C] transition-opacity hover:opacity-60"
+            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--cb-faint)] transition-opacity hover:opacity-60"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path d="M3 3l6 6M9 3l-6 6" stroke="#3E4A30" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M3 3l6 6M9 3l-6 6" stroke="var(--cb-ink)" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
         </div>

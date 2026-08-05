@@ -15,6 +15,7 @@ import {
   type PlacedOrder,
 } from "../../account";
 import { useCart } from "../CartContext";
+import { Button, ButtonLink } from "../../ui/Button";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
@@ -27,9 +28,9 @@ const { olive, muted, faint, border, surface, controlBorder } = PALETTE;
 // set is here so the day a POS starts reporting, this doesn't need touching.
 const STATUS_STYLE: Record<OrderStatus, { bg: string; fg: string; border: string }> = {
   placed: { bg: "transparent", fg: muted, border: controlBorder },
-  "in-the-kitchen": { bg: "#F1EAD8", fg: "#8A6D1F", border: "#E4D6AE" },
-  ready: { bg: "#DFE8D2", fg: "#41632A", border: "#CBDABA" },
-  "on-the-way": { bg: "#F7DED4", fg: "#B4552C", border: "#F0C9B8" },
+  "in-the-kitchen": { bg: "var(--cb-raise)", fg: "var(--cb-muted)", border: "var(--cb-line-soft)" },
+  ready: { bg: "var(--cb-good-bg)", fg: "var(--cb-ink)", border: "var(--cb-line-soft)" },
+  "on-the-way": { bg: "var(--cb-good-bg)", fg: "var(--cb-muted)", border: "var(--cb-line-soft)" },
   complete: { bg: "transparent", fg: muted, border: controlBorder },
 };
 
@@ -105,13 +106,9 @@ export default function AccountPage() {
         <p className="mt-2 text-[14px] leading-[1.5]" style={{ color: muted }}>
           Sign in to keep your usuals and your order history in one place.
         </p>
-        <Link
-          href="/membership"
-          style={{ backgroundColor: olive }}
-          className="mt-6 inline-block cursor-pointer rounded-full px-6 py-3 text-[13px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
-        >
+        <ButtonLink href="/membership" className="mt-6">
           Join or sign in
-        </Link>
+        </ButtonLink>
       </div>
     );
   }
@@ -142,14 +139,9 @@ export default function AccountPage() {
             {account.email}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={signOut}
-          className="shrink-0 cursor-pointer rounded-full border px-4 py-2 text-[12px] transition-colors hover:bg-[#EFEBDD]"
-          style={{ borderColor: controlBorder, color: olive }}
-        >
+        <Button variant="quiet" size="sm" onClick={signOut}>
           Sign out
-        </button>
+        </Button>
       </div>
 
       {orders.length === 0 ? (
@@ -164,20 +156,16 @@ export default function AccountPage() {
             Once you&rsquo;ve ordered, your usuals show up here so a second
             round takes one tap.
           </p>
-          <Link
-            href="/shop"
-            style={{ backgroundColor: olive }}
-            className="mt-5 inline-block cursor-pointer rounded-full px-6 py-3 text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
-          >
+          <ButtonLink href="/shop" className="mt-5">
             Browse the menu
-          </Link>
+          </ButtonLink>
         </div>
       ) : (
         <>
           {usuals.length > 0 ? (
             <section className="mt-9">
               <SectionHeading>Reorder your usuals</SectionHeading>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="cb-stagger grid grid-cols-2 gap-3">
                 {usuals.map((usual) => {
                   const product = getProduct(usual.slug);
                   return (
@@ -187,7 +175,7 @@ export default function AccountPage() {
                       style={{ borderColor: border, backgroundColor: surface }}
                     >
                       <ProductImage
-                        swatch={product?.swatch ?? "#ECE6D8"}
+                        swatch={product?.swatch ?? "var(--cb-tile)"}
                         name={usual.name}
                         className="aspect-square w-full rounded-xl"
                       />
@@ -205,21 +193,22 @@ export default function AccountPage() {
                       <p className="mt-0.5 text-[12px]" style={{ color: faint }}>
                         Ordered {usual.timesOrdered}× before
                       </p>
-                      <button
-                        type="button"
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        block
                         // Adds it exactly as it was ordered, options and all
-                        // — that's the whole point of a usual. It goes
-                        // through the normal add, so it merges with a
-                        // matching line already in the basket.
+                        // — that's the whole point of a usual. It goes through
+                        // the normal add, so it merges with a matching line
+                        // already in the basket.
                         onClick={() => {
                           addItem(usual.slug, 1, usual.options);
                           requestOpenBasket();
                         }}
-                        className="mt-3 flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-full border text-[13px] transition-colors hover:bg-[#EFEBDD]"
-                        style={{ borderColor: controlBorder, color: olive }}
+                        className="mt-3"
                       >
                         <span aria-hidden>+</span> Add
-                      </button>
+                      </Button>
                     </div>
                   );
                 })}
@@ -229,7 +218,7 @@ export default function AccountPage() {
 
           <section className="mt-9">
             <SectionHeading>Recent activity</SectionHeading>
-            <div className="flex flex-col gap-2">
+            <div className="cb-stagger flex flex-col gap-2">
               {activity.map((order) => (
                 <div
                   key={order.id}
@@ -252,7 +241,7 @@ export default function AccountPage() {
 
           <section className="mt-9">
             <SectionHeading>Recent orders</SectionHeading>
-            <div className="flex flex-col gap-3">
+            <div className="cb-stagger flex flex-col gap-3">
               {orders.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}
@@ -279,7 +268,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
       style={{ borderColor: border, backgroundColor: surface }}
     >
       <ProductImage
-        swatch={product?.swatch ?? "#ECE6D8"}
+        swatch={product?.swatch ?? "var(--cb-tile)"}
         name={first?.name ?? order.id}
         className="h-16 w-16 shrink-0 rounded-xl"
       />
@@ -304,16 +293,13 @@ function OrderCard({ order }: { order: PlacedOrder }) {
             {formatPrice(order.subtotalCents)}
           </span>
           {live ? (
-            <Link
-              href={`/shop/order/${order.id}`}
-              style={{ backgroundColor: olive, color: "#F3F1E5" }}
-              className="shrink-0 cursor-pointer rounded-full px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
-            >
+            <ButtonLink href={`/shop/order/${order.id}`} size="sm">
               Track order
-            </Link>
+            </ButtonLink>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               // Puts the whole order back in the basket. Items the menu has
               // since dropped are skipped by addItem rather than failing the
               // reorder — the rest of a lunch is better than none of it.
@@ -323,11 +309,9 @@ function OrderCard({ order }: { order: PlacedOrder }) {
                 }
                 requestOpenBasket();
               }}
-              className="shrink-0 cursor-pointer rounded-full border px-4 py-2 text-[13px] transition-colors hover:bg-[#EFEBDD]"
-              style={{ borderColor: controlBorder, color: olive }}
             >
               Reorder
-            </button>
+            </Button>
           )}
         </div>
       </div>

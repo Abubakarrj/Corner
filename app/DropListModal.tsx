@@ -120,7 +120,7 @@ const HONEYPOT_FIELD = "company";
 
 // The red of the Corner Bagel wordmark — the single fill in public/logo.svg.
 // Keep these in step if the mark is ever recoloured.
-const BRAND_RED = "#BE1923";
+const BRAND_RED = "var(--cb-red)";
 
 const sansStyle = {
   fontFamily: "var(--font-geist-sans), sans-serif",
@@ -322,7 +322,15 @@ export default function DropListModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/25 p-5 backdrop-blur-md"
+      // A plain dim, not backdrop-blur. Blurring the whole viewport is
+      // recomputed against everything behind it on every frame; on a phone
+      // that shows up as the modal flickering and the blur snapping between
+      // resolutions as the compositor catches up. The dim reads the same and
+      // costs one composite.
+      //
+      // cb-fade rather than a mounted-at-opacity-0 element: this one is
+      // conditionally rendered, so it can simply animate in.
+      className="cb-fade fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-5"
       // A click on the backdrop dismisses; clicks inside the card bubble up to
       // here too, so only a hit on the backdrop itself counts.
       onMouseDown={(event) => {
@@ -334,14 +342,14 @@ export default function DropListModal() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="drop-list-title"
-        className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+        className="cb-rise relative w-full max-w-sm rounded-2xl bg-surface p-6 shadow-2xl"
         style={sansStyle}
       >
         <button
           type="button"
           onClick={() => close("dismissed")}
           aria-label="Close"
-          className="absolute right-5 top-5 cursor-pointer text-[#575757] transition-opacity hover:opacity-60"
+          className="absolute right-5 top-5 cursor-pointer text-body transition-opacity hover:opacity-60"
         >
           <svg
             width="20"
@@ -365,12 +373,12 @@ export default function DropListModal() {
             Ordering"). Matched here rather than just the typeface. */}
         <h2
           id="drop-list-title"
-          className="mb-2 pr-8 text-[20px] font-medium leading-tight text-[#2D2D2D]"
+          className="mb-2 pr-8 text-[20px] font-medium leading-tight text-heading"
           style={{ letterSpacing: "-0.03em" }}
         >
           Join our drop list!
         </h2>
-        <p className="mb-4 text-[14px] leading-[145%] text-[#575757]">
+        <p className="mb-4 text-[14px] leading-[145%] text-body">
           We&rsquo;ll email you the second something new drops.
         </p>
 
@@ -390,7 +398,7 @@ export default function DropListModal() {
 
           {/* The field's text stays at 16px however much the card tightens:
               anything smaller makes iOS Safari zoom the page on focus. */}
-          <div className="flex items-center gap-2 rounded-xl border border-[#E2E2E2] px-4 py-3 focus-within:border-[#2D2D2D]">
+          <div className="flex items-center gap-2 rounded-xl border border-line-grey px-4 py-3 focus-within:border-heading">
             <input
               ref={inputRef}
               type="email"
@@ -404,7 +412,7 @@ export default function DropListModal() {
                 setEmail(event.target.value);
                 setError(null);
               }}
-              className="w-full min-w-0 bg-transparent text-[16px] text-[#2D2D2D] outline-none placeholder:text-[#9A9A9A]"
+              className="w-full min-w-0 bg-transparent text-[16px] text-heading outline-none placeholder:text-quieter"
             />
           </div>
 
@@ -424,7 +432,7 @@ export default function DropListModal() {
             type="submit"
             disabled={!valid || status === "sending"}
             style={{ backgroundColor: BRAND_RED }}
-            className="mt-3 w-full cursor-pointer rounded-xl py-3 text-[16px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
+            className="mt-3 w-full cursor-pointer rounded-xl py-3 text-[16px] font-medium text-on-ink transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
           >
             {status === "sending" ? "One sec…" : "Notify me!"}
           </button>
@@ -435,7 +443,7 @@ export default function DropListModal() {
           <button
             type="button"
             onClick={() => close("already")}
-            className="mt-3 w-full cursor-pointer text-center text-[13px] text-[#575757] underline transition-opacity hover:opacity-70"
+            className="mt-3 w-full cursor-pointer text-center text-[13px] text-body underline transition-opacity hover:opacity-70"
           >
             Already on the list
           </button>
@@ -443,7 +451,7 @@ export default function DropListModal() {
 
         {/* Deliberately the smallest thing in the card — the reference design
             sets this fine print at roughly a third of the heading. */}
-        <p className="mt-4 text-[9px] leading-[150%] text-[#8A8A8A]">
+        <p className="mt-4 text-[9px] leading-[150%] text-quiet">
           By submitting your email, you agree to receive marketing emails,
           updates, and announcements from Corner Bagel, a Public Entity
           Holdings company, at the address you provide. You can unsubscribe at

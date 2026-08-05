@@ -18,7 +18,7 @@ function ChevronIcon({ open }: { open: boolean }) {
     >
       <path
         d="M1 1l4 4 4-4"
-        stroke="#3E4A30"
+        stroke="var(--cb-ink)"
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -32,7 +32,7 @@ function CheckIcon() {
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
       <path
         d="M2.5 6.2l2.3 2.3 4.7-5"
-        stroke="#3E4A30"
+        stroke="var(--cb-ink)"
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -91,7 +91,7 @@ export default function SortDropdown({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className={`${CONTROL_PILL} flex cursor-pointer items-center gap-1.5 px-3 transition-colors hover:border-[#3E4A30]`}
+        className={`${CONTROL_PILL} flex cursor-pointer items-center gap-1.5 px-3 transition-colors hover:border-ink`}
       >
         Sort: {activeLabel}
         <ChevronIcon open={open} />
@@ -100,7 +100,7 @@ export default function SortDropdown({
       {open ? (
         <div
           role="listbox"
-          className="absolute left-0 top-[calc(100%+6px)] z-30 w-48 overflow-hidden rounded-xl border border-[#E7E2D2] bg-[#FAF8F0] py-1 shadow-[0_12px_30px_rgba(0,0,0,0.1)]"
+          className="absolute left-0 top-[calc(100%+6px)] z-30 w-48 overflow-hidden rounded-xl border border-line-faint bg-panel py-1 shadow-[0_12px_30px_rgba(0,0,0,0.1)]"
         >
           {SORT_OPTIONS.map((option) => (
             <Link
@@ -109,7 +109,7 @@ export default function SortDropdown({
               role="option"
               aria-selected={option.value === activeSort}
               onClick={() => setOpen(false)}
-              className="flex cursor-pointer items-center justify-between px-3.5 py-2 text-[12px] text-[#3E4A30] transition-colors hover:bg-[#EFEBDD]"
+              className="flex cursor-pointer items-center justify-between px-3.5 py-2 text-[12px] text-ink transition-colors hover:bg-raise"
             >
               {option.label}
               {option.value === activeSort ? <CheckIcon /> : null}

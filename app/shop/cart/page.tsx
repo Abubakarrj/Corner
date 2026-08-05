@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import OptionPicker from "../OptionPicker";
 import { formatPrice } from "../products";
+import { Button, ButtonLink } from "../../ui/Button";
 import ProductImage from "../ProductImage";
 import { DISPLAY_FONT } from "../shopControls";
 
@@ -16,7 +17,7 @@ export default function CartPage() {
       className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-10"
     >
       <h1
-        className="mb-6 text-[16px] font-medium text-[#3E4A30]"
+        className="mb-6 text-[16px] font-medium text-ink"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         Cart
@@ -24,14 +25,14 @@ export default function CartPage() {
 
       {rows.length === 0 ? (
         <div>
-          <p className="text-[14px] text-[#6F6A5C]">Your cart is empty.</p>
+          <p className="text-[14px] text-muted">Your cart is empty.</p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
             Browse the menu
           </Link>
         </div>
       ) : (
         <>
-          <div className="flex flex-col divide-y divide-[#E4DECE]">
+          <div className="flex flex-col divide-y divide-line">
             {rows.map(({ line, product, key, unitCents, lineCents, chosen, complete }) => (
               <div key={key} className="flex gap-4 py-4">
                 <Link href={`/shop/product/${product.slug}`} className="shrink-0 cursor-pointer">
@@ -46,20 +47,20 @@ export default function CartPage() {
                   <div className="flex items-start justify-between gap-2">
                     <Link
                       href={`/shop/product/${product.slug}`}
-                      className="cursor-pointer text-[14px] font-medium text-[#3E4A30] hover:underline"
+                      className="cursor-pointer text-[14px] font-medium text-ink hover:underline"
                     >
                       {product.name}
                     </Link>
-                    <span className="whitespace-nowrap text-[14px] text-[#3E4A30]">
+                    <span className="whitespace-nowrap text-[14px] text-ink">
                       {formatPrice(lineCents)}
                     </span>
                   </div>
                   {chosen.length > 0 ? (
-                    <span className="text-[13px] text-[#6F6A5C]">
+                    <span className="text-[13px] text-muted">
                       {chosen.join(" · ")}
                     </span>
                   ) : null}
-                  <span className="text-[13px] text-[#8A8672]">
+                  <span className="text-[13px] text-faint">
                     {formatPrice(unitCents)} each
                   </span>
                   {/* A line that arrived without its choices — from a
@@ -67,7 +68,7 @@ export default function CartPage() {
                       is the only way out that doesn't mean deleting it. */}
                   {!complete ? (
                     <div className="mt-1.5">
-                      <p className="mb-1 text-[11px]" style={{ color: "#BE1923" }}>
+                      <p className="mb-1 text-[11px]" style={{ color: "var(--cb-red)" }}>
                         Choose before checking out:
                       </p>
                       <OptionPicker
@@ -80,23 +81,23 @@ export default function CartPage() {
                   ) : null}
 
                   <div className="mt-auto flex items-center gap-3 pt-2">
-                    <div className="flex items-center rounded-full border border-[#DDD6C2]">
+                    <div className="flex items-center rounded-full border border-line-soft">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${product.name}`}
                         onClick={() => setQuantity(key, line.quantity - 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#3E4A30] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
                         −
                       </button>
-                      <span className="w-6 text-center text-[13px] text-[#3E4A30]">
+                      <span className="w-6 text-center text-[13px] text-ink">
                         {line.quantity}
                       </span>
                       <button
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
                         onClick={() => setQuantity(key, line.quantity + 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#3E4A30] transition-opacity hover:opacity-60"
+                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
                         +
                       </button>
@@ -104,7 +105,7 @@ export default function CartPage() {
                     <button
                       type="button"
                       onClick={() => removeItem(key)}
-                      className="cursor-pointer text-[12px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
+                      className="cursor-pointer text-[12px] text-quiet underline transition-opacity hover:opacity-70"
                     >
                       Remove
                     </button>
@@ -114,10 +115,10 @@ export default function CartPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-[#E4DECE] pt-4">
-            <span className="text-[14px] font-medium text-[#3E4A30]">Subtotal</span>
+          <div className="mt-6 flex items-center justify-between border-t border-line pt-4">
+            <span className="text-[14px] font-medium text-ink">Subtotal</span>
             <span
-              className="text-[15px] font-medium text-[#3E4A30]"
+              className="text-[15px] font-medium text-ink"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               {formatPrice(subtotalCents)}
@@ -128,21 +129,13 @@ export default function CartPage() {
               letting someone press through to a checkout that turns them
               around. The picker they need is a few pixels above. */}
           {rows.some((row) => !row.complete) ? (
-            <span
-              aria-disabled="true"
-              style={{ backgroundColor: "#3E4A30", opacity: 0.3 }}
-              className="mt-4 block w-full rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5]"
-            >
+            <Button block disabled className="mt-4">
               Checkout
-            </span>
+            </Button>
           ) : (
-            <Link
-              href="/shop/checkout"
-              style={{ backgroundColor: "#3E4A30" }}
-              className="mt-4 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
-            >
+            <ButtonLink href="/shop/checkout" block className="mt-4">
               Checkout
-            </Link>
+            </ButtonLink>
           )}
         </>
       )}

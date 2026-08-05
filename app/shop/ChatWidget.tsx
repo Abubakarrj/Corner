@@ -14,9 +14,9 @@ function describeContext(fulfillment: Fulfillment): string {
 
 // Produce palette — deep olive carries the widget, sage is the visitor's
 // bubble, and the old brand red survives only as the error-text colour.
-const OLIVE = "#3E4A30";
-const SAGE = "#B7C9A2";
-const ERROR_RED = "#BE1923";
+const OLIVE = "var(--cb-ink)";
+const SAGE = "var(--cb-sage)";
+const ERROR_RED = "var(--cb-red)";
 
 // Must match STORAGE_KEY in app/CookieConsent.tsx. The cookie banner is a
 // full-width bar docked to the same bottom-right corner this widget lives
@@ -67,7 +67,7 @@ function ChatBubbleIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M5 6A1.5 1.5 0 0 1 6.5 4.5h11A1.5 1.5 0 0 1 19 6v7.5a1.5 1.5 0 0 1-1.5 1.5H8.8L5 18.6V6Z"
-        stroke="white"
+        stroke="var(--cb-on-ink)"
         strokeWidth="1.9"
         strokeLinejoin="round"
       />
@@ -80,7 +80,7 @@ function CloseIcon() {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
       <path
         d="M5 5l10 10M15 5L5 15"
-        stroke="white"
+        stroke="var(--cb-on-ink)"
         strokeWidth="1.8"
         strokeLinecap="round"
       />
@@ -93,7 +93,7 @@ function SendArrowIcon() {
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
       <path
         d="M8 13V3M8 3L3.5 7.5M8 3l4.5 4.5"
-        stroke="white"
+        stroke="var(--cb-on-ink)"
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -104,7 +104,7 @@ function SendArrowIcon() {
 
 function BagelAvatar() {
   return (
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#E7E2D2] bg-white">
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line-faint bg-surface">
       <Image
         src="/icon.svg"
         alt=""
@@ -118,9 +118,9 @@ function BagelAvatar() {
 }
 
 const botBubbleClass =
-  "w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-[#EFEBDD] px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#3E4A30]";
+  "w-fit max-w-[85%] rounded-2xl rounded-bl-md bg-raise px-3.5 py-2.5 text-[13px] leading-[1.45] text-ink";
 const userBubbleClass =
-  "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2F3A24]";
+  "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-[var(--cb-ink)]";
 
 type Entry = { id: number; role: "bot" | "user"; text: string };
 
@@ -253,7 +253,7 @@ export default function ChatWidget() {
         inert={!open}
         role="dialog"
         aria-label="Chat"
-        className={`mb-3 flex w-[calc(100vw-2.5rem)] max-w-[350px] origin-bottom-right flex-col overflow-hidden rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-200 ease-out ${
+        className={`mb-3 flex w-[calc(100vw-2.5rem)] max-w-[350px] origin-bottom-right flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-200 ease-out ${
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-2 scale-95 opacity-0"
@@ -263,7 +263,7 @@ export default function ChatWidget() {
           style={{ backgroundColor: OLIVE }}
           className="flex items-center gap-3 px-5 py-4"
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface">
             <Image
               src="/icon.svg"
               alt=""
@@ -275,12 +275,12 @@ export default function ChatWidget() {
           </span>
           <div className="min-w-0 flex-1">
             <p
-              className="text-[15px] font-medium leading-tight text-white"
+              className="text-[15px] font-medium leading-tight text-on-ink"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               Riley
             </p>
-            <p className="text-[12px] leading-tight text-white/80">
+            <p className="text-[12px] leading-tight text-on-ink/80">
               Corner Bagel
             </p>
           </div>
@@ -305,7 +305,7 @@ export default function ChatWidget() {
               each bubble is noise, and the thing worth disclosing is that
               nobody is reading this — not that a given sentence was
               generated. */}
-          <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">
+          <p className="ml-9 mt-1 text-[11px] text-quieter">
             AI assistant &middot; not a person
           </p>
 
@@ -316,7 +316,7 @@ export default function ChatWidget() {
                   key={option}
                   type="button"
                   onClick={() => void ask(option)}
-                  className="cursor-pointer rounded-full border border-[#DDD6C2] px-3.5 py-2 text-[13px] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#EFEBDD]"
+                  className="cursor-pointer rounded-full border border-line-soft px-3.5 py-2 text-[13px] text-ink transition-colors hover:border-ink hover:bg-raise"
                 >
                   {option}
                 </button>
@@ -357,7 +357,7 @@ export default function ChatWidget() {
                   {[0, 1, 2].map((index) => (
                     <span
                       key={index}
-                      className="block h-1.5 w-1.5 animate-pulse rounded-full bg-[#8A8672] motion-reduce:animate-none"
+                      className="block h-1.5 w-1.5 animate-pulse rounded-full bg-faint motion-reduce:animate-none"
                       style={{ animationDelay: `${index * 160}ms` }}
                     />
                   ))}
@@ -382,7 +382,7 @@ export default function ChatWidget() {
             event.preventDefault();
             sendDraft();
           }}
-          className="flex items-center gap-2 border-t border-[#E7E2D2] p-3"
+          className="flex items-center gap-2 border-t border-line-faint p-3"
         >
           <input
             type="text"
@@ -390,7 +390,7 @@ export default function ChatWidget() {
             placeholder={thinking ? "Riley is typing…" : "Type a message…"}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="min-w-0 flex-1 rounded-full border border-[#DDD6C2] px-4 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] sm:text-[14px]"
+            className="min-w-0 flex-1 rounded-full border border-line-soft px-4 py-2.5 text-[16px] text-ink outline-none placeholder:text-quieter focus:border-ink sm:text-[14px]"
           />
           <button
             type="submit"

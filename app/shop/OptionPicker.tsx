@@ -47,7 +47,7 @@ export default function OptionPicker({
               className={
                 compact
                   ? "sr-only"
-                  : "mb-1.5 block text-[11px] uppercase tracking-[0.08em] text-[#6F6A5C]"
+                  : "mb-1.5 block text-[11px] uppercase tracking-[0.08em] text-muted"
               }
             >
               {group.label}
@@ -61,8 +61,8 @@ export default function OptionPicker({
               // Named for screen readers even when the visible label is
               // hidden on the compact tiles.
               aria-label={compact ? group.label : undefined}
-              className={`w-full cursor-pointer appearance-none border bg-[#FDFCF7] text-[#3E4A30] outline-none transition-colors focus:border-[#3E4A30] ${field} ${
-                value ? "border-[#DDD6C2]" : "border-[#3E4A30]/45"
+              className={`w-full cursor-pointer appearance-none border bg-surface text-ink outline-none transition-colors focus:border-ink ${field} ${
+                value ? "border-line-soft" : "border-ink/45"
               }`}
               // The chevron is a background image rather than a sibling
               // element so it can't be clipped by the select's own box on

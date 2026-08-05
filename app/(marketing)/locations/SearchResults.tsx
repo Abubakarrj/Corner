@@ -240,7 +240,7 @@ export default function SearchResults({
           </p>
         </div>
       ) : message ? (
-        <p className="m-0 py-3 text-[13px]" style={{ color: "#BE1923" }}>
+        <p className="m-0 py-3 text-[13px]" style={{ color: "var(--cb-red)" }}>
           {message}
         </p>
       ) : searching && rows.length === 0 ? (
@@ -259,7 +259,7 @@ export default function SearchResults({
                   <button
                     type="button"
                     onClick={() => onPickStore(store)}
-                    className="flex w-full cursor-pointer items-center gap-3 border-b py-3.5 text-left transition-colors last:border-b-0 hover:bg-[#EFEBDD]"
+                    className="flex w-full cursor-pointer items-center gap-3 border-b py-3.5 text-left transition-colors last:border-b-0 hover:bg-raise"
                     style={{ borderColor: controlBorder }}
                   >
                     <span className="min-w-0 flex-1">
@@ -279,7 +279,7 @@ export default function SearchResults({
                   <button
                     type="button"
                     onClick={() => choosePlace(suggestion)}
-                    className="flex w-full cursor-pointer items-center gap-3 border-b py-3.5 text-left transition-colors last:border-b-0 hover:bg-[#EFEBDD]"
+                    className="flex w-full cursor-pointer items-center gap-3 border-b py-3.5 text-left transition-colors last:border-b-0 hover:bg-raise"
                     style={{ borderColor: controlBorder }}
                   >
                     <span className="min-w-0 flex-1">

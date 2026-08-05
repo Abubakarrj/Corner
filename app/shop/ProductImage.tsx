@@ -43,7 +43,7 @@ export default function ProductImage({
     <div
       role="img"
       aria-label={name}
-      className={`overflow-hidden bg-[#ECE6D8] ${className}`}
+      className={`overflow-hidden bg-tile ${className}`}
     >
       <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden>
         <text

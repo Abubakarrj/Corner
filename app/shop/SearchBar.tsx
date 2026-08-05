@@ -104,7 +104,7 @@ export default function SearchBar({
         type="button"
         onClick={onOpen}
         aria-label="Search products"
-        className="flex h-10 w-10 cursor-pointer items-center justify-center text-[#3E4A30] transition-opacity hover:opacity-70"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center text-ink transition-opacity hover:opacity-70"
       >
         <SearchIcon className="h-[19px] w-[19px]" />
       </button>
@@ -114,8 +114,8 @@ export default function SearchBar({
   return (
     <div className="flex flex-1 items-center gap-2">
       <div className="relative flex-1">
-        <div className="flex h-9 items-center gap-2 rounded-full border border-[#3E4A30] bg-[#FDFCF7] pl-3 pr-2">
-          <SearchIcon className="shrink-0 text-[#8A8672]" />
+        <div className="flex h-9 items-center gap-2 rounded-full border border-ink bg-surface pl-3 pr-2">
+          <SearchIcon className="shrink-0 text-faint" />
           <input
             ref={inputRef}
             // type="text", not "search": the native search input paints its
@@ -137,14 +137,14 @@ export default function SearchBar({
               setHighlighted(-1);
             }}
             onKeyDown={onKeyDown}
-            className="min-w-0 flex-1 bg-transparent text-[16px] text-[#3E4A30] outline-none placeholder:text-[#A8A28E] sm:text-[13px]"
+            className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-hint sm:text-[13px]"
           />
           {query ? (
             <button
               type="button"
               onClick={submit}
               aria-label="Search"
-              className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#3E4A30] transition-opacity hover:opacity-60"
+              className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink transition-opacity hover:opacity-60"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path
@@ -163,10 +163,10 @@ export default function SearchBar({
           <div
             id="shop-search-suggestions"
             role="listbox"
-            className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-[#E7E2D2] bg-[#FAF8F0] py-1 shadow-[0_14px_34px_rgba(0,0,0,0.12)]"
+            className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl border border-line-faint bg-panel py-1 shadow-[0_14px_34px_rgba(0,0,0,0.12)]"
           >
             {suggestions.length === 0 ? (
-              <p className="px-4 py-3 text-[12px] text-[#8A8672]">
+              <p className="px-4 py-3 text-[12px] text-faint">
                 No products match &ldquo;{query.trim()}&rdquo;
               </p>
             ) : (
@@ -179,7 +179,7 @@ export default function SearchBar({
                   onMouseEnter={() => setHighlighted(index)}
                   onClick={() => goToProduct(product.slug)}
                   className={`flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors ${
-                    index === highlighted ? "bg-[#EFEBDD]" : ""
+                    index === highlighted ? "bg-raise" : ""
                   }`}
                 >
                   <ProductImage
@@ -189,16 +189,16 @@ export default function SearchBar({
                   />
                   <span className="min-w-0 flex-1">
                     <span
-                      className="block truncate text-[13px] text-[#3E4A30]"
+                      className="block truncate text-[13px] text-ink"
                       style={{ fontFamily: DISPLAY_FONT }}
                     >
                       {product.name}
                     </span>
-                    <span className="block truncate text-[10px] uppercase tracking-[0.07em] text-[#A8A28E]">
+                    <span className="block truncate text-[10px] uppercase tracking-[0.07em] text-hint">
                       {product.category}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[12px] tabular-nums text-[#6F6A5C]">
+                  <span className="shrink-0 text-[12px] tabular-nums text-muted">
                     {formatPrice(product.priceCents)}
                   </span>
                 </button>
@@ -212,7 +212,7 @@ export default function SearchBar({
         type="button"
         onClick={onClose}
         aria-label="Close search"
-        className="flex h-9 w-8 shrink-0 cursor-pointer items-center justify-center text-[#3E4A30] transition-opacity hover:opacity-60"
+        className="flex h-9 w-8 shrink-0 cursor-pointer items-center justify-center text-ink transition-opacity hover:opacity-60"
       >
         <CloseIcon />
       </button>

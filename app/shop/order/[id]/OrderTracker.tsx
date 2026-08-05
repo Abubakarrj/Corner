@@ -10,11 +10,12 @@ import {
   type PlacedOrder,
 } from "../../../account";
 import { SHOP_EMAIL } from "../../../shopFacts";
+import { ButtonLink } from "../../../ui/Button";
 import { formatPrice } from "../../products";
 import ProductImage from "../../ProductImage";
 import { DISPLAY_FONT, PALETTE } from "../../shopControls";
 
-const { olive, onOlive, muted, faint, border, surface, controlBorder, sage } = PALETTE;
+const { olive, muted, faint, border, surface, controlBorder, sage } = PALETTE;
 
 // The order-tracking screen, in the shape a food-delivery app uses: a headline
 // that says where the order is, a bar that fills, the stages under it, then
@@ -48,13 +49,9 @@ export default function OrderTracker({ id }: { id: string }) {
           Orders are kept on the device they were placed from, so one placed on
           another phone won&rsquo;t show here.
         </p>
-        <Link
-          href="/shop"
-          style={{ backgroundColor: olive, color: onOlive }}
-          className="mt-6 inline-block cursor-pointer rounded-full px-6 py-3 text-[13px] font-medium uppercase tracking-[0.06em] transition-opacity hover:opacity-90"
-        >
+        <ButtonLink href="/shop" className="mt-6">
           Back to the menu
-        </Link>
+        </ButtonLink>
       </div>
     );
   }
@@ -63,7 +60,7 @@ export default function OrderTracker({ id }: { id: string }) {
   const stage = progress.stages[progress.current];
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
+    <div className="cb-rise mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
       <Link
         href="/shop"
         className="inline-block cursor-pointer text-[13px] underline"
@@ -86,7 +83,7 @@ export default function OrderTracker({ id }: { id: string }) {
           the line under it says which. */}
       <div
         className="mt-5 h-2 overflow-hidden rounded-full"
-        style={{ backgroundColor: "#E7E2D2" }}
+        style={{ backgroundColor: "var(--cb-line-faint)" }}
         role="progressbar"
         aria-valuenow={Math.round(progress.fraction * 100)}
         aria-valuemin={0}
@@ -107,7 +104,7 @@ export default function OrderTracker({ id }: { id: string }) {
 
       {/* The stages, as a list rather than a horizontal stepper: four labels
           across a phone either truncate or shrink below reading size. */}
-      <ol className="mt-7 flex list-none flex-col gap-0 p-0">
+      <ol className="cb-stagger mt-7 flex list-none flex-col gap-0 p-0">
         {progress.stages.map((entry, index) => {
           const done = index < progress.current;
           const active = index === progress.current;
@@ -191,7 +188,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
         {order.items.map((item, index) => (
           <div key={`${item.slug}-${index}`} className="flex items-center gap-3">
             <ProductImage
-              swatch="#ECE6D8"
+              swatch="var(--cb-tile)"
               name={item.name}
               className="h-10 w-10 shrink-0 rounded-lg"
             />
@@ -223,7 +220,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
           {formatPrice(order.subtotalCents)}
         </span>
       </div>
-      <p className="mt-1.5 text-[12px]" style={{ color: faint }}>
+      <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
         Payment is taken by the shop when they confirm.
       </p>
     </div>

@@ -7,7 +7,7 @@ function CheckIcon() {
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
       <path
         d="M2.5 6.7l2.6 2.6 5.4-5.6"
-        stroke="#3E4A30"
+        stroke="var(--cb-ink)"
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -30,8 +30,8 @@ export default function GiftProgressBar({ subtotalCents }: { subtotalCents: numb
   const progress = Math.min(100, (subtotalCents / GIFT_THRESHOLD_CENTS) * 100);
 
   return (
-    <div className="border-b border-[#E7E2D2] px-6 py-4">
-      <p className="mb-2 flex items-center gap-1.5 text-[12px] text-[#3E4A30]">
+    <div className="border-b border-line-faint px-6 py-4">
+      <p className="mb-2 flex items-center gap-1.5 text-[12px] text-ink">
         {unlocked ? (
           <>
             <CheckIcon />
@@ -46,9 +46,9 @@ export default function GiftProgressBar({ subtotalCents }: { subtotalCents: numb
           </>
         )}
       </p>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[#E7E2D2]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-line-faint">
         <div
-          className="h-full rounded-full bg-[#3E4A30] transition-[width] duration-300"
+          className="h-full rounded-full bg-ink transition-[width] duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>

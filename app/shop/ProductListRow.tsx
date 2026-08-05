@@ -20,7 +20,7 @@ export default function ProductListRow({ product }: { product: Product }) {
   const needsChoices = (product.options?.length ?? 0) > 0;
 
   return (
-    <div className="group flex items-center gap-4 border-b border-[#E7E2D2] py-4 first:pt-0 last:border-b-0">
+    <div className="group flex items-center gap-4 border-b border-line-faint py-4 first:pt-0 last:border-b-0">
       <Link
         href={`/shop/product/${product.slug}`}
         className="shrink-0 cursor-pointer overflow-hidden rounded-xl"
@@ -36,33 +36,33 @@ export default function ProductListRow({ product }: { product: Product }) {
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Link
             href={`/shop/product/${product.slug}`}
-            className="cursor-pointer text-[15px] leading-[1.3] text-[#3E4A30] transition-opacity hover:opacity-70"
+            className="cursor-pointer text-[15px] leading-[1.3] text-ink transition-opacity hover:opacity-70"
             style={{ fontFamily: DISPLAY_FONT }}
           >
             {product.name}
           </Link>
           {product.tag ? (
-            <span className="rounded-full bg-[#3E4A30]/90 px-2 py-[2px] text-[9px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5]">
+            <span className="rounded-full bg-ink/90 px-2 py-[2px] text-[9px] font-medium uppercase tracking-[0.06em] text-on-ink">
               {product.tag}
             </span>
           ) : null}
         </div>
-        <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-[#A8A28E]">
+        <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-hint">
           {product.category}
         </p>
-        <p className="mt-1.5 hidden text-[12px] leading-[1.5] text-[#8A8672] sm:line-clamp-1 sm:block">
+        <p className="mt-1.5 hidden text-[12px] leading-[1.5] text-faint sm:line-clamp-1 sm:block">
           {product.description}
         </p>
       </div>
 
       <div className="flex shrink-0 items-center gap-4">
-        <span className="text-[13px] tabular-nums text-[#3E4A30]">
+        <span className="text-[13px] tabular-nums text-ink">
           {formatPrice(product.priceCents)}
         </span>
         {needsChoices ? (
           <Link
             href={`/shop/product/${product.slug}`}
-            className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-[#3E4A30]/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
+            className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-ink/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-on-ink"
           >
             Choose
           </Link>
@@ -73,7 +73,7 @@ export default function ProductListRow({ product }: { product: Product }) {
               addItem(product.slug);
               requestOpenBasket();
             }}
-            className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-[#3E4A30]/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
+            className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-ink/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-on-ink"
           >
             Add to basket
           </button>

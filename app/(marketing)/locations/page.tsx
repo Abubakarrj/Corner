@@ -14,7 +14,7 @@ export default function LocationsPage() {
   // visible — the map is a client-only chunk that arrives a beat later
   // regardless.
   return (
-    <Suspense fallback={<div className="h-dvh w-full" style={{ backgroundColor: "#F7F4EB" }} />}>
+    <Suspense fallback={<div className="h-dvh w-full" style={{ backgroundColor: "var(--cb-cream)" }} />}>
       <LocationFinder />
     </Suspense>
   );

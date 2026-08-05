@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 // Paints the browser chrome cream site-wide. /shop overrides this with its
 // own viewport export to add viewport-fit=cover; the colour is the same.
 export const viewport: Viewport = {
-  themeColor: "#F7F4EB",
+  themeColor: "var(--cb-cream)",
 };
 
 // Deliberately bare otherwise — no floating chrome (corner icon, email

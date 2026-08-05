@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
+import Modal from "../../ui/Modal";
+import { ButtonLink } from "../../ui/Button";
+import { PALETTE } from "../../shop/shopControls";
 
-const { cream, surface, olive, onOlive, controlBorder, muted, sage } = PALETTE;
+const { cream, surface, olive, controlBorder, sage } = PALETTE;
 
 // The sheet that comes up when a gift card is tapped. Built to the reference:
 // an illustration, a line asking you to sign in, a filled primary button, and
@@ -29,99 +29,29 @@ export default function GiftAuthModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    // Move focus into the sheet so a keyboard or screen reader lands on it
-    // rather than staying behind on the card that opened it.
-    panelRef.current?.focus();
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   return (
-    // Always mounted so it can animate closed as well as open; inert keeps
-    // focus and clicks out of it the rest of the time.
-    <div
-      inert={!open}
-      className={`fixed inset-0 z-[180] flex items-end justify-center transition-opacity duration-200 sm:items-center ${
-        open ? "opacity-100" : "pointer-events-none opacity-0"
-      }`}
-      style={{ fontFamily: SHOP_FONT }}
-    >
+    <Modal open={open} onClose={onClose} label="Sign in to keep this gift card" z={180}>
+      <GiftIllustration />
+
+      <p className="m-0 mt-5 text-center text-[20px] font-medium leading-[1.25] tracking-[-0.01em] text-ink">
+        Sign in to continue gifting
+      </p>
+      <p className="m-0 mt-2 text-center text-[14px] leading-[1.5] text-muted">
+        Excellent choice, let&rsquo;s get that into your account.
+      </p>
+
+      <ButtonLink href="/membership" block className="mt-6">
+        Join or sign in
+      </ButtonLink>
+
       <button
         type="button"
-        aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 h-full w-full cursor-default bg-black/35"
-      />
-
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Sign in to keep this gift card"
-        tabIndex={-1}
-        className={`relative w-full max-w-[420px] rounded-t-3xl px-6 pb-[calc(28px+env(safe-area-inset-bottom))] pt-8 outline-none transition-transform duration-200 ease-out sm:rounded-3xl sm:pb-8 ${
-          open ? "translate-y-0" : "translate-y-6"
-        }`}
-        style={{ backgroundColor: surface }}
+        className="cb-press mx-auto mt-4 block cursor-pointer text-[14px] text-muted underline underline-offset-2 hover:text-ink"
       >
-        {/* The backdrop closes this too, but a tap-anywhere target nobody can
-            see isn't a way out — this is the one people look for. */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-[#EFEBDD]"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-            <path
-              d="M4.5 4.5l9 9M13.5 4.5l-9 9"
-              stroke={muted}
-              strokeWidth="1.7"
-              strokeLinecap="round"
-            />
-          </svg>
-        </button>
-
-        <GiftIllustration />
-
-        <p
-          className="m-0 mt-6 text-center text-[21px] font-medium leading-[1.2] tracking-[-0.01em]"
-          style={{ color: olive }}
-        >
-          Sign in to continue gifting
-        </p>
-        <p
-          className="m-0 mt-2.5 text-center text-[14px] leading-[1.5]"
-          style={{ color: muted }}
-        >
-          Excellent choice, let&rsquo;s get that into your account.
-        </p>
-
-        <Link
-          href="/membership"
-          style={{ backgroundColor: olive, color: onOlive }}
-          className="mt-7 block cursor-pointer rounded-full py-4 text-center text-[16px] font-medium transition-opacity hover:opacity-90"
-        >
-          Join or sign in
-        </Link>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mx-auto mt-5 block cursor-pointer text-[14px] underline underline-offset-2 transition-opacity hover:opacity-70"
-          style={{ color: muted }}
-        >
-          Continue as guest
-        </button>
-      </div>
-    </div>
+        Continue as guest
+      </button>
+    </Modal>
   );
 }
 

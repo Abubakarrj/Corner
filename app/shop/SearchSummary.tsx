@@ -13,20 +13,20 @@ export default function SearchSummary({
 }) {
   return (
     <div
-      className="mb-5 border-b border-[#E4DECE] pb-4"
+      className="mb-5 border-b border-line pb-4"
     >
-      <p className="text-[15px] text-[#3E4A30]" style={{ fontFamily: DISPLAY_FONT }}>
+      <p className="text-[15px] text-ink" style={{ fontFamily: DISPLAY_FONT }}>
         {count > 0 ? "Results for" : "No results for"}{" "}
         <span className="font-medium">&ldquo;{query}&rdquo;</span>
       </p>
       {count === 0 ? (
-        <p className="mt-1 text-[12px] text-[#8A8672]">
+        <p className="mt-1 text-[12px] text-faint">
           Try a shorter word, or browse the full menu.
         </p>
       ) : null}
       <Link
         href="/shop"
-        className="mt-2 inline-block cursor-pointer text-[12px] text-[#6F6A5C] underline transition-opacity hover:opacity-70"
+        className="mt-2 inline-block cursor-pointer text-[12px] text-muted underline transition-opacity hover:opacity-70"
       >
         Clear search
       </Link>

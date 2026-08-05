@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "cb-cookie-consent-v1";
-const BRAND_RED = "#BE1923";
+const BRAND_RED = "var(--cb-red)";
 
 // Dispatched whenever consent is acknowledged, so other components that
 // care (the shop's ChatWidget, which repositions to clear this banner while
@@ -77,13 +77,13 @@ export default function CookieConsent() {
       // except the shop, which opts into viewport-fit=cover — there, it
       // keeps this bar clear of the home-indicator gesture area instead of
       // sitting flush against it.
-      className="fixed inset-x-0 bottom-0 z-[200] flex flex-col items-center justify-between gap-3 border-t border-[#E2E2E2] bg-[#F7F7F7] px-5 pt-4 sm:flex-row sm:px-8"
+      className="fixed inset-x-0 bottom-0 z-[200] flex flex-col items-center justify-between gap-3 border-t border-line-grey bg-raise px-5 pt-4 sm:flex-row sm:px-8"
       style={{
         fontFamily: "var(--font-geist-sans), sans-serif",
         paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
       }}
     >
-      <p className="m-0 text-center text-[13px] text-[#575757] sm:text-left">
+      <p className="m-0 text-center text-[13px] text-body sm:text-left">
         By continuing to use this site, you{" "}
         {/* "consent" was already painted brand red, which reads as a link
             whether or not it is one. It now is one: it opens the cookie
@@ -103,7 +103,7 @@ export default function CookieConsent() {
         type="button"
         onClick={acknowledge}
         style={{ backgroundColor: BRAND_RED }}
-        className="shrink-0 cursor-pointer px-6 py-2 text-[13px] font-medium uppercase tracking-[0.06em] text-white transition-opacity hover:opacity-90"
+        className="shrink-0 cursor-pointer px-6 py-2 text-[13px] font-medium uppercase tracking-[0.06em] text-on-ink transition-opacity hover:opacity-90"
       >
         OK
       </button>
