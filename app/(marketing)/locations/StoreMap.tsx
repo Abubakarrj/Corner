@@ -25,7 +25,16 @@ const { ink, onInk, olive, muted } = PALETTE;
 //
 // Attribution is rendered below rather than left to MapLibre's own control,
 // which would land under the card rail.
-const ATTRIBUTION = "© Radar © OpenStreetMap";
+//
+// Both names are links, because attribution that can't be followed isn't
+// really attribution — OSM's licence asks for a credit that leads somewhere,
+// and Radar's "powered by" asks the same. They're the only tappable thing on
+// the map chrome that isn't a control, so they open in a new tab: somebody
+// halfway through choosing a shop shouldn't lose the screen to a licence page.
+const ATTRIBUTION = [
+  { label: "Radar", href: "https://radar.com/?ref=powered_by_radar" },
+  { label: "OpenStreetMap", href: "https://www.openstreetmap.org/copyright" },
+];
 
 // Leaflet took [lat, lng]; MapLibre takes [lng, lat]. Every crossing goes
 // through here, because getting it wrong puts Los Angeles in the South
@@ -308,11 +317,24 @@ export default function StoreMap({
           </button>
         </div>
 
+        {/* pointer-events-auto on the pill, since the layer above it turns
+            them off so the map can be panned everywhere the chrome isn't.
+            The links need to be pressable; the gap between them doesn't. */}
         <span
-          className="pointer-events-none absolute left-3 rounded-full bg-surface/90 px-3 py-1 text-[11px] text-muted"
+          className="pointer-events-auto absolute left-3 flex items-center gap-1 rounded-full bg-surface/90 px-3 py-1 text-[11px] text-muted"
           style={{ bottom: locations.length > 0 ? 136 : 12 }}
         >
-          {ATTRIBUTION}
+          {ATTRIBUTION.map(({ label, href }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cursor-pointer underline-offset-2 transition-colors hover:text-ink hover:underline"
+            >
+              © {label}
+            </a>
+          ))}
         </span>
 
         {/* The store cards, as a rail you swipe rather than one card with a
