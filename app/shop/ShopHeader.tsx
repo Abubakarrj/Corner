@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAccount } from "../account";
 import { useCart } from "./CartContext";
 import CartDrawer from "./CartDrawer";
 import SearchBar from "./SearchBar";
@@ -42,10 +44,32 @@ function BasketIcon() {
   );
 }
 
+// Outline person, drawn to the same 1.6-ish stroke weight as the tab bar's
+// icons so the two families match. Deliberately lighter than the solid
+// basket next to it: the basket is where the money is, and the account is a
+// side door.
+function AccountIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="8.4" r="3.6" stroke="#3E4A30" strokeWidth="1.8" />
+      <path
+        d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"
+        stroke="#3E4A30"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function ShopHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const { itemCount } = useCart();
+  // Only for someone signed in. There's nothing behind it otherwise — no
+  // usuals, no history — and an icon that leads to "sign in to see nothing"
+  // is worse than no icon. The way in is the Reorder tab.
+  const account = useAccount();
 
   // Adding to the basket anywhere in the shop slides the basket open as the
   // confirmation — see openBasket.ts.
@@ -86,23 +110,35 @@ export default function ShopHeader() {
           {/* Pushed aside while the search field is expanded — the field
               takes the row, matching the reference. */}
           {searchOpen ? null : (
-            <button
-              type="button"
-              onClick={() => setBasketOpen(true)}
-              aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
-              aria-expanded={basketOpen}
-              className="relative ml-auto flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
-            >
-              <BasketIcon />
-              {itemCount > 0 ? (
-                <span
-                  style={{ backgroundColor: BRAND_RED }}
-                  className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium text-white"
+            <div className="ml-auto flex items-center gap-1">
+              {account ? (
+                <Link
+                  href="/shop/account"
+                  aria-label={`Account, signed in as ${account.email}`}
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
                 >
-                  {itemCount}
-                </span>
+                  <AccountIcon />
+                </Link>
               ) : null}
-            </button>
+
+              <button
+                type="button"
+                onClick={() => setBasketOpen(true)}
+                aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+                aria-expanded={basketOpen}
+                className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
+              >
+                <BasketIcon />
+                {itemCount > 0 ? (
+                  <span
+                    style={{ backgroundColor: BRAND_RED }}
+                    className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium text-white"
+                  >
+                    {itemCount}
+                  </span>
+                ) : null}
+              </button>
+            </div>
           )}
         </div>
       </header>

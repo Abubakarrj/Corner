@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAccount } from "../account";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
 // Same produce palette as the pantry: olive marks the active tab, cream is
@@ -253,6 +254,12 @@ function NavIcon({ id, active }: { id: TabId; active: boolean }) {
 }
 
 export default function TabBar({ active }: { active: TabId }) {
+  // Reorder means "sign in so you can reorder" until you have; after that it
+  // means your account, where the usuals and the history actually are.
+  // Sending someone who's already signed in back to a login screen is the
+  // one thing this tab must not do.
+  const account = useAccount();
+
   return (
     <nav
       className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
@@ -261,7 +268,8 @@ export default function TabBar({ active }: { active: TabId }) {
     >
       <ul className="m-0 flex list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
-          const { href } = item;
+          const href =
+            item.id === "reorder" && account ? "/shop/account" : item.href;
           const isActive = item.id === active;
           const tone = isActive ? olive : TAB_REST;
           const body = (

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { signIn } from "../../account";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 
@@ -82,6 +83,15 @@ export default function MembershipForm() {
         const body = await response.json().catch(() => null);
         throw new Error(body?.error ?? "Something went wrong.");
       }
+      // Records the name and email on this device so the shop can show a
+      // usuals list and an order history. NOT a login — see the warning at
+      // the top of app/account.ts. It gates nothing.
+      //
+      // Signing in has no name field and none is invented: deriving one from
+      // the local part of the address greets people as "ada", which is worse
+      // than not greeting them by name at all. The account page falls back to
+      // the address.
+      signIn({ name: joining ? name : "", email });
       setStatus("done");
     } catch (submitError) {
       setStatus("idle");
@@ -139,21 +149,21 @@ export default function MembershipForm() {
               style={{ borderColor: border, backgroundColor: surface }}
             >
               <p className="m-0 text-[15px] font-medium" style={{ color: olive }}>
-                Thanks — we have your address.
+                You&rsquo;re in.
               </p>
               <p className="m-0 mt-1.5 text-[13px] leading-[1.5]" style={{ color: muted }}>
-                {joining
-                  ? `We'll be in touch at ${email.trim()} as membership opens up.`
-                  : "Accounts aren't live yet, so there's nothing to sign into — we've noted the address and will write when there is."}
+                Your usuals and your order history live in your account on this
+                device. Full membership — carrying it between devices, and
+                everything that needs a real sign-in — opens up soon, and
+                we&rsquo;ll write to {email.trim()} when it does.
               </p>
-              <button
-                type="button"
-                onClick={() => switchTab(tab)}
-                className="mt-4 cursor-pointer text-[13px] underline transition-opacity hover:opacity-70"
-                style={{ color: muted }}
+              <Link
+                href="/shop/account"
+                style={{ backgroundColor: olive, color: onOlive }}
+                className="mt-4 inline-block cursor-pointer rounded-full px-5 py-2.5 text-[13px] font-medium transition-opacity hover:opacity-90"
               >
-                Back
-              </button>
+                Go to your account
+              </Link>
             </div>
           ) : (
             // key on the tab so switching clears the fields rather than

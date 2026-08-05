@@ -88,15 +88,21 @@ export default function Drawer({
             width === "wide" ? "w-[92vw] max-w-lg" : "w-[85vw] max-w-sm"
           }`;
 
-  // Only painted while the panel is actually on screen. A closed panel is
-  // parked just outside the viewport, and a 40px blur reaches back across
-  // that edge — which rendered as a dark band along the top (or side) of
-  // every page. The container's overflow-hidden does not save us here: it
-  // clips at the viewport box, so it stops the shadow spilling outward
-  // while leaving the half that falls inward fully visible.
-  const panelShadowClass = !open
-    ? ""
-    : side === "top"
+  // The shadow is constant now, and the closed panel is parked its own width
+  // *plus the blur radius* outside the viewport so the shadow has nowhere to
+  // reach back into.
+  //
+  // It used to be applied only while open, to stop a 40px blur bleeding a
+  // dark band across the edge of every page — the container's
+  // overflow-hidden clips at the viewport box, so it stops the outward half
+  // and leaves the inward half fully visible. But switching a 40px shadow on
+  // at the same instant the panel starts moving means it paints at full
+  // strength while the panel is still off-screen: a dark edge flashes, then
+  // the drawer catches up with it. Parking further out fixes the band
+  // without the flash, and lets the shadow stay on one layer for the whole
+  // slide instead of being added mid-transition.
+  const panelShadowClass =
+    side === "top"
       ? "shadow-[0_16px_40px_rgba(0,0,0,0.14)]"
       : side === "left"
         ? "shadow-[8px_0_40px_rgba(0,0,0,0.12)]"
@@ -106,14 +112,14 @@ export default function Drawer({
     side === "top"
       ? open
         ? "translate-y-0"
-        : "-translate-y-full"
+        : "-translate-y-[calc(100%+48px)]"
       : side === "left"
         ? open
           ? "translate-x-0"
-          : "-translate-x-full"
+          : "-translate-x-[calc(100%+48px)]"
         : open
           ? "translate-x-0"
-          : "translate-x-full";
+          : "translate-x-[calc(100%+48px)]";
 
   return (
     // overflow-hidden keeps the closed panel, parked outside the viewport,
@@ -123,10 +129,15 @@ export default function Drawer({
       className={`fixed inset-0 z-[220] overflow-hidden ${open ? "" : "pointer-events-none"}`}
       inert={!open}
     >
+      {/* A plain dim, not a blur. backdrop-filter over the whole viewport is
+          recomputed every frame, and cross-fading one while a panel slides in
+          front of it is the single most expensive thing this component could
+          be asked to do — on a phone it drops the slide to a crawl. The dim
+          reads the same and costs a composite. */}
       <div
         onClick={onClose}
         aria-hidden
-        className={`absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${
           open ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -138,7 +149,16 @@ export default function Drawer({
         // Same reasoning as ShopHeader's inset: every variant is anchored to
         // the viewport's top edge, which extends under the notch, so the
         // panel carries the inset itself to keep its first row clear.
-        className={`absolute flex flex-col overflow-y-auto bg-[#FAF8F0] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelShadowClass} ${panelTransformClass}`}
+        //
+        // overscroll-contain stops a flick inside the basket from chaining to
+        // the page underneath once the list hits its end — on iOS that
+        // chaining is what makes a drawer feel like it's fighting back.
+        className={`absolute flex touch-pan-y flex-col overflow-y-auto overscroll-contain bg-[#FAF8F0] pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelShapeClass} ${panelShadowClass} ${panelTransformClass}`}
+        // Keeps the panel on its own compositor layer for the whole slide, so
+        // the transform doesn't force a repaint of its (long, image-bearing)
+        // contents on each frame. Dropped when closed so an idle drawer isn't
+        // holding a full-height layer for nothing.
+        style={{ willChange: open ? "transform" : undefined }}
       >
         {children}
       </aside>

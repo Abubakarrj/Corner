@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
+import { recordOrder } from "../../account";
 import { DISPLAY_FONT } from "../shopControls";
 
 const BRAND_RED = "#BE1923";
@@ -73,6 +74,24 @@ export default function CheckoutPage() {
         const body = await response.json().catch(() => null);
         throw new Error(body?.error ?? "Something went wrong.");
       }
+      // The account page's history and its usuals list are built from this.
+      // Recorded after the endpoint accepts, so a rejected order doesn't
+      // show up as one that happened, and on this device only — there's no
+      // server-side order history to read back.
+      const where = fulfillment ? describeFulfillment(fulfillment) : null;
+      recordOrder({
+        items: rows.map(({ line, product, unitCents, chosen }) => ({
+          slug: product.slug,
+          name: product.name,
+          quantity: line.quantity,
+          unitCents,
+          options: line.options,
+          optionsLabel: chosen.join(" · "),
+        })),
+        subtotalCents,
+        fulfillmentMode: where?.mode ?? "Pickup",
+        fulfillmentWhere: where?.where ?? "Corner Bagel",
+      });
       setStatus("placed");
       clear();
     } catch (submitError) {

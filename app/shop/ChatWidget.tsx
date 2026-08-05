@@ -3,7 +3,14 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { COOKIE_CONSENT_CHANGED_EVENT } from "../CookieConsent";
+import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { DISPLAY_FONT } from "./shopControls";
+
+// One line naming where the order is going, for Riley's context.
+function describeContext(fulfillment: Fulfillment): string {
+  const { mode, where } = describeFulfillment(fulfillment);
+  return `${mode} — ${where}`;
+}
 
 // Produce palette — deep olive carries the widget, sage is the visitor's
 // bubble, and the old brand red survives only as the error-text colour.
@@ -40,14 +47,17 @@ function getCookieBannerServerSnapshot() {
 }
 
 // The quick-reply buttons under "What can we help you with?". Picking one
-// stands in for the visitor's first message — it's sent along to the intake
-// route as routing metadata, and rendered as their reply bubble in the
-// thread.
+// sends it as the visitor's first message — Riley answers it like anything
+// else they might have typed.
+//
+// "Track my order" is deliberately not here any more: Riley can't see orders,
+// so a button promising she can would be the first thing a visitor tapped and
+// the first thing that disappointed them.
 const TOPICS = [
-  "Track my order",
-  "Report an issue",
-  "Product question",
-  "Other",
+  "What's on the menu?",
+  "How does ordering work?",
+  "What's in a sandwich?",
+  "Something else",
 ] as const;
 
 // The minimal square speech bubble from the user's reference — clean
@@ -112,25 +122,23 @@ const botBubbleClass =
 const userBubbleClass =
   "w-fit max-w-[85%] rounded-2xl rounded-br-md px-3.5 py-2.5 text-[13px] leading-[1.45] text-[#2F3A24]";
 
-// Only the visitor's own messages carry a delivery state — the automated
-// bot lines are generated locally and never travel anywhere.
-type Delivery = "sending" | "sent" | "failed";
-type Entry = { id: number; role: "bot" | "user"; text: string; delivery?: Delivery };
+type Entry = { id: number; role: "bot" | "user"; text: string };
 
-// The shop's chat widget. This is a direct conversation, not a contact form:
-// the visitor types, the team answers in this same window. Nothing here
-// collects a name or an email, and there is no "message sent, we'll get back
-// to you" end state — the thread stays open for as long as the visitor
-// keeps it open.
+// The shop's chat, answered by Riley — see app/api/shop-chat/riley.ts.
 //
-// Each message posts to /api/shop-chat on its own the moment it's sent, so
-// the team sees it as it's typed rather than at the end of some funnel.
-// Delivery is shown per message, and a failed send can be retried in place.
+// A real conversation, not a contact form: the visitor types, Riley answers
+// in the same window, and the thread stays open as long as they keep it open.
+// Nothing here collects a name or an email, because the reply comes back
+// here rather than to an inbox.
 //
-// IMPORTANT: /api/shop-chat currently only logs. Until a real provider is
-// wired up (Intercom, Gorgias, Zendesk, ...) or the team is watching those
-// logs, nobody is on the other end — this UI is ready for a live agent, it
-// does not supply one.
+// The whole visible thread is posted on every turn — the API is stateless and
+// there's nowhere to keep a session, so the transcript in this component *is*
+// the conversation. It follows that a reload starts over, which is the
+// honest behaviour: nothing was being remembered.
+//
+// Riley can answer about the menu, ordering, and how the app works. She
+// cannot see orders, take payment, or issue a refund. Her briefing says so;
+// the quick-reply buttons above deliberately don't imply otherwise.
 export default function ChatWidget() {
   const bannerVisible = useSyncExternalStore(
     subscribeCookieBanner,
@@ -138,16 +146,18 @@ export default function ChatWidget() {
     getCookieBannerServerSnapshot,
   );
   const [open, setOpen] = useState(false);
-  const [topic, setTopic] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
-  const [acknowledged, setAcknowledged] = useState(false);
+  const [thinking, setThinking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Where the order is going, if it's been chosen — the difference between
+  // "when will it arrive" and "when can I collect it". Sent as context so
+  // Riley doesn't have to ask.
+  const fulfillment = useFulfillment();
 
   const threadRef = useRef<HTMLDivElement>(null);
   const nextId = useRef(0);
-  // Ties this visitor's messages together into one thread on the receiving
-  // end. Created on the first send and kept for the life of the page.
-  const conversationId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -164,68 +174,59 @@ export default function ChatWidget() {
     if (thread) thread.scrollTop = thread.scrollHeight;
   }, [entries, open]);
 
-  function push(role: Entry["role"], text: string, delivery?: Delivery) {
+  // Riley's turn. The thread as it stands goes up, her reply comes back, and
+  // both ends of that are derived from `entries` rather than tracked
+  // separately — one source of truth for what the conversation is.
+  async function ask(text: string) {
     const id = nextId.current++;
-    setEntries((prior) => [...prior, { id, role, text, delivery }]);
-    return id;
-  }
+    const asked: Entry[] = [...entries, { id, role: "user", text }];
+    setEntries(asked);
+    setError(null);
+    setThinking(true);
 
-  function setDelivery(id: number, delivery: Delivery) {
-    setEntries((prior) =>
-      prior.map((entry) => (entry.id === id ? { ...entry, delivery } : entry)),
-    );
-  }
-
-  // Posts one message to the team. Deliberately per-message rather than
-  // batched at the end of the thread: this is a conversation, so each line
-  // has to leave as soon as it's sent.
-  async function deliver(id: number, text: string, topicForSend: string | null) {
-    conversationId.current ??=
-      globalThis.crypto?.randomUUID?.() ?? `c-${Date.now()}-${Math.random()}`;
-    setDelivery(id, "sending");
     try {
       const response = await fetch("/api/shop-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: text,
-          topic: topicForSend,
-          conversationId: conversationId.current,
+          messages: asked.map((entry) => ({
+            role: entry.role === "bot" ? "assistant" : "user",
+            text: entry.text,
+          })),
+          context: fulfillment ? describeContext(fulfillment) : undefined,
         }),
       });
-      if (!response.ok) throw new Error("send failed");
-      setDelivery(id, "sent");
-    } catch {
-      setDelivery(id, "failed");
-    }
-  }
+      const body = (await response.json().catch(() => null)) as {
+        reply?: string;
+        error?: string;
+      } | null;
 
-  function pickTopic(option: string) {
-    setTopic(option);
-    const id = push("user", option, "sending");
-    void deliver(id, option, option);
-    push("bot", "Got it. Tell us a bit more and we'll take it from here.");
+      if (!response.ok || !body?.reply) {
+        throw new Error(body?.error ?? "Riley couldn't answer just now.");
+      }
+      setEntries((prior) => [
+        ...prior,
+        { id: nextId.current++, role: "bot", text: body.reply as string },
+      ]);
+    } catch (askError) {
+      // The failed turn is left in the thread and the composer refilled with
+      // what they typed, so retrying is one tap rather than retyping.
+      setError(askError instanceof Error ? askError.message : "Something went wrong.");
+      setDraft(text);
+      setEntries((prior) => prior.filter((entry) => entry.id !== id));
+    } finally {
+      setThinking(false);
+    }
   }
 
   function sendDraft() {
     const text = draft.trim();
-    if (!text) return;
+    if (!text || thinking) return;
     setDraft("");
-    const id = push("user", text, "sending");
-    void deliver(id, text, topic);
-    // One automated line, the first time the visitor types something, to set
-    // the expectation that a person answers in this window. After that the
-    // thread is theirs and the team's — no more canned replies.
-    if (!acknowledged) {
-      setAcknowledged(true);
-      push(
-        "bot",
-        "Thanks — we're on it. Keep this window open and we'll reply right here.",
-      );
-    }
+    void ask(text);
   }
 
-  const showChips = topic === null && entries.length === 0;
+  const showChips = entries.length === 0 && !thinking;
 
   return (
     // pointer-events-none on the container: with the panel always mounted
@@ -277,10 +278,10 @@ export default function ChatWidget() {
               className="text-[15px] font-medium leading-tight text-white"
               style={{ fontFamily: DISPLAY_FONT }}
             >
-              Corner Bagel
+              Riley
             </p>
             <p className="text-[12px] leading-tight text-white/80">
-              Chat with our team
+              Corner Bagel
             </p>
           </div>
           <button
@@ -300,19 +301,25 @@ export default function ChatWidget() {
             className="mb-1.5 ml-9 text-[11px] font-medium text-[#8A8672]"
             style={{ fontFamily: DISPLAY_FONT }}
           >
-            Corner Bagel
+            Riley
           </p>
           <div className="mb-2 ml-9">
             <p className={botBubbleClass}>
-              You&rsquo;re chatting with the Corner Bagel team — replies land
-              right here in this window.
+              Hi, I&rsquo;m Riley. I look after ordering and anything else
+              Corner Bagel.
             </p>
           </div>
           <div className="flex items-end gap-2">
             <BagelAvatar />
-            <p className={botBubbleClass}>What can we help you with?</p>
+            <p className={botBubbleClass}>What can I help you with?</p>
           </div>
-          <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">Automated</p>
+          {/* Said once, up front, rather than under every reply: a label on
+              each bubble is noise, and the thing worth disclosing is that
+              nobody is reading this — not that a given sentence was
+              generated. */}
+          <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">
+            AI assistant &middot; not a person
+          </p>
 
           {showChips ? (
             <div className="mt-4 flex flex-wrap justify-end gap-2">
@@ -320,7 +327,7 @@ export default function ChatWidget() {
                 <button
                   key={option}
                   type="button"
-                  onClick={() => pickTopic(option)}
+                  onClick={() => void ask(option)}
                   className="cursor-pointer rounded-full border border-[#DDD6C2] px-3.5 py-2 text-[13px] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#EFEBDD]"
                 >
                   {option}
@@ -338,34 +345,44 @@ export default function ChatWidget() {
                 >
                   {entry.text}
                 </span>
-                {/* Per-message delivery, the way a chat app shows it — a
-                    failed line is retried in place rather than making the
-                    visitor retype it. */}
-                {entry.delivery === "failed" ? (
-                  <button
-                    type="button"
-                    onClick={() => void deliver(entry.id, entry.text, topic)}
-                    style={{ color: ERROR_RED }}
-                    className="mt-1 cursor-pointer text-[11px] underline transition-opacity hover:opacity-70"
-                  >
-                    Not delivered — tap to retry
-                  </button>
-                ) : (
-                  <span className="mt-1 text-[11px] text-[#9A9A9A]">
-                    {entry.delivery === "sending" ? "Sending…" : "Sent"}
-                  </span>
-                )}
               </div>
             ) : (
-              <div key={entry.id} className="mt-3">
-                <div className="flex items-end gap-2">
-                  <BagelAvatar />
-                  <p className={botBubbleClass}>{entry.text}</p>
-                </div>
-                <p className="ml-9 mt-1 text-[11px] text-[#9A9A9A]">Automated</p>
+              <div key={entry.id} className="mt-3 flex items-end gap-2">
+                <BagelAvatar />
+                {/* whitespace-pre-wrap because Riley writes in paragraphs and
+                    occasionally a short list; collapsing those into one run
+                    is the difference between a readable answer and a wall. */}
+                <p className={`${botBubbleClass} whitespace-pre-wrap`}>{entry.text}</p>
               </div>
             ),
           )}
+
+          {thinking ? (
+            <div className="mt-3 flex items-end gap-2">
+              <BagelAvatar />
+              <span
+                className={botBubbleClass}
+                role="status"
+                aria-label="Riley is typing"
+              >
+                <span className="flex items-center gap-1 py-0.5">
+                  {[0, 1, 2].map((index) => (
+                    <span
+                      key={index}
+                      className="block h-1.5 w-1.5 animate-pulse rounded-full bg-[#8A8672] motion-reduce:animate-none"
+                      style={{ animationDelay: `${index * 160}ms` }}
+                    />
+                  ))}
+                </span>
+              </span>
+            </div>
+          ) : null}
+
+          {error ? (
+            <p role="alert" className="mt-3 text-[11px]" style={{ color: ERROR_RED }}>
+              {error}
+            </p>
+          ) : null}
 
         </div>
 
@@ -382,7 +399,7 @@ export default function ChatWidget() {
           <input
             type="text"
             aria-label="Type a message"
-            placeholder="Type a message…"
+            placeholder={thinking ? "Riley is typing…" : "Type a message…"}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             className="min-w-0 flex-1 rounded-full border border-[#DDD6C2] px-4 py-2.5 text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A] focus:border-[#3E4A30] sm:text-[14px]"
@@ -390,7 +407,7 @@ export default function ChatWidget() {
           <button
             type="submit"
             aria-label="Send"
-            disabled={draft.trim().length === 0}
+            disabled={draft.trim().length === 0 || thinking}
             style={{ backgroundColor: OLIVE }}
             className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-30 disabled:hover:opacity-30"
           >

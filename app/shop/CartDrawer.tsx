@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
-import FreeShippingBar from "./FreeShippingBar";
+import GiftProgressBar from "./GiftProgressBar";
 import CrossSellStrip from "./CrossSellStrip";
 import { useCart, useCartRows } from "./CartContext";
 import OptionPicker from "./OptionPicker";
@@ -92,7 +92,7 @@ export default function CartDrawer({
               Your basket is empty
             </p>
             <p className="mt-1 text-[12px] text-[#8A8A8A]">
-              Jars, sauces, and staples from behind the counter.
+              Sandwiches, bagels, schmears, and something to drink.
             </p>
           </div>
           <button
@@ -106,7 +106,7 @@ export default function CartDrawer({
         </div>
       ) : (
         <>
-          <FreeShippingBar subtotalCents={subtotalCents} />
+          <GiftProgressBar subtotalCents={subtotalCents} />
 
           <div className="flex-1 divide-y divide-[#E7E2D2] overflow-y-auto px-6">
             {rows.map(({ line, product, key, unitCents, chosen, complete }) => (
