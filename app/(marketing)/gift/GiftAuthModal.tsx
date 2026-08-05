@@ -64,20 +64,38 @@ export default function GiftAuthModal({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Sign in to continue gifting"
+        aria-label="Sign in to keep this gift card"
         tabIndex={-1}
         className={`relative w-full max-w-[420px] rounded-t-3xl px-6 pb-[calc(28px+env(safe-area-inset-bottom))] pt-8 outline-none transition-transform duration-200 ease-out sm:rounded-3xl sm:pb-8 ${
           open ? "translate-y-0" : "translate-y-6"
         }`}
         style={{ backgroundColor: surface }}
       >
+        {/* The backdrop closes this too, but a tap-anywhere target nobody can
+            see isn't a way out — this is the one people look for. */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-[#EFEBDD]"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
+            <path
+              d="M4.5 4.5l9 9M13.5 4.5l-9 9"
+              stroke={muted}
+              strokeWidth="1.7"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+
         <GiftIllustration />
 
         <p
           className="m-0 mt-6 text-center text-[21px] font-medium leading-[1.2] tracking-[-0.01em]"
           style={{ color: olive }}
         >
-          Sign in to continue gifting
+          Excellent choice, let&rsquo;s get that into your account
         </p>
         <p
           className="m-0 mt-2.5 text-center text-[14px] leading-[1.5]"

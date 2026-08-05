@@ -3,9 +3,9 @@
 import { useSyncExternalStore } from "react";
 
 // Where an order is going. Nothing in the shop can be ordered without this:
-// a bagel picked up in Koreatown, handed over at an outpost, and delivered to
-// an apartment are three different transactions, and the menu, the price, and
-// the handoff all depend on which one it is.
+// a bagel picked up in Koreatown, a tray going out to an office, and a
+// delivery to an apartment are three different transactions, and the menu,
+// the price, and the handoff all depend on which one it is.
 //
 // Lives at the app root rather than inside app/shop, because it's set on
 // /locations — in the marketing tree — and read in the shop. Same
@@ -16,10 +16,10 @@ import { useSyncExternalStore } from "react";
 const STORAGE_KEY = "cb-fulfillment-v1";
 
 export type Fulfillment =
-  // A shop or an outpost the visitor collects from. `locationId` keys into
+  // A shop or a catering kitchen the order comes out of. `locationId` keys into
   // LOCATIONS; `label` and `detail` are denormalised so the shop can name the
   // destination without importing the marketing tree's data.
-  | { mode: "pickup" | "outpost"; locationId: string; label: string; detail: string }
+  | { mode: "pickup" | "catering"; locationId: string; label: string; detail: string }
   // Delivery has no location of ours — the address is the visitor's, stored
   // as typed. It isn't geocoded or validated against a delivery radius yet;
   // that needs an address service, and until then this is a string we show
@@ -32,7 +32,7 @@ function isFulfillment(value: unknown): value is Fulfillment {
   if (candidate.mode === "delivery") {
     return typeof (candidate as { address?: unknown }).address === "string";
   }
-  if (candidate.mode === "pickup" || candidate.mode === "outpost") {
+  if (candidate.mode === "pickup" || candidate.mode === "catering") {
     const pick = candidate as { locationId?: unknown; label?: unknown; detail?: unknown };
     return (
       typeof pick.locationId === "string" &&
@@ -117,7 +117,7 @@ export function describeFulfillment(fulfillment: Fulfillment): {
     return { mode: "Delivery", where: fulfillment.address };
   }
   return {
-    mode: fulfillment.mode === "outpost" ? "Outpost" : "Pickup",
+    mode: fulfillment.mode === "catering" ? "Catering" : "Pickup",
     where: fulfillment.label,
   };
 }

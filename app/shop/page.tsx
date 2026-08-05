@@ -1,4 +1,11 @@
-import { CATEGORIES, PRODUCTS, isSortValue, searchProducts, sortProducts } from "./products";
+import {
+  CATEGORIES,
+  PRODUCTS,
+  SANDWICH_NOTE,
+  isSortValue,
+  searchProducts,
+  sortProducts,
+} from "./products";
 import CategoryNav from "./CategoryNav";
 import ShopCatalog from "./ShopCatalog";
 import SearchSummary from "./SearchSummary";
@@ -34,6 +41,13 @@ export default async function ShopPage({
       ) : (
         <CategoryNav activeCategory={activeCategory} activeSort={activeSort} />
       )}
+
+      {/* The board's own footnote, shown where it applies. */}
+      {activeCategory === "Sandwiches" ? (
+        <p className="-mt-1 mb-5 text-[12px] leading-[1.5] text-[#6F6A5C]">
+          {SANDWICH_NOTE}
+        </p>
+      ) : null}
 
       <ShopCatalog
         products={products}

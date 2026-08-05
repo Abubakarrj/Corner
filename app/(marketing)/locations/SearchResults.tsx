@@ -58,7 +58,7 @@ export default function SearchResults({
   onPickPlace,
   onResolvedAddress,
 }: {
-  mode: "pickup" | "delivery" | "outpost";
+  mode: "pickup" | "delivery" | "catering";
   value: string;
   // Our own locations of the kind this mode shows, already filtered by the
   // caller — matching them is a substring test over a handful of rows, so it
@@ -169,7 +169,7 @@ export default function SearchResults({
         onResolvedAddress(resolved);
         return;
       }
-      // Pickup and Outpost: a place is somewhere to point the map, not an
+      // Pickup and Catering: a place is somewhere to point the map, not an
       // order destination. The shop is chosen from the card over the map.
       onPickPlace(resolved);
     } catch (detailsError) {
@@ -205,7 +205,9 @@ export default function SearchResults({
         <div className="flex items-center gap-3 pb-1 pt-4">
           {([
             ["places", "Locations", items.length],
-            ["stores", "Shops", stores.length],
+            // "Shops" under Pickup, "Kitchens" under Catering — the tab counts
+            // ours, and which of ours depends on the mode.
+            ["stores", mode === "catering" ? "Kitchens" : "Shops", stores.length],
           ] as const).map(([id, label, count]) => {
             const active = tab === id;
             return (

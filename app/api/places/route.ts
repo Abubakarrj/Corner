@@ -42,7 +42,7 @@ function apiKey(): string | null {
 const TYPES = {
   // Delivery: somewhere a bag can actually be handed over.
   address: ["street_address", "premise", "subpremise"],
-  // Pickup and Outpost: somewhere to point the map. Cities, neighbourhoods,
+  // Pickup and Catering: somewhere to point the map. Cities, neighbourhoods,
   // states, and ZIPs — the geography half of "city, state, or zip".
   region: ["locality", "sublocality", "administrative_area_level_1", "postal_code"],
 } as const;

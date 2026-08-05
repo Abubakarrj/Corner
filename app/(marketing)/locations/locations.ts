@@ -1,9 +1,14 @@
-// The two kinds of place a Corner Bagel bagel can be picked up from, which is
-// what the Pickup / Outpost split in the finder is: a shop is ours, an
-// outpost is somebody else's counter carrying our sandwiches. Delivery isn't
-// a kind of place — it's a mode that asks for the visitor's address instead —
-// so it has no entries here.
-export type LocationKind = "shop" | "outpost";
+// The two kinds of place an order can come out of, which is what the Pickup /
+// Catering split in the finder is: a shop is a counter you walk up to, a
+// catering kitchen is one set up to build a tray for an office or an event.
+// Delivery isn't a kind of place — it's a mode that asks for the visitor's
+// address instead — so it has no entries here.
+//
+// Nothing is a "catering" kind yet, which is why that tab shows an empty map.
+// Adding one is a matter of an entry below; deciding what it means to order
+// from it — minimums, lead time, a headcount instead of a quantity — is the
+// part that needs answers before the tab does anything useful.
+export type LocationKind = "shop" | "catering";
 
 export type StoreLocation = {
   id: string;

@@ -27,12 +27,12 @@ const StoreMap = dynamic(() => import("./StoreMap"), {
   loading: () => <div className="min-h-0 flex-1" style={{ background: "#EAF0DC" }} />,
 });
 
-type Mode = "pickup" | "delivery" | "outpost";
+type Mode = "pickup" | "delivery" | "catering";
 
 const MODES: { id: Mode; label: string }[] = [
   { id: "pickup", label: "Pickup" },
   { id: "delivery", label: "Delivery" },
-  { id: "outpost", label: "Outpost" },
+  { id: "catering", label: "Catering" },
 ];
 
 // Delivery asks for the visitor's address; the other two search ours. That
@@ -41,7 +41,7 @@ const MODES: { id: Mode; label: string }[] = [
 const PLACEHOLDER: Record<Mode, string> = {
   pickup: "Search store, city, state, or zip",
   delivery: "Enter delivery address",
-  outpost: "Search store, city, state, or zip",
+  catering: "Search store, city, state, or zip",
 };
 
 function BackIcon() {
@@ -79,9 +79,9 @@ export default function LocationFinder() {
   const [focus, setFocus] = useState<[number, number] | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
 
-  // Pickup shows our own shops, Outpost shows the counters that carry our
-  // sandwiches, and Delivery shows nothing on the map until an address is
-  // entered — it's asking where the visitor is, not where we are.
+  // Pickup shows the shops you can walk up to, Catering shows the kitchens
+  // that build trays, and Delivery shows nothing on the map until an address
+  // is entered — it's asking where the visitor is, not where we are.
   // Two different filters, which used to be one and shouldn't have been.
   //
   // `visible` is what the map shows: every location of this mode's kind,
@@ -92,7 +92,7 @@ export default function LocationFinder() {
   // the visitor asked to look there.
   const visible: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    const kind = mode === "pickup" ? "shop" : "outpost";
+    const kind = mode === "pickup" ? "shop" : "catering";
     const byKind = LOCATIONS.filter((location) => location.kind === kind);
     return bounds
       ? byKind.filter((location) => bounds.contains(location.position))
@@ -104,7 +104,7 @@ export default function LocationFinder() {
   // only place one belongs.
   const matching: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    return searchLocations(query, mode === "pickup" ? "shop" : "outpost");
+    return searchLocations(query, mode === "pickup" ? "shop" : "catering");
   }, [mode, query]);
 
   // Choosing a shop: record where the order is going, then open the menu.
@@ -118,7 +118,7 @@ export default function LocationFinder() {
   // which tab is lit, since they're the same screen reached two ways.
   function chooseLocation(location: StoreLocation) {
     setFulfillment({
-      mode: location.kind === "outpost" ? "outpost" : "pickup",
+      mode: location.kind === "catering" ? "catering" : "pickup",
       locationId: location.id,
       label: location.name,
       detail: `${location.address}, ${location.city}`,
@@ -150,8 +150,8 @@ export default function LocationFinder() {
   const toastText =
     mode === "delivery"
       ? "Enter an address above to get started."
-      : mode === "outpost"
-        ? "No outposts here yet."
+      : mode === "catering"
+        ? "No catering locations here yet."
         : "No shops here yet.";
 
   return (

@@ -25,7 +25,7 @@ const TILE_ATTRIBUTION = "© OpenStreetMap";
 // bundlers break. A divIcon sidesteps that entirely and lets the pin carry
 // the brand colour: an inline SVG teardrop, anchored at its point.
 function pinIcon(kind: StoreLocation["kind"]) {
-  // Olive for our own shops and sage for outposts — the same two greens the
+  // Olive for the shops and sage for catering kitchens — the same two greens the
   // pantry uses for primary and secondary, and both dark enough to read
   // against the map's pale land.
   const fill = kind === "shop" ? olive : "#7E9160";

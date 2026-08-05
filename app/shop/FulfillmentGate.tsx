@@ -10,9 +10,9 @@ const { olive, onOlive, cream, border, muted, controlBorder } = PALETTE;
 
 // The shop is inert until an order has somewhere to go.
 //
-// A bagel collected in Koreatown, handed over at an outpost, and delivered to
-// an apartment are three different orders — different handoff, potentially
-// different menu and price — so letting someone fill a basket before choosing
+// A bagel collected in Koreatown, a tray going out to an office, and a
+// delivery to an apartment are three different orders — different handoff,
+// potentially different menu and price — so letting someone fill a basket first
 // is inviting them to build something we can't fulfil, and then telling them
 // at checkout. The choice comes first, on /locations, and lives in
 // app/fulfillment.ts.
@@ -49,8 +49,8 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
           className="m-0 mt-3 max-w-xs text-[14px] leading-[1.5]"
           style={{ color: muted }}
         >
-          Taking you to the map to pick a shop, an outpost, or a delivery
-          address. The link below does the same, if it doesn&rsquo;t.
+          Taking you to the map to pick a shop, arrange catering, or set a
+          delivery address. The link below does the same, if it doesn&rsquo;t.
         </p>
         <Link
           href="/locations"
