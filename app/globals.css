@@ -41,8 +41,12 @@
      ladder (muted → faint → quiet → quieter → hint) survives the fix. */
   --cb-muted: #6f6a5c;
   --cb-faint: #706c59;
-  --cb-quiet: #717171;
-  --cb-quieter: #6f6f6f;
+  /* These two carry 11px small print, and the earlier pass only measured
+     them against --cb-surface. On --cb-cream and --cb-tile — the grounds the
+     checkout's fine print actually sits on — they came in at 4.44, under the
+     4.5 that size needs. Walked down until each clears on all four grounds. */
+  --cb-quiet: #676767;
+  --cb-quieter: #666666;
   --cb-hint: #77715d;
 
   /* Rules, heaviest first. */

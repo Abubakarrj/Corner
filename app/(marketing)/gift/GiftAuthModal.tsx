@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Modal from "../../ui/Modal";
 import { ButtonLink } from "../../ui/Button";
 import { PALETTE } from "../../shop/shopControls";
@@ -21,12 +22,11 @@ const { cream, surface, olive, controlBorder, sage } = PALETTE;
 //                      authenticates yet (see the note in MembershipForm),
 //                      but it's a destination rather than a dead end.
 //
-//   Continue as guest  closes this and leaves you on the gallery. There is no
-//                      gifting flow to continue into — issuing a card, taking
-//                      payment, storing a balance and redeeming against it are
-//                      all unbuilt — so it does the one thing it can do
-//                      truthfully. Once amount-and-recipient exists, this is
-//                      where it gets wired in.
+//   Continue as guest  goes on to the purchase flow when there is one to go
+//                      on to (`guestHref`), and otherwise closes the sheet.
+//                      Redeeming still has nowhere to continue to: reading a
+//                      card's balance needs Toast's gift card API, so that
+//                      door closes rather than pretending.
 export type GiftIntent = "send" | "redeem";
 
 const COPY: Record<GiftIntent, { label: string; heading: string; lede: string }> = {
@@ -46,10 +46,13 @@ export default function GiftAuthModal({
   open,
   onClose,
   intent = "send",
+  guestHref,
 }: {
   open: boolean;
   onClose: () => void;
   intent?: GiftIntent;
+  // Where "continue as guest" leads, when it leads anywhere.
+  guestHref?: string;
 }) {
   const copy = COPY[intent];
 
@@ -71,6 +74,14 @@ export default function GiftAuthModal({
         Join or sign in
       </ButtonLink>
 
+      {guestHref ? (
+        <Link
+          href={guestHref}
+          className="cb-press mx-auto mt-4 block cursor-pointer text-center text-[14px] text-muted underline underline-offset-2 hover:text-ink"
+        >
+          Continue as guest
+        </Link>
+      ) : (
       <button
         type="button"
         onClick={onClose}
@@ -78,6 +89,7 @@ export default function GiftAuthModal({
       >
         Continue as guest
       </button>
+      )}
     </Modal>
   );
 }

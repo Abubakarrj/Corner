@@ -8,7 +8,6 @@ import {
   GIFT_NAME,
   GIFT_THRESHOLD_CENTS,
   PRODUCTS,
-  SANDWICH_NOTE,
   SPREAD_GROUP,
   BAGEL_GROUP,
 } from "../../shop/products";
@@ -85,8 +84,6 @@ Reachable at ${SHOP_EMAIL}.
 ${renderMenu()}
 
 ${renderChoices()}
-
-${SANDWICH_NOTE}
 
 Orders over ${formatPrice(GIFT_THRESHOLD_CENTS)} come with a complimentary ${GIFT_NAME}.
 

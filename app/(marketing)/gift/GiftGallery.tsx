@@ -122,6 +122,9 @@ export default function GiftGallery() {
       <GiftAuthModal
         open={redeeming || pendingCard !== null}
         intent={redeeming ? "redeem" : "send"}
+        guestHref={
+          redeeming || pendingCard === null ? undefined : `/gift/buy?design=${pendingCard}`
+        }
         onClose={() => {
           setRedeeming(false);
           setPendingCard(null);

@@ -106,12 +106,6 @@ export type Product = {
   tag?: "New" | "Bestseller";
 };
 
-// The one thing the printed menu says about sandwiches that isn't part of any
-// one sandwich. Shown above the Sandwiches grid; the add-on prices themselves
-// are on the Spread picker, where the decision actually gets made.
-export const SANDWICH_NOTE =
-  "Served on your choice of bagel. Sandwiches do not automatically include plain cream cheese — add a spread below.";
-
 // ——— Options: defaults, pricing, and line identity ———
 
 // What a fresh picker starts on: the group's default where it has one, and
@@ -304,11 +298,6 @@ export const PRODUCTS: Product[] = [
     options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
-    // The menu sells one bagel at one price in three kinds. There is no
-    // options step in the cart yet, so the kinds are named in the copy
-    // rather than picked — a variant selector is the thing to build before
-    // anybody can actually order an everything over a plain. The same gap
-    // is what SANDWICH_NOTE below is standing in for.
     slug: "single-bagel",
     name: "Single Bagel",
     priceCents: 350,

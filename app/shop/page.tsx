@@ -1,7 +1,6 @@
 import {
   CATEGORIES,
   PRODUCTS,
-  SANDWICH_NOTE,
   isSortValue,
   searchProducts,
   sortProducts,
@@ -41,13 +40,6 @@ export default async function ShopPage({
       ) : (
         <CategoryNav activeCategory={activeCategory} activeSort={activeSort} />
       )}
-
-      {/* The board's own footnote, shown where it applies. */}
-      {activeCategory === "Sandwiches" ? (
-        <p className="-mt-1 mb-5 text-[12px] leading-[1.5] text-muted">
-          {SANDWICH_NOTE}
-        </p>
-      ) : null}
 
       <ShopCatalog
         products={products}

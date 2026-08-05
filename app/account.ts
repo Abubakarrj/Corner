@@ -295,7 +295,7 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
 // How long each stage is expected to take, in minutes from when the order went
 // in. Guesses, and named as such: nobody has timed a Corner Bagel morning.
 // They're the one place to change when somebody has.
-const PREP_MINUTES = 12;
+export const PREP_MINUTES = 12;
 const DELIVERY_MINUTES = 22;
 
 export type OrderStage = {
