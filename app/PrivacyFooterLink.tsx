@@ -24,7 +24,10 @@ export default function PrivacyFooterLink() {
         // page runs under `viewport-fit: cover`, so bottom-4 puts this line
         // inside the gesture area and the descenders get cut off by the
         // screen's own curve. Inert (env() is 0) in a normal browser tab.
-        bottom: "calc(1rem + env(safe-area-inset-bottom))",
+        //
+        // And clears the cookie banner, which docks to the same edge at a
+        // higher z-index — this line was printed straight through it.
+        bottom: "calc(1rem + env(safe-area-inset-bottom) + var(--cb-consent-h, 0px))",
         // Literal white, not a token. mixBlendMode:difference against white
         // is an inversion — it comes out dark on a light page and light on a
         // dark one, which is exactly the behaviour wanted and is why this

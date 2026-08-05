@@ -39,7 +39,7 @@ export default function GiftGallery() {
 
   return (
     <div
-      className="flex h-dvh w-full flex-col overflow-hidden"
+      className="cb-app-shell flex w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
       <main className="min-h-0 flex-1 overflow-y-auto pt-[env(safe-area-inset-top)]">

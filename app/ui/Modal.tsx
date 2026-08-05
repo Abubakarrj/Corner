@@ -98,6 +98,16 @@ export default function Modal({
       inert={!open}
       className="fixed inset-0 flex items-end justify-center sm:items-center"
       style={{
+        // A bottom sheet on a phone reaches the floor, which is where the
+        // cookie banner is. The modal has the higher z-index, so it painted
+        // over the banner rather than the other way round — no control was
+        // lost, but the banner was buried under a sheet and its OK button
+        // couldn't be reached until the sheet was closed. Sitting the sheet
+        // on top of the banner instead means both are usable, and it costs
+        // nothing once consent is given (the variable goes to 0). Centred
+        // dialogs on a wider screen are nowhere near the bottom, so this is
+        // inert there too.
+        paddingBottom: "var(--cb-consent-h, 0px)",
         zIndex: z,
         opacity: open ? 1 : 0,
         visibility: open ? "visible" : "hidden",

@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { COOKIE_CONSENT_CHANGED_EVENT } from "../CookieConsent";
+import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { DISPLAY_FONT } from "./shopControls";
 
@@ -13,34 +12,6 @@ function describeContext(fulfillment: Fulfillment): string {
 }
 
 const ERROR_RED = "var(--cb-red)";
-
-// Must match STORAGE_KEY in app/CookieConsent.tsx. The cookie banner is a
-// full-width bar docked to the same bottom-right corner this widget lives
-// in, at a higher z-index — without this, its button is unreachable behind
-// the banner until it's dismissed. Reading the same key (rather than
-// importing that component's internals, since the two live in different
-// layouts) is a small duplication in exchange for not coupling this
-// shop-only widget to a site-wide component.
-const COOKIE_CONSENT_KEY = "cb-cookie-consent-v1";
-
-function cookieBannerVisible(): boolean {
-  try {
-    return window.localStorage.getItem(COOKIE_CONSENT_KEY) === null;
-  } catch {
-    return true;
-  }
-}
-// CookieConsent's own acknowledge() sets localStorage then dispatches this
-// event — a plain localStorage write doesn't fire a "storage" event in the
-// same document that made it, so there'd otherwise be nothing to
-// re-render this on.
-function subscribeCookieBanner(callback: () => void) {
-  window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, callback);
-  return () => window.removeEventListener(COOKIE_CONSENT_CHANGED_EVENT, callback);
-}
-function getCookieBannerServerSnapshot() {
-  return false;
-}
 
 // The quick replies. Picking one sends it as the visitor's first message —
 // Riley answers it like anything else they might have typed.
@@ -141,11 +112,6 @@ type Entry = { id: number; role: "bot" | "user"; text: string };
 // cannot see orders, take payment, or issue a refund. Her briefing says so;
 // the quick replies deliberately don't imply otherwise.
 export default function ChatWidget() {
-  const bannerVisible = useSyncExternalStore(
-    subscribeCookieBanner,
-    cookieBannerVisible,
-    getCookieBannerServerSnapshot,
-  );
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
@@ -238,16 +204,21 @@ export default function ChatWidget() {
     // swallow clicks meant for the page under it. Only the launcher and the
     // open panel opt back in.
     <div
-      className={`pointer-events-none fixed right-5 z-[150] flex flex-col items-end transition-[bottom] duration-200 sm:right-6 ${
-        // Clears the cookie banner's measured height plus a gap while it's up;
-        // settles into the corner once it's dismissed. Each offset adds
-        // env(safe-area-inset-bottom) on top of its usual value — inert on
-        // ordinary pages, but keeps the launcher clear of the home-indicator
-        // area now that /shop's viewport-fit=cover puts it in play.
-        bannerVisible
-          ? "bottom-[calc(136px+env(safe-area-inset-bottom))] sm:bottom-[calc(96px+env(safe-area-inset-bottom))]"
-          : "bottom-[calc(20px+env(safe-area-inset-bottom))] sm:bottom-[calc(24px+env(safe-area-inset-bottom))]"
-      }`}
+      className="pointer-events-none fixed right-5 z-[150] flex flex-col items-end transition-[bottom] duration-200 sm:right-6"
+      style={{
+        // Sits above the cookie banner while it's up and settles into the
+        // corner once it's dismissed. --cb-consent-h is the banner's own
+        // measured height (see app/CookieConsent.tsx); this used to be a pair
+        // of hardcoded pixel values, 136 and 96, which were right for the two
+        // shapes the banner had then and wrong the moment its copy rewrapped
+        // at a different width.
+        //
+        // env(safe-area-inset-bottom) is inert on an ordinary page but keeps
+        // the launcher clear of the home-indicator area, which /shop's
+        // viewport-fit=cover puts in play.
+        bottom:
+          "calc(20px + env(safe-area-inset-bottom) + var(--cb-consent-h, 0px))",
+      }}
     >
       {/* Always mounted so it can animate closed as well as open; inert
           keeps focus and clicks out while it's hidden. The hairline border is

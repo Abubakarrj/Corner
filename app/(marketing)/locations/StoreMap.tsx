@@ -355,7 +355,12 @@ export default function StoreMap({
           >
             {locations.map((location) => (
               <div key={location.id} className="w-full shrink-0 snap-center">
-                <div className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+                {/* Capped and centred. The slide stays full-width so the
+                    snap points still land one card at a time, but the card
+                    itself stops at 2xl — across a 1440px desktop it was a
+                    shop name at the far left and an Order button at the far
+                    right with a metre of nothing between them. */}
+                <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-2xl bg-surface p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                   <button
                     type="button"
                     onClick={() => order(location)}

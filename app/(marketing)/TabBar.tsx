@@ -23,7 +23,12 @@ export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 
 // The routes that render this bar. Anything fixed to the bottom of the
 // screen has to know, or it lands on top of the tabs: PrivacyFooterLink hides
-// itself on these, and CookieConsent lifts itself clear of them.
+// itself on these.
+//
+// CookieConsent used to be in that list too. It isn't now — it docks to the
+// floor on every route and the page shortens itself by --cb-consent-h
+// instead, which carries the tab bar up with it, because the bar is part of
+// the page's column rather than fixed chrome of its own.
 //
 // Add a route here whenever it starts rendering TabBar. /shop needs no entry
 // — it sits outside the marketing route group and has no tab bar at all.
@@ -284,7 +289,10 @@ export default function TabBar({ active }: { active: TabId }) {
       }}
       aria-label="Primary"
     >
-      <ul className="m-0 flex list-none items-stretch justify-around p-0 px-2 pt-[9px]">
+      {/* max-w-2xl, centred. These shells are a phone app column; stretched
+          to a 1440px desktop the five tabs sat a hand's width apart and read
+          as a website footer rather than a tab bar. */}
+      <ul className="m-0 mx-auto flex max-w-2xl list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
           const href =
             item.id === "reorder" && account ? "/shop/account" : item.href;

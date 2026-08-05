@@ -295,6 +295,34 @@ body {
      which meant every Apple device — the only ones with real Helvetica —
      rendered Arial instead. */
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Room for the cookie banner, which is fixed and therefore invisible to
+     layout. app/CookieConsent.tsx measures itself into this variable and
+     zeroes it on dismissal, so every scrolling page gets exactly the
+     clearance it needs and none once the banner is gone. Without it the last
+     thing on a page sits under the banner with no way to reach it — which is
+     how the About page's email address and the Gift page's sign-in button
+     ended up unreachable in an in-app browser. */
+  padding-bottom: var(--cb-consent-h, 0px);
+}
+
+/* The fallback for anything that reads the variable before CookieConsent has
+   mounted — a value has to exist or calc() collapses the whole declaration. */
+:root {
+  --cb-consent-h: 0px;
+}
+
+/* The full-screen app shells: the map finder, the gift gallery, the sign-in
+   screen. Each is a fixed column — header, body, tab bar — sized to the
+   viewport, with its own internal scrolling, so `body { padding-bottom }`
+   above does nothing for them: there is no page scroll to reveal what the
+   cookie banner is sitting on.
+
+   Shortening the shell instead is what puts the tab bar and the map's Order
+   button back above the banner. This matters most in an Instagram or X
+   in-app browser, where the host app's chrome leaves the page around 560px
+   tall and every fixed pixel at the bottom is one the shell can't spare. */
+.cb-app-shell {
+  height: calc(100dvh - var(--cb-consent-h, 0px));
 }
 
 /* ——— Motion ———

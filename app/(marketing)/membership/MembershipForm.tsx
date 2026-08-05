@@ -139,7 +139,7 @@ export default function MembershipForm({
 
   return (
     <div
-      className="flex h-dvh w-full flex-col overflow-hidden"
+      className="cb-app-shell flex w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
       {/* No back button on the first step — you arrive from the Reorder tab,

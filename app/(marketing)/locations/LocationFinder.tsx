@@ -176,22 +176,40 @@ export default function LocationFinder() {
     // dvh, and the map takes the leftover height — so the header stays put,
     // the nav stays put, and the map absorbs a mobile browser's toolbars
     // coming and going rather than the page growing a scrollbar.
+    // cb-app-shell rather than h-dvh — see globals.css. It's the viewport
+    // minus the cookie banner, so the shop card and its Order button stay
+    // above it. They were underneath it in an in-app browser, on a screen
+    // that can't be scrolled to get out of the way.
     <div
-      className="flex h-dvh w-full flex-col overflow-hidden"
+      className="cb-app-shell flex w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
       {/* Spacings measured off the reference frame rather than eyeballed: at
           its 440px width the pill row is 34px tall sitting 21px down, the
           rule under the search field lands 116px into the header, and the
           header is 133px overall. */}
-      <header className="shrink-0 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center gap-2 px-4 pt-[21px]">
+      {/* mx-auto max-w-2xl — the shell is an app column, and on a desktop
+          the mode pills were floating in the middle of a 1440px band with
+          the back and close buttons pinned to opposite edges of the screen,
+          and the search rule ran the whole width. */}
+      <header className="mx-auto w-full max-w-2xl shrink-0 pt-[env(safe-area-inset-top)]">
+        {/* Everything in this row tightens below 390px.
+
+            At 320 — an iPhone SE, and roughly what an in-app browser leaves
+            you once the host app has taken its margins — the three pills and
+            the two circular buttons wanted 408px of a 320px row. The middle
+            group is flex-1, but a pill with fixed padding won't shrink, so
+            the group overflowed and shoved the close button 58px off the
+            right-hand edge, where the shell's overflow-hidden quietly ate
+            it. Nothing looked broken; there was simply no way to close the
+            screen. */}
+        <div className="flex items-center gap-1.5 px-3 pt-[21px] min-[390px]:gap-2 min-[390px]:px-4">
           <IconButtonLink href="/" label="Back">
             <BackIcon />
           </IconButtonLink>
 
           {/* The three modes, centred between the two circular buttons. */}
-          <div className="flex flex-1 items-center justify-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 min-[390px]:gap-2">
             {MODES.map(({ id, label }) => {
               const active = mode === id;
               return (
@@ -205,7 +223,7 @@ export default function LocationFinder() {
                     color: active ? onInk : ink,
                     borderColor: active ? ink : controlBorder,
                   }}
-                  className="flex h-[34px] cursor-pointer items-center rounded-full border px-4 text-[15px] leading-none transition-colors duration-150 sm:px-5"
+                  className="flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-2.5 text-[14px] leading-none transition-colors duration-150 min-[390px]:px-4 min-[390px]:text-[15px] sm:px-5"
                 >
                   {label}
                 </button>
@@ -213,9 +231,15 @@ export default function LocationFinder() {
             })}
           </div>
 
-          <IconButtonLink href="/" label="Close">
-            <CloseIcon />
-          </IconButtonLink>
+          {/* Dropped below 390px, where there simply isn't room for both.
+              It's the one to lose: it goes to the same place as the back
+              arrow beside it, so nothing becomes unreachable — a narrow
+              screen just gets one way out instead of two. */}
+          <span className="hidden min-[390px]:block">
+            <IconButtonLink href="/" label="Close">
+              <CloseIcon />
+            </IconButtonLink>
+          </span>
         </div>
 
         <div className="relative px-5 pb-[17px] pt-[26px]">
