@@ -10,11 +10,18 @@ import { setThemePreference, THEME_OPTIONS, useThemePreference } from "../theme"
 // toggle can't say "I'm not choosing", so the moment you touch it you've
 // silently opted out of the phone's own schedule without being told.
 //
-// Sized to the app's `sm` control height so it sits in a settings row next to
-// everything else without inventing a fourth button size.
+// Compact: 28px tall, which is the height iOS's own small segmented control
+// uses. It sits in the corner of the home screen and in a settings row on the
+// account page, and in both places it's chrome rather than the thing you came
+// for — a control the size of a primary button would read as one.
 //
-// Two homes: the front door under the logo, and the shop's account page. Both
-// drive the same stored preference — see app/theme.ts.
+// The segments are under the 44px tap target the guidelines ask for. That's
+// the accepted cost of a corner chip, and it's mitigated by the three targets
+// sitting side by side with nothing else near them: a miss lands on another
+// segment, which is one more tap to fix, not a mis-navigation.
+//
+// Two homes: the front door and the shop's account page. Both drive the same
+// stored preference — see app/theme.ts.
 export default function ThemeToggle({ className = "" }: { className?: string }) {
   const preference = useThemePreference();
 
@@ -22,7 +29,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
     <div
       role="radiogroup"
       aria-label="Appearance"
-      className={`inline-flex h-9 items-center rounded-full border border-line-soft bg-surface p-[3px] ${className}`}
+      className={`inline-flex h-7 items-center rounded-full border border-line-soft bg-surface p-[2px] ${className}`}
     >
       {THEME_OPTIONS.map(({ id, label }) => {
         const active = preference === id;
@@ -33,7 +40,7 @@ export default function ThemeToggle({ className = "" }: { className?: string }) 
             role="radio"
             aria-checked={active}
             onClick={() => setThemePreference(id)}
-            className={`cb-press h-[27px] cursor-pointer rounded-full px-3 text-[12px] font-medium leading-none transition-colors ${
+            className={`cb-press h-[22px] cursor-pointer rounded-full px-2.5 text-[11px] font-medium leading-none transition-colors ${
               active
                 ? "bg-ink text-on-ink"
                 : "bg-transparent text-muted hover:text-ink"

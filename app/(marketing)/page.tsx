@@ -21,7 +21,7 @@ import ThemeToggle from "../ui/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-page p-6">
+    <div className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-page p-6">
       {/* The logo is the front door into the app: tapping it opens the map,
           which is where an order starts. It used to open /about — that copy
           is still there, reachable from the About tab once you're inside. */}
@@ -48,19 +48,16 @@ export default function Home() {
         </div>
       </Link>
 
-      {/* Appearance, on the front door.
-          
-          It sits under the logo rather than floating in a corner because the
-          page is one centred object and a second one has to look placed, not
-          dropped. Clear of the privacy line in the bottom-right corner, which
-          is fixed rather than in flow. */}
-      <div className="mt-12 flex flex-col items-center gap-2.5">
-        <p
-          className="m-0 text-[11px] uppercase tracking-[0.1em] text-quiet"
-          style={{ fontFamily: "var(--font-geist-sans), sans-serif" }}
-        >
-          Appearance
-        </p>
+      {/* Appearance, in the corner opposite the privacy line, so the two bits
+          of chrome bracket the page rather than crowding each other. No label
+          above it: three segments reading Light / Dark / System say what they
+          are, and the group carries aria-label="Appearance" for anyone who
+          can't see them. The safe-area inset keeps it out of the notch on an
+          installed app. */}
+      <div
+        className="absolute right-4 z-10"
+        style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
+      >
         <ThemeToggle />
       </div>
     </div>
