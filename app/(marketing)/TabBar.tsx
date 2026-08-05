@@ -4,19 +4,19 @@ import Link from "next/link";
 import { useAccount } from "../account";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
-// Same produce palette as the pantry: olive marks the active tab, cream is
+// Same produce palette as the pantry: ink marks the active tab, cream is
 // the ground, and the rule above the bar is the shop's section border.
-const { cream, olive, border, muted } = PALETTE;
+const { cream, ink, border, muted } = PALETTE;
 
 // Resting tabs sit at the palette's muted tier and the current one steps up
-// to full olive with its underline. The gap is deliberately wider than the
+// to full ink with its underline. The gap is deliberately wider than the
 // reference's, where inactive and active are nearly the same lightness and
 // only the hue separates them; that reads as five equal tabs with one tinted,
 // rather than one you're on and four you could go to.
 //
 // This used to be the `faint` tier, which measured 3.3:1 on cream — fine for
 // an icon, under the 4.5:1 text needs at 13px. Muted is 5.3:1 and still reads
-// clearly duller than olive, so the state contrast survives the fix.
+// clearly duller than ink, so the state contrast survives the fix.
 const TAB_REST = muted;
 
 export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
@@ -289,7 +289,7 @@ export default function TabBar({ active }: { active: TabId }) {
           const href =
             item.id === "reorder" && account ? "/shop/account" : item.href;
           const isActive = item.id === active;
-          const tone = isActive ? olive : TAB_REST;
+          const tone = isActive ? ink : TAB_REST;
           const body = (
             <>
               <NavIcon id={item.id} active={isActive} />
@@ -298,7 +298,7 @@ export default function TabBar({ active }: { active: TabId }) {
                   under the label rather than a full-width indicator. */}
               <span
                 className="mt-1.5 block h-[2px] w-7 rounded-full"
-                style={{ backgroundColor: isActive ? olive : "transparent" }}
+                style={{ backgroundColor: isActive ? ink : "transparent" }}
               />
             </>
           );

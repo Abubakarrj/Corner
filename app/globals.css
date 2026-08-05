@@ -7,12 +7,12 @@
  * component as a hex is a value that cannot follow it. Adding dark mode
  * without this would mean finding all ~280 literals again next time.
  *
- * The dark set is not the light set inverted. Inverting produces grey mush:
- * olive becomes a sickly yellow, cream becomes charcoal with a green cast,
- * and the borders that separate cards from the page vanish. Instead the dark
- * ground is a deep olive charcoal — the brand's own hue, not neutral grey —
- * the olive flips role from ink to a light sage-cream that reads on it, and
- * every border is lightened until the separation it existed to make survives.
+ * The dark set is not the light set inverted — inverting produces grey mush.
+ * It's built: the ground is a warm charcoal that reads as the cream page at
+ * night, the ink flips to a warm off-white, and every border is lightened
+ * until the separation it existed to make survives. The accents are re-mixed
+ * rather than flipped, since a tint that works under text on cream is not the
+ * tint that works under text on charcoal.
  */
 :root {
   color-scheme: light;
@@ -25,10 +25,41 @@
   --cb-raise: #efebdd;
   --cb-tile: #ece6d8;
 
-  /* The brand green, and what reads on it. */
-  --cb-ink: #3e4a30;
-  --cb-on-ink: #f3f1e5;
+  /* The ink, and what reads on it.
+   *
+   * This was the brand olive, and because everything resolves through it —
+   * every heading, every line of body copy, every filled button, every active
+   * tab — the whole product came out green. A brand colour doing the work of
+   * a text colour has nowhere left to be a brand colour.
+   *
+   * So the ink is a warm near-black, and olive is demoted to what it should
+   * always have been: one accent among several, spent where it means
+   * something (the map's pins, the logo) rather than everywhere. */
+  --cb-ink: #1f1d1a;
+  --cb-on-ink: #faf7ef;
+
+  /* The accents. Each one has a job, and none of them is decoration:
+   *
+   *   olive  the brand's own green — pins, marks, the places that should
+   *          still read as Corner Bagel rather than as any cream app
+   *   sky    information and progress. Where an order is, what's estimated,
+   *          what the app is telling you rather than asking you
+   *   sun    reward and highlight. The keychain you're earning, the tag on
+   *          something new
+   *
+   * Each comes as a fill, a tint to lay under text, and an ink to set on that
+   * tint — because "use the blue" without saying which blue is how a palette
+   * turns into six blues. */
+  --cb-olive: #3e4a30;
   --cb-sage: #b7c9a2;
+
+  --cb-sky: #4f92bb;
+  --cb-sky-soft: #dceaf3;
+  --cb-sky-ink: #17394f;
+
+  --cb-sun: #e0a318;
+  --cb-sun-soft: #fbeecb;
+  --cb-sun-ink: #5a4106;
 
   /* Text, loudest first. */
   --cb-heading: #2d2d2d;
@@ -84,30 +115,41 @@
  * The first pass at this ground was #12150e — a near-black with a green cast.
  * It measured fine and looked like a switched-off screen: at that lightness
  * the hue is invisible, every surface reads as the same black, and the cards
- * only exist because of their borders. These values sit a full step up, where
- * the olive is actually legible as olive and the surfaces separate from the
- * page on their own. Still dark; no longer a void.
+ * only exist because of their borders. These sit a full step up, where the
+ * surfaces separate from the page on their own. Still dark; no longer a void.
  */
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --cb-page: #1f241c;
-  --cb-cream: #252b21;
-  --cb-panel: #2b3227;
-  --cb-surface: #30382b;
-  --cb-raise: #3a4334;
-  --cb-tile: #363e30;
+  /* Warm charcoal rather than the olive-charcoal these were. With the ink no
+     longer green there was nothing for a green ground to agree with, and a
+     tinted ground under neutral text just reads as a colour cast. */
+  --cb-page: #171614;
+  --cb-cream: #1d1c19;
+  --cb-panel: #232220;
+  --cb-surface: #282725;
+  --cb-raise: #33312e;
+  --cb-tile: #2f2d2a;
 
-  /* Olive can't be the ink on a dark ground — it flips to the light end of
-     the brand's own ramp so headings stay green rather than turning white. */
-  --cb-ink: #d5e0c2;
-  --cb-on-ink: #252b21;
+  /* The ink inverts to a warm off-white. */
+  --cb-ink: #f2eee5;
+  --cb-on-ink: #1d1c19;
+
+  --cb-olive: #93b06f;
   --cb-sage: #7f9663;
 
-  --cb-heading: #edebe4;
-  --cb-body: #bfbcb1;
-  --cb-muted: #b1ae9f;
-  --cb-faint: #a29f8d;
+  --cb-sky: #6fb0da;
+  --cb-sky-soft: #1e3648;
+  --cb-sky-ink: #a8d4ef;
+
+  --cb-sun: #e8b23c;
+  --cb-sun-soft: #3a2f14;
+  --cb-sun-ink: #f3d38a;
+
+  --cb-heading: #f2eee5;
+  --cb-body: #c2beb4;
+  --cb-muted: #b3afa4;
+  --cb-faint: #a4a094;
   /* Same treatment on the dark side: lifted until each clears AA against
      --cb-surface and --cb-cream — and lifted again with the grounds, since
      raising the ground eats the contrast these had. */
@@ -115,17 +157,17 @@
   --cb-quieter: #a19e92;
   --cb-hint: #a19e90;
 
-  --cb-line: #47513a;
-  --cb-line-soft: #505a41;
-  --cb-line-faint: #3f4833;
-  --cb-line-grey: #444a3c;
-  --cb-line-mute: #5a6448;
+  --cb-line: #403d38;
+  --cb-line-soft: #4a4741;
+  --cb-line-faint: #383530;
+  --cb-line-grey: #3d3a36;
+  --cb-line-mute: #55514a;
 
   /* The brand red is unreadable at #BE1923 on a dark ground; lifted to the
      tint that keeps the hue and clears contrast. */
   --cb-red: #f08a90;
   --cb-link: #a8bdff;
-  --cb-good-bg: #3d4f31;
+  --cb-good-bg: #2f4326;
 
   --cb-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
@@ -150,6 +192,13 @@
   --color-ink: var(--cb-ink);
   --color-on-ink: var(--cb-on-ink);
   --color-sage: var(--cb-sage);
+  --color-olive: var(--cb-olive);
+  --color-sky: var(--cb-sky);
+  --color-sky-soft: var(--cb-sky-soft);
+  --color-sky-ink: var(--cb-sky-ink);
+  --color-sun: var(--cb-sun);
+  --color-sun-soft: var(--cb-sun-soft);
+  --color-sun-ink: var(--cb-sun-ink);
   --color-heading: var(--cb-heading);
   --color-body: var(--cb-body);
   --color-muted: var(--cb-muted);

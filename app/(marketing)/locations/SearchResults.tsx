@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
 import type { StoreLocation } from "./locations";
 
-const { olive, onOlive, controlBorder, muted, faint, border } = PALETTE;
+const { ink, onInk, controlBorder, muted, faint, border } = PALETTE;
 
 export type Suggestion = { placeId: string; primary: string; secondary: string };
 
@@ -217,8 +217,8 @@ export default function SearchResults({
                 aria-pressed={active}
                 onClick={() => setChosenTab({ forQuery: query, tab: id })}
                 style={{
-                  backgroundColor: active ? olive : "transparent",
-                  color: active ? onOlive : faint,
+                  backgroundColor: active ? ink : "transparent",
+                  color: active ? onInk : faint,
                 }}
                 className="cursor-pointer rounded-full px-5 py-2.5 text-[15px] font-medium leading-none transition-colors"
               >
@@ -231,7 +231,7 @@ export default function SearchResults({
 
       {rangeNotice ? (
         <div className="py-3">
-          <p className="m-0 text-[14px] font-medium" style={{ color: olive }}>
+          <p className="m-0 text-[14px] font-medium" style={{ color: ink }}>
             That address is outside our delivery area.
           </p>
           <p className="m-0 mt-1 text-[13px]" style={{ color: muted }}>
@@ -268,7 +268,7 @@ export default function SearchResults({
                     style={{ borderColor: controlBorder }}
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px]" style={{ color: olive }}>
+                      <span className="block truncate text-[15px]" style={{ color: ink }}>
                         {store.name}
                       </span>
                       <span className="block truncate text-[13px]" style={{ color: muted }}>
@@ -288,7 +288,7 @@ export default function SearchResults({
                     style={{ borderColor: controlBorder }}
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px]" style={{ color: olive }}>
+                      <span className="block truncate text-[15px]" style={{ color: ink }}>
                         {suggestion.primary}
                       </span>
                       {suggestion.secondary ? (

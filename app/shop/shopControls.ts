@@ -55,14 +55,29 @@ export const PALETTE = {
   cream: "var(--cb-cream)",
   // A half-step up from the ground, for cards and floating controls.
   surface: "var(--cb-surface)",
-  // The brand green that carries the shop: active pills, headings, body text.
-  // In dark mode this flips to the light end of the same ramp — see the note
-  // in globals.css.
-  olive: "var(--cb-ink)",
-  // Reads on olive.
-  onOlive: "var(--cb-on-ink)",
+  // What carries the shop: headings, body text, active pills, filled buttons.
+  // A warm near-black, and a warm off-white in dark mode.
+  //
+  // This used to be called `olive` and used to *be* olive, which is how the
+  // whole product came out green — a brand colour asked to do a text colour's
+  // job ends up everywhere, and then it isn't a brand colour any more. The
+  // name changed with the value on purpose: `olive` now means olive.
+  ink: "var(--cb-ink)",
+  // Reads on ink.
+  onInk: "var(--cb-on-ink)",
+  // The brand green, spent where it should read as Corner Bagel rather than
+  // as any cream app — the map's pins, the marks on the About page.
+  olive: "var(--cb-olive)",
   // Sage — the lighter produce green, for secondary marks.
   sage: "var(--cb-sage)",
+  // Information and progress: where an order is, what's estimated.
+  sky: "var(--cb-sky)",
+  skySoft: "var(--cb-sky-soft)",
+  skyInk: "var(--cb-sky-ink)",
+  // Reward and highlight: the keychain being earned, a tag on something new.
+  sun: "var(--cb-sun)",
+  sunSoft: "var(--cb-sun-soft)",
+  sunInk: "var(--cb-sun-ink)",
   // Borders, in the two weights the shop uses: the heavier one separates
   // sections, the lighter one outlines controls.
   border: "var(--cb-line)",

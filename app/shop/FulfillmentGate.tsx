@@ -7,7 +7,7 @@ import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfill
 import { ButtonLink } from "../ui/Button";
 import { PALETTE } from "./shopControls";
 
-const { olive, cream, border, muted, controlBorder } = PALETTE;
+const { ink, cream, border, muted, controlBorder } = PALETTE;
 
 // The shop is inert until an order has somewhere to go.
 //
@@ -42,7 +42,7 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
       <div className="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
         <p
           className="m-0 text-[20px] font-medium leading-tight"
-          style={{ color: olive }}
+          style={{ color: ink }}
         >
           Where are we sending this?
         </p>
@@ -79,7 +79,7 @@ export function FulfillmentBanner() {
     >
       <span
         className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]"
-        style={{ color: olive, borderColor: controlBorder }}
+        style={{ color: ink, borderColor: controlBorder }}
       >
         {mode}
       </span>
@@ -89,7 +89,7 @@ export function FulfillmentBanner() {
       <Link
         href="/locations"
         className="shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
-        style={{ color: olive }}
+        style={{ color: ink }}
       >
         Change
       </Link>

@@ -42,7 +42,7 @@ export default function ProductListRow({ product }: { product: Product }) {
             {product.name}
           </Link>
           {product.tag ? (
-            <span className="rounded-full bg-ink/90 px-2 py-[2px] text-[9px] font-medium uppercase tracking-[0.06em] text-on-ink">
+            <span className="rounded-full bg-sun px-2 py-[2px] text-[9px] font-medium uppercase tracking-[0.06em] text-sun-ink">
               {product.tag}
             </span>
           ) : null}

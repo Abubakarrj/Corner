@@ -48,7 +48,7 @@ export default function ProductCard({ product }: { product: Product }) {
           className="aspect-square w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
         {product.tag ? (
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-ink/90 px-2 py-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-on-ink">
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-sun px-2 py-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-sun-ink">
             {product.tag}
           </span>
         ) : null}

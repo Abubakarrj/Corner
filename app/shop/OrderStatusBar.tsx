@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { activeOrder, progressFor, useOrders } from "../account";
 import { PALETTE } from "./shopControls";
 
-const { olive, onOlive } = PALETTE;
+const { skySoft, skyInk } = PALETTE;
 
 // The live-order bar, in the shape a delivery app puts at the top of its home
 // screen: what's happening, when it's expected, and a way through to the
@@ -33,7 +33,11 @@ export default function OrderStatusBar() {
   return (
     <Link
       href={`/shop/order/${order.id}`}
-      style={{ backgroundColor: olive, color: onOlive }}
+      // Sky, because this bar is the app telling you something rather than
+      // asking you for something. It used to be a filled ink slab, which is
+      // the same weight as a primary button and read as one — the loudest
+      // thing on the screen, above a menu you are trying to read.
+      style={{ backgroundColor: skySoft, color: skyInk }}
       className="block cursor-pointer transition-opacity hover:opacity-95"
     >
       <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6">

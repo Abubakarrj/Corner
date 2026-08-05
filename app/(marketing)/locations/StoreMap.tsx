@@ -7,7 +7,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { PALETTE } from "../../shop/shopControls";
 import { INITIAL_BOUNDS, type StoreLocation } from "./locations";
 
-const { olive, onOlive, muted } = PALETTE;
+const { ink, onInk, olive, muted } = PALETTE;
 
 // A real slippy map rather than a picture of one — it pans, it zooms, and
 // "Search area" means something because there are real bounds to read.
@@ -25,9 +25,10 @@ const TILE_ATTRIBUTION = "© OpenStreetMap";
 // bundlers break. A divIcon sidesteps that entirely and lets the pin carry
 // the brand colour: an inline SVG teardrop, anchored at its point.
 function pinIcon(kind: StoreLocation["kind"]) {
-  // Olive for the shops and sage for catering kitchens — the same two greens the
-  // pantry uses for primary and secondary, and both dark enough to read
-  // against the map's pale land.
+  // Olive for the shops and sage for catering kitchens. This is one of the few
+  // places the brand green still does the work: a pin is a mark on somebody
+  // else's map and it should read as ours, where a black pin would read as the
+  // map's own. Both are dark enough to hold against the pale land.
   const fill = kind === "shop" ? olive : "var(--cb-sage)";
   return L.divIcon({
     className: "",
@@ -75,11 +76,11 @@ function MapBridge({
 function LocateIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="3.2" fill={olive} />
-      <circle cx="12" cy="12" r="7" stroke={olive} strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3.2" fill={ink} />
+      <circle cx="12" cy="12" r="7" stroke={ink} strokeWidth="1.8" />
       <path
         d="M12 1.5v3.2M12 19.3v3.2M22.5 12h-3.2M4.7 12H1.5"
-        stroke={olive}
+        stroke={ink}
         strokeWidth="1.8"
         strokeLinecap="round"
       />
@@ -115,7 +116,7 @@ export default function StoreMap({
   // finger stays in charge.
   const [cardIndex, setCardIndex] = useState(0);
   // Which card's Order button has been pressed. The button is white at rest
-  // and fills olive when it's chosen, and this holds that state long enough
+  // and fills ink when it's chosen, and this holds that state long enough
   // to be seen: the tap navigates away, so without the beat the confirmation
   // would be a frame of colour nobody registers.
   const [chosenId, setChosenId] = useState<string | null>(null);
@@ -193,7 +194,7 @@ export default function StoreMap({
               <button
                 type="button"
                 onClick={() => onChoose(location)}
-                style={{ backgroundColor: olive }}
+                style={{ backgroundColor: ink }}
                 className="cb-press mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-medium text-on-ink hover:opacity-90"
               >
                 Order from here
@@ -290,7 +291,7 @@ export default function StoreMap({
                   >
                     <span
                       className="block truncate text-[17px] font-medium leading-tight"
-                      style={{ color: olive }}
+                      style={{ color: ink }}
                     >
                       {location.name}
                     </span>
@@ -301,17 +302,17 @@ export default function StoreMap({
                       {location.city}
                     </span>
                   </button>
-                  {/* White until it's the one chosen, then it fills olive.
-                      Flat olive from the start gave no way to tell a press
+                  {/* White until it's the one chosen, then it fills ink.
+                      Flat ink from the start gave no way to tell a press
                       had registered. */}
                   <button
                     type="button"
                     onClick={() => order(location)}
                     aria-label={`Order from ${location.name}`}
                     style={{
-                      backgroundColor: chosenId === location.id ? olive : "var(--cb-surface)",
-                      color: chosenId === location.id ? onOlive : olive,
-                      borderColor: olive,
+                      backgroundColor: chosenId === location.id ? ink : "var(--cb-surface)",
+                      color: chosenId === location.id ? onInk : ink,
+                      borderColor: ink,
                     }}
                     className="cb-press shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-medium hover:bg-raise"
                   >
@@ -332,7 +333,7 @@ export default function StoreMap({
                 key={location.id}
                 className="block h-1.5 w-1.5 rounded-full transition-colors"
                 style={{
-                  backgroundColor: index === cardIndex ? olive : "rgba(62,74,48,0.28)",
+                  backgroundColor: index === cardIndex ? ink : "rgba(62,74,48,0.28)",
                 }}
               />
             ))}

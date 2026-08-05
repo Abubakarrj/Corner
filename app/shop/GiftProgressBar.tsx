@@ -46,9 +46,11 @@ export default function GiftProgressBar({ subtotalCents }: { subtotalCents: numb
           </>
         )}
       </p>
+      {/* Sun, because this is a reward being earned. As an ink bar it looked
+          like a loading indicator. */}
       <div className="h-1.5 overflow-hidden rounded-full bg-line-faint">
         <div
-          className="h-full rounded-full bg-ink transition-[width] duration-300"
+          className="h-full rounded-full bg-sun transition-[width] duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>

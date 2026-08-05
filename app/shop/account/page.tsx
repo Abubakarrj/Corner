@@ -23,7 +23,7 @@ import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
 import { DISPLAY_FONT, PALETTE } from "../shopControls";
 
-const { olive, muted, faint, border, surface, controlBorder } = PALETTE;
+const { ink, muted, faint, border, surface, controlBorder } = PALETTE;
 
 // Chip colours per status. The stage is estimated from the clock rather than
 // reported — see the warning on OrderStatus in app/account.ts — but the whole
@@ -101,7 +101,7 @@ export default function AccountPage() {
       <div className="mx-auto max-w-2xl px-5 py-10 sm:px-6">
         <h1
           className="text-[20px] font-medium"
-          style={{ color: olive, fontFamily: DISPLAY_FONT }}
+          style={{ color: ink, fontFamily: DISPLAY_FONT }}
         >
           Your account
         </h1>
@@ -132,7 +132,7 @@ export default function AccountPage() {
         <div className="min-w-0">
           <h1
             className="text-[24px] font-medium leading-tight tracking-[-0.01em]"
-            style={{ color: olive, fontFamily: DISPLAY_FONT }}
+            style={{ color: ink, fontFamily: DISPLAY_FONT }}
           >
             {greeting()}
             {account.name ? `, ${account.name.split(" ")[0]}` : ""}
@@ -151,7 +151,7 @@ export default function AccountPage() {
           className="mt-8 rounded-2xl border p-6 text-center"
           style={{ borderColor: border, backgroundColor: surface }}
         >
-          <p className="text-[14px] font-medium" style={{ color: olive }}>
+          <p className="text-[14px] font-medium" style={{ color: ink }}>
             No orders yet.
           </p>
           <p className="mx-auto mt-1.5 max-w-xs text-[13px] leading-[1.5]" style={{ color: muted }}>
@@ -183,7 +183,7 @@ export default function AccountPage() {
                       />
                       <p
                         className="mt-2.5 line-clamp-1 text-[14px]"
-                        style={{ color: olive, fontFamily: DISPLAY_FONT }}
+                        style={{ color: ink, fontFamily: DISPLAY_FONT }}
                       >
                         {usual.name}
                       </p>
@@ -227,7 +227,7 @@ export default function AccountPage() {
                   className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5"
                   style={{ borderColor: border, backgroundColor: surface }}
                 >
-                  <span className="min-w-0 truncate text-[14px]" style={{ color: olive }}>
+                  <span className="min-w-0 truncate text-[14px]" style={{ color: ink }}>
                     {order.id} &middot;{" "}
                     {STATUS_LABEL[
                       progressFor(order).stages[progressFor(order).current].status
@@ -290,13 +290,13 @@ function OrderCard({ order }: { order: PlacedOrder }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[14px]" style={{ color: olive }}>
+          <span className="text-[14px]" style={{ color: ink }}>
             {order.id}
           </span>
           <StatusChip status={progress.stages[progress.current].status} />
         </div>
 
-        <p className="mt-1 line-clamp-1 text-[14px]" style={{ color: olive }}>
+        <p className="mt-1 line-clamp-1 text-[14px]" style={{ color: ink }}>
           {describeOrderItems(order)}
         </p>
         <p className="mt-0.5 text-[12px]" style={{ color: faint }}>
@@ -306,7 +306,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
         <div className="mt-2 flex items-end justify-between gap-3">
           {/* What it came to, not what the food cost — the same number the
               tracker and the confirmation show. */}
-          <span className="text-[15px]" style={{ color: olive }}>
+          <span className="text-[15px]" style={{ color: ink }}>
             {formatPrice(orderTotals(order).totalCents)}
           </span>
           {live ? (

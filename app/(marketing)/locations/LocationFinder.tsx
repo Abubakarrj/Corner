@@ -17,11 +17,11 @@ import TabBar from "../TabBar";
 import { LOCATIONS, searchLocations, type StoreLocation } from "./locations";
 
 // Dressed in the shop's produce palette rather than the reference's own
-// greys: deep olive carries the active state, cream is the ground, and the
+// greys: deep ink carries the active state, cream is the ground, and the
 // rules are the same two border weights the catalog uses. The reference's
 // geometry is untouched — only its colours and typeface change, so the
 // finder and the pantry read as one product.
-const { cream, olive, onOlive, border, controlBorder, muted } = PALETTE;
+const { cream, ink, onInk, border, controlBorder, muted } = PALETTE;
 
 // Leaflet touches window at import time, so the map can only ever be a
 // client-side chunk — ssr:false is load-bearing, not a preference. The
@@ -194,9 +194,9 @@ export default function LocationFinder() {
                   onClick={() => changeMode(id)}
                   aria-pressed={active}
                   style={{
-                    backgroundColor: active ? olive : "transparent",
-                    color: active ? onOlive : olive,
-                    borderColor: active ? olive : controlBorder,
+                    backgroundColor: active ? ink : "transparent",
+                    color: active ? onInk : ink,
+                    borderColor: active ? ink : controlBorder,
                   }}
                   className="flex h-[34px] cursor-pointer items-center rounded-full border px-4 text-[15px] leading-none transition-colors duration-150 sm:px-5"
                 >

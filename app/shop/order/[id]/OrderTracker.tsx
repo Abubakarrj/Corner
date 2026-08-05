@@ -16,7 +16,7 @@ import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
 import { DISPLAY_FONT, PALETTE } from "../../shopControls";
 
-const { olive, muted, faint, border, surface, controlBorder, sage } = PALETTE;
+const { ink, muted, faint, border, surface, controlBorder, sky } = PALETTE;
 
 // The order-tracking screen, in the shape a food-delivery app uses: a headline
 // that says where the order is, a bar that fills, the stages under it, then
@@ -43,7 +43,7 @@ export default function OrderTracker({ id }: { id: string }) {
   if (!order) {
     return (
       <div className="mx-auto max-w-2xl px-5 py-12 text-center sm:px-6">
-        <p className="text-[16px] font-medium" style={{ color: olive }}>
+        <p className="text-[16px] font-medium" style={{ color: ink }}>
           We can&rsquo;t find that order.
         </p>
         <p className="mx-auto mt-2 max-w-xs text-[14px] leading-[1.5]" style={{ color: muted }}>
@@ -72,7 +72,7 @@ export default function OrderTracker({ id }: { id: string }) {
 
       <h1
         className="mt-5 text-[26px] font-medium leading-[1.15] tracking-[-0.02em]"
-        style={{ color: olive, fontFamily: DISPLAY_FONT }}
+        style={{ color: ink, fontFamily: DISPLAY_FONT }}
       >
         {stage.label}
       </h1>
@@ -93,7 +93,7 @@ export default function OrderTracker({ id }: { id: string }) {
       >
         <div
           className="h-full rounded-full transition-[width] duration-700 ease-out"
-          style={{ width: `${Math.max(6, progress.fraction * 100)}%`, backgroundColor: olive }}
+          style={{ width: `${Math.max(6, progress.fraction * 100)}%`, backgroundColor: sky }}
         />
       </div>
 
@@ -117,15 +117,17 @@ export default function OrderTracker({ id }: { id: string }) {
                   aria-hidden
                   className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2"
                   style={{
-                    borderColor: done || active ? olive : controlBorder,
-                    backgroundColor: done ? olive : active ? sage : "transparent",
+                    borderColor: done || active ? ink : controlBorder,
+                    // Done is ink because it is a fact; the stage in flight is sky
+                    // because it is the thing still happening.
+                    backgroundColor: done ? ink : active ? sky : "transparent",
                   }}
                 />
                 {last ? null : (
                   <span
                     aria-hidden
                     className="my-1 w-[2px] flex-1 rounded-full"
-                    style={{ backgroundColor: done ? olive : controlBorder }}
+                    style={{ backgroundColor: done ? ink : controlBorder }}
                   />
                 )}
               </div>
@@ -133,7 +135,7 @@ export default function OrderTracker({ id }: { id: string }) {
                 <p
                   className="m-0 text-[14px]"
                   style={{
-                    color: done || active ? olive : faint,
+                    color: done || active ? ink : faint,
                     fontWeight: active ? 500 : 400,
                   }}
                 >
@@ -157,7 +159,7 @@ export default function OrderTracker({ id }: { id: string }) {
         <a
           href={`mailto:${SHOP_EMAIL}?subject=${encodeURIComponent(`Order ${order.id}`)}`}
           className="cursor-pointer underline underline-offset-2"
-          style={{ color: olive }}
+          style={{ color: ink }}
         >
           Email the shop
         </a>
@@ -175,7 +177,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
       style={{ borderColor: border, backgroundColor: surface }}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[14px] font-medium" style={{ color: olive }}>
+        <span className="text-[14px] font-medium" style={{ color: ink }}>
           {order.id}
         </span>
         <span className="text-[13px]" style={{ color: faint }}>
@@ -195,7 +197,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
               className="h-10 w-10 shrink-0 rounded-lg"
             />
             <div className="min-w-0 flex-1">
-              <p className="m-0 text-[14px]" style={{ color: olive }}>
+              <p className="m-0 text-[14px]" style={{ color: ink }}>
                 {item.quantity}× {item.name}
               </p>
               {item.optionsLabel ? (
@@ -204,7 +206,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
                 </p>
               ) : null}
             </div>
-            <span className="shrink-0 text-[14px]" style={{ color: olive }}>
+            <span className="shrink-0 text-[14px]" style={{ color: ink }}>
               {formatPrice(item.unitCents * item.quantity)}
             </span>
           </div>
@@ -243,13 +245,13 @@ function Line({
     <div className="flex items-center justify-between gap-3 py-1">
       <span
         className={strong ? "text-[14px] font-medium" : "text-[13px]"}
-        style={{ color: strong ? olive : muted }}
+        style={{ color: strong ? ink : muted }}
       >
         {label}
       </span>
       <span
         className={strong ? "text-[15px] font-medium" : "text-[13px]"}
-        style={{ color: olive }}
+        style={{ color: ink }}
       >
         {amount}
       </span>

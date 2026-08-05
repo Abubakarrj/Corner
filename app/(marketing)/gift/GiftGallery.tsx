@@ -7,7 +7,7 @@ import GiftAuthModal from "./GiftAuthModal";
 import GiftCardArt from "./GiftCardArt";
 import { CATEGORIES, GIFT_CARDS, type Category } from "./giftCards";
 
-const { cream, olive, onOlive, controlBorder, muted } = PALETTE;
+const { cream, ink, onInk, controlBorder, muted } = PALETTE;
 
 // The gift screen, built to the reference: a heading, a redeem line, a row of
 // category pills that scrolls sideways, and the card designs stacked below.
@@ -47,11 +47,11 @@ export default function GiftGallery() {
           <div className="px-5 pt-8">
             <h1
               className="m-0 text-[24px] font-medium leading-[1.15] tracking-[-0.02em] sm:text-[27px]"
-              style={{ color: olive }}
+              style={{ color: ink }}
             >
               Send a little something around the corner
             </h1>
-            <p className="m-0 mt-3 text-[15px]" style={{ color: olive }}>
+            <p className="m-0 mt-3 text-[15px]" style={{ color: ink }}>
               Have a gift card?{" "}
               <button
                 type="button"
@@ -78,9 +78,9 @@ export default function GiftGallery() {
                     aria-pressed={active}
                     onClick={() => setCategory(active ? null : name)}
                     style={{
-                      backgroundColor: active ? olive : "transparent",
-                      color: active ? onOlive : olive,
-                      borderColor: active ? olive : controlBorder,
+                      backgroundColor: active ? ink : "transparent",
+                      color: active ? onInk : ink,
+                      borderColor: active ? ink : controlBorder,
                     }}
                     className="cb-press flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em]"
                   >
