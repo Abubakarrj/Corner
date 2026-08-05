@@ -22,14 +22,28 @@ import { setThemePreference, THEME_OPTIONS, useThemePreference } from "../theme"
 //
 // Two homes: the front door and the shop's account page. Both drive the same
 // stored preference — see app/theme.ts.
-export default function ThemeToggle({ className = "" }: { className?: string }) {
+//
+// They sit on different grounds, which is what `shell` is for. The shop is a
+// cream app and its cards are --cb-surface, a half-step up from that ground.
+// The marketing home is white, and a --cb-surface pill on it reads as a cream
+// chip on a white page — close enough to look like a mistake rather than a
+// choice. So the shell names its ground instead of assuming one.
+export default function ThemeToggle({
+  className = "",
+  shell = "surface",
+}: {
+  className?: string;
+  shell?: "surface" | "page";
+}) {
   const preference = useThemePreference();
 
   return (
     <div
       role="radiogroup"
       aria-label="Appearance"
-      className={`inline-flex h-7 items-center rounded-full border border-line-soft bg-surface p-[2px] ${className}`}
+      className={`inline-flex h-7 items-center rounded-full border border-line-soft p-[2px] ${
+        shell === "page" ? "bg-page" : "bg-surface"
+      } ${className}`}
     >
       {THEME_OPTIONS.map(({ id, label }) => {
         const active = preference === id;

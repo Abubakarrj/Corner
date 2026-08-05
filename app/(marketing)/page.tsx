@@ -58,7 +58,7 @@ export default function Home() {
         className="absolute right-4 z-10"
         style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
       >
-        <ThemeToggle />
+        <ThemeToggle shell="page" />
       </div>
     </div>
   );
