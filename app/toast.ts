@@ -13,12 +13,31 @@ import "server-only";
 //
 //   POST {host}/authentication/v1/authentication/login
 //        -> a bearer token, cached until it expires
+//   GET  {host}/menus/v2/menus
+//        -> the published menu, which is the integration to build FIRST —
+//           see the note below
 //   POST {host}/orders/v2/orders
 //        with Toast-Restaurant-External-ID: <restaurant GUID>
 //        -> the created order, with its own GUID and check
 //   GET  {host}/orders/v2/orders/{guid}
 //        -> the order's current state, which is what real order tracking
 //           would read instead of the clock-based estimate in app/account.ts
+//
+// ——— Menus before orders ———
+//
+// The tempting first integration is order submission. It is the wrong one.
+//
+// Today app/shop/products.ts is the source of truth for what exists and what
+// it costs. The moment Toast is the POS, the till is — and the two will
+// disagree, because somebody will change a price at the counter and nobody
+// will edit a TypeScript file. Then the site quotes $14.50, the customer
+// agrees to $14.50, and the window charges $15.00. That is a worse failure
+// than the site not being able to submit an order at all, and it is silent.
+//
+// So: pull the menu first and treat products.ts as a fallback for when the
+// pull fails. Sold-out belongs here too — SOLD_OUT in products.ts is
+// hand-edited precisely because this doesn't exist yet, and Toast is where
+// availability actually lives.
 //
 // ——— On payment ———
 //
