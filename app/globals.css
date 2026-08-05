@@ -130,6 +130,16 @@
   --cb-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
+/* A `dark:` variant that follows the attribute, not the media query.
+ *
+ * Tailwind's built-in one reads prefers-color-scheme, which stopped being the
+ * source of truth when the theme became a choice — it would ignore a visitor
+ * who picked light on a dark phone. Almost nothing needs this: colour differences
+ * belong in the tokens above, and a component that reaches for `dark:` to change
+ * a *value* is working around the palette. It's here for the rare case where the
+ * two themes want a different structure rather than a different shade. */
+@custom-variant dark (&:where(:root[data-theme="dark"], :root[data-theme="dark"] *));
+
 @theme inline {
   --color-page: var(--cb-page);
   --color-cream: var(--cb-cream);
