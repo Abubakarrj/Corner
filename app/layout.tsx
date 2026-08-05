@@ -38,8 +38,12 @@ export const metadata: Metadata = {
     // put the time on top of the header's controls.
     statusBarStyle: "default",
   },
+  // No SVG entry here any more. public/icon.svg is the bare bagel on a
+  // transparent ground — right for the logo, wrong for a tab, where it left
+  // the browser showing a different icon from the one on the home screen.
+  // app/favicon.ico is now the same composed artwork at 16/32/48 and Next
+  // links it automatically, so there is one icon everywhere.
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
 };
