@@ -6,9 +6,14 @@ import { PALETTE } from "../../shop/shopControls";
 
 const { cream, surface, olive, controlBorder, sage } = PALETTE;
 
-// The sheet that comes up when a gift card is tapped. Built to the reference:
-// an illustration, a line asking you to sign in, a filled primary button, and
-// a quieter guest link under it.
+// The sheet that comes up when a gift card is tapped, and when Redeem now is.
+// Built to the reference: an illustration, a line asking you to sign in, a
+// filled primary button, and a quieter guest link under it.
+//
+// Both doors need an account, so both land here — only the copy differs, and
+// only enough to answer "why am I being asked to sign in": buying a card and
+// redeeming one are different errands and the sheet should say which it
+// thinks you're on.
 //
 // What's behind each door, honestly:
 //
@@ -22,22 +27,44 @@ const { cream, surface, olive, controlBorder, sage } = PALETTE;
 //                      all unbuilt — so it does the one thing it can do
 //                      truthfully. Once amount-and-recipient exists, this is
 //                      where it gets wired in.
+export type GiftIntent = "send" | "redeem";
+
+const COPY: Record<GiftIntent, { label: string; heading: string; lede: string }> = {
+  send: {
+    label: "Sign in to keep this gift card",
+    heading: "Sign in to continue gifting",
+    lede: "Excellent choice, let\u2019s get that into your account.",
+  },
+  redeem: {
+    label: "Sign in to redeem a gift card",
+    heading: "Sign in to redeem",
+    lede: "Gift card redeem coming right up!",
+  },
+};
+
 export default function GiftAuthModal({
   open,
   onClose,
+  intent = "send",
 }: {
   open: boolean;
   onClose: () => void;
+  intent?: GiftIntent;
 }) {
+  const copy = COPY[intent];
+
   return (
-    <Modal open={open} onClose={onClose} label="Sign in to keep this gift card" z={180}>
+    // No z override. This used to sit at 180, which put it under the cookie
+    // consent bar — a sheet that something else can paint over is not a
+    // modal. Modal's default 1200 is the top of the stack.
+    <Modal open={open} onClose={onClose} label={copy.label}>
       <GiftIllustration />
 
       <p className="m-0 mt-5 text-center text-[20px] font-medium leading-[1.25] tracking-[-0.01em] text-ink">
-        Sign in to continue gifting
+        {copy.heading}
       </p>
       <p className="m-0 mt-2 text-center text-[14px] leading-[1.5] text-muted">
-        Excellent choice, let&rsquo;s get that into your account.
+        {copy.lede}
       </p>
 
       <ButtonLink href="/membership" block className="mt-6">

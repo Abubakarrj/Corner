@@ -24,6 +24,10 @@ export default function GiftGallery() {
   // the card's id rather than a bare boolean because the step after signing
   // in — amount and recipient — will need to know which design it was.
   const [pendingCard, setPendingCard] = useState<string | null>(null);
+  // Redeeming needs an account too, so it opens the same sheet with its own
+  // copy. Separate state rather than a sentinel card id: one of these is
+  // about a specific design and the other isn't about a design at all.
+  const [redeeming, setRedeeming] = useState(false);
 
   const cards = useMemo(
     () =>
@@ -51,6 +55,7 @@ export default function GiftGallery() {
               Have a gift card?{" "}
               <button
                 type="button"
+                onClick={() => setRedeeming(true)}
                 className="cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
               >
                 Redeem now
@@ -112,7 +117,16 @@ export default function GiftGallery() {
 
       <TabBar active="gift" />
 
-      <GiftAuthModal open={pendingCard !== null} onClose={() => setPendingCard(null)} />
+      {/* One sheet, two reasons to open it. Redeeming wins if both are
+          somehow set, since it's the more specific errand. */}
+      <GiftAuthModal
+        open={redeeming || pendingCard !== null}
+        intent={redeeming ? "redeem" : "send"}
+        onClose={() => {
+          setRedeeming(false);
+          setPendingCard(null);
+        }}
+      />
     </div>
   );
 }

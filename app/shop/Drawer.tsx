@@ -7,10 +7,11 @@ import { useEffect, useRef } from "react";
 // conditional rendering would snap it away — with `inert` keeping focus and
 // clicks out while it's off-screen.
 //
-// z-[220] puts the whole surface (backdrop included) above the cookie
-// consent bar (z-[200]): a drawer is a modal surface, and the basket's
+// z-[1100] puts the whole surface (backdrop included) above the cookie
+// consent bar (z-[1000]): a drawer is a modal surface, and the basket's
 // checkout button docks to the drawer's bottom edge, exactly where the
-// banner would otherwise sit on top of it.
+// banner would otherwise sit on top of it. Still under Modal's 1200, which
+// is the top of the stack.
 export default function Drawer({
   open,
   onClose,
@@ -126,7 +127,7 @@ export default function Drawer({
     // from extending the scrollable area. It does not contain the panel's
     // shadow — see panelShadowClass above for that.
     <div
-      className={`fixed inset-0 z-[220] overflow-hidden ${open ? "" : "pointer-events-none"}`}
+      className={`fixed inset-0 z-[1100] overflow-hidden ${open ? "" : "pointer-events-none"}`}
       inert={!open}
     >
       {/* A plain dim, not a blur. backdrop-filter over the whole viewport is

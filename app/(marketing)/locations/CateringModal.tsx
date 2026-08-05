@@ -12,9 +12,10 @@ const { cream, surface, olive, controlBorder } = PALETTE;
 //
 // A catering order is a conversation — headcount, date, what's in the tray,
 // how it gets there — and none of that fits a checkout that takes a quantity
-// and a bagel kind. So choosing a shop under Catering opens this instead of
-// the menu, and hands the visitor a pre-addressed email rather than a form
-// nobody is on the other end of.
+// and a bagel kind. So the flow is: pick the shop you want catering from,
+// then press Order on its card, and this opens instead of the menu, handing
+// the visitor a pre-addressed email rather than a form nobody is on the other
+// end of.
 //
 // mailto rather than a form on purpose: it needs no backend, the reply lands
 // in a thread the shop already reads, and the visitor keeps a copy of what
@@ -47,16 +48,12 @@ export default function CateringModal({
         Bagels, spreads, and sandwiches for office mornings, meetings,
         celebrations, and everything in between.
       </p>
-      <p className="m-0 mt-2.5 text-[14px] leading-[1.55] text-muted">
-        Catering packages start at 10 guests.
-      </p>
-
       <ButtonAnchor href={mailto} block className="mt-6">
         Request Catering
       </ButtonAnchor>
 
       <p className="m-0 mt-3 text-center text-[12px] text-muted">
-        Opens an email to {SHOP_EMAIL}.
+        Catering packages start at 10 guests.
       </p>
     </Modal>
   );

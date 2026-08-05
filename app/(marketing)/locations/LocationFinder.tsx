@@ -117,13 +117,13 @@ export default function LocationFinder() {
   // app/shop/layout.tsx — because a bagel picked up in Koreatown and one
   // delivered to an apartment are different orders.
   //
-  // Everything that names a specific shop does this: the card's Order button,
-  // the pin's popup, and picking one out of the search results. Home and Menu
-  // behave identically here; the only thing that differs between them is
+  // This is the Order press — on the card or in the pin's popup. Naming a
+  // shop in the search results is a lighter act; see pickFromSearch. Home and
+  // Menu behave identically here; the only thing that differs between them is
   // which tab is lit, since they're the same screen reached two ways.
   function chooseLocation(location: StoreLocation) {
-    // Catering is a conversation, not a basket. Choosing a shop under that
-    // mode opens the request sheet instead of committing a destination.
+    // Catering is a conversation, not a basket. Ordering from a shop under
+    // that mode opens the request sheet instead of committing a destination.
     if (mode === "catering") {
       setCateringFor(location);
       return;
@@ -135,6 +135,23 @@ export default function LocationFinder() {
       detail: `${location.address}, ${location.city}`,
     });
     router.push("/shop");
+  }
+
+  // Picking a shop out of the search results is not the same act as pressing
+  // Order on its card. Under Pickup the two coincide — naming a shop is
+  // choosing it — but catering has a step in between: you say which counter
+  // you're asking, look at it, then decide. So a catering search result flies
+  // the map to that shop and leaves its card under your thumb, and the sheet
+  // waits for the Order press.
+  function pickFromSearch(location: StoreLocation) {
+    if (mode === "catering") {
+      setFocus(location.position);
+      // The results panel is keyed off the query; emptying it puts the map
+      // and the shop's card back in view, which is the thing being pointed at.
+      setQuery("");
+      return;
+    }
+    chooseLocation(location);
   }
 
   // The delivery equivalent: a resolved, in-range address is a destination,
@@ -257,7 +274,7 @@ export default function LocationFinder() {
           value={query}
           stores={matching}
           onValueChange={setQuery}
-          onPickStore={chooseLocation}
+          onPickStore={pickFromSearch}
           onPickPlace={(place) => setFocus([place.lat, place.lng])}
           onResolvedAddress={chooseAddress}
         />

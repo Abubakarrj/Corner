@@ -239,7 +239,12 @@ export default function SearchResults({
             deliver within {rangeNotice.radiusMiles}. Pickup is still open.
           </p>
         </div>
-      ) : message ? (
+      ) : message && !showStores ? (
+        // Scoped to the Places tab, which is the only thing that can fail this
+        // way — `message` is the address lookup's error. Unscoped, a missing
+        // GOOGLE_PLACES_API_KEY replaced the *whole* panel with "Address
+        // search isn't configured", so typing a shop's own name under Pickup
+        // or Catering found nothing and blamed the address search for it.
         <p className="m-0 py-3 text-[13px]" style={{ color: "var(--cb-red)" }}>
           {message}
         </p>

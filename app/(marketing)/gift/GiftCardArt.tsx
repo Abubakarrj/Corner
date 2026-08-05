@@ -1,4 +1,4 @@
-import type { Art } from "./giftCards";
+import { CREAM, type Art } from "./giftCards";
 
 // Every card carries the wordmark and an outlined "GIFT CARD" badge, as in
 // the reference — that pairing is what makes a patterned rectangle read as a
@@ -67,7 +67,10 @@ function Bagels({ ink, ground }: { ink: string; ground: string }) {
 function Checker({ ink, ground, word }: { ink: string; ground: string; word: string }) {
   const squares = `repeating-conic-gradient(${ground} 0% 25%, transparent 0% 50%)`;
   return (
-    <div className="absolute inset-0" style={{ backgroundColor: "var(--cb-cream)" }}>
+    // The literal, not var(--cb-cream). The squares this shows between are
+    // the card's own paper — in dark mode the token turned them near-black
+    // and the design came apart. See the note in giftCards.ts.
+    <div className="absolute inset-0" style={{ backgroundColor: CREAM }}>
       <div
         className="absolute inset-0"
         style={{ backgroundImage: squares, backgroundSize: "40px 40px" }}

@@ -15,6 +15,13 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+// The card colours are literals, not palette tokens, and must stay that way.
+// A gift card is printed artwork: a red gingham card is red gingham on a
+// cream ground whether the phone is in light mode or dark, the same way it
+// would be in someone's hand. The one place this had leaked — the checker
+// design painted its base with var(--cb-cream) — turned that card into
+// near-black squares in dark mode.
+//
 // How the card face is drawn. The gallery maps these to real markup in
 // GiftCardArt.tsx; keeping them as names rather than raw styles means a
 // design can be restyled in one place instead of per entry.
@@ -32,7 +39,7 @@ export type GiftCard = {
   art: Art;
 };
 
-const CREAM = "#F7F4EB";
+export const CREAM = "#F7F4EB";
 const OLIVE = "#3E4A30";
 const SAGE = "#B7C9A2";
 const RED = "#BE1923";

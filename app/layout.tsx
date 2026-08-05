@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "./CookieConsent";
+import { THEME_SCRIPT } from "./themeScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,8 +46,14 @@ export const metadata: Metadata = {
 
 // Paints the browser chrome cream site-wide. /shop overrides this with its
 // own viewport export to add viewport-fit=cover; the colour is the same.
+//
+// A literal, because a <meta> tag can't resolve a custom property — this used
+// to say var(--cb-cream), which browsers ignore. It's the light value; the
+// theme script in <head> rewrites it when the page resolves to dark, which is
+// also why there's one tag here rather than a light/dark pair with `media`
+// (a manual override has to win over the system, and `media` can't do that).
 export const viewport: Viewport = {
-  themeColor: "var(--cb-cream)",
+  themeColor: "#f7f4eb",
 };
 
 // Deliberately bare otherwise — no floating chrome (corner icon, email
@@ -69,6 +76,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Before the first paint — see THEME_SCRIPT. suppressHydrationWarning
+            on <html> above is what lets it stamp data-theme without React
+            objecting that the server didn't render it. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
         {children}
         <CookieConsent />

@@ -16,6 +16,7 @@ import {
 } from "../../account";
 import { useCart } from "../CartContext";
 import { Button, ButtonLink } from "../../ui/Button";
+import ThemeToggle from "../../ui/ThemeToggle";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
@@ -249,6 +250,19 @@ export default function AccountPage() {
           </section>
         </>
       )}
+
+      {/* Settings, such as they are. Sits outside the orders branch so it's
+          reachable on a brand-new account too — the same control is on the
+          About tab for anyone not signed in. */}
+      <section className="mt-9 border-t pt-6" style={{ borderColor: border }}>
+        <SectionHeading>Appearance</SectionHeading>
+        <div className="flex items-center justify-between gap-4">
+          <p className="m-0 text-[13px] leading-[1.5]" style={{ color: muted }}>
+            Follows your phone unless you say otherwise.
+          </p>
+          <ThemeToggle className="shrink-0" />
+        </div>
+      </section>
     </div>
   );
 }

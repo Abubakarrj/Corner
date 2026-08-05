@@ -125,7 +125,14 @@ export default function StoreMap({
   function order(location: StoreLocation) {
     if (chosenId) return;
     setChosenId(location.id);
-    window.setTimeout(() => onChoose(location), 220);
+    window.setTimeout(() => {
+      onChoose(location);
+      // Under Pickup this tap navigates away and the reset never runs. Under
+      // Catering it doesn't — the sheet opens over the map — so the button
+      // has to come back to rest, or closing the sheet leaves a filled Order
+      // that the guard above refuses to press a second time.
+      window.setTimeout(() => setChosenId(null), 500);
+    }, 220);
   }
 
   function onRailScroll() {

@@ -10,7 +10,7 @@
  * The dark set is not the light set inverted. Inverting produces grey mush:
  * olive becomes a sickly yellow, cream becomes charcoal with a green cast,
  * and the borders that separate cards from the page vanish. Instead the dark
- * ground is a very dark olive-black (the brand's own hue, not neutral grey),
+ * ground is a deep olive charcoal — the brand's own hue, not neutral grey —
  * the olive flips role from ink to a light sage-cream that reads on it, and
  * every border is lightened until the separation it existed to make survives.
  */
@@ -59,49 +59,71 @@
 
   /* Shadow, so cards keep an edge in dark mode where a black shadow can't. */
   --cb-shadow: 0 0 0 0 transparent;
+
+  /* The bottom tab bar's height, not counting the safe-area padding beneath
+     it. It's a token because two components need to agree on it: the bar
+     sets it as a floor, and the cookie consent bar subtracts it to sit above
+     rather than on top of the tabs. A number guessed in the second place
+     drifts the moment the first one changes. */
+  --cb-tab-bar-h: 66px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
+/* ——— Dark ———
+ *
+ * Keyed off an attribute rather than `prefers-color-scheme` directly, because
+ * the appearance is now a choice as well as a system setting. app/theme.ts
+ * resolves the visitor's preference — light, dark, or follow the system — to
+ * one of two literal values and stamps it on <html> before the first paint,
+ * so this file only ever has to know about the answer. Nothing here reads the
+ * media query; the script does, and it re-runs when the system flips.
+ *
+ * The first pass at this ground was #12150e — a near-black with a green cast.
+ * It measured fine and looked like a switched-off screen: at that lightness
+ * the hue is invisible, every surface reads as the same black, and the cards
+ * only exist because of their borders. These values sit a full step up, where
+ * the olive is actually legible as olive and the surfaces separate from the
+ * page on their own. Still dark; no longer a void.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
 
-    --cb-page: #12150e;
-    --cb-cream: #161a11;
-    --cb-panel: #1a1e14;
-    --cb-surface: #1e2317;
-    --cb-raise: #262c1d;
-    --cb-tile: #232819;
+  --cb-page: #1f241c;
+  --cb-cream: #252b21;
+  --cb-panel: #2b3227;
+  --cb-surface: #30382b;
+  --cb-raise: #3a4334;
+  --cb-tile: #363e30;
 
-    /* Olive can't be the ink on a dark ground — it flips to the light end of
-       the brand's own ramp so headings stay green rather than turning white. */
-    --cb-ink: #d5e0c2;
-    --cb-on-ink: #161a11;
-    --cb-sage: #6f8455;
+  /* Olive can't be the ink on a dark ground — it flips to the light end of
+     the brand's own ramp so headings stay green rather than turning white. */
+  --cb-ink: #d5e0c2;
+  --cb-on-ink: #252b21;
+  --cb-sage: #7f9663;
 
-    --cb-heading: #e9e7e0;
-    --cb-body: #b6b3a8;
-    --cb-muted: #a8a596;
-    --cb-faint: #928f7d;
-    /* Same treatment on the dark side: lifted until each clears AA against
-       --cb-surface and --cb-cream. --cb-hint was the only one still short. */
-    --cb-quiet: #9c9a8d;
-    --cb-quieter: #979488;
-    --cb-hint: #8f8c7d;
+  --cb-heading: #edebe4;
+  --cb-body: #bfbcb1;
+  --cb-muted: #b1ae9f;
+  --cb-faint: #a29f8d;
+  /* Same treatment on the dark side: lifted until each clears AA against
+     --cb-surface and --cb-cream — and lifted again with the grounds, since
+     raising the ground eats the contrast these had. */
+  --cb-quiet: #a6a497;
+  --cb-quieter: #a19e92;
+  --cb-hint: #a19e90;
 
-    --cb-line: #333a26;
-    --cb-line-soft: #3b4330;
-    --cb-line-faint: #2e3421;
-    --cb-line-grey: #2f332a;
-    --cb-line-mute: #454c38;
+  --cb-line: #47513a;
+  --cb-line-soft: #505a41;
+  --cb-line-faint: #3f4833;
+  --cb-line-grey: #444a3c;
+  --cb-line-mute: #5a6448;
 
-    /* The brand red is unreadable at #BE1923 on near-black; lifted to the
-       tint that keeps the hue and clears contrast. */
-    --cb-red: #ef7a80;
-    --cb-link: #9db6ff;
-    --cb-good-bg: #2c3a22;
+  /* The brand red is unreadable at #BE1923 on a dark ground; lifted to the
+     tint that keeps the hue and clears contrast. */
+  --cb-red: #f08a90;
+  --cb-link: #a8bdff;
+  --cb-good-bg: #3d4f31;
 
-    --cb-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  }
+  --cb-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 @theme inline {
@@ -264,15 +286,17 @@ body {
 /* The two-letter product placeholders. Each product's swatch is picked to
    read boldly on the light tile (#ece6d8) — which leaves it too dark to see
    on the dark tile, so dark mode lifts the whole letter rather than every
-   product carrying a second hex. 1.5 is the multiplier the swatches were
-   verified against: every one of them clears 3:1 on both tiles with it. */
+   product carrying a second hex. 1.75 is the multiplier the swatches were
+   verified against: every one of them clears 3:1 on both tiles with it. Note
+   the ceiling — brightness() clamps each channel at 255, so a very saturated
+   colour hits the wall in its strongest channel and stops getting lighter.
+   That is why the brand red on the gift card is #C0303B and not the darker
+   #B5121E it wants to be. */
 .cb-initials {
   filter: none;
 }
-@media (prefers-color-scheme: dark) {
-  .cb-initials {
-    filter: brightness(1.5);
-  }
+:root[data-theme="dark"] .cb-initials {
+  filter: brightness(1.75);
 }
 
 /* Every interactive surface gets the same press. A tap that does nothing

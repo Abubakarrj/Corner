@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
+import { hasTabBar } from "./(marketing)/TabBar";
+import { Button } from "./ui/Button";
 
 const STORAGE_KEY = "cb-cookie-consent-v1";
 const BRAND_RED = "var(--cb-red)";
@@ -67,20 +70,34 @@ function acknowledge() {
 // localStorage there just like the drop-list modal does here.
 export default function CookieConsent() {
   const consented = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const onTabBarRoute = hasTabBar(usePathname());
   if (consented) return null;
 
   return (
     <div
       role="region"
       aria-label="Cookie consent"
-      // The extra bottom padding is inert (env() resolves to 0) everywhere
-      // except the shop, which opts into viewport-fit=cover — there, it
-      // keeps this bar clear of the home-indicator gesture area instead of
-      // sitting flush against it.
-      className="fixed inset-x-0 bottom-0 z-[200] flex flex-col items-center justify-between gap-3 border-t border-line-grey bg-raise px-5 pt-4 sm:flex-row sm:px-8"
+      // z-[1000] rather than the 200 this used to carry. Leaflet hands its
+      // own panes and controls z-indexes in the 400–800 band, and since
+      // .leaflet-container sets no z-index of its own it creates no stacking
+      // context — so those panes compete in the root stacking context and a
+      // bar at 200 renders *underneath the map*. On an installed PWA that
+      // looked like the banner was cut off at the bottom of the screen; it
+      // wasn't clipped, the map was painted over it.
+      className="fixed inset-x-0 z-[1000] flex flex-col items-center justify-between gap-3 border-t border-line-grey bg-raise px-5 pt-4 sm:flex-row sm:px-8"
       style={{
         fontFamily: "var(--font-geist-sans), sans-serif",
-        paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+        // Above the tab bar on the screens that have one, rather than over
+        // the top of it — a consent bar that hides the navigation is a
+        // consent bar people dismiss without reading, if they can find it.
+        // The tab bar already sits above the home indicator on those routes,
+        // so only the other case needs the safe-area padding.
+        bottom: onTabBarRoute
+          ? "calc(var(--cb-tab-bar-h) + env(safe-area-inset-bottom))"
+          : 0,
+        paddingBottom: onTabBarRoute
+          ? "1rem"
+          : "calc(1rem + env(safe-area-inset-bottom))",
       }}
     >
       <p className="m-0 text-center text-[13px] text-body sm:text-left">
@@ -99,14 +116,15 @@ export default function CookieConsent() {
         </Link>{" "}
         to our use of cookies.
       </p>
-      <button
-        type="button"
-        onClick={acknowledge}
-        style={{ backgroundColor: BRAND_RED }}
-        className="shrink-0 cursor-pointer px-6 py-2 text-[13px] font-medium uppercase tracking-[0.06em] text-on-ink transition-opacity hover:opacity-90"
-      >
+      {/* The app's own primary button, not a square of brand red. The red
+          version was the last hand-rolled button left after the design pass,
+          and in dark mode — where the brand red lifts to a pink tint so it
+          can be read as text — a filled block of it came out hot pink over
+          an olive page. As a link colour the tint is right; as a fill it
+          never was. */}
+      <Button size="sm" className="shrink-0" onClick={acknowledge}>
         OK
-      </button>
+      </Button>
     </div>
   );
 }

@@ -21,6 +21,18 @@ const TAB_REST = muted;
 
 export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
 
+// The routes that render this bar. Anything fixed to the bottom of the
+// screen has to know, or it lands on top of the tabs: PrivacyFooterLink hides
+// itself on these, and CookieConsent lifts itself clear of them.
+//
+// Add a route here whenever it starts rendering TabBar. /shop needs no entry
+// — it sits outside the marketing route group and has no tab bar at all.
+export const TAB_BAR_ROUTES = ["/locations", "/membership", "/gift"];
+
+export function hasTabBar(pathname: string): boolean {
+  return TAB_BAR_ROUTES.includes(pathname);
+}
+
 // The app-shell tab bar, shared by every screen that has one. It lives here
 // rather than inside the location finder because more than one page shows it
 // now, and a tab bar that differs between screens is worse than none.
@@ -261,7 +273,15 @@ export default function TabBar({ active }: { active: TabId }) {
   return (
     <nav
       className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
-      style={{ backgroundColor: cream, borderColor: border, fontFamily: SHOP_FONT }}
+      style={{
+        backgroundColor: cream,
+        borderColor: border,
+        fontFamily: SHOP_FONT,
+        // Pins the height the cookie bar offsets itself by — see the token's
+        // note in globals.css. A floor rather than a fixed height, so a
+        // longer label wrapping makes the bar taller instead of clipping.
+        minHeight: "calc(var(--cb-tab-bar-h) + env(safe-area-inset-bottom))",
+      }}
       aria-label="Primary"
     >
       <ul className="m-0 flex list-none items-stretch justify-around p-0 px-2 pt-[9px]">
