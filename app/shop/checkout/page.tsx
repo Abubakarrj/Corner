@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useCart } from "../CartContext";
-import { formatPrice, getProduct } from "../products";
+import { useCart, useCartRows } from "../CartContext";
+import { formatPrice } from "../products";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { DISPLAY_FONT } from "../shopControls";
 
@@ -15,7 +15,7 @@ const inputClass =
   "w-full min-w-0 bg-transparent text-[16px] text-[#3E4A30] outline-none placeholder:text-[#9A9A9A]";
 
 export default function CheckoutPage() {
-  const { lines, subtotalCents, clear } = useCart();
+  const { subtotalCents, clear } = useCart();
   const fulfillment = useFulfillment();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,16 +23,18 @@ export default function CheckoutPage() {
   const [status, setStatus] = useState<"idle" | "sending" | "placed">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const rows = lines
-    .map((line) => ({ line, product: getProduct(line.slug) }))
-    .filter((row): row is { line: (typeof lines)[number]; product: NonNullable<ReturnType<typeof getProduct>> } =>
-      Boolean(row.product),
-    );
+  const rows = useCartRows();
+
+  // A row that never got its bagel chosen can't be made, and the endpoint
+  // refuses it — so the button refuses first, and says where to fix it
+  // rather than failing on submit.
+  const incomplete = rows.filter((row) => !row.complete);
 
   const valid =
     name.trim().length > 0 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    rows.length > 0;
+    rows.length > 0 &&
+    incomplete.length === 0;
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -54,11 +56,15 @@ export default function CheckoutPage() {
           // as-is rather than assumed — the kitchen needs it more than the
           // basket does.
           fulfillment,
-          items: rows.map(({ line, product }) => ({
+          // Options travel with each line — the kitchen needs to know which
+          // bagel, and the endpoint reprices from them rather than trusting
+          // the priceCents sent alongside.
+          items: rows.map(({ line, product, unitCents }) => ({
             slug: product.slug,
             name: product.name,
             quantity: line.quantity,
-            priceCents: product.priceCents,
+            options: line.options,
+            priceCents: unitCents,
           })),
           subtotalCents,
         }),
@@ -103,14 +109,14 @@ export default function CheckoutPage() {
             </p>
           ) : null}
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
-            Back to the pantry
+            Back to the menu
           </Link>
         </div>
       ) : rows.length === 0 ? (
         <div>
           <p className="text-[14px] text-[#6F6A5C]">Your cart is empty.</p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
-            Browse the pantry
+            Browse the menu
           </Link>
         </div>
       ) : (
@@ -158,6 +164,16 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {incomplete.length > 0 ? (
+              <p role="alert" style={{ color: BRAND_RED }} className="text-[12px]">
+                {incomplete[0].product.name} still needs its options.{" "}
+                <Link href="/shop/cart" className="cursor-pointer underline">
+                  Choose in your basket
+                </Link>
+                .
+              </p>
+            ) : null}
+
             {error ? (
               <p role="alert" style={{ color: BRAND_RED }} className="text-[12px]">
                 {error}
@@ -183,13 +199,18 @@ export default function CheckoutPage() {
               Order summary
             </h2>
             <div className="flex flex-col divide-y divide-[#E4DECE]">
-              {rows.map(({ line, product }) => (
-                <div key={line.slug} className="flex items-center justify-between py-2.5 text-[14px]">
-                  <span className="text-[#3E4A30]">
+              {rows.map(({ line, product, key, lineCents, chosen }) => (
+                <div key={key} className="flex items-start justify-between gap-3 py-2.5 text-[14px]">
+                  <span className="min-w-0 text-[#3E4A30]">
                     {product.name} <span className="text-[#8A8A8A]">×{line.quantity}</span>
+                    {chosen.length > 0 ? (
+                      <span className="mt-0.5 block text-[12px] text-[#6F6A5C]">
+                        {chosen.join(" · ")}
+                      </span>
+                    ) : null}
                   </span>
-                  <span className="text-[#3E4A30]">
-                    {formatPrice(product.priceCents * line.quantity)}
+                  <span className="whitespace-nowrap text-[#3E4A30]">
+                    {formatPrice(lineCents)}
                   </span>
                 </div>
               ))}

@@ -5,8 +5,9 @@ import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
 import FreeShippingBar from "./FreeShippingBar";
 import CrossSellStrip from "./CrossSellStrip";
-import { useCart } from "./CartContext";
-import { formatPrice, getCrossSellProducts, getProduct } from "./products";
+import { useCart, useCartRows } from "./CartContext";
+import OptionPicker from "./OptionPicker";
+import { formatPrice, getCrossSellProducts } from "./products";
 import { DISPLAY_FONT } from "./shopControls";
 
 function CloseIcon() {
@@ -56,14 +57,10 @@ export default function CartDrawer({
   open: boolean;
   onClose: () => void;
 }) {
-  const { lines, setQuantity, removeItem, subtotalCents, itemCount } = useCart();
+  const { lines, setQuantity, removeItem, setLineOptions, subtotalCents, itemCount } =
+    useCart();
 
-  const rows = lines
-    .map((line) => ({ line, product: getProduct(line.slug) }))
-    .filter(
-      (row): row is { line: (typeof lines)[number]; product: NonNullable<ReturnType<typeof getProduct>> } =>
-        Boolean(row.product),
-    );
+  const rows = useCartRows();
 
   return (
     <Drawer open={open} onClose={onClose} side="right" label="Basket" width="wide">
@@ -104,7 +101,7 @@ export default function CartDrawer({
             style={{ borderColor: "#3E4A30", color: "#3E4A30" }}
             className="cursor-pointer rounded-full border px-5 py-2 text-[11px] font-medium uppercase tracking-[0.06em] transition-opacity hover:opacity-70"
           >
-            Browse the pantry
+            Browse the menu
           </button>
         </div>
       ) : (
@@ -112,8 +109,8 @@ export default function CartDrawer({
           <FreeShippingBar subtotalCents={subtotalCents} />
 
           <div className="flex-1 divide-y divide-[#E7E2D2] overflow-y-auto px-6">
-            {rows.map(({ line, product }) => (
-              <div key={line.slug} className="flex gap-4 py-5">
+            {rows.map(({ line, product, key, unitCents, chosen, complete }) => (
+              <div key={key} className="flex gap-4 py-5">
                 <Link
                   href={`/shop/product/${product.slug}`}
                   onClick={onClose}
@@ -136,19 +133,42 @@ export default function CartDrawer({
                       {product.name}
                     </Link>
                     <span className="whitespace-nowrap text-[13px] text-[#3E4A30]">
-                      {formatPrice(product.priceCents * line.quantity)}
+                      {formatPrice(unitCents * line.quantity)}
                     </span>
                   </div>
+                  {/* What was chosen, so the basket is checkable at a glance
+                      — this is where a wrong bagel gets caught. */}
+                  {chosen.length > 0 ? (
+                    <span className="mt-0.5 text-[12px] text-[#6F6A5C]">
+                      {chosen.join(" · ")}
+                    </span>
+                  ) : null}
                   <span className="mt-0.5 text-[12px] text-[#8A8A8A]">
-                    {formatPrice(product.priceCents)} each
+                    {formatPrice(unitCents)} each
                   </span>
+                  {/* A line that arrived without its choices — from a
+                      basket saved before this item had any. Answering here
+                      is the only way out that doesn't mean deleting it. */}
+                  {!complete ? (
+                    <div className="mt-1.5">
+                      <p className="mb-1 text-[11px]" style={{ color: "#BE1923" }}>
+                        Choose before checking out:
+                      </p>
+                      <OptionPicker
+                        product={product}
+                        selected={line.options}
+                        onChange={(next) => setLineOptions(key, next)}
+                        idPrefix={`basket-${key}`}
+                      />
+                    </div>
+                  ) : null}
 
                   <div className="mt-auto flex items-center justify-between pt-3">
                     <div className="flex items-center rounded-full border border-[#DDD6C2]">
                       <button
                         type="button"
                         aria-label={`Decrease quantity of ${product.name}`}
-                        onClick={() => setQuantity(line.slug, line.quantity - 1)}
+                        onClick={() => setQuantity(key, line.quantity - 1)}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#3E4A30] transition-opacity hover:opacity-60"
                       >
                         −
@@ -159,7 +179,7 @@ export default function CartDrawer({
                       <button
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
-                        onClick={() => setQuantity(line.slug, line.quantity + 1)}
+                        onClick={() => setQuantity(key, line.quantity + 1)}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-[#3E4A30] transition-opacity hover:opacity-60"
                       >
                         +
@@ -167,7 +187,7 @@ export default function CartDrawer({
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeItem(line.slug)}
+                      onClick={() => removeItem(key)}
                       className="cursor-pointer text-[11px] text-[#8A8A8A] underline transition-opacity hover:opacity-70"
                     >
                       Remove
@@ -202,14 +222,27 @@ export default function CartDrawer({
             <p className="mt-1 text-[10px] text-[#8A8A8A]">
               Payment is confirmed with you after the order goes in.
             </p>
-            <Link
-              href="/shop/checkout"
-              onClick={onClose}
-              style={{ backgroundColor: "#3E4A30" }}
-              className="mt-3 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
-            >
-              Checkout
-            </Link>
+            {/* Held back while a line still needs a choice — the picker for
+                it is up in the list, so there's nowhere useful to send
+                someone who presses this. */}
+            {rows.some((row) => !row.complete) ? (
+              <span
+                aria-disabled="true"
+                style={{ backgroundColor: "#3E4A30", opacity: 0.3 }}
+                className="mt-3 block w-full rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5]"
+              >
+                Checkout
+              </span>
+            ) : (
+              <Link
+                href="/shop/checkout"
+                onClick={onClose}
+                style={{ backgroundColor: "#3E4A30" }}
+                className="mt-3 block w-full cursor-pointer rounded-full py-3 text-center text-[12px] font-medium uppercase tracking-[0.06em] text-[#F3F1E5] transition-opacity hover:opacity-90"
+              >
+                Checkout
+              </Link>
+            )}
             <Link
               href="/shop/cart"
               onClick={onClose}

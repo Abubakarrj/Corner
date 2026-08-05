@@ -21,7 +21,7 @@ export default function SearchSummary({
       </p>
       {count === 0 ? (
         <p className="mt-1 text-[12px] text-[#8A8672]">
-          Try a shorter word, or browse the full pantry.
+          Try a shorter word, or browse the full menu.
         </p>
       ) : null}
       <Link

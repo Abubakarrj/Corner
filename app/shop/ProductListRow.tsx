@@ -13,6 +13,11 @@ import { DISPLAY_FONT } from "./shopControls";
 // shopControls.ts) so switching views doesn't change the page's type.
 export default function ProductListRow({ product }: { product: Product }) {
   const { addItem } = useCart();
+  // A row is a single line of controls, and two dropdowns don't fit in one
+  // without shoving the price off the end. An item that needs choices sends
+  // you to its page to make them instead — which is the honest answer either
+  // way, since it can't go in the basket unconfigured.
+  const needsChoices = (product.options?.length ?? 0) > 0;
 
   return (
     <div className="group flex items-center gap-4 border-b border-[#E7E2D2] py-4 first:pt-0 last:border-b-0">
@@ -54,16 +59,25 @@ export default function ProductListRow({ product }: { product: Product }) {
         <span className="text-[13px] tabular-nums text-[#3E4A30]">
           {formatPrice(product.priceCents)}
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            addItem(product.slug);
-            requestOpenBasket();
-          }}
-          className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-[#3E4A30]/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
-        >
-          Add to basket
-        </button>
+        {needsChoices ? (
+          <Link
+            href={`/shop/product/${product.slug}`}
+            className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-[#3E4A30]/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
+          >
+            Choose
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              addItem(product.slug);
+              requestOpenBasket();
+            }}
+            className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-[#3E4A30]/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
+          >
+            Add to basket
+          </button>
+        )}
       </div>
     </div>
   );

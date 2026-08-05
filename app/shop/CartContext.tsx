@@ -7,30 +7,69 @@ import {
   useMemo,
   useSyncExternalStore,
 } from "react";
-import { getProduct } from "./products";
+import {
+  describeOptions,
+  getProduct,
+  lineKey,
+  normalizeOptions,
+  optionsComplete,
+  unitPriceCents,
+  type Product,
+  type SelectedOptions,
+} from "./products";
 
 const STORAGE_KEY = "cb-shop-cart-v1";
 
-// Just slug + quantity, not a snapshot of name/price — those are looked up
-// from the catalog at render time, so the cart never shows stale pricing if
-// the catalog changes.
-type CartLine = { slug: string; quantity: number };
+// Slug + the choices made + quantity — not a snapshot of name/price, which
+// are looked up from the catalog at render time so the basket never shows
+// stale pricing if the catalog changes.
+//
+// `options` is what makes an everything bagel and a plain one two lines
+// instead of a quantity of two. Lines are addressed by lineKey(), not by
+// slug, since slug alone is no longer unique in the basket.
+export type CartLine = { slug: string; quantity: number; options: SelectedOptions };
 
 const EMPTY_LINES: CartLine[] = [];
 
+// Reading is also a migration. A cart saved before options existed has bare
+// {slug, quantity} lines, and a cart saved before a choice was renamed has an
+// id nothing matches — normalizeOptions repairs both, filling each group with
+// its default (or dropping it, for a group like Bagel that has none).
+//
+// Repairing can make two lines collapse onto the same key, so they're merged
+// rather than left as duplicates the quantity controls would fight over.
 function readStoredLines(): CartLine[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return EMPTY_LINES;
-    const parsed = JSON.parse(raw) as unknown;
+    const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return EMPTY_LINES;
-    return parsed.filter(
-      (line): line is CartLine =>
-        typeof line === "object" &&
-        line !== null &&
-        typeof (line as CartLine).slug === "string" &&
-        typeof (line as CartLine).quantity === "number",
-    );
+
+    const merged = new Map<string, CartLine>();
+    for (const entry of parsed) {
+      if (typeof entry !== "object" || entry === null) continue;
+      const { slug, quantity, options } = entry as Partial<CartLine>;
+      if (typeof slug !== "string") continue;
+      if (typeof quantity !== "number" || !Number.isFinite(quantity) || quantity <= 0) {
+        continue;
+      }
+      const product = getProduct(slug);
+      // A slug the catalog no longer has is dropped here rather than carried
+      // as a row every screen has to filter out.
+      if (!product) continue;
+
+      const clean = normalizeOptions(
+        product,
+        typeof options === "object" && options !== null
+          ? (options as SelectedOptions)
+          : undefined,
+      );
+      const key = lineKey(slug, clean);
+      const existing = merged.get(key);
+      if (existing) existing.quantity += Math.floor(quantity);
+      else merged.set(key, { slug, quantity: Math.floor(quantity), options: clean });
+    }
+    return merged.size > 0 ? [...merged.values()] : EMPTY_LINES;
   } catch {
     return EMPTY_LINES;
   }
@@ -66,13 +105,20 @@ function commit(next: CartLine[]) {
   listeners.forEach((listener) => listener());
 }
 
+// The price of one of this line, choices included.
+export function lineUnitPriceCents(line: CartLine): number {
+  const product = getProduct(line.slug);
+  return product ? unitPriceCents(product, line.options) : 0;
+}
+
 type CartContextValue = {
   lines: CartLine[];
   itemCount: number;
   subtotalCents: number;
-  addItem: (slug: string, quantity?: number) => void;
-  removeItem: (slug: string) => void;
-  setQuantity: (slug: string, quantity: number) => void;
+  addItem: (slug: string, quantity?: number, options?: SelectedOptions) => void;
+  removeItem: (key: string) => void;
+  setQuantity: (key: string, quantity: number) => void;
+  setLineOptions: (key: string, options: SelectedOptions) => void;
   clear: () => void;
 };
 
@@ -81,29 +127,84 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const currentLines = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  const addItem = useCallback((slug: string, quantity = 1) => {
-    const existing = lines.find((line) => line.slug === slug);
-    if (existing) {
-      commit(
-        lines.map((line) =>
-          line.slug === slug ? { ...line, quantity: line.quantity + quantity } : line,
-        ),
-      );
-    } else {
-      commit([...lines, { slug, quantity }]);
-    }
+  const addItem = useCallback(
+    (slug: string, quantity = 1, options?: SelectedOptions) => {
+      const product = getProduct(slug);
+      if (!product) return;
+      // Normalised on the way in as well as on the way out, so a caller that
+      // passes a half-filled or stale selection can't put a line in the
+      // basket that priceOf() and describeOptions() then disagree about.
+      const clean = normalizeOptions(product, options);
+      const key = lineKey(slug, clean);
+      const existing = lines.find((line) => lineKey(line.slug, line.options) === key);
+      if (existing) {
+        commit(
+          lines.map((line) =>
+            lineKey(line.slug, line.options) === key
+              ? { ...line, quantity: line.quantity + quantity }
+              : line,
+          ),
+        );
+      } else {
+        commit([...lines, { slug, quantity, options: clean }]);
+      }
+    },
+    [],
+  );
+
+  const removeItem = useCallback((key: string) => {
+    commit(lines.filter((line) => lineKey(line.slug, line.options) !== key));
   }, []);
 
-  const removeItem = useCallback((slug: string) => {
-    commit(lines.filter((line) => line.slug !== slug));
-  }, []);
-
-  const setQuantity = useCallback((slug: string, quantity: number) => {
+  const setQuantity = useCallback((key: string, quantity: number) => {
     if (quantity <= 0) {
-      commit(lines.filter((line) => line.slug !== slug));
+      commit(lines.filter((line) => lineKey(line.slug, line.options) !== key));
       return;
     }
-    commit(lines.map((line) => (line.slug === slug ? { ...line, quantity } : line)));
+    commit(
+      lines.map((line) =>
+        lineKey(line.slug, line.options) === key ? { ...line, quantity } : line,
+      ),
+    );
+  }, []);
+
+  // Change the choices on a line that's already in the basket.
+  //
+  // This exists for the line that arrives without them: a cart saved before
+  // an item had options, or before a required group was added to one, has a
+  // row nobody can check out with — the endpoint rejects a bagel with no
+  // kind, and rightly. Without a way to answer from the basket, that row is
+  // a dead end that can only be resolved by deleting something the customer
+  // did choose to buy.
+  //
+  // Re-keys the line, so answering merges it into an identical row if one is
+  // already there rather than leaving two of the same thing.
+  const setLineOptions = useCallback((key: string, options: SelectedOptions) => {
+    const target = lines.find((line) => lineKey(line.slug, line.options) === key);
+    if (!target) return;
+    const product = getProduct(target.slug);
+    if (!product) return;
+
+    const clean = normalizeOptions(product, options);
+    const nextKey = lineKey(target.slug, clean);
+    const rest = lines.filter((line) => lineKey(line.slug, line.options) !== key);
+    const merged = rest.find((line) => lineKey(line.slug, line.options) === nextKey);
+
+    if (merged) {
+      commit(
+        rest.map((line) =>
+          lineKey(line.slug, line.options) === nextKey
+            ? { ...line, quantity: line.quantity + target.quantity }
+            : line,
+        ),
+      );
+      return;
+    }
+    commit(
+      lines.map((line) =>
+        lineKey(line.slug, line.options) === key ? { ...line, options: clean } : line,
+      ),
+    );
   }, []);
 
   const clear = useCallback(() => commit([]), []);
@@ -115,10 +216,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const subtotalCents = useMemo(
     () =>
-      currentLines.reduce((sum, line) => {
-        const product = getProduct(line.slug);
-        return product ? sum + product.priceCents * line.quantity : sum;
-      }, 0),
+      currentLines.reduce(
+        (sum, line) => sum + lineUnitPriceCents(line) * line.quantity,
+        0,
+      ),
     [currentLines],
   );
 
@@ -130,9 +231,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       addItem,
       removeItem,
       setQuantity,
+      setLineOptions,
       clear,
     }),
-    [currentLines, itemCount, subtotalCents, addItem, removeItem, setQuantity, clear],
+    [
+      currentLines,
+      itemCount,
+      subtotalCents,
+      addItem,
+      removeItem,
+      setQuantity,
+      setLineOptions,
+      clear,
+    ],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
@@ -142,4 +253,48 @@ export function useCart(): CartContextValue {
   const context = useContext(CartContext);
   if (!context) throw new Error("useCart must be used within a CartProvider");
   return context;
+}
+
+// Everything a basket row needs to render itself, resolved once. The drawer,
+// the cart page and the checkout summary all showed the same three lines of
+// derivation before options existed; with options in play they'd all have to
+// price and describe the choices too, and three copies of that is three
+// chances for the basket, the summary, and the total to disagree.
+export type CartRow = {
+  line: CartLine;
+  product: Product;
+  // Addresses this row for setQuantity/removeItem.
+  key: string;
+  // Price of one, choices included.
+  unitCents: number;
+  lineCents: number;
+  // The chosen options as labels, e.g. ["Everything", "Scallion (+$1.50)"].
+  chosen: string[];
+  // False when a required group is still unanswered — see setLineOptions.
+  // The basket shows a picker on these rows and checkout refuses them.
+  complete: boolean;
+};
+
+export function useCartRows(): CartRow[] {
+  const { lines: currentLines } = useCart();
+  return useMemo(
+    () =>
+      currentLines.flatMap<CartRow>((line) => {
+        const product = getProduct(line.slug);
+        if (!product) return [];
+        const unitCents = unitPriceCents(product, line.options);
+        return [
+          {
+            line,
+            product,
+            key: lineKey(line.slug, line.options),
+            unitCents,
+            lineCents: unitCents * line.quantity,
+            chosen: describeOptions(product, line.options),
+            complete: optionsComplete(product, line.options),
+          },
+        ];
+      }),
+    [currentLines],
+  );
 }

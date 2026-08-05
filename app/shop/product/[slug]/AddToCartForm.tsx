@@ -2,24 +2,42 @@
 
 import { useState } from "react";
 import { useCart } from "../../CartContext";
-import { formatPrice } from "../../products";
+import {
+  defaultOptions,
+  formatPrice,
+  getProduct,
+  optionsComplete,
+  unitPriceCents,
+} from "../../products";
+import OptionPicker from "../../OptionPicker";
 import { requestOpenBasket } from "../../openBasket";
 
-// The stepper plus the reference-style pill button: "ADD TO BASKET" on the
-// left, the live total (price × quantity) on the right, in one rounded
-// outline pill that fills on hover.
-export default function AddToCartForm({
-  slug,
-  priceCents,
-}: {
-  slug: string;
-  priceCents: number;
-}) {
+// The choices, the stepper, and the reference-style pill button: "ADD TO
+// BASKET" on the left, the live total (unit price × quantity, choices
+// included) on the right, in one rounded outline pill that fills on hover.
+export default function AddToCartForm({ slug }: { slug: string }) {
   const { addItem } = useCart();
+  const product = getProduct(slug);
+  const [selected, setSelected] = useState(() =>
+    product ? defaultOptions(product) : {},
+  );
   const [quantity, setQuantity] = useState(1);
 
+  if (!product) return null;
+
+  const ready = optionsComplete(product, selected);
+  const unit = unitPriceCents(product, selected);
+
   return (
-    <div>
+    <div className="flex flex-col gap-5">
+      <OptionPicker
+        product={product}
+        selected={selected}
+        onChange={setSelected}
+        size="full"
+        idPrefix={`page-${product.slug}`}
+      />
+
       <div className="flex items-center gap-3">
         <div className="flex shrink-0 items-center rounded-full border border-[#3E4A30]/30">
           <button
@@ -43,17 +61,19 @@ export default function AddToCartForm({
 
         <button
           type="button"
+          disabled={!ready}
           onClick={() => {
-            addItem(slug, quantity);
+            addItem(product.slug, quantity, selected);
             setQuantity(1);
+            setSelected(defaultOptions(product));
             // The basket drawer sliding open is the confirmation — no
             // "Added" message needed here.
             requestOpenBasket();
           }}
-          className="flex h-10 flex-1 cursor-pointer items-center justify-between rounded-full border border-[#3E4A30] px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-[#3E4A30] transition-colors hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
+          className="flex h-10 flex-1 cursor-pointer items-center justify-between rounded-full border border-[#3E4A30] px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-[#3E4A30] transition-colors hover:bg-[#3E4A30] hover:text-[#F3F1E5] disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-[#3E4A30]"
         >
           <span>Add to basket</span>
-          <span>{formatPrice(priceCents * quantity)}</span>
+          <span>{formatPrice(unit * quantity)}</span>
         </button>
       </div>
     </div>

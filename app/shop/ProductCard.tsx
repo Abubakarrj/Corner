@@ -1,8 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { formatPrice, type Product } from "./products";
+import { useState } from "react";
+import {
+  defaultOptions,
+  formatPrice,
+  optionsComplete,
+  unitPriceCents,
+  type Product,
+} from "./products";
 import ProductImage from "./ProductImage";
+import OptionPicker from "./OptionPicker";
 import { useCart } from "./CartContext";
 import { requestOpenBasket } from "./openBasket";
 import { DISPLAY_FONT } from "./shopControls";
@@ -19,6 +27,12 @@ import { DISPLAY_FONT } from "./shopControls";
 // Links are /shop-rooted, not /-rooted — see the note in ShopHeader.tsx.
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  // The choices ride on the tile rather than sending people to the product
+  // page for them: a bagel order is a handful of small decisions made fast,
+  // and a round trip per sandwich would be the slowest part of it.
+  const [selected, setSelected] = useState(() => defaultOptions(product));
+  const ready = optionsComplete(product, selected);
+  const price = unitPriceCents(product, selected);
 
   return (
     <div
@@ -56,16 +70,27 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
       </div>
 
+      <OptionPicker
+        product={product}
+        selected={selected}
+        onChange={setSelected}
+        idPrefix={`card-${product.slug}`}
+      />
+
       <button
         type="button"
+        disabled={!ready}
         onClick={() => {
-          addItem(product.slug);
+          addItem(product.slug, 1, selected);
+          // Back to the starting point, so adding an everything bagel doesn't
+          // leave the tile pre-answered for the next person's plain one.
+          setSelected(defaultOptions(product));
           requestOpenBasket();
         }}
-        className="mt-4 flex h-9 shrink-0 cursor-pointer items-center justify-between gap-2 rounded-full border border-[#3E4A30]/70 px-3.5 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5]"
+        className="mt-3 flex h-9 shrink-0 cursor-pointer items-center justify-between gap-2 rounded-full border border-[#3E4A30]/70 px-3.5 text-[10px] font-medium uppercase tracking-[0.09em] text-[#3E4A30] transition-colors hover:border-[#3E4A30] hover:bg-[#3E4A30] hover:text-[#F3F1E5] disabled:cursor-default disabled:opacity-35 disabled:hover:border-[#3E4A30]/70 disabled:hover:bg-transparent disabled:hover:text-[#3E4A30]"
       >
         <span>Add to basket</span>
-        <span className="tabular-nums">{formatPrice(product.priceCents)}</span>
+        <span className="tabular-nums">{formatPrice(price)}</span>
       </button>
     </div>
   );

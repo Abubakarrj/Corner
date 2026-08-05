@@ -20,7 +20,7 @@ export default async function ProductPage({
         href="/shop"
         className="mb-6 inline-block cursor-pointer text-[13px] text-[#6F6A5C] underline"
       >
-        ← Back to the pantry
+        ← Back to the menu
       </Link>
 
       {/* A fixed-width image column (not a 50/50 split) — this is a
@@ -63,7 +63,7 @@ export default async function ProductPage({
           </p>
 
           <div className="mt-6">
-            <AddToCartForm slug={product.slug} priceCents={product.priceCents} />
+            <AddToCartForm slug={product.slug} />
           </div>
         </div>
       </div>

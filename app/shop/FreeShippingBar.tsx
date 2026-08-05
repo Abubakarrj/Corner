@@ -1,4 +1,7 @@
+"use client";
+
 import { formatPrice, FREE_SHIPPING_THRESHOLD_CENTS } from "./products";
+import { useFulfillment } from "../fulfillment";
 
 function CheckIcon() {
   return (
@@ -18,7 +21,15 @@ function CheckIcon() {
 // concierge cart's progress bar ("You are $86.00 away from FREE
 // SHIPPING"). Pure presentation over the cart's own subtotal — no new
 // state, no separate threshold tracking beyond the one constant.
+//
+// Delivery only. Telling someone collecting a bacon-egg-and-cheese in
+// Koreatown that they're $12 away from free shipping is asking them to spend
+// more to avoid a charge that was never going to apply — the bar has to know
+// which kind of order it's attached to now that the shop does.
 export default function FreeShippingBar({ subtotalCents }: { subtotalCents: number }) {
+  const fulfillment = useFulfillment();
+  if (fulfillment?.mode !== "delivery") return null;
+
   const remainingCents = FREE_SHIPPING_THRESHOLD_CENTS - subtotalCents;
   const unlocked = remainingCents <= 0;
   const progress = Math.min(100, (subtotalCents / FREE_SHIPPING_THRESHOLD_CENTS) * 100);

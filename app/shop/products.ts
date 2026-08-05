@@ -9,6 +9,66 @@
 // The `swatch` color fills in for product photography we don't have for
 // either half yet (see ProductImage in ProductCard.tsx).
 
+// What a customer picks before an item can be made: which bagel, which
+// spread. A choice can carry a surcharge, which is what turns the board's
+// "+1.50" into a real number on the line.
+export type OptionChoice = { id: string; label: string; priceCents: number };
+
+export type OptionGroup = {
+  id: string;
+  label: string;
+  choices: OptionChoice[];
+  // A group with no default has to be answered before the item can go in the
+  // basket. Bagel works that way — "customers need to select their bagel" —
+  // while spread defaults to none, because the board is explicit that the
+  // sandwich price does not include cream cheese.
+  defaultChoiceId?: string;
+};
+
+// groupId -> choiceId. Stored on the cart line, so two of the same sandwich
+// with different bagels are two lines rather than a quantity of two.
+export type SelectedOptions = Record<string, string>;
+
+// Three kinds, one price. Deliberately no default: an everything bagel and a
+// plain one are not interchangeable, and defaulting to plain would quietly
+// decide for anyone who tapped straight past.
+export const BAGEL_GROUP: OptionGroup = {
+  id: "bagel",
+  label: "Bagel",
+  choices: [
+    { id: "plain", label: "Plain", priceCents: 0 },
+    { id: "everything", label: "Everything", priceCents: 0 },
+    { id: "sesame", label: "Sesame", priceCents: 0 },
+  ],
+};
+
+// The board's add-on box: any spread +$1.50, lox spread +$2.00, and nothing
+// at all as the default — "Sandwiches do NOT automatically include plain
+// cream cheese" is the whole reason this group exists.
+//
+// Only the eight whipped spreads are offered. Peanut butter, jelly, butter,
+// hot honey and chili crisp sit under "+ MORE" on the board rather than
+// under "spread", and no add-on price is printed for them, so they're
+// orderable on their own and not attachable here. Worth confirming with the
+// kitchen — if they can go on a sandwich, they belong in this list with
+// whatever the counter charges.
+export const SPREAD_GROUP: OptionGroup = {
+  id: "spread",
+  label: "Spread",
+  defaultChoiceId: "none",
+  choices: [
+    { id: "none", label: "No spread", priceCents: 0 },
+    { id: "plain", label: "Plain cream cheese", priceCents: 150 },
+    { id: "scallion", label: "Scallion", priceCents: 150 },
+    { id: "jalapeno", label: "Jalapeño", priceCents: 150 },
+    { id: "veggie", label: "Veggie", priceCents: 150 },
+    { id: "garlic-herb", label: "Garlic & herb", priceCents: 150 },
+    { id: "strawberry", label: "Strawberry", priceCents: 150 },
+    { id: "vegan-plain", label: "Vegan plain", priceCents: 150 },
+    { id: "lox", label: "Lox spread", priceCents: 200 },
+  ],
+};
+
 export type Product = {
   slug: string;
   name: string;
@@ -16,6 +76,9 @@ export type Product = {
   category: string;
   description: string;
   swatch: string;
+  // Choices this item can't be made without. Sandwiches take a bagel and a
+  // spread; a single bagel takes a bagel. Everything else has none.
+  options?: OptionGroup[];
   // The other things people type when they mean this. A menu name is rarely
   // the search term: nobody types "Cloud Cold Brew" when they want coffee,
   // "Good Lox Today!" when they want salmon, or "Orange Juice" when they
@@ -29,16 +92,92 @@ export type Product = {
   tag?: "New" | "Bestseller";
 };
 
-// The two things the printed menu says about sandwiches that aren't part of
-// any one sandwich. Shown above the Sandwiches grid.
-//
-// The spread add-ons are copy, not a purchasable modifier: the cart has no
-// options step, so nobody can actually attach a $1.50 schmear to a sandwich
-// yet. Saying so up front is the point — the board warns that cream cheese
-// isn't included, and a catalog that quietly dropped that warning would have
-// people arriving at a counter expecting something they didn't order.
+// The one thing the printed menu says about sandwiches that isn't part of any
+// one sandwich. Shown above the Sandwiches grid; the add-on prices themselves
+// are on the Spread picker, where the decision actually gets made.
 export const SANDWICH_NOTE =
-  "Served on your choice of bagel. Sandwiches do not automatically include plain cream cheese — add your choice of spread for $1.50, or lox spread for $2.";
+  "Served on your choice of bagel. Sandwiches do not automatically include plain cream cheese — add a spread below.";
+
+// ——— Options: defaults, pricing, and line identity ———
+
+// What a fresh picker starts on: the group's default where it has one, and
+// nothing where it doesn't. An empty answer is what "you still have to
+// choose" looks like, and it's what disables the add button.
+export function defaultOptions(product: Product): SelectedOptions {
+  const selected: SelectedOptions = {};
+  for (const group of product.options ?? []) {
+    if (group.defaultChoiceId) selected[group.id] = group.defaultChoiceId;
+  }
+  return selected;
+}
+
+// Every group answered with a choice that exists. Guards two different
+// things: a cart restored from localStorage that was saved before this item
+// had options (or before a choice was renamed), and a hand-edited request to
+// the order endpoint.
+export function normalizeOptions(
+  product: Product,
+  selected: SelectedOptions | undefined,
+): SelectedOptions {
+  const groups = product.options ?? [];
+  const clean: SelectedOptions = {};
+  for (const group of groups) {
+    const wanted = selected?.[group.id];
+    const found = group.choices.find((choice) => choice.id === wanted);
+    const fallback = group.choices.find((c) => c.id === group.defaultChoiceId);
+    const choice = found ?? fallback;
+    if (choice) clean[group.id] = choice.id;
+  }
+  return clean;
+}
+
+export function optionsComplete(product: Product, selected: SelectedOptions): boolean {
+  return (product.options ?? []).every((group) => Boolean(selected[group.id]));
+}
+
+// The item's price with its choices priced in — the number a customer should
+// see on the button before they commit, and the number the kitchen bills.
+export function unitPriceCents(product: Product, selected: SelectedOptions): number {
+  let total = product.priceCents;
+  for (const group of product.options ?? []) {
+    const choice = group.choices.find((c) => c.id === selected[group.id]);
+    if (choice) total += choice.priceCents;
+  }
+  return total;
+}
+
+// The chosen options as short labels, for the basket and the order summary:
+// ["Everything", "Scallion (+$1.50)"]. A default answer that costs nothing
+// and adds nothing — "No spread" — is left out, because listing it on every
+// line is noise that makes the lines that do carry a choice harder to spot.
+export function describeOptions(product: Product, selected: SelectedOptions): string[] {
+  const parts: string[] = [];
+  for (const group of product.options ?? []) {
+    const choice = group.choices.find((c) => c.id === selected[group.id]);
+    if (!choice) continue;
+    if (choice.priceCents === 0 && choice.id === group.defaultChoiceId) continue;
+    parts.push(
+      choice.priceCents > 0
+        ? `${choice.label} (+${formatPrice(choice.priceCents)})`
+        : choice.label,
+    );
+  }
+  return parts;
+}
+
+// What makes two basket lines the same line. An everything bagel and a plain
+// one are different things to make, so they're separate lines rather than a
+// quantity of two — this is the string that decides that, and it's what the
+// basket's quantity and remove controls address a line by.
+//
+// Sorted by group id so the key doesn't depend on the order the choices were
+// made in, and prefixed with the slug so two products can never collide.
+export function lineKey(slug: string, selected: SelectedOptions | undefined): string {
+  const pairs = Object.entries(selected ?? {})
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([group, choice]) => `${group}:${choice}`);
+  return pairs.length > 0 ? `${slug}::${pairs.join(",")}` : slug;
+}
 
 // Menu first, pantry after — the tabs run in this order, and what someone
 // came for is a sandwich far more often than a jar of oil. The four pantry
@@ -68,6 +207,7 @@ export const PRODUCTS: Product[] = [
     description: "Tomato, cucumber, red onion, capers.",
     swatch: "#C4453C",
     aliases: ["tomato sandwich", "cucumber", "capers", "no meat"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "egg-and-schmear",
@@ -77,6 +217,7 @@ export const PRODUCTS: Product[] = [
     description: "Two eggs, scallion.",
     swatch: "#E8B93F",
     aliases: ["egg sandwich", "eggs", "schmear", "cream cheese", "breakfast"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "baby-got-bec",
@@ -92,6 +233,7 @@ export const PRODUCTS: Product[] = [
       "breakfast",
       "egg sandwich",
     ],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "one-sec-please",
@@ -101,6 +243,7 @@ export const PRODUCTS: Product[] = [
     description: "Sausage, egg, cheese.",
     swatch: "#9E5432",
     aliases: ["sausage egg and cheese", "breakfast", "egg sandwich"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "the-veggie-stack",
@@ -110,6 +253,7 @@ export const PRODUCTS: Product[] = [
     description: "Avocado, tomato, cucumber, sprouts, pickled onion.",
     swatch: "#8FAE5E",
     aliases: ["veggie", "veg", "avocado", "avo", "sprouts"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "turkey-around-the-corner",
@@ -119,6 +263,7 @@ export const PRODUCTS: Product[] = [
     description: "Turkey, tomato, arugula, pickled onion, hot honey.",
     swatch: "#D08B3E",
     aliases: ["turkey sandwich", "arugula", "hot honey"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "spicy-tuna-sando",
@@ -128,6 +273,7 @@ export const PRODUCTS: Product[] = [
     description: "Spicy tuna salad, cucumber, scallion, sesame, nori.",
     swatch: "#B8471F",
     aliases: ["tuna", "sando", "spicy", "nori", "seaweed"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     slug: "good-lox-today",
@@ -137,6 +283,7 @@ export const PRODUCTS: Product[] = [
     description: "Smoked salmon, tomato, red onion, capers, dill.",
     swatch: "#E08A7E",
     aliases: ["lox", "salmon", "nova", "bagel and lox", "smoked salmon"],
+    options: [BAGEL_GROUP, SPREAD_GROUP],
   },
   {
     // The menu sells one bagel at one price in three kinds. There is no
@@ -159,6 +306,7 @@ export const PRODUCTS: Product[] = [
       "plain bagel",
       "sesame bagel",
     ],
+    options: [BAGEL_GROUP],
   },
   {
     slug: "cream-cheese-plain",

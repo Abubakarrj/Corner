@@ -50,18 +50,24 @@ export default function CrossSellStrip({
                 name={product.name}
                 className="aspect-square w-full rounded-lg"
               />
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault();
-                  addItem(product.slug);
-                }}
-                aria-label={`Add ${product.name} to basket`}
-                style={{ backgroundColor: "#3E4A30" }}
-                className="absolute bottom-1.5 right-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.25)] transition-opacity hover:opacity-90"
-              >
-                <PlusIcon />
-              </button>
+              {/* Quick-add only for things that can be made without asking
+                  anything. A sandwich needs a bagel chosen, so its tile is
+                  just the link to its page — a "+" that silently guessed
+                  would be the worst version of this control. */}
+              {(product.options?.length ?? 0) === 0 ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    addItem(product.slug);
+                  }}
+                  aria-label={`Add ${product.name} to basket`}
+                  style={{ backgroundColor: "#3E4A30" }}
+                  className="absolute bottom-1.5 right-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.25)] transition-opacity hover:opacity-90"
+                >
+                  <PlusIcon />
+                </button>
+              ) : null}
             </Link>
             <Link
               href={`/shop/product/${product.slug}`}

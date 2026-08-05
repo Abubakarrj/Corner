@@ -11,8 +11,8 @@ import { SHOP_FONT } from "./shopControls";
 // pages are written root-relative (/, /product/x, /cart) to match how
 // they resolve once rewritten — see proxy.ts for the full explanation.
 export const metadata: Metadata = {
-  title: "Corner Bagel Pantry",
-  description: "Sauces, pickles, and pantry staples from Corner Bagel.",
+  title: "Corner Bagel Menu",
+  description: "Order sandwiches, bagels, spreads and drinks from Corner Bagel.",
 };
 
 // Colours the browser chrome cream instead of the default white. Scoped to
