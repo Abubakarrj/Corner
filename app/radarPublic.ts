@@ -31,10 +31,29 @@ export type SuggestKind = keyof typeof LAYERS;
 // being pulled from tile.openstreetmap.org any more. That endpoint is for
 // light use and explicitly not for production traffic.
 export function radarStyleUrl(theme: "light" | "dark"): string {
-  const style = theme === "dark" ? "radar-default-v1" : "radar-light-v1";
+  const style = theme === "dark" ? "radar-dark-v1" : "radar-light-v1";
   return `https://api.radar.io/maps/styles/${style}?publishableKey=${encodeURIComponent(
     RADAR_PUBLISHABLE_KEY,
   )}`;
+}
+
+// Said once, in the console, when the key is missing.
+//
+// Without it the map is a flat coloured rectangle with the pins and controls
+// still on it, which is the right thing to render — but it looks like a
+// broken map rather than an unconfigured one, and there is no way to tell
+// them apart by looking. This is the note that tells them apart. It's a
+// developer's problem, so it goes where a developer looks; putting "no map
+// key" on the screen would be telling a customer about our deployment.
+let warned = false;
+export function warnIfNoMapKey() {
+  if (warned || RADAR_PUBLISHABLE_KEY) return;
+  warned = true;
+  console.warn(
+    "[map] NEXT_PUBLIC_RADAR_PUBLISHABLE_KEY is not set, so the basemap is " +
+      "blank. Note it is compiled into the bundle at build time — setting it " +
+      "needs a rebuild, not just a restart.",
+  );
 }
 
 type RadarAddress = {

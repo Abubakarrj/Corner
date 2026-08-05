@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import maplibregl from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
-import { RADAR_PUBLISHABLE_KEY, radarStyleUrl } from "../../radarPublic";
+import { RADAR_PUBLISHABLE_KEY, radarStyleUrl, warnIfNoMapKey } from "../../radarPublic";
 import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
 
@@ -145,6 +145,8 @@ export default function StoreMap({
   useEffect(() => {
     const holder = holderRef.current;
     if (!holder || mapRef.current) return;
+
+    warnIfNoMapKey();
 
     const map = new maplibregl.Map({
       container: holder,
