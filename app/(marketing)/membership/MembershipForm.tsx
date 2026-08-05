@@ -1,6 +1,6 @@
 "use client";
 
-import { BackIcon, IconButton, IconButtonLink } from "../../ui/IconButton";
+import { BackIcon, IconButton } from "../../ui/IconButton";
 import { useState } from "react";
 import { signIn } from "../../account";
 import { SHOP_EMAIL } from "../../shopFacts";
@@ -133,13 +133,24 @@ export default function MembershipForm({ initialStep = "signin" }: { initialStep
       className="flex h-dvh w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
+      {/* No back button on Login. You arrive here from the Reorder tab, so
+          there is nothing behind you — the one that used to sit here pointed
+          at the map, which is a back arrow to somewhere you have never been.
+          The tab bar is the way out. The inner steps do have somewhere to go
+          back to, and keep it. */}
       <header className="shrink-0 pt-[env(safe-area-inset-top)]">
-        <div className="px-5 pt-4">
-          <BackButton onBack={step === "signin" ? undefined : () => go("signin")} />
-        </div>
+        {step === "signin" ? null : (
+          <div className="px-5 pt-4">
+            <BackButton onBack={() => go("signin")} />
+          </div>
+        )}
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 pt-2">
+      <main
+        className={`min-h-0 flex-1 overflow-y-auto px-5 pb-8 ${
+          step === "signin" ? "pt-8" : "pt-2"
+        }`}
+      >
         {/* Keyed on the step so each screen animates in as its own thing
             rather than the fields silently swapping under a static heading. */}
         <div key={step} className="cb-rise mx-auto max-w-[380px]">
@@ -266,22 +277,18 @@ export default function MembershipForm({ initialStep = "signin" }: { initialStep
   );
 }
 
-function BackButton({ onBack }: { onBack?: () => void }) {
-  // Inside the flow, back means the previous screen; at the start of it, back
-  // means out. A bare href from Recover would drop someone on the map.
+function BackButton({ onBack }: { onBack: () => void }) {
+  // Always a step back inside the flow now — Recover and Join and New password
+  // all return to Login. It no longer has a link form, because the only thing
+  // that needed one was Login itself, and Login no longer has a back button.
   //
-  // The shell is the shared one now. This used to draw its own 40px circle
-  // filled with --cb-surface, which next to the map's unfilled 36px one — same
-  // control, same corner of the screen — read as a white disc against the
-  // cream page.
-  return onBack ? (
+  // The shell is the shared one. This used to draw its own 40px circle filled
+  // with --cb-surface, which next to the map's unfilled 36px one — same
+  // control, same corner of the screen — read as a white disc on the cream.
+  return (
     <IconButton label="Back" onClick={onBack}>
       <BackIcon />
     </IconButton>
-  ) : (
-    <IconButtonLink label="Back" href="/locations">
-      <BackIcon />
-    </IconButtonLink>
   );
 }
 
