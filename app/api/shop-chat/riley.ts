@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { SHOP_ADDRESS, SHOP_CITY, SHOP_EMAIL, SHOP_HOURS } from "../../shopFacts";
+import {
+  SHOP_ADDRESS,
+  SHOP_CITY,
+  SHOP_EMAIL,
+  SHOP_HOURS,
+  openingStatus,
+} from "../../shopFacts";
 import {
   CATEGORIES,
   formatPrice,
@@ -10,6 +16,10 @@ import {
   PRODUCTS,
   SPREAD_GROUP,
   BAGEL_GROUP,
+  SOLD_OUT,
+  ALLERGEN_NOTE,
+  getProduct,
+  possibleAllergens,
 } from "../../shop/products";
 
 // Riley's briefing, in three parts.
@@ -43,14 +53,29 @@ function renderMenu(): string {
     lines.push(`${category}:`);
     for (const item of items) {
       const options = (item.options ?? []).map((group) => group.label).join(" + ");
+      const allergens = possibleAllergens(item);
       lines.push(
         `  ${item.name} — ${formatPrice(item.priceCents)}` +
           (item.description ? ` (${item.description})` : "") +
-          (options ? ` [choose: ${options}]` : ""),
+          (options ? ` [choose: ${options}]` : "") +
+          (allergens.length > 0
+            ? ` {allergens: ${allergens.join(", ")}}`
+            : " {allergens: none listed}"),
       );
     }
   }
   return lines.join("\n");
+}
+
+// What's off the board, so she doesn't recommend something that isn't there.
+// Her guide tells her never to promise availability; this is what lets her
+// keep that promise rather than guess.
+function renderSoldOut(): string {
+  if (SOLD_OUT.length === 0) {
+    return "Nothing is marked sold out right now.";
+  }
+  const names = SOLD_OUT.map((slug) => getProduct(slug)?.name ?? slug).join(", ");
+  return `Sold out today, do not offer these: ${names}.`;
 }
 
 function renderChoices(): string {
@@ -77,6 +102,11 @@ disagrees with anything above, this wins.
 
 Corner Bagel, ${SHOP_ADDRESS}, ${SHOP_CITY}. Open ${SHOP_HOURS}.
 
+Right now: ${openingStatus().label}. If somebody wants to order and the shop is
+shut, say so and tell them when it opens — don't take the order and don't let
+them think one is coming. The app refuses it too, so an order they think they
+placed is one they'll turn up for and find nothing waiting.
+
 Reachable at ${SHOP_EMAIL}.
 
 ## The menu
@@ -84,6 +114,8 @@ Reachable at ${SHOP_EMAIL}.
 ${renderMenu()}
 
 ${renderChoices()}
+
+${renderSoldOut()}
 
 Orders over ${formatPrice(GIFT_THRESHOLD_CENTS)} come with a complimentary ${GIFT_NAME}.
 
@@ -130,8 +162,23 @@ works. "I can't see your order from here — Track order on your account has it
 live" is a good answer. Quietly failing to do it is not.
 
 Never invent a fact to fill a gap. No second shop, no delivery radius or fee,
-no nutrition figures, no allergen certainty beyond the ingredients listed
-above, no holiday hours. A confident wrong answer costs somebody a trip.`;
+no nutrition figures, no holiday hours. A confident wrong answer costs somebody
+a trip.
+
+## Allergens
+
+Every item above carries its allergens, and the choices carry theirs — a
+sesame bagel adds sesame, a lox spread adds fish. Read them off the list; that
+is what it's for, and it's the one thing here you must never work out for
+yourself.
+
+The list is what's *in* it. It is not a safety guarantee, and the difference
+matters: "there's no dairy in that one" is true and yours to say, "that one is
+safe for a dairy allergy" is neither. ${ALLERGEN_NOTE} Say that whenever
+somebody tells you an allergy is severe, and point them at a person before
+they order.
+
+If an item isn't on the list above, you don't know what's in it. Say so.`;
 }
 
 // Anything Riley writes back is text — no tools, no structured output. The

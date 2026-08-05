@@ -1,9 +1,21 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { formatPrice, getProduct } from "../../products";
+import {
+  ALLERGEN_NOTE,
+  formatPrice,
+  getProduct,
+  possibleAllergens,
+} from "../../products";
 import ProductImage from "../../ProductImage";
 import AddToCartForm from "./AddToCartForm";
 import { DISPLAY_FONT } from "../../shopControls";
+
+// "wheat, dairy and egg" — an Oxford-less list, because this is read aloud
+// more often than it's read.
+function listed(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
 
 export default async function ProductPage({
   params,
@@ -13,6 +25,9 @@ export default async function ProductPage({
   const { slug } = await params;
   const product = getProduct(slug);
   if (!product) notFound();
+
+  // Everything it could carry, since no choice has been made on this page yet.
+  const allergens = possibleAllergens(product);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
@@ -64,6 +79,24 @@ export default async function ProductPage({
 
           <div className="mt-6">
             <AddToCartForm slug={product.slug} />
+          </div>
+
+          {/* Ingredients, not a safety claim — see the note on Product.allergens.
+              Shown on every item, including the ones that carry none, because
+              a missing section reads as "we didn't check" and an empty one
+              reads as "we did". */}
+          <div className="mt-7 border-t border-line pt-5">
+            <h2 className="m-0 text-[11px] uppercase tracking-[0.09em] text-faint">
+              Allergens
+            </h2>
+            <p className="m-0 mt-2 text-[13px] leading-[1.5] text-ink">
+              {allergens.length > 0
+                ? `Contains ${listed(allergens)}.`
+                : "Nothing from our allergen list."}
+            </p>
+            <p className="m-0 mt-1.5 text-[12px] leading-[1.5] text-muted">
+              {ALLERGEN_NOTE}
+            </p>
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { totalsFor } from "../money";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
+import { useOpening } from "../../useOpening";
 import { orderTotals, recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
@@ -34,6 +35,7 @@ export default function CheckoutPage() {
   const { subtotalCents, clear } = useCart();
   const fulfillment = useFulfillment();
   const rows = useCartRows();
+  const opening = useOpening();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -57,6 +59,9 @@ export default function CheckoutPage() {
   // A row that never got its bagel chosen can't be made, and the endpoint
   // refuses it — so the button refuses first, and says where to fix it.
   const incomplete = rows.filter((row) => !row.complete);
+  // Sold out since the basket was filled. A basket outlives the morning, so
+  // this is ordinary rather than exceptional — it just can't be ordered.
+  const unavailable = rows.filter((row) => row.gone);
   const totals = totalsFor({ subtotalCents, tipCents });
 
   const emailError = tried && !EMAIL.test(email.trim()) ? "Enter a valid email." : undefined;
@@ -66,7 +71,12 @@ export default function CheckoutPage() {
     firstName.trim().length > 0 &&
     EMAIL.test(email.trim()) &&
     rows.length > 0 &&
-    incomplete.length === 0;
+    incomplete.length === 0 &&
+    unavailable.length === 0 &&
+    // Nothing gets made outside opening hours, so nothing gets ordered. The
+    // app used to take the order at 3am on a Monday and promise it for
+    // 3:12am, which sends somebody to a locked window.
+    opening.acceptingOrders;
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -287,6 +297,16 @@ export default function CheckoutPage() {
           </Link>
         </Disclosure>
 
+        {unavailable.length > 0 ? (
+          <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
+            {unavailable[0].product.name} sold out today.{" "}
+            <Link href="/shop/cart" className="cursor-pointer underline">
+              Take it out of your basket
+            </Link>
+            .
+          </p>
+        ) : null}
+
         {incomplete.length > 0 ? (
           <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
             {incomplete[0].product.name} still needs its options.{" "}
@@ -297,6 +317,19 @@ export default function CheckoutPage() {
           </p>
         ) : null}
       </Section>
+
+      {!opening.acceptingOrders ? (
+        <div className="mb-6 rounded-2xl border border-line-soft bg-sun-soft px-4 py-3">
+          <p className="m-0 text-[14px] font-medium text-sun-ink">
+            {opening.open ? "The kitchen is closing" : "We're closed right now"}
+          </p>
+          <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
+            {opening.open
+              ? `There isn't time to make this before we shut at 2pm. Your basket keeps — order again when we open.`
+              : `${opening.label.replace("Closed · o", "O")}. Your basket keeps until then.`}
+          </p>
+        </div>
+      ) : null}
 
       <Section title="Payment">
         <PaymentSection tender={tender} onTender={setTender} cardEnabled={CARD_PAYMENT_ENABLED} />
@@ -349,10 +382,19 @@ export default function CheckoutPage() {
       <Button
         type="submit"
         block
-        disabled={status === "sending" || incomplete.length > 0}
+        disabled={
+          status === "sending" ||
+          incomplete.length > 0 ||
+          unavailable.length > 0 ||
+          !opening.acceptingOrders
+        }
         className="mt-5"
       >
-        {status === "sending" ? "Placing order…" : `Place order · ${formatPrice(totals.totalCents)}`}
+        {status === "sending"
+          ? "Placing order…"
+          : !opening.acceptingOrders
+            ? "Closed"
+            : `Place order · ${formatPrice(totals.totalCents)}`}
       </Button>
 
       <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">

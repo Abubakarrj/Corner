@@ -7,7 +7,15 @@
 // What a customer picks before an item can be made: which bagel, which
 // spread. A choice can carry a surcharge, which is what turns the board's
 // "+1.50" into a real number on the line.
-export type OptionChoice = { id: string; label: string; priceCents: number };
+export type OptionChoice = {
+  id: string;
+  label: string;
+  priceCents: number;
+  // What this choice brings with it. A sesame bagel adds sesame to whatever
+  // it's under; a lox spread adds fish. Held on the choice rather than the
+  // item because the item's own list can't know which one you'll pick.
+  allergens?: Allergen[];
+};
 
 export type OptionGroup = {
   id: string;
@@ -35,9 +43,10 @@ export const BAGEL_GROUP: OptionGroup = {
   id: "bagel",
   label: "Bagel",
   choices: [
-    { id: "plain", label: "Plain", priceCents: 0 },
-    { id: "everything", label: "Everything", priceCents: 0 },
-    { id: "sesame", label: "Sesame", priceCents: 0 },
+    // Wheat is on all three; sesame is the one that differs.
+    { id: "plain", label: "Plain", priceCents: 0, allergens: ["wheat"] },
+    { id: "everything", label: "Everything", priceCents: 0, allergens: ["wheat", "sesame"] },
+    { id: "sesame", label: "Sesame", priceCents: 0, allergens: ["wheat", "sesame"] },
   ],
 };
 
@@ -57,14 +66,14 @@ export const SPREAD_GROUP: OptionGroup = {
   defaultChoiceId: "none",
   choices: [
     { id: "none", label: "No spread", priceCents: 0 },
-    { id: "plain", label: "Plain cream cheese", priceCents: 150 },
-    { id: "scallion", label: "Scallion", priceCents: 150 },
-    { id: "jalapeno", label: "Jalapeño", priceCents: 150 },
-    { id: "veggie", label: "Veggie", priceCents: 150 },
-    { id: "garlic-herb", label: "Garlic & herb", priceCents: 150 },
-    { id: "strawberry", label: "Strawberry", priceCents: 150 },
+    { id: "plain", label: "Plain cream cheese", priceCents: 150, allergens: ["dairy"] },
+    { id: "scallion", label: "Scallion", priceCents: 150, allergens: ["dairy"] },
+    { id: "jalapeno", label: "Jalapeño", priceCents: 150, allergens: ["dairy"] },
+    { id: "veggie", label: "Veggie", priceCents: 150, allergens: ["dairy"] },
+    { id: "garlic-herb", label: "Garlic & herb", priceCents: 150, allergens: ["dairy"] },
+    { id: "strawberry", label: "Strawberry", priceCents: 150, allergens: ["dairy"] },
     { id: "vegan-plain", label: "Vegan plain", priceCents: 150 },
-    { id: "lox", label: "Lox spread", priceCents: 200 },
+    { id: "lox", label: "Lox spread", priceCents: 200, allergens: ["dairy", "fish"] },
   ],
 };
 
@@ -104,7 +113,61 @@ export type Product = {
   // "Bestseller") — same treatment as the reference designs. Nothing carries
   // one today; it's here for when the counter wants to push something.
   tag?: "New" | "Bestseller";
+  // What's in it that somebody might need to avoid.
+  //
+  // Every sandwich is on a bagel, so wheat is on all of them; a sesame bagel
+  // adds sesame, which is why BAGEL_GROUP carries its own allergens and the
+  // two get combined per line rather than listed once here.
+  //
+  // ⚠️ This is an ingredient list, not a safety guarantee. Everything is made
+  // on one counter with shared boards and one toaster, so nothing here is
+  // free of anything — allergensFor() returns the ingredients, and the copy
+  // that shows it says the rest. Riley is told the same, because "no dairy in
+  // that one" and "safe for a dairy allergy" are different sentences and only
+  // one of them is ours to say.
+  allergens?: Allergen[];
 };
+
+// The set worth naming, from the guide's own list.
+export type Allergen =
+  | "wheat"
+  | "dairy"
+  | "egg"
+  | "fish"
+  | "sesame"
+  | "peanuts"
+  | "soy";
+
+export const ALLERGEN_LABEL: Record<Allergen, string> = {
+  wheat: "wheat",
+  dairy: "dairy",
+  egg: "egg",
+  fish: "fish",
+  sesame: "sesame",
+  peanuts: "peanuts",
+  soy: "soy",
+};
+
+// Said wherever allergens are. One sentence, one place.
+export const ALLERGEN_NOTE =
+  "Made on one counter with shared boards and a shared toaster, so we can't call anything allergen-free.";
+
+// What's off the board today.
+//
+// A shop that bakes in the morning runs out, and the menu has a Donut of the
+// Day on it — an item that is, by definition, sometimes gone. Riley's briefing
+// has a whole section on how to handle sold out; until this existed the app
+// had no way to tell her, or anyone, that anything was.
+//
+// Edited by hand for now, and that's the honest shape of it: there is no
+// stock system and no admin screen. When the POS is connected this comes from
+// there instead, and everything below keeps working — the catalog, the cart,
+// the endpoint and Riley all read through soldOut(), not through this array.
+export const SOLD_OUT: string[] = [];
+
+export function soldOut(slug: string): boolean {
+  return SOLD_OUT.includes(slug);
+}
 
 // ——— Options: defaults, pricing, and line identity ———
 
@@ -182,6 +245,39 @@ export function describeOptions(product: Product, selected: SelectedOptions): st
 //
 // Sorted by group id so the key doesn't depend on the order the choices were
 // made in, and prefixed with the slug so two products can never collide.
+// Everything in a line, item and choices together, de-duplicated and in a
+// stable order. This is what a product page and Riley both read — if it were
+// computed twice it would eventually disagree with itself, and a disagreement
+// about allergens is not the kind you find out about gently.
+export function allergensFor(
+  product: Product,
+  selected: SelectedOptions = {},
+): Allergen[] {
+  const found = new Set<Allergen>(product.allergens ?? []);
+  for (const group of product.options ?? []) {
+    const choice = group.choices.find((option) => option.id === selected[group.id]);
+    for (const allergen of choice?.allergens ?? []) found.add(allergen);
+  }
+  // A fixed order, so the same set always reads the same way.
+  const ORDER: Allergen[] = ["wheat", "dairy", "egg", "fish", "sesame", "peanuts", "soy"];
+  return ORDER.filter((allergen) => found.has(allergen));
+}
+
+// Every allergen an item could carry, whichever choices get made. What a
+// catalog listing shows, and what Riley is given — "contains wheat and may
+// contain sesame depending on the bagel" is the honest shape of it before a
+// choice exists.
+export function possibleAllergens(product: Product): Allergen[] {
+  const found = new Set<Allergen>(product.allergens ?? []);
+  for (const group of product.options ?? []) {
+    for (const choice of group.choices) {
+      for (const allergen of choice.allergens ?? []) found.add(allergen);
+    }
+  }
+  const ORDER: Allergen[] = ["wheat", "dairy", "egg", "fish", "sesame", "peanuts", "soy"];
+  return ORDER.filter((allergen) => found.has(allergen));
+}
+
 export function lineKey(slug: string, selected: SelectedOptions | undefined): string {
   const pairs = Object.entries(selected ?? {})
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -213,6 +309,7 @@ export const PRODUCTS: Product[] = [
   // the board's two groups (schmears, then the rest).
   {
     slug: "tomato-please",
+    allergens: ["wheat"],
     name: "Tomato, Please",
     priceCents: 1300,
     category: "Sandwiches",
@@ -223,6 +320,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "egg-and-schmear",
+    allergens: ["wheat", "egg", "dairy"],
     name: "Egg & Schmear",
     priceCents: 1350,
     category: "Sandwiches",
@@ -233,6 +331,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "baby-got-bec",
+    allergens: ["wheat", "egg", "dairy"],
     name: "Baby Got BEC",
     priceCents: 1450,
     category: "Sandwiches",
@@ -249,6 +348,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "one-sec-please",
+    allergens: ["wheat", "egg", "dairy"],
     name: "One Sec Please",
     priceCents: 1500,
     category: "Sandwiches",
@@ -259,6 +359,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "the-veggie-stack",
+    allergens: ["wheat", "dairy"],
     name: "The Veggie Stack",
     priceCents: 1550,
     category: "Sandwiches",
@@ -269,6 +370,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "turkey-around-the-corner",
+    allergens: ["wheat", "dairy"],
     name: "Turkey Around The Corner",
     priceCents: 1600,
     category: "Sandwiches",
@@ -279,6 +381,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "spicy-tuna-sando",
+    allergens: ["wheat", "fish", "egg"],
     name: "Spicy Tuna Sando",
     priceCents: 1650,
     category: "Sandwiches",
@@ -289,6 +392,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "good-lox-today",
+    allergens: ["wheat", "fish", "dairy"],
     name: "Good Lox Today!",
     priceCents: 1750,
     category: "Sandwiches",
@@ -299,6 +403,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "single-bagel",
+    allergens: ["wheat"],
     name: "Single Bagel",
     priceCents: 350,
     category: "Bagels",
@@ -317,6 +422,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "cream-cheese-plain",
+    allergens: ["dairy"],
     name: "Plain Cream Cheese",
     priceCents: 375,
     category: "Spreads",
@@ -326,6 +432,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "cream-cheese-scallion",
+    allergens: ["dairy"],
     name: "Scallion Cream Cheese",
     priceCents: 450,
     category: "Spreads",
@@ -335,6 +442,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "cream-cheese-jalapeno",
+    allergens: ["dairy"],
     name: "Jalapeño Cream Cheese",
     priceCents: 450,
     category: "Spreads",
@@ -344,6 +452,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "cream-cheese-veggie",
+    allergens: ["dairy"],
     name: "Veggie Cream Cheese",
     priceCents: 450,
     category: "Spreads",
@@ -353,6 +462,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "cream-cheese-garlic-herb",
+    allergens: ["dairy"],
     name: "Garlic & Herb Cream Cheese",
     priceCents: 450,
     category: "Spreads",
@@ -362,6 +472,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "lox-spread",
+    allergens: ["dairy", "fish"],
     name: "Lox Spread",
     priceCents: 450,
     category: "Spreads",
@@ -371,6 +482,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "cream-cheese-strawberry",
+    allergens: ["dairy"],
     name: "Strawberry Cream Cheese",
     priceCents: 450,
     category: "Spreads",
@@ -396,6 +508,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "peanut-butter",
+    allergens: ["peanuts"],
     name: "Peanut Butter",
     priceCents: 375,
     category: "Spreads",
@@ -414,6 +527,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "butter",
+    allergens: ["dairy"],
     name: "Butter",
     priceCents: 250,
     category: "Spreads",
@@ -423,6 +537,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "hot-honey-schmear",
+    allergens: ["dairy"],
     name: "Hot Honey",
     priceCents: 200,
     category: "Spreads",
@@ -432,6 +547,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "chili-crisp",
+    allergens: ["soy"],
     name: "Chili Crisp",
     priceCents: 300,
     category: "Spreads",
@@ -441,6 +557,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "choco-milk",
+    allergens: ["dairy"],
     name: "Choco Milk",
     priceCents: 700,
     category: "Drinks",

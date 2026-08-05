@@ -7,6 +7,7 @@ import {
   useMemo,
   useSyncExternalStore,
 } from "react";
+import { peekFulfillment, useFulfillment } from "../fulfillment";
 import {
   describeOptions,
   getProduct,
@@ -16,9 +17,40 @@ import {
   unitPriceCents,
   type Product,
   type SelectedOptions,
+  soldOut,
 } from "./products";
 
 const STORAGE_KEY = "cb-shop-cart-v1";
+
+// The most of any one thing a basket will hold. Past this the answer is
+// catering, not a bigger number.
+export const MAX_PER_LINE = 24;
+
+// Which kind of order the basket was started for.
+//
+// A basket outlives the destination it was filled for: you can put four
+// sandwiches in for pickup, go back to the map, switch to delivery, and the
+// basket comes with you without a word said. Nothing about it is wrong — the
+// prices are the same — but it is a different order from the one you started,
+// and the basket should say so rather than let you notice at the counter.
+const STARTED_KEY = "cb-cart-started-for-v1";
+
+function readStartedFor(): string | null {
+  try {
+    return window.localStorage.getItem(STARTED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStartedFor(mode: string | null) {
+  try {
+    if (mode === null) window.localStorage.removeItem(STARTED_KEY);
+    else window.localStorage.setItem(STARTED_KEY, mode);
+  } catch {
+    // Nothing to persist to; the note just won't appear.
+  }
+}
 
 // Slug + the choices made + quantity — not a snapshot of name/price, which
 // are looked up from the catalog at render time so the basket never shows
@@ -91,9 +123,27 @@ function getSnapshot() {
 function getServerSnapshot() {
   return EMPTY_LINES;
 }
+// A second tab is a second copy of this module with its own `lines`. Without
+// this, filling a basket in one tab and then adding something in another
+// silently throws the first tab's work away: both write the whole array, and
+// the last write wins.
+//
+// The `storage` event fires only in the *other* documents on the origin, which
+// is exactly the ones that need to hear it — the tab that made the change
+// already knows.
+function onStorage(event: StorageEvent) {
+  if (event.key !== null && event.key !== STORAGE_KEY) return;
+  lines = readStoredLines();
+  listeners.forEach((listener) => listener());
+}
+
 function subscribe(callback: () => void) {
+  if (listeners.size === 0) window.addEventListener("storage", onStorage);
   listeners.add(callback);
-  return () => listeners.delete(callback);
+  return () => {
+    listeners.delete(callback);
+    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
+  };
 }
 function commit(next: CartLine[]) {
   lines = next;
@@ -134,6 +184,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Normalised on the way in as well as on the way out, so a caller that
       // passes a half-filled or stale selection can't put a line in the
       // basket that priceOf() and describeOptions() then disagree about.
+      // First thing in: remember what kind of order this basket began as.
+      if (lines.length === 0) writeStartedFor(peekFulfillment()?.mode ?? null);
       const clean = normalizeOptions(product, options);
       const key = lineKey(slug, clean);
       const existing = lines.find((line) => lineKey(line.slug, line.options) === key);
@@ -141,7 +193,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         commit(
           lines.map((line) =>
             lineKey(line.slug, line.options) === key
-              ? { ...line, quantity: line.quantity + quantity }
+              ? { ...line, quantity: Math.min(line.quantity + quantity, MAX_PER_LINE) }
               : line,
           ),
         );
@@ -157,6 +209,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setQuantity = useCallback((key: string, quantity: number) => {
+    // A walk-up window is not a wholesale counter. Nothing stopped 999
+    // sandwiches reaching the kitchen, and the person who does it is far more
+    // likely to have leaned on the + button than to want 999 sandwiches.
+    // Catering is the door for a real bulk order — see CateringModal.
+    quantity = Math.min(quantity, MAX_PER_LINE);
     if (quantity <= 0) {
       commit(lines.filter((line) => lineKey(line.slug, line.options) !== key));
       return;
@@ -207,7 +264,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const clear = useCallback(() => commit([]), []);
+  const clear = useCallback(() => {
+    writeStartedFor(null);
+    commit([]);
+  }, []);
 
   const itemCount = useMemo(
     () => currentLines.reduce((sum, line) => sum + line.quantity, 0),
@@ -273,6 +333,10 @@ export type CartRow = {
   // False when a required group is still unanswered — see setLineOptions.
   // The basket shows a picker on these rows and checkout refuses them.
   complete: boolean;
+  // True when the item has gone off the board since it went in the basket.
+  // A basket outlives the morning it was filled in, so this is a normal
+  // state, not an error: the row says so and checkout refuses it.
+  gone: boolean;
 };
 
 export function useCartRows(): CartRow[] {
@@ -292,9 +356,22 @@ export function useCartRows(): CartRow[] {
             lineCents: unitCents * line.quantity,
             chosen: describeOptions(product, line.options),
             complete: optionsComplete(product, line.options),
+            gone: soldOut(line.slug),
           },
         ];
       }),
     [currentLines],
   );
+}
+
+// Whether the basket was started for a different kind of order than the one
+// it's now attached to — "you began this for pickup, it's going to delivery".
+// Returns null when they agree, or when there's nothing in the basket.
+export function useBasketMoved(): { from: string; to: string } | null {
+  const { lines: currentLines } = useCart();
+  const fulfillment = useFulfillment();
+  if (currentLines.length === 0 || !fulfillment) return null;
+  const from = readStartedFor();
+  if (!from || from === fulfillment.mode) return null;
+  return { from, to: fulfillment.mode };
 }

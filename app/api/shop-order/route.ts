@@ -2,10 +2,12 @@ import {
   describeOptions,
   getProduct,
   normalizeOptions,
+  soldOut,
   unitPriceCents,
   type SelectedOptions,
 } from "../../shop/products";
 import { totalsFor } from "../../shop/money";
+import { isOpenNow, minutesUntilClose, nextOpening } from "../../shopFacts";
 import { createToastOrder, isToastConfigured } from "../../toast";
 
 // Order intake, behind /checkout on the shop subdomain.
@@ -96,6 +98,25 @@ export async function POST(request: Request) {
     );
   }
 
+  // Closed means closed. The checkout disables its own button, but that is a
+  // courtesy to the person using it — this is the rule, and it's here because
+  // a request doesn't have to come from the form.
+  //
+  // PREP_MINUTES of headroom, because being open at 1:58pm is not the same as
+  // being able to make something before 2.
+  const PREP_MINUTES = 12;
+  if (!isOpenNow() || minutesUntilClose() < PREP_MINUTES) {
+    const next = nextOpening();
+    return Response.json(
+      {
+        error: next
+          ? `We're closed right now — we open ${next}.`
+          : "There isn't time to make that before we close at 2pm.",
+      },
+      { status: 409 },
+    );
+  }
+
   const rawItems = body?.items;
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
     return Response.json({ error: "Your cart is empty." }, { status: 400 });
@@ -127,6 +148,14 @@ export async function POST(request: Request) {
     const product = getProduct(slug);
     if (!product) {
       return Response.json({ error: "Invalid cart item." }, { status: 400 });
+    }
+    // Gone since the basket was filled. 409 rather than 400: the request is
+    // well-formed, the world moved.
+    if (soldOut(slug)) {
+      return Response.json(
+        { error: `${product.name} sold out today.` },
+        { status: 409 },
+      );
     }
     const rawOptions = (raw as { options?: unknown })?.options;
     const options = normalizeOptions(

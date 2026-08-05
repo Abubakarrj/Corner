@@ -5,7 +5,7 @@ import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
 import GiftProgressBar from "./GiftProgressBar";
 import CrossSellStrip from "./CrossSellStrip";
-import { useCart, useCartRows } from "./CartContext";
+import { useCart, useCartRows, MAX_PER_LINE } from "./CartContext";
 import OptionPicker from "./OptionPicker";
 import { formatPrice, getCrossSellProducts } from "./products";
 import { Button, ButtonLink } from "../ui/Button";
@@ -176,6 +176,7 @@ export default function CartDrawer({
                         type="button"
                         aria-label={`Increase quantity of ${product.name}`}
                         onClick={() => setQuantity(key, line.quantity + 1)}
+                        disabled={line.quantity >= MAX_PER_LINE}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
                         +
@@ -221,7 +222,7 @@ export default function CartDrawer({
             {/* Held back while a line still needs a choice — the picker for
                 it is up in the list, so there's nowhere useful to send
                 someone who presses this. */}
-            {rows.some((row) => !row.complete) ? (
+            {rows.some((row) => !row.complete || row.gone) ? (
               <Button block disabled className="mt-3">
                 Checkout
               </Button>

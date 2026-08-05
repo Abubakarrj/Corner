@@ -7,6 +7,7 @@ import {
   formatPrice,
   optionsComplete,
   unitPriceCents,
+  soldOut,
   type Product,
 } from "./products";
 import ProductImage from "./ProductImage";
@@ -31,7 +32,8 @@ export default function ProductCard({ product }: { product: Product }) {
   // page for them: a bagel order is a handful of small decisions made fast,
   // and a round trip per sandwich would be the slowest part of it.
   const [selected, setSelected] = useState(() => defaultOptions(product));
-  const ready = optionsComplete(product, selected);
+  const gone = soldOut(product.slug);
+  const ready = optionsComplete(product, selected) && !gone;
   const price = unitPriceCents(product, selected);
 
   return (
@@ -47,6 +49,11 @@ export default function ProductCard({ product }: { product: Product }) {
           name={product.name}
           className="aspect-square w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
+        {gone ? (
+          <span className="absolute inset-x-0 bottom-0 bg-ink/80 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-on-ink">
+            Sold out today
+          </span>
+        ) : null}
         {product.tag ? (
           <span className="absolute left-2.5 top-2.5 rounded-full bg-sun px-2 py-[3px] text-[9px] font-medium uppercase tracking-[0.06em] text-sun-ink">
             {product.tag}
@@ -70,12 +77,14 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
       </div>
 
-      <OptionPicker
-        product={product}
-        selected={selected}
-        onChange={setSelected}
-        idPrefix={`card-${product.slug}`}
-      />
+      {gone ? null : (
+        <OptionPicker
+          product={product}
+          selected={selected}
+          onChange={setSelected}
+          idPrefix={`card-${product.slug}`}
+        />
+      )}
 
       <button
         type="button"
@@ -89,7 +98,7 @@ export default function ProductCard({ product }: { product: Product }) {
         }}
         className="cb-press mt-3 flex h-9 shrink-0 cursor-pointer items-center justify-between gap-2 rounded-full border border-line-soft bg-surface px-3.5 text-[10px] font-medium uppercase tracking-[0.09em] text-ink hover:border-ink hover:bg-ink hover:text-on-ink disabled:cursor-default disabled:opacity-35 disabled:hover:border-line-soft disabled:hover:bg-surface disabled:hover:text-ink"
       >
-        <span>Add to basket</span>
+        <span>{gone ? "Sold out" : "Add to basket"}</span>
         <span className="tabular-nums">{formatPrice(price)}</span>
       </button>
     </div>

@@ -204,19 +204,52 @@ export function useOrders(): PlacedOrder[] {
   return useSyncExternalStore(subscribe, getOrders, getOrdersServer);
 }
 
-// CB-2026-0045: brand, year, and a per-device counter. Deliberately not
-// presented to the kitchen as an order number — nothing on the server issues
-// these, so two devices will happily mint the same one. It's a label for the
-// customer's own list until the order system hands back a real reference.
+// CB-7K3M-001: brand, a tag for this browser, and a counter within it.
+//
+// Still not issued by a server — when a POS starts handing back real
+// references, that one wins and this becomes the local key. But it is now
+// unique enough to read out at a counter without two customers claiming the
+// same number.
+//
+// A short tag for this browser, minted once and kept.
+//
+// Order numbers used to be CB-2026-0001 counting up from local history, which
+// means every device's first order is CB-2026-0001. Fine as a key into this
+// device's own list; useless as a reference somebody reads out at the counter,
+// and a straight collision the moment a POS is holding the real ones.
+//
+// Crockford-ish alphabet: no I, L, O or U, so nothing is misheard as a digit
+// or misread in handwriting, and nothing spells anything.
+const TAG_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const DEVICE_TAG_KEY = "cb-device-tag-v1";
+
+function deviceTag(): string {
+  try {
+    const kept = window.localStorage.getItem(DEVICE_TAG_KEY);
+    if (kept && /^[0-9A-Z]{4}$/.test(kept)) return kept;
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    const tag = Array.from(bytes, (byte) => TAG_ALPHABET[byte % TAG_ALPHABET.length]).join("");
+    window.localStorage.setItem(DEVICE_TAG_KEY, tag);
+    return tag;
+  } catch {
+    // Storage refused. A per-session tag still beats everyone sharing 0001;
+    // it just won't survive a reload, which only affects how the *next* order
+    // is numbered, not this one.
+    const bytes = new Uint8Array(4);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => TAG_ALPHABET[byte % TAG_ALPHABET.length]).join("");
+  }
+}
+
 function nextOrderId(existing: PlacedOrder[]): string {
-  const year = new Date().getFullYear();
-  const prefix = `CB-${year}-`;
+  const prefix = `CB-${deviceTag()}-`;
   const highest = existing.reduce((max, order) => {
     if (!order.id.startsWith(prefix)) return max;
     const n = Number.parseInt(order.id.slice(prefix.length), 10);
     return Number.isFinite(n) && n > max ? n : max;
   }, 0);
-  return `${prefix}${String(highest + 1).padStart(4, "0")}`;
+  return `${prefix}${String(highest + 1).padStart(3, "0")}`;
 }
 
 export function recordOrder(

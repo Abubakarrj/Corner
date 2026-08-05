@@ -8,6 +8,7 @@ import {
   getProduct,
   optionsComplete,
   unitPriceCents,
+  soldOut,
 } from "../../products";
 import OptionPicker from "../../OptionPicker";
 import { requestOpenBasket } from "../../openBasket";
@@ -25,8 +26,20 @@ export default function AddToCartForm({ slug }: { slug: string }) {
 
   if (!product) return null;
 
-  const ready = optionsComplete(product, selected);
+  const gone = soldOut(product.slug);
+  const ready = optionsComplete(product, selected) && !gone;
   const unit = unitPriceCents(product, selected);
+
+  if (gone) {
+    return (
+      <div className="rounded-2xl border border-line-soft bg-sun-soft px-4 py-3">
+        <p className="m-0 text-[14px] font-medium text-sun-ink">Sold out today</p>
+        <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
+          We bake in the morning and this one has gone. Back tomorrow.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">

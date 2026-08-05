@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
 import { ButtonLink } from "../ui/Button";
 import { PALETTE } from "./shopControls";
+import { useOpening } from "../useOpening";
 
 const { ink, cream, border, muted, controlBorder } = PALETTE;
 
@@ -68,6 +69,7 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
 // where getting it wrong costs the most.
 export function FulfillmentBanner() {
   const fulfillment = useFulfillment();
+  const opening = useOpening();
   if (!fulfillment) return null;
 
   const { mode, where } = describeFulfillment(fulfillment);
@@ -86,6 +88,14 @@ export function FulfillmentBanner() {
       <span className="min-w-0 flex-1 truncate text-[12px]" style={{ color: muted }}>
         {where}
       </span>
+      {/* Open or shut, on the one bar that's on every shop page. Somebody
+          browsing at 11pm should find out here rather than at checkout — or,
+          worse, at the window. */}
+      {!opening.open ? (
+        <span className="shrink-0 rounded-full bg-sun-soft px-2 py-1 text-[10px] font-medium leading-none text-sun-ink">
+          Closed
+        </span>
+      ) : null}
       <Link
         href="/locations"
         className="shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
