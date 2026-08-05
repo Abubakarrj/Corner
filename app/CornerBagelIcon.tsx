@@ -31,7 +31,12 @@ export default function CornerBagelIcon() {
 
   return (
     <div
-      className={`pointer-events-none fixed left-2 md:left-30 md:-top-30 top-0 z-40 ${pageWrapper}`}
+      // Nudged down 20px from where the layout math alone puts it. That maths
+      // reproduces the old /bagel page's corner exactly, and the corner it
+      // lands in leaves the bagel hanging in the gap above the contact line
+      // rather than sitting with it. The offset is the whole adjustment —
+      // everything else about the position is still inherited.
+      className={`pointer-events-none fixed left-2 md:left-30 top-5 md:-top-[6.25rem] z-40 ${pageWrapper}`}
     >
       <div className={contentBox}>
         {/* Stand-in for the image frame: no content, only the height, so the
