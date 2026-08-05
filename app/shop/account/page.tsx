@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import {
   describeOrderItems,
@@ -83,6 +84,7 @@ function SectionHeading({
 }
 
 export default function AccountPage() {
+  const router = useRouter();
   const account = useAccount();
   const orders = useOrders();
   const { addItem } = useCart();
@@ -141,7 +143,26 @@ export default function AccountPage() {
             {account.email}
           </p>
         </div>
-        <Button variant="quiet" size="sm" onClick={signOut}>
+        {/* Out of here on the way out.
+
+            Signing out used to leave you on this page, which then had nothing
+            on it — the account collapses to "Sign in to keep your usuals",
+            a heading and a button, on a screen you were already looking at.
+            That reads like the tap failed. Somebody signing out of a bagel
+            shop is not leaving the shop, they're just done being signed in,
+            so the menu is where they belong.
+
+            replace, not push: the signed-in account page is gone for this
+            visitor, and leaving it in the history for the back button to
+            find is offering a door to a room that no longer exists. */}
+        <Button
+          variant="quiet"
+          size="sm"
+          onClick={() => {
+            signOut();
+            router.replace("/shop");
+          }}
+        >
           Sign out
         </Button>
       </div>
