@@ -4,6 +4,7 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { Button } from "../../ui/Button";
 import { useCapabilities } from "../../capabilities";
+import { useT } from "../../locale";
 import { PALETTE } from "../../shop/shopControls";
 import { SHOP_HOURS } from "../../shopFacts";
 import type { StoreLocation } from "./locations";
@@ -114,6 +115,7 @@ export default function LocationSheet({
   onOrder: (location: StoreLocation) => void;
 }) {
   const { phone } = useCapabilities();
+  const t = useT();
   // Tagged with the shop it belongs to rather than reset by an effect, the
   // same way the address search keys its results. A bare boolean would need
   // clearing when the sheet changes shop, and a tick left over from the last
@@ -136,7 +138,7 @@ export default function LocationSheet({
       {/* No close button here: Modal draws its own, top right. Adding a
           second one put two crosses in the same corner. The heading is padded
           clear of it rather than sharing the row. */}
-      <div className="pr-10">
+      <div className="pe-10">
         <h2
           className="m-0 text-[26px] font-medium leading-[1.15] tracking-[-0.01em]"
           style={{ color: olive }}
@@ -156,11 +158,11 @@ export default function LocationSheet({
       {/* Wraps rather than scrolls. Three chips fit a phone on two rows, and a
           horizontal scroller here would hide the third one off the edge. */}
       <div className="mt-5 flex flex-wrap gap-2">
-        <Chip icon={<PinIcon />} label="Directions" href={directions} />
-        {phone ? <Chip icon={<PhoneIcon />} label="Call" href={`tel:${phone}`} /> : null}
+        <Chip icon={<PinIcon />} label={t("finder.directions")} href={directions} />
+        {phone ? <Chip icon={<PhoneIcon />} label={t("finder.call")} href={`tel:${phone}`} /> : null}
         <Chip
           icon={<CopyIcon done={copied} />}
-          label={copied ? "Copied" : "Copy address"}
+          label={copied ? t("finder.copied") : t("finder.copyAddress")}
           onClick={() => {
             void navigator.clipboard
               ?.writeText(full)
@@ -173,7 +175,7 @@ export default function LocationSheet({
       </div>
 
       <Button block className="mt-6" onClick={() => onOrder(location)}>
-        Order now
+        {t("finder.orderNow")}
       </Button>
     </Modal>
   );

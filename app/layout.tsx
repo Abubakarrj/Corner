@@ -5,6 +5,7 @@ import CookieConsent from "./CookieConsent";
 import SessionSync from "./auth/SessionSync";
 import { CapabilitiesProvider } from "./capabilities";
 import { THEME_SCRIPT } from "./themeScript";
+import { LOCALE_SCRIPT } from "./localeScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -77,8 +78,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // lang and dir are the server's best guess and nothing more. The script
+    // below replaces both before the first paint, from the stored choice or
+    // the browser's own languages, which is why suppressHydrationWarning is
+    // load-bearing here: the document React rendered and the document the
+    // visitor sees deliberately differ on these two attributes.
     <html
       lang="en"
+      dir="ltr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
@@ -87,6 +94,10 @@ export default function RootLayout({
             on <html> above is what lets it stamp data-theme without React
             objecting that the server didn't render it. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        {/* Same reasoning, and more urgent: dir="rtl" applied in an effect is
+            a frame of the entire app laid out backwards, which is a worse
+            flash than any colour. See LOCALE_SCRIPT. */}
+        <script dangerouslySetInnerHTML={{ __html: LOCALE_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
         <CapabilitiesProvider>

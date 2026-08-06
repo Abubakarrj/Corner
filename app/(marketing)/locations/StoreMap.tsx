@@ -7,6 +7,7 @@ import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
+import { useT } from "../../locale";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
 const { ink, muted, controlBorder } = PALETTE;
@@ -25,6 +26,19 @@ const { ink, muted, controlBorder } = PALETTE;
 // canvas and forbids modifying or obscuring any of it. Protomaps needs a
 // single pill reading "Protomaps © OpenStreetMap", because that is all
 // OpenStreetMap's licence asks for.
+
+// Scrolls the card rail to one slide, in either reading direction.
+//
+// scrollLeft is not symmetric: left-to-right counts up from 0 at the left
+// edge, right-to-left counts down from 0 at the right edge. Getting this wrong
+// under Urdu doesn't throw, it just scrolls the rail hard against its start
+// and leaves the wrong card under your thumb, which is the kind of bug that
+// only shows up in the one language nobody tests in.
+function scrollRailTo(rail: HTMLDivElement | null, index: number) {
+  if (!rail) return;
+  const rtl = getComputedStyle(rail).direction === "rtl";
+  rail.scrollTo({ left: (rtl ? -1 : 1) * index * rail.clientWidth, behavior: "smooth" });
+}
 
 function LocateIcon() {
   return (
@@ -75,6 +89,7 @@ export default function StoreMap({
   focus: MapFocus | null;
 }) {
   const theme = useResolvedTheme();
+  const t = useT();
   const holderRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<MapEngine | null>(null);
   const [ready, setReady] = useState(false);
@@ -174,12 +189,10 @@ export default function StoreMap({
     if (!ready) return;
     engineRef.current?.setMarkers(locations, (id) => {
       const index = locations.findIndex((location) => location.id === id);
-      if (index < 0) return;
-      railRef.current?.scrollTo({
-        left: index * (railRef.current.clientWidth || 0),
-        behavior: "smooth",
-      });
-      setCardIndex(index);
+      if (index >= 0) {
+        scrollRailTo(railRef.current, index);
+        setCardIndex(index);
+      }
     });
   }, [locations, ready]);
 
@@ -201,10 +214,7 @@ export default function StoreMap({
     engineRef.current?.panTo(focus.at, focus.zoom ?? 12);
     if (!focus.openId) return;
     const index = locations.findIndex((location) => location.id === focus.openId);
-    const rail = railRef.current;
-    if (index >= 0 && rail) {
-      rail.scrollTo({ left: index * rail.clientWidth, behavior: "smooth" });
-    }
+    if (index >= 0) scrollRailTo(railRef.current, index);
   }, [focus, ready, locations]);
 
   const onRailScroll = useCallback(() => {
@@ -216,7 +226,11 @@ export default function StoreMap({
     settle.current = window.setTimeout(() => {
       const width = rail.clientWidth;
       if (width === 0) return;
-      const index = Math.round(rail.scrollLeft / width);
+      // abs, because under Urdu the document is right-to-left and a
+      // right-to-left scroller starts at 0 on its right edge and counts
+      // *down* into negatives going left. The index is the same either way;
+      // only the sign of the offset differs.
+      const index = Math.round(Math.abs(rail.scrollLeft) / width);
       const location = locations[index];
       if (!location) return;
       setCardIndex(index);
@@ -259,9 +273,9 @@ export default function StoreMap({
               const bounds = engineRef.current?.getBounds();
               if (bounds) onSearchArea(bounds);
             }}
-            className="pointer-events-auto absolute left-4 top-4 cursor-pointer rounded-full bg-surface px-5 py-2.5 text-[14px] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+            className="pointer-events-auto absolute start-4 top-4 cursor-pointer rounded-full bg-surface px-5 py-2.5 text-[14px] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
           >
-            Search area
+            {t("finder.searchArea")}
           </button>
         ) : null}
 
@@ -282,22 +296,22 @@ export default function StoreMap({
               { enableHighAccuracy: false, timeout: 8000 },
             );
           }}
-          aria-label="Use my location"
-          className="pointer-events-auto absolute right-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+          aria-label={t("finder.useMyLocation")}
+          className="pointer-events-auto absolute end-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
         >
           <LocateIcon />
         </button>
 
         {/* Zoom pair, stacked and sharing one rounded shell with a divider
             between: they read as one control. */}
-        <div className="pointer-events-auto absolute right-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)]">
+        <div className="pointer-events-auto absolute end-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)]">
           <button
             type="button"
             onClick={() => {
               const engine = engineRef.current;
               engine?.setZoom(engine.getZoom() + 1);
             }}
-            aria-label="Zoom in"
+            aria-label={t("finder.zoomIn")}
             className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
           >
             +
@@ -308,7 +322,7 @@ export default function StoreMap({
               const engine = engineRef.current;
               engine?.setZoom(engine.getZoom() - 1);
             }}
-            aria-label="Zoom out"
+            aria-label={t("finder.zoomOut")}
             className="flex h-11 cursor-pointer items-center justify-center border-t border-line-soft text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
           >
             −
@@ -392,7 +406,7 @@ export default function StoreMap({
                     onClick={() => order(location)}
                     aria-label={`Order from ${location.name}`}
                   >
-                    Order
+                    {t("finder.order")}
                   </Button>
                 </div>
               </div>

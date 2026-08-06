@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import ThemeToggle from "../ui/ThemeToggle";
+import LanguagePicker from "../ui/LanguagePicker";
 
 // The "SHOP PANTRY" button and its arrow annotation used to sit under the
 // logo here, linking to /shop. Pulled until the pantry is ready to launch —
@@ -48,16 +49,19 @@ export default function Home() {
         </div>
       </Link>
 
-      {/* Appearance, in the corner opposite the privacy line, so the two bits
-          of chrome bracket the page rather than crowding each other. No label
-          above it: three segments reading Light / Dark / System say what they
-          are, and the group carries aria-label="Appearance" for anyone who
-          can't see them. The safe-area inset keeps it out of the notch on an
-          installed app. */}
+      {/* Language and appearance, in the corner opposite the privacy line, so
+          the chrome brackets the page rather than crowding it. Both are 28px
+          and sit on one row, which is what keeps them reading as one strip
+          rather than two widgets.
+
+          `end-4` rather than `right-4`: under Urdu the document is mirrored,
+          and this belongs in whichever corner is the far one. The safe-area
+          inset keeps it out of the notch on an installed app. */}
       <div
-        className="absolute right-4 z-10"
+        className="absolute end-4 z-10 flex items-center gap-2"
         style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
       >
+        <LanguagePicker shell="page" />
         <ThemeToggle shell="page" />
       </div>
     </div>

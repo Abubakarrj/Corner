@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../locale";
+import type { StringKey } from "../strings";
 import { useAccount } from "../account";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 
@@ -53,14 +55,16 @@ export function hasTabBar(pathname: string): boolean {
 //
 // Every tab has a destination now, so nothing is dimmed — the disabled
 // branch below stays because a new tab will arrive before its page does.
-const NAV: { id: TabId; label: string; href: string | null }[] = [
-  { id: "home", label: "Home", href: "/locations" },
+// The label is a string key now, not a word: the bar is the same five tabs in
+// every language, and only the lookup changes.
+const NAV: { id: TabId; label: StringKey; href: string | null }[] = [
+  { id: "home", label: "nav.home", href: "/locations" },
   // ?for=menu is how the map knows to light Menu rather than Home — they
   // are the same screen reached two ways.
-  { id: "menu", label: "Menu", href: "/locations?for=menu" },
-  { id: "reorder", label: "Reorder", href: "/membership" },
-  { id: "gift", label: "Gift", href: "/gift" },
-  { id: "about", label: "About", href: "/about" },
+  { id: "menu", label: "nav.menu", href: "/locations?for=menu" },
+  { id: "reorder", label: "nav.reorder", href: "/membership" },
+  { id: "gift", label: "nav.gift", href: "/gift" },
+  { id: "about", label: "nav.about", href: "/about" },
 ];
 
 // Each icon has a resting outline and a filled or opened state for the tab
@@ -274,6 +278,7 @@ export default function TabBar({ active }: { active: TabId }) {
   // Sending someone who's already signed in back to a login screen is the
   // one thing this tab must not do.
   const account = useAccount();
+  const t = useT();
 
   return (
     <nav
@@ -301,7 +306,7 @@ export default function TabBar({ active }: { active: TabId }) {
           const body = (
             <>
               <NavIcon id={item.id} active={isActive} />
-              <span className="mt-1.5 text-[13px] leading-none">{item.label}</span>
+              <span className="mt-1.5 text-[13px] leading-none">{t(item.label)}</span>
               {/* The active underline, as in the reference: a short rule
                   under the label rather than a full-width indicator. */}
               <span

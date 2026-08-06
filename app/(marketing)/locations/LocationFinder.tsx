@@ -13,6 +13,8 @@ import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
+import { useT } from "../../locale";
+import type { StringKey } from "../../strings";
 import {
   LOCATIONS,
   nearestLocations,
@@ -56,19 +58,19 @@ const StoreMap = dynamic(() => import("./StoreMap"), {
 
 type Mode = "pickup" | "delivery" | "catering";
 
-const MODES: { id: Mode; label: string }[] = [
-  { id: "pickup", label: "Pickup" },
-  { id: "delivery", label: "Delivery" },
-  { id: "catering", label: "Catering" },
+const MODES: { id: Mode; label: StringKey }[] = [
+  { id: "pickup", label: "finder.pickup" },
+  { id: "delivery", label: "finder.delivery" },
+  { id: "catering", label: "finder.catering" },
 ];
 
 // Delivery asks for the visitor's address; the other two search ours. That
 // one difference drives the placeholder, the "Search area" button, and the
 // empty-state toast.
-const PLACEHOLDER: Record<Mode, string> = {
-  pickup: "Search store, city, state, or zip",
-  delivery: "Enter delivery address",
-  catering: "Search store, city, state, or zip",
+const PLACEHOLDER: Record<Mode, StringKey> = {
+  pickup: "finder.searchPlaceholder",
+  delivery: "finder.addressPlaceholder",
+  catering: "finder.searchPlaceholder",
 };
 
 export default function LocationFinder() {
@@ -77,6 +79,7 @@ export default function LocationFinder() {
   // them to light in the tab bar. Anything else — a direct visit, the Home
   // tab — reads as Home.
   const activeTab = useSearchParams().get("for") === "menu" ? "menu" : "home";
+  const t = useT();
   const [mode, setMode] = useState<Mode>("pickup");
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
@@ -254,8 +257,8 @@ export default function LocationFinder() {
 
   const toastText = !asked
     ? mode === "delivery"
-      ? "Enter an address above to get started."
-      : "Search a store, city, state or zip to get started."
+      ? t("finder.startAddress")
+      : t("finder.startSearch")
     : missed
       ? `No ${noun} in ${shortPlace(searched!.label)}. The nearest is ${missed.location.name}, ` +
         `${missed.miles.toFixed(missed.miles < 10 ? 1 : 0)} miles away.`
@@ -316,7 +319,7 @@ export default function LocationFinder() {
                   }}
                   className="flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-2.5 text-[14px] leading-none transition-colors duration-150 min-[390px]:px-4 min-[390px]:text-[15px] sm:px-5"
                 >
-                  {label}
+                  {t(label)}
                 </button>
               );
             })}
@@ -338,8 +341,8 @@ export default function LocationFinder() {
             type="text"
             inputMode="search"
             autoComplete="off"
-            aria-label={PLACEHOLDER[mode]}
-            placeholder={PLACEHOLDER[mode]}
+            aria-label={t(PLACEHOLDER[mode])}
+            placeholder={t(PLACEHOLDER[mode])}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
@@ -360,10 +363,10 @@ export default function LocationFinder() {
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-5 top-[26px] cursor-pointer text-[13px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
+              className="absolute end-5 top-[26px] cursor-pointer text-[13px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
               style={{ color: muted }}
             >
-              Clear
+              {t("finder.clear")}
             </button>
           ) : null}
         </div>

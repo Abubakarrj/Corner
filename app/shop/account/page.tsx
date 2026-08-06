@@ -19,6 +19,8 @@ import {
 import { useCart } from "../CartContext";
 import { Button, ButtonLink } from "../../ui/Button";
 import ThemeToggle from "../../ui/ThemeToggle";
+import LanguagePicker from "../../ui/LanguagePicker";
+import { useT } from "../../locale";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
@@ -88,6 +90,7 @@ export default function AccountPage() {
   const account = useAccount();
   const orders = useOrders();
   const { addItem } = useCart();
+  const t = useT();
 
   const usuals = useMemo(() => summarizeUsuals(orders), [orders]);
   // The reference's "Recent activity" is a short status feed above the
@@ -277,12 +280,22 @@ export default function AccountPage() {
           reachable on a brand-new account too — the same control is on the
           home screen for anyone not signed in. */}
       <section className="mt-9 border-t pt-6" style={{ borderColor: border }}>
-        <SectionHeading>Appearance</SectionHeading>
+        <SectionHeading>{t("settings.language")}</SectionHeading>
         <div className="flex items-center justify-between gap-4">
           <p className="m-0 text-[13px] leading-[1.5]" style={{ color: muted }}>
-            Follows your phone unless you say otherwise.
+            Seven languages. Anything not translated yet stays in English.
           </p>
-          <ThemeToggle className="shrink-0" />
+          <LanguagePicker className="shrink-0" />
+        </div>
+
+        <div className="mt-6">
+          <SectionHeading>{t("settings.appearance")}</SectionHeading>
+          <div className="flex items-center justify-between gap-4">
+            <p className="m-0 text-[13px] leading-[1.5]" style={{ color: muted }}>
+              Follows your phone until you set it here.
+            </p>
+            <ThemeToggle className="shrink-0" />
+          </div>
         </div>
       </section>
     </div>

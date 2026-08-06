@@ -153,7 +153,17 @@ export default function CookieConsent() {
       {/* Capped and centred so this doesn't become a 1400px-wide sentence
           with a button marooned at the far end of a desktop screen. */}
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-5 pt-[0.875rem] sm:px-8">
-        <p className="m-0 text-[13px] leading-[1.45] text-body">
+        {/* dir="auto" because this copy is still English while the document
+            may be Urdu. Inside an RTL container the browser lays English out
+            right-to-left, which puts the full stop at the *start* of the line
+            and reads as a rendering fault. "auto" asks the browser to decide
+            from the first strong character in the text, so English reads
+            left-to-right here and a translation of it will read right-to-left
+            without this changing.
+
+            This is the general shape of the fix for any block that hasn't been
+            translated yet. */}
+        <p dir="auto" className="m-0 text-[13px] leading-[1.45] text-body">
           By continuing to use this site, you{" "}
           {/* "consent" was already painted brand red, which reads as a link
               whether or not it is one. It now is one: it opens the cookie
