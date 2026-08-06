@@ -8,6 +8,7 @@ import {
 } from "../../shop/products";
 import { totalsFor } from "../../shop/money";
 import {
+  CLOSE_LABEL,
   isOpenNow,
   minutesUntilClose,
   nextOpening,
@@ -126,7 +127,7 @@ export async function POST(request: Request) {
       {
         error: next
           ? `We're closed right now — we open ${next}.`
-          : "There isn't time to make that before we close at 2pm.",
+          : `There isn't time to make that before we close at ${CLOSE_LABEL}.`,
       },
       { status: 409 },
     );

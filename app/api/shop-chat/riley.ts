@@ -102,7 +102,7 @@ export function buildSystemPrompt(): string {
 Everything under this line comes from the app itself and is current. Where it
 disagrees with anything above, this wins.
 
-Corner Bagel, ${SHOP_ADDRESS}, ${SHOP_CITY}. Open ${SHOP_HOURS}.
+Corner Bagel, ${SHOP_ADDRESS}, ${SHOP_CITY}. Hours: ${SHOP_HOURS}.
 
 Right now: ${openingStatus().label}. If somebody wants to order and the shop is
 shut, say so and tell them when it opens. don't take the order and don't let

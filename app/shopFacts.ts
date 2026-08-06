@@ -6,11 +6,31 @@
 // "Hours to come" in one file and unmentioned in three others; when they
 // changed there was no single place to change them, and Riley would have gone
 // on telling people they weren't published.
-export const SHOP_HOURS = "Wed – Sun, 7am – 2pm";
+// The en dash here is unspaced on purpose. Riley's reply is scrubbed for em
+// dashes on the way out, and a *spaced* en dash is doing an em dash's job so
+// it gets replaced by a comma. Unspaced, it reads as a range and is left
+// alone, which is what "7am–4pm" is. Spaced, this would reach a customer as
+// "7am, 4pm".
+export const SHOP_HOURS = "Every day, 7am–4pm";
 
-// Compact form for a status line ("Open until 2pm").
 export const OPEN_HOUR = 7;
-export const CLOSE_HOUR = 14;
+export const CLOSE_HOUR = 16;
+
+// "7am" and "4pm", derived rather than typed.
+//
+// Three screens had "2pm" written into a sentence, so changing the closing
+// time meant finding all three, and the order flow told people it shut at 2pm
+// for as long as one was missed. A time that appears in prose is still the
+// same fact as the number the clock compares against, and it should come from
+// the same place.
+function clockLabel(hour24: number): string {
+  const period = hour24 >= 12 ? "pm" : "am";
+  const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${hour}${period}`;
+}
+
+export const OPEN_LABEL = clockLabel(OPEN_HOUR);
+export const CLOSE_LABEL = clockLabel(CLOSE_HOUR);
 
 // How long the kitchen needs before an order is ready. One number, here,
 // because it answers three separate questions that have to agree: whether
@@ -19,11 +39,12 @@ export const CLOSE_HOUR = 14;
 // three times, and three copies of a number is two chances to change one.
 export const PREP_MINUTES = 12;
 
-// The days the window is open, as JavaScript weekdays (0 = Sunday). Monday
-// and Tuesday are closed. Kept as data rather than folded into isOpenNow so
-// that a screen can say *which* days without re-deriving them from the
-// sentence above.
-export const OPEN_DAYS = [0, 3, 4, 5, 6];
+// The days the window is open, as JavaScript weekdays (0 = Sunday). Seven
+// days a week, so this is all of them. Kept as a list rather than dropped now
+// that nothing is excluded, because the code around it asks "is today an open
+// day" and that question should keep having an answer the day the shop takes
+// a Monday off.
+export const OPEN_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 export const SHOP_ADDRESS = "3064 W 8th St";
 export const SHOP_CITY = "Los Angeles, CA 90005";
@@ -108,13 +129,17 @@ export function nextOpening(now: Date = new Date()): string | null {
   const { day, hour } = shopClock(now);
 
   // Later today, if today is an open day and it hasn't started yet.
-  if (OPEN_DAYS.includes(day) && hour < OPEN_HOUR) return "at 7am";
+  if (OPEN_DAYS.includes(day) && hour < OPEN_HOUR) return `at ${OPEN_LABEL}`;
 
-  // Otherwise walk forward to the next open day.
+  // Otherwise walk forward to the next open day. With every day open this
+  // always lands on tomorrow, and the loop stays because the shop closing on
+  // a weekday should not also require rewriting this.
   for (let ahead = 1; ahead <= 7; ahead += 1) {
     const next = (day + ahead) % 7;
     if (!OPEN_DAYS.includes(next)) continue;
-    return ahead === 1 ? "tomorrow at 7am" : `${DAY_LONG[next]} at 7am`;
+    return ahead === 1
+      ? `tomorrow at ${OPEN_LABEL}`
+      : `${DAY_LONG[next]} at ${OPEN_LABEL}`;
   }
   return null;
 }
@@ -125,7 +150,7 @@ export function openingStatus(now: Date = new Date()): {
   open: boolean;
   label: string;
 } {
-  if (isOpenNow(now)) return { open: true, label: "Open until 2pm" };
+  if (isOpenNow(now)) return { open: true, label: `Open until ${CLOSE_LABEL}` };
   const next = nextOpening(now);
   return { open: false, label: next ? `Closed · opens ${next}` : "Closed" };
 }

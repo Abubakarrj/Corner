@@ -7,6 +7,7 @@ import { formatPrice } from "../products";
 import { totalsFor } from "../money";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
+import { CLOSE_LABEL } from "../../shopFacts";
 import { useCapabilities } from "../../capabilities";
 import { orderTotals, recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
@@ -402,7 +403,7 @@ export default function CheckoutPage() {
           </p>
           <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
             {opening.open
-              ? `There isn't time to make this before we shut at 2pm. Your basket keeps — order again when we open.`
+              ? `There isn't time to make this before we shut at ${CLOSE_LABEL}. Your basket keeps — order again when we open.`
               : `${opening.label.replace("Closed · o", "O")}. Your basket keeps until then.`}
           </p>
         </div>
