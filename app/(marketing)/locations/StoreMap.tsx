@@ -2,87 +2,27 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
-import { loadMaps } from "../../googleMapsPublic";
+import { mapsConfig } from "../../googleMapsPublic";
 import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
+import type { EngineFactory, MapEngine } from "./mapEngine";
 
-const { ink, onInk, olive, muted } = PALETTE;
+const { ink, onInk, muted } = PALETTE;
 
 // A real slippy map: it pans, it zooms, and "Search area" means something
 // because there are real bounds to read.
 //
-// Google Maps, on the one key that also does the geocoding, the routing and
-// the address search. That single key is the whole reason this replaced Radar
-// and MapLibre, and it is why there is no attribution pill of our own any
-// more: the Maps JavaScript API draws its own logo and terms link along the
-// base of the canvas.
+// Everything on this screen lives here, and the basemap underneath it does
+// not. Two engines implement the seam in mapEngine.ts, Google and Protomaps,
+// and this file neither knows nor cares which one answered. That is what makes
+// them comparable: swap the engine and the only thing that changes is the map.
 //
-// That strip is not decoration and it is not ours to restyle. The Maps
-// Platform terms say a customer "will display all attribution that Google
-// provides through the Services (including branding, logos, and copyright and
-// trademark notices)" and "will not modify, obscure, or delete" it. So there
-// is no swapping it for a tidier pill reading "© Google Maps", and nothing on
-// this screen may be drawn over it. What can go is the keyboard shortcuts
-// button, which is a control rather than attribution, and it has: see
-// keyboardShortcuts below.
-//
-// If the small pill is the look you want, the way to get it is a basemap
-// whose licence asks for that: OpenStreetMap data through MapLibre, self
-// hosted, where "© OpenStreetMap contributors" is the whole requirement.
-//
-// Styling is the JS `styles` array rather than a cloud-hosted Map ID, so the
-// only setup is enabling the APIs. That is a deliberate trade. Cloud styling
-// and AdvancedMarkerElement both need a Map ID created in the console, and the
-// point of this rewrite was one variable and no dashboard work. If you ever
-// want the newer marker element, create a Map ID, pass it here, and move the
-// palettes below into the console.
-const MAP_STYLE: Record<"light" | "dark", google.maps.MapTypeStyle[]> = {
-  // Warm and quiet. Points of interest are off on both: this map has one pin
-  // that matters and a hundred restaurant markers competing with it is not
-  // help, it is noise.
-  light: [
-    { featureType: "poi", stylers: [{ visibility: "off" }] },
-    { featureType: "transit", stylers: [{ visibility: "off" }] },
-    { elementType: "geometry", stylers: [{ color: "#f2eee1" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#6b6553" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#f7f4eb" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
-    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#faf8f1" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#cfe0e8" }] },
-    { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#e7e6d4" }] },
-  ],
-  dark: [
-    { featureType: "poi", stylers: [{ visibility: "off" }] },
-    { featureType: "transit", stylers: [{ visibility: "off" }] },
-    { elementType: "geometry", stylers: [{ color: "#232220" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#8f8a80" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#171614" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#33312e" }] },
-    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#3b3935" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#1e2a30" }] },
-    { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#282725" }] },
-  ],
-};
-
-// The pin: an inline SVG teardrop anchored at its point. Olive for the shops
-// and sage for catering kitchens. One of the few places the brand green still
-// does the work, because a pin is a mark on somebody else's map and it should
-// read as ours, where a black pin would read as the map's own.
-function pinIcon(kind: StoreLocation["kind"]): google.maps.Icon {
-  // Custom properties don't resolve inside a data URI, so these are the
-  // literal token values rather than var() references.
-  const fill = kind === "shop" ? "#3e4a30" : "#b7c9a2";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34">
-      <path d="M13 33C13 33 25 20.5 25 13A12 12 0 1 0 1 13C1 20.5 13 33 13 33Z"
-            fill="${fill}" stroke="white" stroke-width="2"/>
-      <circle cx="13" cy="13" r="4.4" fill="white"/>
-    </svg>`;
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(26, 34),
-    anchor: new google.maps.Point(13, 33),
-  };
-}
+// Which one runs comes from MAP_PROVIDER, overridable per visit with
+// ?map=google or ?map=protomaps on /locations. They differ in what they oblige
+// you to show. Google draws its own logo and Terms along the base of the
+// canvas and forbids modifying or obscuring any of it. Protomaps needs a
+// single pill reading "Protomaps © OpenStreetMap", because that is all
+// OpenStreetMap's licence asks for.
 
 function LocateIcon() {
   return (
@@ -99,6 +39,20 @@ function LocateIcon() {
   );
 }
 
+// Where the map should be looking, and what should be open on it.
+//
+// One object rather than three props because they are one intention: a search
+// resolved, so point the camera there, get that close, and open that shop's
+// card. Sending them separately meant three effects racing to describe a
+// single answer.
+export type MapFocus = {
+  at: [number, number];
+  zoom?: number;
+  // The location whose popup should open, if any. This is how a pickup search
+  // ends up showing the shop's own card, address and all, over the shop.
+  openId?: string;
+};
+
 export default function StoreMap({
   locations,
   showSearchArea,
@@ -114,14 +68,11 @@ export default function StoreMap({
   // Committing to a location is the whole point of this screen: the menu
   // can't price or route an order without knowing where it's going.
   onChoose: (location: StoreLocation) => void;
-  // Where a searched city, state, or ZIP landed.
-  focus: [number, number] | null;
+  focus: MapFocus | null;
 }) {
   const theme = useResolvedTheme();
   const holderRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
-  const infoRef = useRef<google.maps.InfoWindow | null>(null);
+  const engineRef = useRef<MapEngine | null>(null);
   const [ready, setReady] = useState(false);
   // Shown only once the visitor has actually moved the map. Offering to
   // re-search an area nobody has changed is noise.
@@ -155,45 +106,42 @@ export default function StoreMap({
     // the tinted holder, which looks exactly like a map that hasn't loaded
     // yet. A blank panel should always be able to say why it's blank.
     void (async () => {
-      const maps = await loadMaps();
-      const holder = holderRef.current;
-      if (cancelled || !maps || !holder || mapRef.current) return;
-
-      const { Map } = (await maps.importLibrary("maps")) as google.maps.MapsLibrary;
+      const config = await mapsConfig();
       if (cancelled) return;
 
-      const map = new Map(holder, {
-        // The whole-country view the finder opens on: nothing preselected,
-        // the lower 48 until the visitor searches or shares their position.
-        center: { lat: 39, lng: -96 },
-        zoom: 4,
-        // Google's own chrome, all off. The finder draws its own zoom pair and
-        // locate button so they match the app rather than the platform, and a
-        // second set underneath them is clutter over a small screen.
-        disableDefaultUI: true,
-        // Separate from disableDefaultUI, which explicitly does not cover it.
-        // This is what takes the "Keyboard shortcuts" button off the bottom
-        // bar, and it is a supported option rather than something hidden with
-        // CSS. Nothing here is reachable by keyboard anyway: the finder draws
-        // its own zoom pair and locate button, and those are real buttons.
-        keyboardShortcuts: false,
-        clickableIcons: false,
-        gestureHandling: "greedy",
-        styles: MAP_STYLE[theme],
+      // The query parameter wins over the deployment's default, so both maps
+      // can be looked at on one deployment without a redeploy between them.
+      const asked = new URLSearchParams(window.location.search).get("map");
+      const provider =
+        asked === "google" || asked === "protomaps" ? asked : config.provider;
+
+      // Imported here rather than at the top of the file so only the engine in
+      // use is downloaded. MapLibre and the Protomaps style are a few hundred
+      // kilobytes, and a visitor on the Google path should never pay for them.
+      const create: EngineFactory =
+        provider === "protomaps"
+          ? (await import("./engineProtomaps")).createProtomapsEngine
+          : (await import("./engineGoogle")).createGoogleEngine;
+
+      const holder = holderRef.current;
+      if (cancelled || !holder || engineRef.current) return;
+
+      const engine = await create(holder, {
+        theme,
+        initialBounds: {
+          south: INITIAL_BOUNDS[0][0],
+          west: INITIAL_BOUNDS[0][1],
+          north: INITIAL_BOUNDS[1][0],
+          east: INITIAL_BOUNDS[1][1],
+        },
+        onMoved: () => setMoved(true),
       });
+      if (cancelled || !engine) {
+        engine?.destroy();
+        return;
+      }
 
-      map.fitBounds({
-        south: INITIAL_BOUNDS[0][0],
-        west: INITIAL_BOUNDS[0][1],
-        north: INITIAL_BOUNDS[1][0],
-        east: INITIAL_BOUNDS[1][1],
-      });
-
-      map.addListener("dragend", () => setMoved(true));
-      map.addListener("zoom_changed", () => setMoved(true));
-
-      infoRef.current = new maps.InfoWindow({ disableAutoPan: false });
-      mapRef.current = map;
+      engineRef.current = engine;
       setReady(true);
     })().catch((error: unknown) => {
       console.error("[map] could not build the map", error);
@@ -201,53 +149,33 @@ export default function StoreMap({
 
     return () => {
       cancelled = true;
+      engineRef.current?.destroy();
+      engineRef.current = null;
     };
     // theme is applied by the effect below rather than by rebuilding the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Follow the app's light/dark switch. setOptions swaps the palette and
-  // leaves the markers, which are overlays rather than part of the style.
+  // Follow the app's light/dark switch.
   useEffect(() => {
-    mapRef.current?.setOptions({ styles: MAP_STYLE[theme] });
-  }, [theme]);
+    if (ready) engineRef.current?.setTheme(theme);
+  }, [theme, ready]);
 
   // Markers, redrawn whenever the visible set changes.
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = locations.map((location) => {
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: location.position[0], lng: location.position[1] },
-        icon: pinIcon(location.kind),
-        title: location.name,
-      });
-      marker.addListener("click", () => {
-        const info = infoRef.current;
-        if (!info) return;
-        info.setContent(popupContent(location, () => chooseRef.current(location)));
-        info.open({ map, anchor: marker });
-      });
-      return marker;
-    });
-
-    return () => {
-      markersRef.current.forEach((marker) => marker.setMap(null));
-      markersRef.current = [];
-    };
+    if (!ready) return;
+    engineRef.current?.setMarkers(locations, (location) => chooseRef.current(location));
   }, [locations, ready]);
 
-  // Recentres when a searched place resolves.
+  // Where to look, and what to open. Runs after the markers effect above, so
+  // the popup it asks for belongs to a marker that exists.
   useEffect(() => {
-    if (!focus) return;
-    const map = mapRef.current;
-    if (!map) return;
-    map.panTo({ lat: focus[0], lng: focus[1] });
-    map.setZoom(12);
-  }, [focus]);
+    if (!ready || !focus) return;
+    const engine = engineRef.current;
+    if (!engine) return;
+    engine.panTo(focus.at, focus.zoom ?? 12);
+    if (focus.openId) engine.openPopup(focus.openId);
+  }, [focus, ready, locations]);
 
   const onRailScroll = useCallback(() => {
     const rail = railRef.current;
@@ -262,7 +190,7 @@ export default function StoreMap({
       const location = locations[index];
       if (!location) return;
       setCardIndex(index);
-      mapRef.current?.panTo({ lat: location.position[0], lng: location.position[1] });
+      engineRef.current?.panTo(location.position);
     }, 120);
   }, [locations]);
 
@@ -282,7 +210,7 @@ export default function StoreMap({
   return (
     <div className="relative min-h-0 flex-1">
       {/* The tinted ground shows through until the basemap paints, and stays
-          if no key is configured. A white gap where a map should be reads as
+          if nothing is configured. A white gap where a map should be reads as
           broken; a filled panel with the pins and controls still on it reads
           as a map that hasn't loaded, which is the truth. */}
       <div
@@ -298,16 +226,8 @@ export default function StoreMap({
           <button
             type="button"
             onClick={() => {
-              const bounds = mapRef.current?.getBounds();
-              if (!bounds) return;
-              const sw = bounds.getSouthWest();
-              const ne = bounds.getNorthEast();
-              onSearchArea({
-                south: sw.lat(),
-                west: sw.lng(),
-                north: ne.lat(),
-                east: ne.lng(),
-              });
+              const bounds = engineRef.current?.getBounds();
+              if (bounds) onSearchArea(bounds);
             }}
             className="pointer-events-auto absolute left-4 top-4 cursor-pointer rounded-full bg-surface px-5 py-2.5 text-[14px] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
           >
@@ -323,13 +243,10 @@ export default function StoreMap({
             // dialog over a map that still works.
             navigator.geolocation?.getCurrentPosition(
               (position) => {
-                const map = mapRef.current;
-                if (!map) return;
-                map.panTo({
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude,
-                });
-                map.setZoom(13);
+                engineRef.current?.panTo(
+                  [position.coords.latitude, position.coords.longitude],
+                  13,
+                );
               },
               () => {},
               { enableHighAccuracy: false, timeout: 8000 },
@@ -347,8 +264,8 @@ export default function StoreMap({
           <button
             type="button"
             onClick={() => {
-              const map = mapRef.current;
-              map?.setZoom((map.getZoom() ?? 4) + 1);
+              const engine = engineRef.current;
+              engine?.setZoom(engine.getZoom() + 1);
             }}
             aria-label="Zoom in"
             className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
@@ -358,8 +275,8 @@ export default function StoreMap({
           <button
             type="button"
             onClick={() => {
-              const map = mapRef.current;
-              map?.setZoom((map.getZoom() ?? 4) - 1);
+              const engine = engineRef.current;
+              engine?.setZoom(engine.getZoom() - 1);
             }}
             aria-label="Zoom out"
             className="flex h-11 cursor-pointer items-center justify-center border-t border-line-soft text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
@@ -380,10 +297,9 @@ export default function StoreMap({
           <div
             ref={railRef}
             onScroll={onRailScroll}
-            // bottom-8, not bottom-3. The strip along the base of the map is
-            // Google's logo on the left and "Map data ©" and Terms on the
-            // right, and the Maps Platform terms are explicit that a customer
-            // "will not modify, obscure, or delete such attribution". At 12px
+            // bottom-8, not bottom-3. Both maps draw their attribution along
+            // the base of the canvas, and Google's terms are explicit that a
+            // customer "will not modify, obscure, or delete" theirs. At 12px
             // the card sat across the logo, which is obscuring it. 32px clears
             // the strip with room to spare. It reads better too, so there is
             // nothing being traded off here.
@@ -455,35 +371,4 @@ export default function StoreMap({
       </div>
     </div>
   );
-}
-
-// The pin's popup, as real DOM rather than an HTML string: the Order button
-// inside it needs a listener, and a string would give us markup with no way to
-// attach one short of querying the document for it after the fact.
-function popupContent(location: StoreLocation, onOrder: () => void): HTMLElement {
-  const root = document.createElement("div");
-  root.className = "cb-map-popup";
-
-  const name = document.createElement("span");
-  name.className = "block text-[13px] font-medium text-ink";
-  name.textContent = location.name;
-
-  const detail = document.createElement("span");
-  detail.className = "mt-0.5 block text-[12px] text-muted";
-  detail.append(location.address, document.createElement("br"));
-  detail.append(location.city, document.createElement("br"));
-  detail.append(location.hours);
-
-  // The commitment point. Everything else on this screen is browsing; this is
-  // where the order gets a destination.
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className =
-    "cb-press mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-medium text-on-ink hover:opacity-90";
-  button.style.backgroundColor = olive;
-  button.textContent = "Order from here";
-  button.addEventListener("click", onOrder);
-
-  root.append(name, detail, button);
-  return root;
 }

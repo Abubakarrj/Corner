@@ -437,3 +437,38 @@ body {
 :root[data-theme="dark"] .gm-style-iw-c button.gm-ui-hover-effect > span {
   filter: invert(1);
 }
+
+/* The same card under MapLibre, which builds a different shell around the
+   content we hand it. Two rule sets rather than one because the two libraries
+   have nothing in common structurally, and the point of both is that the popup
+   looks identical whichever is drawing the map. */
+.cb-map-popup-shell .maplibregl-popup-content {
+  background: var(--cb-surface);
+  color: var(--cb-ink);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  min-width: 190px;
+}
+/* The tip is a bordered triangle, so it is coloured through border-color and
+   only on the edge facing the bubble. Which edge that is depends on which side
+   of the pin the popup opened, hence all four. */
+.cb-map-popup-shell .maplibregl-popup-tip {
+  border-top-color: var(--cb-surface);
+  border-bottom-color: var(--cb-surface);
+  border-left-color: var(--cb-surface);
+  border-right-color: var(--cb-surface);
+}
+/* MapLibre's attribution pill, in the app's surfaces rather than the default
+   translucent white, which sat oddly on a cream basemap and badly on a dark
+   one. Only the shell is restyled: the text and its links are the attribution
+   itself and are left exactly as written. */
+.maplibregl-ctrl-attrib.maplibregl-compact,
+.maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--cb-surface) 88%, transparent);
+  color: var(--cb-muted);
+  border-radius: 999px;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--cb-muted);
+}

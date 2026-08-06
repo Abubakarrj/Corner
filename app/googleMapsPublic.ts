@@ -22,18 +22,38 @@ const LAYERS = {
 
 export type SuggestKind = keyof typeof LAYERS;
 
-// ——— The key ———
+// ——— Configuration ———
 
-let keyPromise: Promise<string | null> | null = null;
+export type MapsConfig = {
+  provider: "google" | "protomaps";
+  key: string | null;
+  pmtiles: string | null;
+  glyphs: string;
+  sprite: string;
+};
+
+const FALLBACK: MapsConfig = {
+  provider: "google",
+  key: null,
+  pmtiles: null,
+  glyphs: "",
+  sprite: "",
+};
+
+let configPromise: Promise<MapsConfig> | null = null;
+
+// Once per page. The answer doesn't change under a running app, and the finder
+// mounts the map and the search box separately.
+export function mapsConfig(): Promise<MapsConfig> {
+  configPromise ??= fetch("/api/maps-config")
+    .then((response) => (response.ok ? response.json() : null))
+    .then((body: Partial<MapsConfig> | null) => ({ ...FALLBACK, ...(body ?? {}) }))
+    .catch(() => FALLBACK);
+  return configPromise;
+}
 
 export function mapsKey(): Promise<string | null> {
-  // Once per page. The answer doesn't change under a running app, and the
-  // finder mounts the map and the search box separately.
-  keyPromise ??= fetch("/api/maps-config")
-    .then((response) => (response.ok ? response.json() : null))
-    .then((body: { key?: string } | null) => body?.key ?? null)
-    .catch(() => null);
-  return keyPromise;
+  return mapsConfig().then((config) => config.key);
 }
 
 // ——— Loading the library ———

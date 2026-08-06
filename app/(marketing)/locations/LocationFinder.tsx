@@ -47,6 +47,8 @@ const { cream, ink, onInk, border, controlBorder, muted } = PALETTE;
 // initial bundle is why the header and the search field are usable before the
 // basemap has arrived. The placeholder holds the map's space so nothing
 // jumps when it does.
+import type { MapFocus } from "./StoreMap";
+
 const StoreMap = dynamic(() => import("./StoreMap"), {
   ssr: false,
   loading: () => <div className="min-h-0 flex-1" style={{ background: "var(--cb-raise)" }} />,
@@ -79,7 +81,7 @@ export default function LocationFinder() {
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
-  const [focus, setFocus] = useState<[number, number] | null>(null);
+  const [focus, setFocus] = useState<MapFocus | null>(null);
   // The place that was searched for, once it has coordinates. This is what
   // turns "Beverly Hills" from a word we can't match into a point we can
   // measure from, so the shops shown are the shops actually near it.
@@ -172,7 +174,9 @@ export default function LocationFinder() {
   // waits for the Order press.
   function pickFromSearch(location: StoreLocation) {
     if (mode === "catering") {
-      setFocus(location.position);
+      // Named a kitchen by name, so land on it with its card open, same as a
+      // place search that resolves to it.
+      setFocus({ at: location.position, zoom: 16, openId: location.id });
       // The results panel is keyed off the query; emptying it puts the map
       // and the shop's card back in view, which is the thing being pointed at.
       setQuery("");
@@ -198,16 +202,31 @@ export default function LocationFinder() {
     setToastDismissed(false);
   }
 
-  // A place picked out of the results, for pickup and catering: point the map
-  // at it, and measure our shops against it. Both, because either alone is
-  // half an answer — flying there without ranking leaves the wrong card under
-  // your thumb, and ranking without flying leaves you looking at the map you
-  // had before.
+  // A place picked out of the results, for pickup and catering.
+  //
+  // The map goes to the *shop*, not to the place that was typed. Somebody
+  // searching "Beverly Hills" under Pickup is asking where they can collect,
+  // and the answer to that is a counter with an address on it. Flying to
+  // Beverly Hills and leaving them to find the pin is showing them their own
+  // question back.
+  //
+  // So: measure our shops against what was searched, then land on the nearest
+  // one close enough to read the street, with its card open. That card carries
+  // the address, the hours and the Order button, which is everything the
+  // search was for. When there is nothing of ours at all, the searched place
+  // is still better than the country view we were on.
   function lookAt(place: ResolvedPlace) {
-    setFocus([place.lat, place.lng]);
-    setSearched({ point: [place.lat, place.lng], label: place.address });
+    const point: [number, number] = [place.lat, place.lng];
+    setSearched({ point, label: place.address });
     setBounds(null);
     setToastDismissed(false);
+
+    const closest = nearestLocations(point, mode === "catering" ? "catering" : "shop")[0];
+    setFocus(
+      closest
+        ? { at: closest.location.position, zoom: 16, openId: closest.location.id }
+        : { at: point, zoom: 12 },
+    );
   }
 
   // What the bar along the bottom says, and whether it says anything.
