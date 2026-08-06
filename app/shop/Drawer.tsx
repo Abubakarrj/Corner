@@ -157,6 +157,19 @@ export default function Drawer({
     <div
       className={`fixed inset-0 z-[1100] overflow-hidden ${open ? "" : "pointer-events-none"}`}
       inert={!open}
+      style={{
+        // The same fix Modal.tsx carries, and for the same reason: an element
+        // that is only transparent is still composited. `inert` and
+        // pointer-events keep it out of the way of a finger, but the browser
+        // has no way to know a full-viewport layer is invisible in any useful
+        // sense, so it goes on being a layer over every shop page.
+        //
+        // visibility is what actually removes it, and the delay is what keeps
+        // the closing animation: it flips at the end of the slide out, and
+        // immediately on the way in.
+        visibility: open ? "visible" : "hidden",
+        transition: open ? "visibility 0s" : "visibility 0s linear 300ms",
+      }}
     >
       {/* A plain dim, not a blur. backdrop-filter over the whole viewport is
           recomputed every frame, and cross-fading one while a panel slides in

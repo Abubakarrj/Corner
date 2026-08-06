@@ -286,6 +286,19 @@ export default function ChatWidget() {
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-2 scale-95 opacity-0"
         }`}
+        style={{
+          // See Modal.tsx: opacity-0 is invisible to a person and still a
+          // composited layer to the browser. This panel sits on every page of
+          // the shop, so leaving it composited is a permanent cost for a thing
+          // most visits never open.
+          //
+          // The closed transition restates `transition-all duration-200` from
+          // the class list rather than only naming visibility, because an
+          // inline transition replaces the class one outright, and naming just
+          // visibility would take the fade out with it.
+          visibility: open ? "visible" : "hidden",
+          transition: open ? undefined : "all 200ms ease-out, visibility 0s linear 200ms",
+        }}
       >
         {/* Header. Slimmer than it was — it used to be a 72px olive slab with
             a 40px disc in it, which is a lot of furniture above a one-line
