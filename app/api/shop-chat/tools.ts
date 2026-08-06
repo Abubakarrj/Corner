@@ -28,7 +28,7 @@ import {
   SHOP_ADDRESS_PARTS,
 } from "../../shopFacts";
 import { DELIVERY_ORIGIN, DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
-import { driveBetween, geocode } from "../../radar";
+import { driveBetween, geocode } from "../../googleMaps";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../uberDirect";
 
 // What Riley can actually do.
@@ -80,7 +80,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
   {
     name: "search_menu",
     description:
-      "Search the live menu. Call this before naming any item, price, or ingredient — " +
+      "Search the live menu. Call this before naming any item, price, or ingredient. " +
       "never answer from memory, because prices and availability change and a wrong " +
       "price costs somebody a trip. Also call it when asked what's vegetarian, what " +
       "has no dairy, what's under a price, or what's in a category. Returns each " +
@@ -137,7 +137,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
   {
     name: "price_order",
     description:
-      "Work out what a basket comes to — subtotal, tax and total. ALWAYS call this " +
+      "Work out what a basket comes to. subtotal, tax and total. ALWAYS call this " +
       "instead of adding prices up yourself: it runs the same arithmetic the checkout " +
       "runs, so the figure you quote is the figure they'll be charged. Mental " +
       "arithmetic here is how a chat quotes one number and the till charges another.",
@@ -166,8 +166,8 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "Whether the counter is open right now, when it next opens, and whether there's " +
       "still time to make an order before it shuts. Call this whenever the answer " +
-      "depends on the time — 'are you open', 'can I order now', 'when will it be " +
-      "ready' — rather than assuming.",
+      "depends on the time. 'are you open', 'can I order now', 'when will it be " +
+      "ready'. rather than assuming.",
     input_schema: { type: "object", properties: {}, required: [] },
   },
   {
@@ -175,7 +175,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "Whether a courier will deliver to an address, how far it is by road, what the " +
       "delivery costs and how long it takes. Call this the moment somebody gives an " +
-      "address or asks whether you deliver to them. Never guess a delivery fee — it's " +
+      "address or asks whether you deliver to them. Never guess a delivery fee. it's " +
       "quoted per address, so there is no flat rate to quote.",
     input_schema: {
       type: "object",
@@ -192,7 +192,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     name: "show_items",
     description:
       "Put menu items on screen as tappable cards, each with its price and an Add " +
-      "button. Use this instead of listing items in your text — a card is one tap to " +
+      "button. Use this instead of listing items in your text. a card is one tap to " +
       "the basket and a paragraph is not. Call it alongside your reply whenever you " +
       "mention two or more items, or recommend a specific one. Keep your text about " +
       "*why*; let the cards carry the names and prices.",
@@ -212,8 +212,8 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     name: "suggest_replies",
     description:
       "Offer two or three short things they might say next, as tappable chips. Use " +
-      "them for the obvious follow-ups — 'What's on it?', 'Add it', 'Something " +
-      "without dairy' — so answering is a tap. Write them as the visitor would say " +
+      "them for the obvious follow-ups. 'What's on it?', 'Add it', 'Something " +
+      "without dairy'. so answering is a tap. Write them as the visitor would say " +
       "them, not as menu options. Skip them when you've asked a direct question that " +
       "needs a real answer, like an address.",
     input_schema: {
@@ -231,8 +231,8 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
   {
     name: "add_to_basket",
     description:
-      "Put an item in their basket. Only when they've asked for it — 'add it', 'I'll " +
-      "take two', 'sounds good, get me that' — never on your own initiative or to be " +
+      "Put an item in their basket. Only when they've asked for it. 'add it', 'I'll " +
+      "take two', 'sounds good, get me that'. never on your own initiative or to be " +
       "helpful. Every required choice must be filled in; call get_item first if you " +
       "don't know what they are, and ask them rather than guessing which bagel they " +
       "want. This does not place or pay for anything: the basket opens so they can see " +
@@ -255,7 +255,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     name: "open_screen",
     description:
       "Offer a button that takes them somewhere in the app. Use it at the end of a " +
-      "thread of conversation — checkout once the basket is right, locations to set a " +
+      "thread of conversation. checkout once the basket is right, locations to set a " +
       "delivery address, account to find an order. One button, and only when there's a " +
       "clear next step; a button on every reply is navigation, not help.",
     input_schema: {
@@ -364,7 +364,7 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
           // Said every time, because the honest answer to "is this dairy free"
           // is never yes on a counter with one toaster.
           allergenCaveat:
-            "Ingredient lists, not safety guarantees — one counter, shared boards, one toaster.",
+            "Ingredient lists, not safety guarantees. one counter, shared boards, one toaster.",
         },
       };
     }
@@ -471,7 +471,7 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       const address = typeof args.address === "string" ? args.address.trim() : "";
       if (!address) return { forModel: { error: "No address given." } };
 
-      const place = await geocode(address);
+      const place = await geocode(address, DELIVERY_ORIGIN.position);
       if (!place) {
         return {
           forModel: {
@@ -568,7 +568,7 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
                   ? [{ label: "At the door in", value: `about ${quote.quote.etaMinutes} min` }]
                   : []),
               ],
-              note: "Quoted for this address — the checkout re-quotes before you pay.",
+              note: "Quoted for this address. the checkout re-quotes before you pay.",
             },
           ],
         },

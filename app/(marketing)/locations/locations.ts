@@ -146,8 +146,8 @@ export function searchLocations(
 // What the map is currently showing, in plain numbers.
 //
 // This used to be Leaflet's LatLngBounds passed straight out of the map
-// component. It isn't any more — the map is MapLibre now — and it shouldn't
-// have been either way: "which shops are on screen" is a question about
+// component. It isn't any more, and it shouldn't have been either way:
+// "which shops are on screen" is a question about
 // latitude and longitude, and typing it as one library's class made every
 // caller import that library to ask it.
 export type MapBounds = {
@@ -180,7 +180,7 @@ export const DELIVERY_RADIUS_MILES = 8;
 
 // Great-circle distance in miles.
 //
-// No longer the radius check — that's Radar's driving distance now, measured
+// No longer the radius check. That's the Routes API's driving distance, measured
 // server-side in app/api/geo/route.ts, because five miles of Los Angeles
 // street grid is nothing like five miles of straight line. This stays as the
 // fallback for when routing is unreachable, and for anywhere a rough distance

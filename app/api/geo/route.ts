@@ -3,31 +3,29 @@ import {
   DELIVERY_RADIUS_MILES,
   milesBetween,
 } from "../../(marketing)/locations/locations";
-import { driveBetween, geocode, suggest } from "../../radar";
+import { driveBetween, geocode, suggest } from "../../googleMaps";
 
 // Resolving an address, and deciding whether we'll deliver to it.
 //
-// This replaces the Google Places proxy that used to live at /api/places.
-// The shape of the conversation is simpler now: the browser does its own
-// autocomplete against Radar's publishable key (see app/radarPublic.ts), so
-// nothing here fires per keystroke. What arrives here is the one address
-// somebody actually chose.
+// The browser does its own autocomplete against the Maps JavaScript API (see
+// app/googleMapsPublic.ts), so nothing here fires per keystroke. What arrives
+// here is the one address somebody actually chose.
 //
 // Two things then happen, in this order, and both on the server:
 //
-//   1. The address is geocoded from scratch. Radar's autocomplete already
-//      returned coordinates, but those came through the browser, and a
-//      coordinate that came through the browser is a coordinate the browser
-//      can change. Delivery range is an authorization decision — "will we
-//      send a courier here" — so it gets made on numbers we fetched.
+//   1. The address is geocoded from scratch. Autocomplete already returned a
+//      place, but that came through the browser, and a coordinate that came
+//      through the browser is a coordinate the browser can change. Delivery
+//      range is an authorization decision, "will we send a courier here", so
+//      it gets made on numbers we fetched.
 //
-//   2. The distance is a driving distance from the shop, via Radar's routing.
+//   2. The distance is a driving distance from the shop, via the Routes API.
 //      The straight line is still here as a fallback, but it is a worse
 //      answer: on a street grid five miles as the crow flies can be nine
 //      miles of driving, and the courier is not a crow.
 //
-// `suggest` is here too, as the fallback for a deployment that has set
-// RADAR_SECRET_KEY but not the publishable key.
+// `suggest` is here too, as the fallback for when the Maps library couldn't
+// load in the browser.
 
 export async function POST(request: Request) {
   let payload: unknown;
@@ -54,7 +52,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Enter an address." }, { status: 400 });
   }
 
-  const place = await geocode(query);
+  const place = await geocode(query, DELIVERY_ORIGIN.position);
   if (!place) {
     return Response.json(
       { error: "We couldn't find that address. Try adding the city or ZIP." },

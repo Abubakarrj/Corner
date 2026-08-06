@@ -1,79 +1,74 @@
 "use client";
 
-import "maplibre-gl/dist/maplibre-gl.css";
-import maplibregl from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
-import { RADAR_PUBLISHABLE_KEY, radarStyleUrl, warnIfNoMapKey } from "../../radarPublic";
+import { loadMaps } from "../../googleMapsPublic";
 import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
 
 const { ink, onInk, olive, muted } = PALETTE;
 
-// A real slippy map — it pans, it zooms, and "Search area" means something
+// A real slippy map: it pans, it zooms, and "Search area" means something
 // because there are real bounds to read.
 //
-// Tiles are Radar's, drawn by MapLibre. They used to come straight from
-// tile.openstreetmap.org, which is free and keyless and explicitly not for
-// production traffic: OSM's tile policy is for development and light use, and
-// a storefront pulling tiles from it is using a volunteer-funded service as a
-// CDN. Radar serves the same OpenStreetMap data from its own infrastructure,
-// as a vector style, which is also why the renderer changed — Leaflet draws
-// raster tiles, MapLibre draws vector ones, and vector is what makes the
-// labels stay sharp on a phone and lets the basemap follow the app's
-// light/dark switch instead of being a bright rectangle in a dark UI.
+// Google Maps, on the one key that also does the geocoding, the routing and
+// the address search. That single key is the whole reason this replaced Radar
+// and MapLibre, and it is why there is no attribution pill any more: the Maps
+// JavaScript API draws its own logo and terms link into the canvas, which is
+// both required and already handled.
 //
-// Attribution is rendered below rather than left to MapLibre's own control,
-// which would land under the card rail.
-//
-// Both names are links, because attribution that can't be followed isn't
-// really attribution — OSM's licence asks for a credit that leads somewhere,
-// and Radar's "powered by" asks the same. They're the only tappable thing on
-// the map chrome that isn't a control, so they open in a new tab: somebody
-// halfway through choosing a shop shouldn't lose the screen to a licence page.
-const ATTRIBUTION = [
-  { label: "Radar", href: "https://radar.com/?ref=powered_by_radar" },
-  { label: "OpenStreetMap", href: "https://www.openstreetmap.org/copyright" },
-];
-
-// Leaflet took [lat, lng]; MapLibre takes [lng, lat]. Every crossing goes
-// through here, because getting it wrong puts Los Angeles in the South
-// Atlantic and the mistake looks like a data problem rather than an axis one.
-function lngLat([lat, lng]: [number, number]): [number, number] {
-  return [lng, lat];
-}
-
-const INITIAL: maplibregl.LngLatBoundsLike = [
-  lngLat(INITIAL_BOUNDS[0]),
-  lngLat(INITIAL_BOUNDS[1]),
-];
-
-// A blank style, for a deployment that hasn't set the publishable key yet.
-// The pins, the rail, the zoom and "Search area" all still work over it —
-// what's missing is the picture of the streets. Better than a broken tile
-// grid, and much better than quietly falling back to hammering OSM.
-function blankStyle(background: string): maplibregl.StyleSpecification {
-  return {
-    version: 8,
-    sources: {},
-    layers: [{ id: "bg", type: "background", paint: { "background-color": background } }],
-  };
-}
+// Styling is the JS `styles` array rather than a cloud-hosted Map ID, so the
+// only setup is enabling the APIs. That is a deliberate trade. Cloud styling
+// and AdvancedMarkerElement both need a Map ID created in the console, and the
+// point of this rewrite was one variable and no dashboard work. If you ever
+// want the newer marker element, create a Map ID, pass it here, and move the
+// palettes below into the console.
+const MAP_STYLE: Record<"light" | "dark", google.maps.MapTypeStyle[]> = {
+  // Warm and quiet. Points of interest are off on both: this map has one pin
+  // that matters and a hundred restaurant markers competing with it is not
+  // help, it is noise.
+  light: [
+    { featureType: "poi", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", stylers: [{ visibility: "off" }] },
+    { elementType: "geometry", stylers: [{ color: "#f2eee1" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#6b6553" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#f7f4eb" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#faf8f1" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#cfe0e8" }] },
+    { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#e7e6d4" }] },
+  ],
+  dark: [
+    { featureType: "poi", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", stylers: [{ visibility: "off" }] },
+    { elementType: "geometry", stylers: [{ color: "#232220" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#8f8a80" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#171614" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#33312e" }] },
+    { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#3b3935" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#1e2a30" }] },
+    { featureType: "landscape.natural", elementType: "geometry", stylers: [{ color: "#282725" }] },
+  ],
+};
 
 // The pin: an inline SVG teardrop anchored at its point. Olive for the shops
-// and sage for catering kitchens — one of the few places the brand green
-// still does the work, because a pin is a mark on somebody else's map and it
-// should read as ours, where a black pin would read as the map's own.
-function pinElement(kind: StoreLocation["kind"]): HTMLElement {
-  const fill = kind === "shop" ? olive : "var(--cb-sage)";
-  const element = document.createElement("div");
-  element.style.cursor = "pointer";
-  element.innerHTML = `<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
+// and sage for catering kitchens. One of the few places the brand green still
+// does the work, because a pin is a mark on somebody else's map and it should
+// read as ours, where a black pin would read as the map's own.
+function pinIcon(kind: StoreLocation["kind"]): google.maps.Icon {
+  // Custom properties don't resolve inside a data URI, so these are the
+  // literal token values rather than var() references.
+  const fill = kind === "shop" ? "#3e4a30" : "#b7c9a2";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34">
       <path d="M13 33C13 33 25 20.5 25 13A12 12 0 1 0 1 13C1 20.5 13 33 13 33Z"
             fill="${fill}" stroke="white" stroke-width="2"/>
       <circle cx="13" cy="13" r="4.4" fill="white"/>
     </svg>`;
-  return element;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(26, 34),
+    anchor: new google.maps.Point(13, 33),
+  };
 }
 
 function LocateIcon() {
@@ -99,8 +94,8 @@ export default function StoreMap({
   focus,
 }: {
   locations: StoreLocation[];
-  // Delivery has no "search this area" — there is nothing to search until an
-  // address is entered — so the button is the caller's decision, not ours.
+  // Delivery has no "search this area", there is nothing to search until an
+  // address is entered, so the button is the caller's decision, not ours.
   showSearchArea: boolean;
   onSearchArea: (bounds: MapBounds) => void;
   // Committing to a location is the whole point of this screen: the menu
@@ -111,10 +106,11 @@ export default function StoreMap({
 }) {
   const theme = useResolvedTheme();
   const holderRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<google.maps.Marker[]>([]);
+  const infoRef = useRef<google.maps.InfoWindow | null>(null);
   const [ready, setReady] = useState(false);
-  // Shown only once the visitor has actually moved the map — offering to
+  // Shown only once the visitor has actually moved the map. Offering to
   // re-search an area nobody has changed is noise.
   const [moved, setMoved] = useState(false);
   // Which card the rail is centred on, for the dots and for panning the map
@@ -130,89 +126,102 @@ export default function StoreMap({
   const settle = useRef<number | undefined>(undefined);
 
   // The latest onChoose, without it being a dependency of the map's lifecycle.
-  // Marker click handlers are attached to DOM nodes once; re-creating the map
-  // because a parent re-rendered would tear down the basemap mid-pan.
+  // Marker listeners are attached once; re-creating the map because a parent
+  // re-rendered would tear down the basemap mid-pan.
   const chooseRef = useRef(onChoose);
   useEffect(() => {
     chooseRef.current = onChoose;
   }, [onChoose]);
 
-  const style = RADAR_PUBLISHABLE_KEY
-    ? radarStyleUrl(theme)
-    : blankStyle(theme === "dark" ? "#232220" : "#efeadc");
-
   // Create once.
   useEffect(() => {
-    const holder = holderRef.current;
-    if (!holder || mapRef.current) return;
+    let cancelled = false;
 
-    warnIfNoMapKey();
+    void (async () => {
+      const maps = await loadMaps();
+      const holder = holderRef.current;
+      if (cancelled || !maps || !holder || mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: holder,
-      style,
-      bounds: INITIAL,
-      attributionControl: false,
-      // The rail and the chrome sit over the map; a compass and a scale bar
-      // on top of them is clutter. Rotation off for the same reason — this is
-      // a "which shop is near me" map, and a tilted one is a map somebody has
-      // to fix before they can read it.
-      pitchWithRotate: false,
-      dragRotate: false,
-      touchZoomRotate: true,
-    });
-    map.touchZoomRotate.disableRotation();
-    map.on("moveend", () => setMoved(true));
-    map.on("load", () => setReady(true));
-    mapRef.current = map;
+      const { Map } = (await maps.importLibrary("maps")) as google.maps.MapsLibrary;
+      if (cancelled) return;
+
+      const map = new Map(holder, {
+        // The whole-country view the finder opens on: nothing preselected,
+        // the lower 48 until the visitor searches or shares their position.
+        center: { lat: 39, lng: -96 },
+        zoom: 4,
+        // Google's own chrome, all off. The finder draws its own zoom pair and
+        // locate button so they match the app rather than the platform, and a
+        // second set underneath them is clutter over a small screen.
+        disableDefaultUI: true,
+        clickableIcons: false,
+        gestureHandling: "greedy",
+        styles: MAP_STYLE[theme],
+      });
+
+      map.fitBounds({
+        south: INITIAL_BOUNDS[0][0],
+        west: INITIAL_BOUNDS[0][1],
+        north: INITIAL_BOUNDS[1][0],
+        east: INITIAL_BOUNDS[1][1],
+      });
+
+      map.addListener("dragend", () => setMoved(true));
+      map.addListener("zoom_changed", () => setMoved(true));
+
+      infoRef.current = new maps.InfoWindow({ disableAutoPan: false });
+      mapRef.current = map;
+      setReady(true);
+    })();
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      cancelled = true;
     };
-    // Deliberately empty: `style` is applied on change by the effect below,
-    // not by rebuilding the map.
+    // theme is applied by the effect below rather than by rebuilding the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Follow the theme. setStyle swaps the basemap and leaves the markers,
-  // which are DOM overlays rather than layers, exactly where they are.
+  // Follow the app's light/dark switch. setOptions swaps the palette and
+  // leaves the markers, which are overlays rather than part of the style.
   useEffect(() => {
-    mapRef.current?.setStyle(style as maplibregl.StyleSpecification | string);
-    // `style` is a fresh object each render when there's no key; compare by
-    // theme instead so this fires once per switch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    mapRef.current?.setOptions({ styles: MAP_STYLE[theme] });
   }, [theme]);
 
   // Markers, redrawn whenever the visible set changes.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !ready) return;
 
-    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = locations.map((location) => {
-      const element = pinElement(location.kind);
-      const popup = new maplibregl.Popup({
-        offset: 30,
-        closeButton: false,
-        className: "cb-map-popup",
-      }).setDOMContent(popupContent(location, () => chooseRef.current(location)));
-
-      return new maplibregl.Marker({ element, anchor: "bottom" })
-        .setLngLat(lngLat(location.position))
-        .setPopup(popup)
-        .addTo(map);
+      const marker = new google.maps.Marker({
+        map,
+        position: { lat: location.position[0], lng: location.position[1] },
+        icon: pinIcon(location.kind),
+        title: location.name,
+      });
+      marker.addListener("click", () => {
+        const info = infoRef.current;
+        if (!info) return;
+        info.setContent(popupContent(location, () => chooseRef.current(location)));
+        info.open({ map, anchor: marker });
+      });
+      return marker;
     });
 
     return () => {
-      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current.forEach((marker) => marker.setMap(null));
       markersRef.current = [];
     };
   }, [locations, ready]);
 
   // Recentres when a searched place resolves.
   useEffect(() => {
-    if (focus) mapRef.current?.flyTo({ center: lngLat(focus), zoom: 12, duration: 800 });
+    if (!focus) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.panTo({ lat: focus[0], lng: focus[1] });
+    map.setZoom(12);
   }, [focus]);
 
   const onRailScroll = useCallback(() => {
@@ -228,9 +237,7 @@ export default function StoreMap({
       const location = locations[index];
       if (!location) return;
       setCardIndex(index);
-      // easeTo, not flyTo: the card and the map should move together, and a
-      // long animated flight on every swipe is seasick.
-      mapRef.current?.easeTo({ center: lngLat(location.position), duration: 350 });
+      mapRef.current?.panTo({ lat: location.position[0], lng: location.position[1] });
     }, 120);
   }, [locations]);
 
@@ -240,16 +247,24 @@ export default function StoreMap({
     window.setTimeout(() => {
       onChoose(location);
       // Under Pickup this tap navigates away and the reset never runs. Under
-      // Catering it doesn't — the sheet opens over the map — so the button
-      // has to come back to rest, or closing the sheet leaves a filled Order
-      // that the guard above refuses to press a second time.
+      // Catering it doesn't, the sheet opens over the map, so the button has
+      // to come back to rest or closing the sheet leaves a filled Order that
+      // the guard above refuses to press a second time.
       window.setTimeout(() => setChosenId(null), 500);
     }, 220);
   }
 
   return (
     <div className="relative min-h-0 flex-1">
-      <div ref={holderRef} className="h-full w-full" />
+      {/* The tinted ground shows through until the basemap paints, and stays
+          if no key is configured. A white gap where a map should be reads as
+          broken; a filled panel with the pins and controls still on it reads
+          as a map that hasn't loaded, which is the truth. */}
+      <div
+        ref={holderRef}
+        className="h-full w-full"
+        style={{ background: "var(--cb-raise)" }}
+      />
 
       {/* Chrome over the map. pointer-events-none on the layer so panning
           still works everywhere the buttons aren't. */}
@@ -258,14 +273,15 @@ export default function StoreMap({
           <button
             type="button"
             onClick={() => {
-              const map = mapRef.current;
-              if (!map) return;
-              const bounds = map.getBounds();
+              const bounds = mapRef.current?.getBounds();
+              if (!bounds) return;
+              const sw = bounds.getSouthWest();
+              const ne = bounds.getNorthEast();
               onSearchArea({
-                south: bounds.getSouth(),
-                west: bounds.getWest(),
-                north: bounds.getNorth(),
-                east: bounds.getEast(),
+                south: sw.lat(),
+                west: sw.lng(),
+                north: ne.lat(),
+                east: ne.lng(),
               });
             }}
             className="pointer-events-auto absolute left-4 top-4 cursor-pointer rounded-full bg-surface px-5 py-2.5 text-[14px] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
@@ -282,11 +298,13 @@ export default function StoreMap({
             // dialog over a map that still works.
             navigator.geolocation?.getCurrentPosition(
               (position) => {
-                mapRef.current?.flyTo({
-                  center: [position.coords.longitude, position.coords.latitude],
-                  zoom: 13,
-                  duration: 900,
+                const map = mapRef.current;
+                if (!map) return;
+                map.panTo({
+                  lat: position.coords.latitude,
+                  lng: position.coords.longitude,
                 });
+                map.setZoom(13);
               },
               () => {},
               { enableHighAccuracy: false, timeout: 8000 },
@@ -299,11 +317,14 @@ export default function StoreMap({
         </button>
 
         {/* Zoom pair, stacked and sharing one rounded shell with a divider
-            between — they read as one control. */}
+            between: they read as one control. */}
         <div className="pointer-events-auto absolute right-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)]">
           <button
             type="button"
-            onClick={() => mapRef.current?.zoomIn()}
+            onClick={() => {
+              const map = mapRef.current;
+              map?.setZoom((map.getZoom() ?? 4) + 1);
+            }}
             aria-label="Zoom in"
             className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
           >
@@ -311,33 +332,16 @@ export default function StoreMap({
           </button>
           <button
             type="button"
-            onClick={() => mapRef.current?.zoomOut()}
+            onClick={() => {
+              const map = mapRef.current;
+              map?.setZoom((map.getZoom() ?? 4) - 1);
+            }}
             aria-label="Zoom out"
             className="flex h-11 cursor-pointer items-center justify-center border-t border-line-soft text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
           >
             −
           </button>
         </div>
-
-        {/* pointer-events-auto on the pill, since the layer above it turns
-            them off so the map can be panned everywhere the chrome isn't.
-            The links need to be pressable; the gap between them doesn't. */}
-        <span
-          className="pointer-events-auto absolute left-3 flex items-center gap-1 rounded-full bg-surface/90 px-3 py-1 text-[11px] text-muted"
-          style={{ bottom: locations.length > 0 ? 136 : 12 }}
-        >
-          {ATTRIBUTION.map(({ label, href }) => (
-            <a
-              key={label}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="cursor-pointer underline-offset-2 transition-colors hover:text-ink hover:underline"
-            >
-              © {label}
-            </a>
-          ))}
-        </span>
 
         {/* The store cards, as a rail you swipe rather than one card with a
             button to advance it. Five shops in a ZIP is five swipes, which is
@@ -357,9 +361,9 @@ export default function StoreMap({
               <div key={location.id} className="w-full shrink-0 snap-center">
                 {/* Capped and centred. The slide stays full-width so the
                     snap points still land one card at a time, but the card
-                    itself stops at 2xl — across a 1440px desktop it was a
-                    shop name at the far left and an Order button at the far
-                    right with a metre of nothing between them. */}
+                    itself stops at 2xl: across a 1440px desktop it was a shop
+                    name at the far left and an Order button at the far right
+                    with a metre of nothing between them. */}
                 <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-2xl bg-surface p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                   <button
                     type="button"
@@ -402,7 +406,7 @@ export default function StoreMap({
         ) : null}
 
         {/* Which of them you're on. Only earns its place once there's more
-            than one — a single dot says nothing. */}
+            than one: a single dot says nothing. */}
         {locations.length > 1 ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-[118px] flex justify-center gap-1.5">
             {locations.map((location, index) => (
@@ -421,11 +425,12 @@ export default function StoreMap({
   );
 }
 
-// The pin's popup, as real DOM rather than an HTML string — the Order button
-// inside it needs a listener, and setHTML would give us markup with no way to
+// The pin's popup, as real DOM rather than an HTML string: the Order button
+// inside it needs a listener, and a string would give us markup with no way to
 // attach one short of querying the document for it after the fact.
 function popupContent(location: StoreLocation, onOrder: () => void): HTMLElement {
   const root = document.createElement("div");
+  root.className = "cb-map-popup";
 
   const name = document.createElement("span");
   name.className = "block text-[13px] font-medium text-ink";
@@ -443,7 +448,7 @@ function popupContent(location: StoreLocation, onOrder: () => void): HTMLElement
   button.type = "button";
   button.className =
     "cb-press mt-2.5 w-full cursor-pointer rounded-full px-4 py-2 text-[12px] font-medium text-on-ink hover:opacity-90";
-  button.style.backgroundColor = ink;
+  button.style.backgroundColor = olive;
   button.textContent = "Order from here";
   button.addEventListener("click", onOrder);
 

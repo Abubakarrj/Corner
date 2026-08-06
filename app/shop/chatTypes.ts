@@ -2,7 +2,7 @@
 //
 // Its own module because both ends need it and they can't share the module
 // that produces it: app/api/shop-chat/tools.ts is `server-only` — it reaches
-// Radar and Uber with secret keys — and importing that from the widget would
+// Google and Uber with secret keys — and importing that from the widget would
 // pull the whole server half into the browser bundle, or fail the build
 // trying. Types are erased at compile time, so the two ends agree at zero
 // runtime cost.

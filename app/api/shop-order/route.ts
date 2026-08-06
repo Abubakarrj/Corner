@@ -17,7 +17,7 @@ import {
 } from "../../shopFacts";
 import { createToastOrder, isToastConfigured } from "../../toast";
 import { DELIVERY_ORIGIN } from "../../(marketing)/locations/locations";
-import { geocode } from "../../radar";
+import { geocode } from "../../googleMaps";
 import {
   createDelivery,
   isUberConfigured,
@@ -240,7 +240,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const place = await geocode(deliveryAddress);
+    const place = await geocode(deliveryAddress, DELIVERY_ORIGIN.position);
     if (!place) {
       return Response.json({ error: "We couldn't find that address." }, { status: 400 });
     }

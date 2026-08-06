@@ -42,6 +42,37 @@ const MAX_MESSAGE_CHARS = 2000;
 // bill and the visitor's clock.
 const MAX_TOOL_ROUNDS = 6;
 
+// No em dashes, ever.
+//
+// The instruction is in Riley's briefing twice, and stripping them out of the
+// briefing itself does most of the work: a model mirrors the punctuation of
+// the text it's given, so a prompt full of dashes is a prompt that teaches
+// them. This is the belt to that pair of braces. It runs on her visible text
+// only, never on tool inputs, so a dash inside an address she's looking up is
+// left alone.
+//
+// The replacement is picked by what sits either side. A sentence already
+// closed by its own punctuation just needs the space ("Good Lox Today!, the
+// best one" is worse than the dash was). A capital letter after it means the
+// dash was joining two sentences, so it becomes a full stop. Anything else was
+// parenthetical, so it becomes a comma.
+//
+// A spaced en dash is doing an em dash's job and gets the same treatment. An
+// unspaced one is a range ("7am-2pm") and is left alone.
+const DASH = /([^\s])?\s*[\u2014\u2015]\s*(.?)/g;
+
+export function noEmDashes(text: string): string {
+  return text
+    .replace(DASH, (_match, before: string | undefined, after: string) => {
+      const lead = before ?? "";
+      if (/[.!?:;,]/.test(lead)) return `${lead} ${after}`;
+      const joinsSentences =
+        after.length > 0 && after === after.toUpperCase() && after !== after.toLowerCase();
+      return `${lead}${joinsSentences ? ". " : ", "}${after}`;
+    })
+    .replace(/ \u2013 /g, ", ");
+}
+
 type Turn = { role: "user" | "assistant"; text: string };
 
 function isTurn(value: unknown): value is Turn {
@@ -194,7 +225,10 @@ export async function POST(request: Request) {
             { status: 502 },
           );
         }
-        return Response.json({ reply, ...attachments }, { status: 200 });
+        return Response.json(
+          { reply: noEmDashes(reply), ...attachments },
+          { status: 200 },
+        );
       }
 
       // Everything she asked for in this turn, run together. The results go

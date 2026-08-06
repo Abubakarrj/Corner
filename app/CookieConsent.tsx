@@ -132,7 +132,7 @@ export default function CookieConsent() {
       // context, those panes compete in the root one, and a bar at 200
       // renders *underneath the map*. On an installed PWA that looked like
       // the banner was cut off at the bottom of the screen; it wasn't
-      // clipped, the map was painted over it. Still true of MapLibre, which
+      // clipped, the map was painted over it. Still true of Google Maps, which
       // is why the number stayed after the map changed libraries.
       // One row, always — it used to stack the button under the text below
       // the `sm` breakpoint, which is what made it 120px tall on exactly the

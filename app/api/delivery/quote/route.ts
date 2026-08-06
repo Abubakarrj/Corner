@@ -1,5 +1,5 @@
 import { DELIVERY_ORIGIN, DELIVERY_RADIUS_MILES } from "../../../(marketing)/locations/locations";
-import { driveBetween, geocode } from "../../../radar";
+import { driveBetween, geocode } from "../../../googleMaps";
 import { PREP_MINUTES, SHOP_ADDRESS_PARTS } from "../../../shopFacts";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../../uberDirect";
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Missing delivery address." }, { status: 400 });
   }
 
-  const place = await geocode(address.trim());
+  const place = await geocode(address.trim(), DELIVERY_ORIGIN.position);
   if (!place) {
     return Response.json(
       { error: "We couldn't find that address." },

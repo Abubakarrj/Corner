@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
-import { suggestAddresses, type Suggestion } from "../../radarPublic";
+import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN, type StoreLocation } from "./locations";
 
 const { ink, onInk, controlBorder, muted, faint, border } = PALETTE;
@@ -13,8 +13,8 @@ export type ResolvedPlace = {
   address: string;
   lat: number;
   lng: number;
-  // Driving miles from the shop, and the drive itself in minutes — Radar's
-  // routing answer, measured on the server. `minutes` is null only when the
+  // Driving miles from the shop, and the drive itself in minutes: the Routes
+  // API's answer, measured on the server. `minutes` is null only when the
   // routing call failed and `miles` fell back to the straight line.
   miles: number;
   minutes: number | null;
@@ -39,16 +39,16 @@ function Chevron() {
 // The results panel under the search field, per the reference.
 //
 // The field promises "store, city, state, or zip", which is two searches, so
-// there are two tabs with their counts: places from Radar, and our own shops
+// there are two tabs with their counts: places from Google, and our own shops
 // matched by name. Delivery has neither — it wants one address, so it shows a
 // plain list and no tabs.
 //
-// Suggestions come from Radar directly, out of the browser, on the
-// publishable key — there's no hop through our own server on a keystroke.
-// What gets *picked* does go to our server (/api/geo), which geocodes it
-// again from scratch and measures the drive from the shop. The suggestion is
-// a hint; the range check is a decision, and decisions aren't made on numbers
-// that passed through the client.
+// Suggestions come from Google Places directly, out of the browser, through
+// the Maps library that's already loaded for the map — there's no hop through
+// our own server on a keystroke. What gets *picked* does go to our server
+// (/api/geo), which geocodes it again from scratch and measures the drive from
+// the shop. The suggestion is a hint; the range check is a decision, and
+// decisions aren't made on numbers that passed through the client.
 //
 // Everything async carries the query it belongs to, and the render only shows
 // what still matches what's typed. That keeps stale results off the screen
@@ -92,7 +92,7 @@ export default function SearchResults({
   });
   const [error, setError] = useState<{ forQuery: string; message: string } | null>(null);
   // Keyed by the text put in the field when the suggestion was chosen, not by
-  // the resolved address — Radar's formattedAddress is normalised and rarely
+  // the resolved address — Google's formatted address is normalised and rarely
   // equals the suggestion text, which would hide this every time.
   const [outOfRange, setOutOfRange] = useState<
     { forQuery: string; resolved: ResolvedPlace } | null

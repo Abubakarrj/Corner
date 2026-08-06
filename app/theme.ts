@@ -58,9 +58,9 @@ export function useThemePreference(): ThemePreference {
 
 // What the preference actually resolved to, which is the question anything
 // outside CSS has to ask. A custom property answers it for anything styled by
-// a stylesheet, but a map basemap is a URL — you can't hand MapLibre
-// `var(--cb-cream)` and expect a dark style back — so this reads the
-// attribute the head script stamped.
+// a stylesheet, but a map basemap is styled in JavaScript: you can't hand
+// Google Maps `var(--cb-cream)` and expect a dark basemap back, so this reads
+// the attribute the head script stamped.
 //
 // Subscribed to the same event, so flipping the switch or the phone flipping
 // itself at sunset both reach it.

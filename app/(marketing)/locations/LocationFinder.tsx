@@ -28,8 +28,9 @@ import {
 // finder and the pantry read as one product.
 const { cream, ink, onInk, border, controlBorder, muted } = PALETTE;
 
-// MapLibre touches window at import time, so the map can only ever be a
-// client-side chunk — ssr:false is load-bearing, not a preference. It's also
+// The Maps library only exists in a browser, and the map component loads its
+// script into the document head, so this can only ever be a client-side
+// chunk: ssr:false is load-bearing, not a preference. It's also
 // the biggest thing on this page by some way, and keeping it out of the
 // initial bundle is why the header and the search field are usable before the
 // basemap has arrived. The placeholder holds the map's space so nothing
