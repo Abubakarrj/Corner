@@ -9,7 +9,7 @@ import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
-const { ink, muted, olive, controlBorder } = PALETTE;
+const { ink, muted, controlBorder } = PALETTE;
 
 // A real slippy map: it pans, it zooms, and "Search area" means something
 // because there are real bounds to read.
@@ -342,60 +342,53 @@ export default function StoreMap({
                     itself stops at 2xl: across a 1440px desktop it was a shop
                     name at the far left and an Order button at the far right
                     with a metre of nothing between them. */}
-                <div className="mx-auto max-w-2xl rounded-3xl bg-surface p-5 shadow-[0_4px_20px_rgba(0,0,0,0.16)]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      {/* The shop's name, in the brand green and at a size
-                          that reads as a heading. It was 17px ink, the same
-                          weight as its own address, which made the card a
-                          block of grey text with a button beside it. */}
-                      <span
-                        className="block truncate text-[22px] font-medium leading-[1.15] tracking-[-0.01em]"
-                        style={{ color: olive }}
-                      >
-                        {location.name}
-                      </span>
-                      <span className="mt-1.5 block truncate text-[14px]" style={{ color: muted }}>
-                        {location.address}
-                      </span>
-                      <span className="block truncate text-[14px]" style={{ color: muted }}>
-                        {location.city}
-                      </span>
-                    </div>
-                    {/* Hours, directions, the phone. Everything that used to be
-                        crammed onto the pin's popup, which said all of this a
-                        second time three inches higher up the screen. */}
-                    <button
-                      type="button"
-                      onClick={() => setDetailsFor(location)}
-                      aria-label={`About ${location.name}`}
-                      className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
-                      style={{ borderColor: controlBorder }}
+                {/* One row, and it stays one row. The card is a label on a
+                    map, not a page about a shop: it says which place this is
+                    and offers the two things to do with it. Everything that
+                    wanted more room than that is on the sheet behind the info
+                    button, which is what stopped it growing. */}
+                <div className="mx-auto flex max-w-2xl items-center gap-2.5 rounded-2xl bg-surface p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+                  <button
+                    type="button"
+                    onClick={() => order(location)}
+                    className="min-w-0 flex-1 cursor-pointer text-left"
+                  >
+                    <span
+                      className="block truncate text-[17px] font-medium leading-tight"
+                      style={{ color: ink }}
                     >
-                      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden>
-                        <circle cx="9" cy="9" r="7.4" stroke={muted} strokeWidth="1.4" />
-                        <path
-                          d="M9 8.1v4.1"
-                          stroke={muted}
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                        />
-                        <circle cx="9" cy="5.6" r="0.95" fill={muted} />
-                      </svg>
-                    </button>
-                  </div>
-                  {/* Full width, and the only button on the card. A 100px
-                      pill beside three lines of address was the smallest
-                      target on the screen and the most important one.
-
-                      The shared Button, not a bespoke one, so this and the
-                      sheet's "Order now" cannot drift into two different
-                      primaries for the same act. The press is felt through
-                      cb-press and the beat before navigating, rather than
-                      through a colour this button no longer owns. */}
+                      {location.name}
+                    </span>
+                    <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
+                      {location.address}
+                    </span>
+                    <span className="block truncate text-[14px]" style={{ color: muted }}>
+                      {location.city}
+                    </span>
+                  </button>
+                  {/* Hours, directions, the phone. Everything that used to be
+                      crammed onto the pin's popup, which said all of this a
+                      second time three inches higher up the screen. */}
+                  <button
+                    type="button"
+                    onClick={() => setDetailsFor(location)}
+                    aria-label={`About ${location.name}`}
+                    className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
+                    style={{ borderColor: controlBorder }}
+                  >
+                    <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden>
+                      <circle cx="9" cy="9" r="7.4" stroke={muted} strokeWidth="1.4" />
+                      <path d="M9 8.1v4.1" stroke={muted} strokeWidth="1.6" strokeLinecap="round" />
+                      <circle cx="9" cy="5.6" r="0.95" fill={muted} />
+                    </svg>
+                  </button>
+                  {/* The shared Button at `sm`, which is the outlined pill this
+                      card always had: 36px, fills on press. Bespoke markup here
+                      is how the app ended up with a dozen different buttons
+                      once before. */}
                   <Button
-                    block
-                    className="cb-press mt-4"
+                    size="sm"
+                    variant="secondary"
                     onClick={() => order(location)}
                     aria-label={`Order from ${location.name}`}
                   >
@@ -410,7 +403,7 @@ export default function StoreMap({
         {/* Which of them you're on. Only earns its place once there's more
             than one: a single dot says nothing. */}
         {locations.length > 1 ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-[186px] flex justify-center gap-1.5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[138px] flex justify-center gap-1.5">
             {locations.map((location, index) => (
               <span
                 key={location.id}
