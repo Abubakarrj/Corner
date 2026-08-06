@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice, searchProducts } from "./products";
 import ProductImage from "./ProductImage";
@@ -45,6 +46,7 @@ export default function SearchBar({
   onOpen: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(-1);
@@ -103,7 +105,7 @@ export default function SearchBar({
       <button
         type="button"
         onClick={onOpen}
-        aria-label="Search products"
+        aria-label={t("shop.searchProducts")}
         className="flex h-10 w-10 cursor-pointer items-center justify-center text-ink transition-opacity hover:opacity-70"
       >
         <SearchIcon className="h-[19px] w-[19px]" />
@@ -127,8 +129,8 @@ export default function SearchBar({
             role="combobox"
             aria-expanded={suggestions.length > 0}
             aria-controls="shop-search-suggestions"
-            aria-label="Search products"
-            placeholder="Search products…"
+            aria-label={t("shop.searchProducts")}
+            placeholder={t("shop.searchProductsPlaceholder")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -143,7 +145,7 @@ export default function SearchBar({
             <button
               type="button"
               onClick={submit}
-              aria-label="Search"
+              aria-label={t("shop.search")}
               className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink transition-opacity hover:opacity-60"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
@@ -211,7 +213,7 @@ export default function SearchBar({
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close search"
+        aria-label={t("shop.closeSearch")}
         className="flex h-9 w-8 shrink-0 cursor-pointer items-center justify-center text-ink transition-opacity hover:opacity-60"
       >
         <CloseIcon />

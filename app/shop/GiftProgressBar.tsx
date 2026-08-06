@@ -1,6 +1,7 @@
 "use client";
 
 import { formatPrice, GIFT_NAME, GIFT_THRESHOLD_CENTS } from "./products";
+import { useT } from "../i18n";
 
 function CheckIcon() {
   return (
@@ -25,6 +26,7 @@ function CheckIcon() {
 // the free-shipping version it replaced: a gift in the bag makes as much
 // sense collected in Koreatown as delivered to a door.
 export default function GiftProgressBar({ subtotalCents }: { subtotalCents: number }) {
+  const t = useT();
   const remainingCents = GIFT_THRESHOLD_CENTS - subtotalCents;
   const unlocked = remainingCents <= 0;
   const progress = Math.min(100, (subtotalCents / GIFT_THRESHOLD_CENTS) * 100);
@@ -35,14 +37,14 @@ export default function GiftProgressBar({ subtotalCents }: { subtotalCents: numb
         {unlocked ? (
           <>
             <CheckIcon />
-            <span>
-              A <span className="font-medium">{GIFT_NAME}</span> is on us.
-            </span>
+            <span>{t("shop.giftEarned", { gift: GIFT_NAME })}</span>
           </>
         ) : (
           <>
-            You&rsquo;re <span className="font-medium">{formatPrice(remainingCents)}</span>{" "}
-            from a complimentary <span className="font-medium">{GIFT_NAME}</span>
+            {t("shop.giftProgress", {
+              amount: formatPrice(remainingCents),
+              gift: GIFT_NAME,
+            })}
           </>
         )}
       </p>

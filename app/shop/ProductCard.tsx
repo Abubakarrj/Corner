@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { useState } from "react";
 import {
   defaultOptions,
@@ -27,6 +28,7 @@ import { DISPLAY_FONT } from "./shopControls";
 //
 // Links are /shop-rooted, not /-rooted — see the note in ShopHeader.tsx.
 export default function ProductCard({ product }: { product: Product }) {
+  const t = useT();
   const { addItem } = useCart();
   // The choices ride on the tile rather than sending people to the product
   // page for them: a bagel order is a handful of small decisions made fast,
@@ -51,7 +53,7 @@ export default function ProductCard({ product }: { product: Product }) {
         />
         {gone ? (
           <span className="absolute inset-x-0 bottom-0 bg-ink/80 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-on-ink">
-            Sold out today
+            {t("common.soldOutToday")}
           </span>
         ) : null}
         {product.tag ? (

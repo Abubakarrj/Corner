@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
@@ -29,6 +30,7 @@ export default function CrossSellStrip({
   products: Product[];
   onNavigate: () => void;
 }) {
+  const t = useT();
   const { addItem } = useCart();
 
   if (products.length === 0) return null;
@@ -39,7 +41,7 @@ export default function CrossSellStrip({
         className="mb-3 text-[13px] text-ink"
         style={{ fontFamily: DISPLAY_FONT }}
       >
-        You might also like
+        {t("shop.alsoLike")}
       </p>
       <div className="flex gap-3 overflow-x-auto pb-1">
         {products.map((product) => (
@@ -61,7 +63,7 @@ export default function CrossSellStrip({
                     event.preventDefault();
                     addItem(product.slug);
                   }}
-                  aria-label={`Add ${product.name} to basket`}
+                  aria-label={t("shop.addNamed", { name: product.name })}
                   style={{ backgroundColor: "var(--cb-ink)" }}
                   className="absolute bottom-1.5 right-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.25)] transition-opacity hover:opacity-90"
                 >

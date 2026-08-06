@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import ProductImage from "./ProductImage";
 import { formatPrice } from "./products";
 import type { ChatAction, InfoCard, ProductCard } from "./chatTypes";
@@ -132,6 +133,7 @@ export function ProductCards({
   products: ProductCard[];
   onAdd: (product: ProductCard) => void;
 }) {
+  const t = useT();
   if (products.length === 0) return null;
 
   return (
@@ -163,7 +165,7 @@ export function ProductCards({
                 a plus button that silently picked one for you is how somebody
                 gets a sesame they didn't ask for. */}
             {product.soldOut ? (
-              <span className="mt-auto pt-1 text-[11px] text-quiet">Sold out today</span>
+              <span className="mt-auto pt-1 text-[11px] text-quiet">{t("common.soldOutToday")}</span>
             ) : product.needs.length > 0 ? (
               <Link
                 href={`/shop/product/${product.slug}`}

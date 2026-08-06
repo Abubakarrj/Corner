@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
@@ -35,6 +36,7 @@ function ordering(pathname: string): boolean {
 }
 
 export default function FulfillmentGate({ children }: { children: React.ReactNode }) {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const fulfillment = useFulfillment();
@@ -60,17 +62,16 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
           className="m-0 text-[20px] font-medium leading-tight"
           style={{ color: ink }}
         >
-          Where are we sending this?
+          {t("shop.whereSending")}
         </p>
         <p
           className="m-0 mt-3 max-w-xs text-[14px] leading-[1.5]"
           style={{ color: muted }}
         >
-          Taking you to the map to pick a shop, arrange catering, or set a
-          delivery address. The button below does the same, if it doesn&rsquo;t.
+          {t("shop.takingYouToMap")}
         </p>
         <ButtonLink href="/locations" className="mt-7">
-          Choose where it&rsquo;s going
+          {t("shop.chooseWhereGoing")}
         </ButtonLink>
       </div>
     );
@@ -83,6 +84,7 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
 // header on every page beneath it — including the cart and checkout, which is
 // where getting it wrong costs the most.
 export function FulfillmentBanner() {
+  const t = useT();
   const fulfillment = useFulfillment();
   const opening = useOpening();
   if (!fulfillment) return null;
@@ -108,7 +110,7 @@ export function FulfillmentBanner() {
           worse, at the window. */}
       {!opening.open ? (
         <span className="shrink-0 rounded-full bg-sun-soft px-2 py-1 text-[10px] font-medium leading-none text-sun-ink">
-          Closed
+          {t("shop.closed")}
         </span>
       ) : null}
       <Link
@@ -116,7 +118,7 @@ export function FulfillmentBanner() {
         className="shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
         style={{ color: ink }}
       >
-        Change
+        {t("shop.change")}
       </Link>
     </div>
   );

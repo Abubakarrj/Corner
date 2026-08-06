@@ -172,6 +172,25 @@ export const en = {
   "checkout.quotingDelivery": "Pricing your delivery…",
 
   // ——— Tracking an order ———
+  "checkout.deliveryDetails": "Delivery details",
+  "checkout.pickupDetails": "Pickup details",
+  "checkout.switchToDelivery": "Switch to delivery",
+  "checkout.deliveryAround": "Delivery around {time}",
+  "checkout.pickupAround": "Pickup around {time}",
+  "checkout.estimatedCourier": "Estimated by the courier.",
+  "checkout.estimatedShop": "Estimated, the shop confirms.",
+  "checkout.curbsidePickup": "Curbside pickup",
+  "checkout.curbsideHint": "Bring my order out to the car.",
+  "checkout.utensilsLabel": "Utensils and napkins",
+  "checkout.utensilsHint": "Left out unless you ask, most orders don't need them.",
+  "checkout.placingOrder": "Placing order…",
+  "checkout.deliveryUnavailable": "Delivery unavailable",
+  "checkout.pricingDelivery": "Pricing delivery…",
+  "checkout.cardCharged": "Your card is charged when the shop confirms the order.",
+  "checkout.payAtWindow": "You pay at the window when you collect.",
+  "checkout.somethingWentWrong": "Something went wrong.",
+  "checkout.couldNotPrice": "We couldn't price that delivery.",
+
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice":
     "Orders are kept on the device they were placed from, so one placed on another phone won't show here.",

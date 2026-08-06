@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "../i18n";
 import type { Product, SortValue } from "./products";
 import ProductCard from "./ProductCard";
 import ProductListRow from "./ProductListRow";
@@ -43,6 +44,7 @@ export default function ShopCatalog({
   activeCategory: Product["category"] | undefined;
   activeSort: SortValue;
 }) {
+  const t = useT();
   const [view, setView] = useState<"grid" | "list">("grid");
 
   return (
@@ -60,7 +62,7 @@ export default function ShopCatalog({
             <button
               type="button"
               onClick={() => setView("grid")}
-              aria-label="Grid view"
+              aria-label={t("shop.gridView")}
               aria-pressed={view === "grid"}
               className={`flex h-full w-9 cursor-pointer items-center justify-center transition-colors ${
                 view === "grid"
@@ -73,7 +75,7 @@ export default function ShopCatalog({
             <button
               type="button"
               onClick={() => setView("list")}
-              aria-label="List view"
+              aria-label={t("shop.listView")}
               aria-pressed={view === "list"}
               className={`flex h-full w-9 cursor-pointer items-center justify-center border-l border-line-soft transition-colors ${
                 view === "list"

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
 import GiftProgressBar from "./GiftProgressBar";
@@ -58,6 +59,7 @@ export default function CartDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   const { lines, setQuantity, removeItem, setLineOptions, subtotalCents, itemCount } =
     useCart();
 
@@ -83,7 +85,7 @@ export default function CartDrawer({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close basket"
+          aria-label={t("cart.closeBasket")}
           className="flex h-9 w-9 cursor-pointer items-center justify-center text-ink transition-opacity hover:opacity-60"
         >
           <CloseIcon />
@@ -95,14 +97,14 @@ export default function CartDrawer({
           <EmptyBasketIcon />
           <div>
             <p className="text-[13px] font-medium text-ink">
-              Your basket is empty
+              {t("cart.emptyDrawer")}
             </p>
             <p className="mt-1 text-[12px] text-quiet">
-              Sandwiches, bagels, schmears, and something to drink.
+              {t("cart.emptyDrawerSub")}
             </p>
           </div>
           <Button variant="secondary" size="sm" onClick={onClose}>
-            Browse the menu
+            {t("common.browseMenu")}
           </Button>
         </div>
       ) : (
@@ -157,7 +159,7 @@ export default function CartDrawer({
                   {!complete ? (
                     <div className="mt-1.5">
                       <p className="mb-1 text-[11px]" style={{ color: "var(--cb-red)" }}>
-                        Choose before checking out:
+                        {t("cart.chooseBefore")}
                       </p>
                       <OptionPicker
                         product={product}
@@ -196,7 +198,7 @@ export default function CartDrawer({
                       onClick={() => removeItem(key)}
                       className="cursor-pointer text-[11px] text-quiet underline transition-opacity hover:opacity-70"
                     >
-                      Remove
+                      {t("common.remove")}
                     </button>
                   </div>
                 </div>
@@ -217,7 +219,7 @@ export default function CartDrawer({
             style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-medium text-ink">Subtotal</span>
+              <span className="text-[13px] font-medium text-ink">{t("common.subtotal")}</span>
               <span
                 className="text-[14px] font-medium text-ink"
                 style={{ fontFamily: DISPLAY_FONT }}
@@ -226,18 +228,18 @@ export default function CartDrawer({
               </span>
             </div>
             <p className="mt-1 text-[10px] text-quiet">
-              Payment is confirmed with you after the order goes in.
+              {t("cart.paymentConfirmed")}
             </p>
             {/* Held back while a line still needs a choice — the picker for
                 it is up in the list, so there's nowhere useful to send
                 someone who presses this. */}
             {rows.some((row) => !row.complete || row.gone) ? (
               <Button block disabled className="mt-3">
-                Checkout
+                {t("common.checkout")}
               </Button>
             ) : (
               <ButtonLink href="/shop/checkout" onClick={onClose} block className="mt-3">
-                Checkout
+                {t("common.checkout")}
               </ButtonLink>
             )}
             <Link
@@ -245,7 +247,7 @@ export default function CartDrawer({
               onClick={onClose}
               className="mt-3 block cursor-pointer text-center text-[11px] text-body underline transition-opacity hover:opacity-70"
             >
-              View full basket
+              {t("cart.viewFull")}
             </Link>
           </div>
         </>

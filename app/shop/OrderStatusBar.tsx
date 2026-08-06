@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { useEffect, useState } from "react";
 import { activeOrder, progressFor, useOrders } from "../account";
 import { PALETTE } from "./shopControls";
@@ -13,6 +14,7 @@ const { skySoft, skyInk } = PALETTE;
 // disappears once its estimate has run out — a bar that sits there for a week
 // saying "Ready around 8:24am" is worse than no bar.
 export default function OrderStatusBar() {
+  const t = useT();
   const orders = useOrders();
 
   // Same 15s heartbeat as the tracker, for the same reason: the stage and the
@@ -52,7 +54,7 @@ export default function OrderStatusBar() {
           ) : null}
         </span>
         <span className="shrink-0 text-[12px] font-medium uppercase tracking-[0.06em] underline underline-offset-2">
-          Track order
+          {t("common.trackOrder")}
         </span>
       </div>
     </Link>

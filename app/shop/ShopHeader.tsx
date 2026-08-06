@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { useEffect, useState } from "react";
 import { useAccount } from "../account";
 import { useCart } from "./CartContext";
@@ -63,6 +64,7 @@ function AccountIcon() {
 }
 
 export default function ShopHeader() {
+  const t = useT();
   const [searchOpen, setSearchOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const { itemCount } = useCart();
@@ -114,7 +116,7 @@ export default function ShopHeader() {
               {account ? (
                 <Link
                   href="/shop/account"
-                  aria-label={`Account, signed in as ${account.email}`}
+                  aria-label={t("shop.accountSignedIn", { email: account.email })}
                   className="flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
                 >
                   <AccountIcon />
@@ -124,7 +126,7 @@ export default function ShopHeader() {
               <button
                 type="button"
                 onClick={() => setBasketOpen(true)}
-                aria-label={`Basket, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
+                aria-label={itemCount === 1 ? t("shop.basketCountOne") : t("shop.basketCount", { count: itemCount })}
                 aria-expanded={basketOpen}
                 className="relative flex h-10 w-10 cursor-pointer items-center justify-center transition-opacity hover:opacity-70"
               >

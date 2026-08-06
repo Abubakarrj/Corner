@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../../i18n";
 import { useBasketMoved, useCart, useCartRows, MAX_PER_LINE } from "../CartContext";
 import OptionPicker from "../OptionPicker";
 import { formatPrice } from "../products";
@@ -9,6 +10,7 @@ import ProductImage from "../ProductImage";
 import { DISPLAY_FONT } from "../shopControls";
 
 export default function CartPage() {
+  const t = useT();
   const { setQuantity, removeItem, setLineOptions, subtotalCents } = useCart();
   const rows = useCartRows();
   const moved = useBasketMoved();
@@ -24,7 +26,7 @@ export default function CartPage() {
         className="mb-6 text-[20px] font-medium text-ink"
         style={{ fontFamily: DISPLAY_FONT }}
       >
-        Your basket
+        {t("cart.title")}
       </h1>
 
       {moved ? (
@@ -36,9 +38,9 @@ export default function CartPage() {
 
       {rows.length === 0 ? (
         <div>
-          <p className="text-[14px] text-muted">Your cart is empty.</p>
+          <p className="text-[14px] text-muted">{t("cart.empty")}</p>
           <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
-            Browse the menu
+            {t("common.browseMenu")}
           </Link>
         </div>
       ) : (
@@ -76,7 +78,7 @@ export default function CartPage() {
                   </span>
                   {gone ? (
                     <span className="mt-1 w-fit rounded-full bg-sun-soft px-2 py-[3px] text-[11px] font-medium leading-none text-sun-ink">
-                      Sold out today
+                      {t("common.soldOutToday")}
                     </span>
                   ) : null}
                   {/* A line that arrived without its choices — from a
@@ -85,7 +87,7 @@ export default function CartPage() {
                   {!complete ? (
                     <div className="mt-1.5">
                       <p className="mb-1 text-[11px]" style={{ color: "var(--cb-red)" }}>
-                        Choose before checking out:
+                        {t("cart.chooseBefore")}
                       </p>
                       <OptionPicker
                         product={product}
@@ -124,7 +126,7 @@ export default function CartPage() {
                       onClick={() => removeItem(key)}
                       className="cursor-pointer text-[12px] text-quiet underline transition-opacity hover:opacity-70"
                     >
-                      Remove
+                      {t("common.remove")}
                     </button>
                   </div>
                 </div>
@@ -133,7 +135,7 @@ export default function CartPage() {
           </div>
 
           <div className="mt-6 flex items-center justify-between border-t border-line pt-4">
-            <span className="text-[14px] font-medium text-ink">Subtotal</span>
+            <span className="text-[14px] font-medium text-ink">{t("common.subtotal")}</span>
             <span
               className="text-[15px] font-medium text-ink"
               style={{ fontFamily: DISPLAY_FONT }}
@@ -147,11 +149,11 @@ export default function CartPage() {
               around. The picker they need is a few pixels above. */}
           {rows.some((row) => !row.complete || row.gone) ? (
             <Button block disabled className="mt-4">
-              Checkout
+              {t("common.checkout")}
             </Button>
           ) : (
             <ButtonLink href="/shop/checkout" block className="mt-4">
-              Checkout
+              {t("common.checkout")}
             </ButtonLink>
           )}
         </>

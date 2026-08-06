@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "../../i18n";
 import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
@@ -29,6 +30,7 @@ function readyAt(minutes: number): string {
 }
 
 export default function CheckoutPage() {
+  const t = useT();
   const { subtotalCents, clear } = useCart();
   const fulfillment = useFulfillment();
   const rows = useCartRows();
@@ -69,14 +71,24 @@ export default function CheckoutPage() {
   // fulfillment mid-checkout would otherwise leave the previous address's fee
   // on the screen while the new one is still in flight, and the moment to be
   // showing a stale delivery fee is never.
+  // `failed` and `message` rather than one error string, because the string
+  // has to be translated and the effect must not depend on the translator.
+  // `t` is a new closure every render, so putting it in the dependency array
+  // would re-quote the delivery on every keystroke in the form. The effect
+  // records *that* it failed and whatever the server said; the sentence is
+  // chosen at render, where the language is already known.
   const [quoted, setQuoted] = useState<{
     forAddress: string;
     quote: { quoteId: string; feeCents: number; etaMinutes: number | null } | null;
-    error: string | null;
+    failed: boolean;
+    message: string | null;
   } | null>(null);
 
-  const quote = quoted?.forAddress === deliveryAddress ? quoted.quote : null;
-  const quoteError = quoted?.forAddress === deliveryAddress ? quoted.error : null;
+  const current = quoted?.forAddress === deliveryAddress ? quoted : null;
+  const quote = current?.quote ?? null;
+  const quoteError = current?.failed
+    ? (current.message ?? t("checkout.couldNotPrice"))
+    : null;
 
   useEffect(() => {
     if (!deliveryAddress) return;
@@ -92,16 +104,13 @@ export default function CheckoutPage() {
         setQuoted({
           forAddress: deliveryAddress,
           quote: response.ok ? body : null,
-          error: response.ok ? null : (body?.error ?? "We couldn't price that delivery."),
+          failed: !response.ok,
+          message: response.ok ? null : (body?.error ?? null),
         });
       })
       .catch(() => {
         if (!live) return;
-        setQuoted({
-          forAddress: deliveryAddress,
-          quote: null,
-          error: "We couldn't price that delivery.",
-        });
+        setQuoted({ forAddress: deliveryAddress, quote: null, failed: true, message: null });
       });
     return () => {
       live = false;
@@ -120,8 +129,8 @@ export default function CheckoutPage() {
     deliveryCents: quote?.feeCents ?? 0,
   });
 
-  const emailError = tried && !EMAIL.test(email.trim()) ? "Enter a valid email." : undefined;
-  const firstNameError = tried && firstName.trim().length === 0 ? "Required." : undefined;
+  const emailError = tried && !EMAIL.test(email.trim()) ? t("checkout.validEmail") : undefined;
+  const firstNameError = tried && firstName.trim().length === 0 ? t("checkout.required") : undefined;
 
   const valid =
     firstName.trim().length > 0 &&
@@ -177,7 +186,7 @@ export default function CheckoutPage() {
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(result?.error ?? "Something went wrong.");
+        throw new Error(result?.error ?? t("checkout.somethingWentWrong"));
       }
 
       // The account page's history and its usuals list are built from this.
@@ -214,7 +223,7 @@ export default function CheckoutPage() {
       clear();
     } catch (submitError) {
       setStatus("idle");
-      setError(submitError instanceof Error ? submitError.message : "Something went wrong.");
+      setError(submitError instanceof Error ? submitError.message : t("checkout.somethingWentWrong"));
     }
   }
 
@@ -231,9 +240,9 @@ export default function CheckoutPage() {
   if (rows.length === 0) {
     return (
       <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
-        <p className="text-[14px] text-muted">Your basket is empty.</p>
+        <p className="text-[14px] text-muted">{t("checkout.emptyBasket")}</p>
         <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
-          Browse the menu
+          {t("common.browseMenu")}
         </Link>
       </div>
     );
@@ -250,10 +259,10 @@ export default function CheckoutPage() {
         Checkout
       </h1>
 
-      <Section title="Contact">
+      <Section title={t("checkout.contact")}>
         <div className="flex flex-col gap-3">
           <Field
-            label="Email"
+            label={t("checkout.email")}
             type="email"
             inputMode="email"
             autoComplete="email"
@@ -264,7 +273,7 @@ export default function CheckoutPage() {
           />
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="First name"
+              label={t("checkout.firstName")}
               autoComplete="given-name"
               required
               value={firstName}
@@ -272,14 +281,14 @@ export default function CheckoutPage() {
               error={firstNameError}
             />
             <Field
-              label="Last name"
+              label={t("checkout.lastName")}
               autoComplete="family-name"
               value={lastName}
               onChange={setLastName}
             />
           </div>
           <Field
-            label="Phone"
+            label={t("checkout.phone")}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -293,13 +302,13 @@ export default function CheckoutPage() {
       </Section>
 
       <Section
-        title={isDelivery ? "Delivery details" : "Pickup details"}
+        title={isDelivery ? t("checkout.deliveryDetails") : t("checkout.pickupDetails")}
         aside={
           <Link
             href="/locations"
             className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
           >
-            {isDelivery ? "Switch to pickup" : "Switch to delivery"}
+            {isDelivery ? t("checkout.switchToPickup") : t("checkout.switchToDelivery")}
           </Link>
         }
       >
@@ -319,8 +328,8 @@ export default function CheckoutPage() {
                   saying otherwise would be a promise the shop didn't make. */}
               <p className="m-0 text-[12px] text-muted">
                 {isDelivery && quote
-                  ? "Estimated by the courier."
-                  : "Estimated — the shop confirms."}
+                  ? t("checkout.estimatedCourier")
+                  : t("checkout.estimatedShop")}
               </p>
             </div>
           </div>
@@ -340,15 +349,15 @@ export default function CheckoutPage() {
               <Check
                 checked={curbside}
                 onChange={setCurbside}
-                label="Curbside pickup"
-                hint="Bring my order out to the car."
+                label={t("checkout.curbsidePickup")}
+                hint={t("checkout.curbsideHint")}
               />
             </div>
           ) : null}
         </div>
       </Section>
 
-      <Section title="Order details">
+      <Section title={t("checkout.orderDetails")}>
         <Disclosure summary={`${itemCount} item${itemCount === 1 ? "" : "s"}`}>
           <div className="flex flex-col divide-y divide-line-faint">
             {rows.map(({ line, product, key, lineCents, chosen }) => (
@@ -371,7 +380,7 @@ export default function CheckoutPage() {
             href="/shop/cart"
             className="mt-3 inline-block cursor-pointer text-[13px] text-muted underline hover:text-ink"
           >
-            Edit basket
+            {t("checkout.editBasket")}
           </Link>
         </Disclosure>
 
@@ -379,7 +388,7 @@ export default function CheckoutPage() {
           <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
             {unavailable[0].product.name} sold out today.{" "}
             <Link href="/shop/cart" className="cursor-pointer underline">
-              Take it out of your basket
+              {t("checkout.takeItOut")}
             </Link>
             .
           </p>
@@ -389,7 +398,7 @@ export default function CheckoutPage() {
           <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
             {incomplete[0].product.name} still needs its options.{" "}
             <Link href="/shop/cart" className="cursor-pointer underline">
-              Choose in your basket
+              {t("checkout.chooseInBasket")}
             </Link>
             .
           </p>
@@ -399,7 +408,7 @@ export default function CheckoutPage() {
       {!opening.acceptingOrders ? (
         <div className="mb-6 rounded-2xl border border-line-soft bg-sun-soft px-4 py-3">
           <p className="m-0 text-[14px] font-medium text-sun-ink">
-            {opening.open ? "The kitchen is closing" : "We're closed right now"}
+            {opening.open ? t("checkout.closingSoon") : t("checkout.closedNow")}
           </p>
           <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
             {opening.open
@@ -409,25 +418,25 @@ export default function CheckoutPage() {
         </div>
       ) : null}
 
-      <Section title="Payment">
+      <Section title={t("checkout.payment")}>
         <PaymentSection tender={tender} onTender={setTender} cardEnabled={payments} />
       </Section>
 
-      <Section title="Add a tip">
+      <Section title={t("checkout.addTip")}>
         <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
       </Section>
 
-      <Section title="Anything else">
+      <Section title={t("checkout.anythingElse")}>
         <div className="flex flex-col gap-4">
           <Check
             checked={utensils}
             onChange={setUtensils}
-            label="Utensils and napkins"
-            hint="Left out unless you ask — most orders don't need them."
+            label={t("checkout.utensilsLabel")}
+            hint={t("checkout.utensilsHint")}
           />
           <div>
             <label htmlFor="order-note" className="mb-1 block text-[12px] text-muted">
-              Note for the kitchen
+              {t("checkout.noteForKitchen")}
             </label>
             <textarea
               id="order-note"
@@ -435,7 +444,7 @@ export default function CheckoutPage() {
               maxLength={255}
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              placeholder="Allergies, how you'd like it, where to leave it."
+              placeholder={t("checkout.notePlaceholder")}
               className="w-full resize-none rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
             />
           </div>
@@ -443,17 +452,17 @@ export default function CheckoutPage() {
       </Section>
 
       <div className="border-t border-line pt-5">
-        <Money label="Subtotal" amount={formatPrice(totals.subtotalCents)} />
-        <Money label="Tax" amount={formatPrice(totals.taxCents)} />
+        <Money label={t("common.subtotal")} amount={formatPrice(totals.subtotalCents)} />
+        <Money label={t("checkout.tax")} amount={formatPrice(totals.taxCents)} />
         {isDelivery ? (
           <Money
-            label="Delivery"
+            label={t("checkout.delivery")}
             amount={quote ? formatPrice(totals.deliveryCents) : "—"}
           />
         ) : null}
-        {totals.tipCents > 0 ? <Money label="Tip" amount={formatPrice(totals.tipCents)} /> : null}
+        {totals.tipCents > 0 ? <Money label={t("checkout.tip")} amount={formatPrice(totals.tipCents)} /> : null}
         <div className="mt-1 border-t border-line pt-2">
-          <Money label="Total" amount={formatPrice(totals.totalCents)} strong />
+          <Money label={t("common.total")} amount={formatPrice(totals.totalCents)} strong />
         </div>
       </div>
 
@@ -489,13 +498,13 @@ export default function CheckoutPage() {
         className="mt-5"
       >
         {status === "sending"
-          ? "Placing order…"
+          ? t("checkout.placingOrder")
           : !opening.acceptingOrders
-            ? "Closed"
+            ? t("shop.closed")
             : isDelivery && quote === null
               ? quoteError
-                ? "Delivery unavailable"
-                : "Pricing delivery…"
+                ? t("checkout.deliveryUnavailable")
+                : t("checkout.pricingDelivery")
               : `Place order · ${formatPrice(totals.totalCents)}`}
       </Button>
 
@@ -505,8 +514,8 @@ export default function CheckoutPage() {
           haven't — is the one failure mode worth designing against. */}
       <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
         {tender === "card"
-          ? "Your card is charged when the shop confirms the order."
-          : "You pay at the window when you collect."}
+          ? t("checkout.cardCharged")
+          : t("checkout.payAtWindow")}
       </p>
     </form>
   );
@@ -521,6 +530,7 @@ function Placed({
   order: PlacedOrder | null;
   where: { mode: string; where: string } | null;
 }) {
+  const t = useT();
   const bill = order ? orderTotals(order) : null;
   return (
     <div className="cb-rise mx-auto max-w-lg px-4 py-10 text-center sm:px-6">
@@ -544,7 +554,7 @@ function Placed({
         className="mt-4 text-[22px] font-medium leading-tight text-ink"
         style={{ fontFamily: DISPLAY_FONT }}
       >
-        You&rsquo;re all set
+        {t("checkout.allSet")}
       </p>
       <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-muted">
         {where ? (
@@ -553,27 +563,27 @@ function Placed({
             We&rsquo;ll have it ready.
           </>
         ) : (
-          <>We&rsquo;ll have it ready.</>
+          <>{t("checkout.weWillHaveItReady")}</>
         )}
       </p>
 
       {bill ? (
         <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft p-4 text-left">
-          <Money label="Subtotal" amount={formatPrice(bill.subtotalCents)} />
-          <Money label="Tax" amount={formatPrice(bill.taxCents)} />
+          <Money label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
+          <Money label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
           {bill.deliveryCents > 0 ? (
-            <Money label="Delivery" amount={formatPrice(bill.deliveryCents)} />
+            <Money label={t("checkout.delivery")} amount={formatPrice(bill.deliveryCents)} />
           ) : null}
-          {bill.tipCents > 0 ? <Money label="Tip" amount={formatPrice(bill.tipCents)} /> : null}
+          {bill.tipCents > 0 ? <Money label={t("checkout.tip")} amount={formatPrice(bill.tipCents)} /> : null}
           <div className="mt-1 border-t border-line pt-2">
-            <Money label="Total" amount={formatPrice(bill.totalCents)} strong />
+            <Money label={t("common.total")} amount={formatPrice(bill.totalCents)} strong />
           </div>
         </div>
       ) : null}
 
       {order ? (
         <ButtonLink href={`/shop/order/${order.id}`} className="mt-6 w-full max-w-[280px]">
-          Track order
+          {t("common.trackOrder")}
         </ButtonLink>
       ) : null}
 
@@ -581,7 +591,7 @@ function Placed({
         href="/shop"
         className="cb-press mt-4 block cursor-pointer text-[14px] text-muted underline hover:text-ink"
       >
-        Back to the menu
+        {t("common.backToMenu")}
       </Link>
     </div>
   );

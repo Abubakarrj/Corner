@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { useEffect, useRef } from "react";
 import { CATEGORIES, type Product, type SortValue } from "./products";
 
@@ -19,6 +20,7 @@ export default function CategoryNav({
   activeCategory: Product["category"] | undefined;
   activeSort: SortValue;
 }) {
+  const t = useT();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
@@ -80,7 +82,7 @@ export default function CategoryNav({
           href={hrefFor(undefined)}
           className={`${tabBase} ${activeCategory ? tabIdle : tabActive}`}
         >
-          All
+          {t("shop.all")}
         </Link>
         {CATEGORIES.map((category) => (
           <Link

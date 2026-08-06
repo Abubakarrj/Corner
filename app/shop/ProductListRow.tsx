@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../i18n";
 import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
@@ -12,6 +13,7 @@ import { DISPLAY_FONT } from "./shopControls";
 // pinned right. Sizes track the same scale as the card (see
 // shopControls.ts) so switching views doesn't change the page's type.
 export default function ProductListRow({ product }: { product: Product }) {
+  const t = useT();
   const { addItem } = useCart();
   // A row is a single line of controls, and two dropdowns don't fit in one
   // without shoving the price off the end. An item that needs choices sends
@@ -64,7 +66,7 @@ export default function ProductListRow({ product }: { product: Product }) {
             href={`/shop/product/${product.slug}`}
             className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-ink/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-on-ink"
           >
-            Choose
+            {t("shop.choose")}
           </Link>
         ) : (
           <button
@@ -75,7 +77,7 @@ export default function ProductListRow({ product }: { product: Product }) {
             }}
             className="flex h-9 cursor-pointer items-center whitespace-nowrap rounded-full border border-ink/70 px-4 text-[10px] font-medium uppercase tracking-[0.09em] text-ink transition-colors hover:border-ink hover:bg-ink hover:text-on-ink"
           >
-            Add to basket
+            {t("shop.addToBasket")}
           </button>
         )}
       </div>
