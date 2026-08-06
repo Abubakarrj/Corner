@@ -93,17 +93,6 @@ export default function LocationFinder() {
   // menu — see CateringModal.
   const [cateringFor, setCateringFor] = useState<StoreLocation | null>(null);
 
-  // Pickup shows the shops you can walk up to, Catering shows the kitchens
-  // that build trays, and Delivery shows nothing on the map until an address
-  // is entered — it's asking where the visitor is, not where we are.
-  // Two different filters, which used to be one and shouldn't have been.
-  //
-  // `visible` is what the map shows: every location of this mode's kind,
-  // narrowed only by "Search area". It deliberately ignores the query, because
-  // the query is a place name — picking "Los Angeles, CA, USA" from the
-  // results would otherwise substring-match against a shop whose address
-  // reads "CA 90005", find nothing, and empty the map at the exact moment
-  // the visitor asked to look there.
   // Ranked against the searched place when there is one, so the card under
   // your thumb is the nearest shop to what you asked for rather than whichever
   // one happens to be first in the file.
@@ -112,26 +101,41 @@ export default function LocationFinder() {
     return nearestLocations(searched.point, mode === "catering" ? "catering" : "shop");
   }, [mode, searched]);
 
-  const visible: StoreLocation[] = useMemo(() => {
+  // Pins and cards are two different questions, which is why they are two
+  // lists now rather than the one they used to be.
+  //
+  // `pins` is where we are: every location of this mode's kind, narrowed only
+  // by "Search area". They sit on the map from the first frame, because a map
+  // of the country with nothing marked on it says we don't exist.
+  const pins: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
     const byKind = LOCATIONS.filter((location) =>
       mode === "catering" ? location.catering === true : location.kind === "shop",
     );
-    // "Search area" is an explicit gesture at the map, so it wins: it means
-    // this rectangle, whatever was searched before it.
-    if (bounds) return byKind.filter((location) => withinBounds(bounds, location.position));
+    return bounds
+      ? byKind.filter((location) => withinBounds(bounds, location.position))
+      : byKind;
+  }, [mode, bounds]);
 
-    if (searched) {
-      const near = nearby.filter((hit) => hit.miles <= SEARCH_RADIUS_MILES);
-      // Nothing in range still shows the closest one rather than an empty map.
-      // The banner is what says it isn't nearby; taking the card away as well
-      // would leave somebody who searched a town we don't serve with no way to
-      // reach the shop that could still make their order.
-      return (near.length > 0 ? near : nearby.slice(0, 1)).map((hit) => hit.location);
-    }
+  // `cards` is the answer to a question, and until one is asked there isn't
+  // one. The rail stays empty on arrival: a card offering to order from a shop
+  // is a result, and presenting it before anybody has searched puts the last
+  // step of the flow on top of the first. Delivery has always behaved this
+  // way, and pickup and catering now match it.
+  const cards: StoreLocation[] = useMemo(() => {
+    if (mode === "delivery") return [];
+    // "Search area" is a search: an explicit gesture at the map meaning this
+    // rectangle, whatever was typed before it.
+    if (bounds) return pins;
+    if (!searched) return [];
 
-    return byKind;
-  }, [mode, bounds, searched, nearby]);
+    const near = nearby.filter((hit) => hit.miles <= SEARCH_RADIUS_MILES);
+    // Nothing in range still shows the closest one rather than an empty rail.
+    // The banner is what says it isn't nearby; taking the card away as well
+    // would leave somebody who searched a town we don't serve with no way to
+    // reach the shop that could still make their order.
+    return (near.length > 0 ? near : nearby.slice(0, 1)).map((hit) => hit.location);
+  }, [mode, bounds, pins, searched, nearby]);
 
   // `matching` is the Shops tab in the results: our own locations whose name
   // or address contains what's typed. That is a text search, and it's the
@@ -231,31 +235,37 @@ export default function LocationFinder() {
 
   // What the bar along the bottom says, and whether it says anything.
   //
-  // Three situations, and they are worth telling apart. Delivery before an
-  // address is a prompt. A searched place with nothing of ours near it is an
-  // answer, and it should name the place asked about and how far the nearest
-  // counter is, because "no shops here yet" next to a map of Pasadena leaves
-  // somebody guessing whether we mean Pasadena or the whole company. An empty
-  // map after "Search area" is the third, and the old wording is right there.
+  // Four situations, and they are worth telling apart.
+  //
+  // Before anything is asked, every mode prompts. Delivery always did; pickup
+  // and catering used to skip it because a card was already sitting on the map,
+  // and now that the rail waits for a result they need the same nudge.
+  //
+  // A searched place with nothing of ours near it is an answer, not a prompt,
+  // so it names the place asked about and how far the nearest counter is:
+  // "no shops here yet" next to a map of Pasadena leaves somebody guessing
+  // whether we mean Pasadena or the whole company. An empty map after "Search
+  // area" is the fourth, and the old wording is right for it.
   const noun = mode === "catering" ? "catering" : "shops";
   const missed =
     searched && nearby.length > 0 && nearby[0].miles > SEARCH_RADIUS_MILES ? nearby[0] : null;
+  // Whether the visitor has actually asked this screen anything yet.
+  const asked =
+    mode === "delivery" ? query.trim().length > 0 : searched !== null || bounds !== null;
 
   const showToast =
-    !toastDismissed &&
-    (mode === "delivery"
-      ? query.trim().length === 0
-      : missed !== null || visible.length === 0);
+    !toastDismissed && (!asked || missed !== null || (mode !== "delivery" && cards.length === 0));
 
-  const toastText =
-    mode === "delivery"
+  const toastText = !asked
+    ? mode === "delivery"
       ? "Enter an address above to get started."
-      : missed
-        ? `No ${noun} in ${shortPlace(searched!.label)}. The nearest is ${missed.location.name}, ` +
-          `${missed.miles.toFixed(missed.miles < 10 ? 1 : 0)} miles away.`
-        : mode === "catering"
-          ? "No catering here yet."
-          : "No shops here yet.";
+      : "Search a store, city, state or zip to get started."
+    : missed
+      ? `No ${noun} in ${shortPlace(searched!.label)}. The nearest is ${missed.location.name}, ` +
+        `${missed.miles.toFixed(missed.miles < 10 ? 1 : 0)} miles away.`
+      : mode === "catering"
+        ? "No catering here yet."
+        : "No shops here yet.";
 
   return (
     // dvh, and the map takes the leftover height — so the header stays put,
@@ -374,7 +384,8 @@ export default function LocationFinder() {
       </header>
 
       <StoreMap
-        locations={visible}
+        locations={pins}
+        cards={cards}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
         onChoose={chooseLocation}
