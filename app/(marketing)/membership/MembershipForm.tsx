@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useT } from "../../i18n";
 import { useEffect, useRef, useState } from "react";
 import { signIn } from "../../account";
 import { Button } from "../../ui/Button";
@@ -48,6 +49,7 @@ export default function MembershipForm({
 }: {
   initialStep?: Intent;
 }) {
+  const t = useT();
   const router = useRouter();
   const [intent, setIntent] = useState<Intent>(initialStep);
   const [step, setStep] = useState<Step>("email");
@@ -197,11 +199,11 @@ export default function MembershipForm({
                   {intent === "signin" ? (
                     <>
                       New here?{" "}
-                      <Quiet onClick={() => setIntent("join")}>Create an account</Quiet>
+                      <Quiet onClick={() => setIntent("join")}>{t("membership.createAccount")}</Quiet>
                     </>
                   ) : (
                     <>
-                      Already have one? <Quiet onClick={() => setIntent("signin")}>Log in</Quiet>
+                      {t("membership.alreadyHaveOne")} <Quiet onClick={() => setIntent("signin")}>{t("membership.logIn")}</Quiet>
                     </>
                   )}
                 </p>
@@ -210,7 +212,7 @@ export default function MembershipForm({
           ) : (
             <>
               <h1 className="m-0 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink">
-                Check your email
+                {t("membership.checkEmail")}
               </h1>
               <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">
                 We sent a code to{" "}
@@ -253,7 +255,7 @@ export default function MembershipForm({
                           if (sent) setResent(true);
                         }}
                       >
-                        Send another
+                        {t("common.sendAnother")}
                       </Quiet>
                     </>
                   )}

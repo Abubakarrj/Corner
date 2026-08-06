@@ -1,5 +1,7 @@
 "use client";
 
+import type { StringKey } from "./i18n";
+
 import { useSyncExternalStore } from "react";
 import type { SelectedOptions } from "./shop/products";
 import { taxFor } from "./shop/money";
@@ -400,12 +402,15 @@ export function describeOrderItems(order: PlacedOrder): string {
   return rest.length > 0 ? `${first.name} + ${rest.length} more` : first.name;
 }
 
-export const STATUS_LABEL: Record<OrderStatus, string> = {
-  placed: "Order received",
-  "in-the-kitchen": "In the kitchen",
-  ready: "Ready for pickup",
-  "on-the-way": "On the way",
-  complete: "Complete",
+// String keys, not English. This module has no hooks and no language, and it
+// should not: it is where an order's shape lives, not where it is described.
+// The tracker translates these at render, where the locale is known.
+export const STATUS_LABEL: Record<OrderStatus, StringKey> = {
+  placed: "order.placed",
+  "in-the-kitchen": "order.inKitchen",
+  ready: "order.readyForPickup",
+  "on-the-way": "order.onTheWayStage",
+  complete: "order.complete",
 };
 
 // ——— Tracking ———
@@ -420,9 +425,12 @@ const DELIVERY_MINUTES = 22;
 
 export type OrderStage = {
   status: OrderStatus;
-  label: string;
-  // What's happening, in the customer's terms.
-  detail: string;
+  label: StringKey;
+  // What's happening, in the customer's terms. A key and the values it needs,
+  // rather than a finished sentence, because "Heading to Koreatown" puts the
+  // destination where English wants it and nowhere else.
+  detail: StringKey;
+  detailVars?: Record<string, string>;
 };
 
 export type OrderProgress = {
@@ -431,8 +439,9 @@ export type OrderProgress = {
   current: number;
   // 0–1, for the bar.
   fraction: number;
-  // "Ready around 8:24am", or null once it's past the estimate.
-  etaLabel: string | null;
+  // The key and the time for "Ready around 8:24am", or null once it's past
+  // the estimate. A key, for the same reason the stages carry one.
+  eta: { key: StringKey; time: string } | null;
   settled: boolean;
 };
 
@@ -446,28 +455,29 @@ export function stagesFor(order: PlacedOrder): OrderStage[] {
     {
       status: "placed",
       label: STATUS_LABEL.placed,
-      detail: "We have your order and the shop is confirming it.",
+      detail: "order.placedDetail",
     },
     {
       status: "in-the-kitchen",
       label: STATUS_LABEL["in-the-kitchen"],
-      detail: "Bagels are being toasted and built.",
+      detail: "order.kitchenDetail",
     },
     delivery
       ? {
           status: "on-the-way",
           label: STATUS_LABEL["on-the-way"],
-          detail: `Heading to ${order.fulfillmentWhere}.`,
+          detail: "order.headingTo",
+          detailVars: { where: order.fulfillmentWhere },
         }
       : {
           status: "ready",
           label: STATUS_LABEL.ready,
-          detail: `Waiting for you at the counter.`,
+          detail: "order.atCounter",
         },
     {
       status: "complete",
-      label: delivery ? "Delivered" : "Picked up",
-      detail: delivery ? "Enjoy it." : "Enjoy it.",
+      label: delivery ? "order.delivered" : "order.pickedUpStage",
+      detail: "order.enjoy",
     },
   ];
 }
@@ -498,9 +508,12 @@ export function progressFor(order: PlacedOrder, now: number = Date.now()): Order
     stages,
     current,
     fraction,
-    etaLabel: settled
+    eta: settled
       ? null
-      : `${delivery ? "Arriving" : "Ready"} around ${formatClock(order.placedAt + totalMinutes * 60000)}`,
+      : {
+          key: delivery ? "order.arrivingAround" : "order.readyAround",
+          time: formatClock(order.placedAt + totalMinutes * 60000),
+        },
     settled,
   };
 }

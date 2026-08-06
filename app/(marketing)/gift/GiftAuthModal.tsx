@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../../i18n";
 import Modal from "../../ui/Modal";
 import { ButtonLink } from "../../ui/Button";
 import { PALETTE } from "../../shop/shopControls";
@@ -18,11 +19,11 @@ const { cream, surface, olive, controlBorder, sage } = PALETTE;
 //
 // What's behind each door, honestly:
 //
-//   Join or sign in    goes to /membership, which is a real screen. Nothing
+//   {t("account.joinOrSignIn")}    goes to /membership, which is a real screen. Nothing
 //                      authenticates yet (see the note in MembershipForm),
 //                      but it's a destination rather than a dead end.
 //
-//   Continue as guest  goes on to the purchase flow when there is one to go
+//   {t("gift.continueAsGuest")}  goes on to the purchase flow when there is one to go
 //                      on to (`guestHref`), and otherwise closes the sheet.
 //                      Redeeming still has nowhere to continue to: reading a
 //                      card's balance needs Toast's gift card API, so that
@@ -54,6 +55,7 @@ export default function GiftAuthModal({
   // Where "continue as guest" leads, when it leads anywhere.
   guestHref?: string;
 }) {
+  const t = useT();
   const copy = COPY[intent];
 
   return (
@@ -71,7 +73,7 @@ export default function GiftAuthModal({
       </p>
 
       <ButtonLink href="/membership" block className="mt-6">
-        Join or sign in
+        {t("account.joinOrSignIn")}
       </ButtonLink>
 
       {guestHref ? (
@@ -79,7 +81,7 @@ export default function GiftAuthModal({
           href={guestHref}
           className="cb-press mx-auto mt-4 block cursor-pointer text-center text-[14px] text-muted underline underline-offset-2 hover:text-ink"
         >
-          Continue as guest
+          {t("gift.continueAsGuest")}
         </Link>
       ) : (
       <button
@@ -87,7 +89,7 @@ export default function GiftAuthModal({
         onClick={onClose}
         className="cb-press mx-auto mt-4 block cursor-pointer text-[14px] text-muted underline underline-offset-2 hover:text-ink"
       >
-        Continue as guest
+        {t("gift.continueAsGuest")}
       </button>
       )}
     </Modal>

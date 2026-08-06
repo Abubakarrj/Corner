@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useT } from "../../i18n";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import GiftAuthModal from "./GiftAuthModal";
@@ -17,6 +18,7 @@ const { cream, ink, onInk, controlBorder, muted } = PALETTE;
 // commerce — issuing a card, taking payment, storing a balance, redeeming
 // against it — and none of that exists yet.
 export default function GiftGallery() {
+  const t = useT();
   // null is "All" — the reference has no All pill, it simply starts unfiltered
   // with every design showing, and tapping the selected pill again clears it.
   const [category, setCategory] = useState<Category | null>(null);
@@ -49,7 +51,7 @@ export default function GiftGallery() {
               className="m-0 text-[24px] font-medium leading-[1.15] tracking-[-0.02em] sm:text-[27px]"
               style={{ color: ink }}
             >
-              Send a little something around the corner
+              {t("gift.tagline")}
             </h1>
             <p className="m-0 mt-3 text-[15px]" style={{ color: ink }}>
               Have a gift card?{" "}
@@ -58,7 +60,7 @@ export default function GiftGallery() {
                 onClick={() => setRedeeming(true)}
                 className="cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
               >
-                Redeem now
+                {t("gift.redeemNow")}
               </button>
             </p>
           </div>
@@ -108,7 +110,7 @@ export default function GiftGallery() {
 
             {cards.length === 0 ? (
               <p className="m-0 py-10 text-center text-[14px]" style={{ color: muted }}>
-                Nothing in this category yet.
+                {t("gift.nothingInCategory")}
               </p>
             ) : null}
           </div>

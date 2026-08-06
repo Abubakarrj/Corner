@@ -204,6 +204,23 @@ export const en = {
   "order.readyAround": "Ready around {time}",
 
   // ——— The account ———
+  "order.placed": "Order received",
+  "order.inKitchen": "In the kitchen",
+  "order.readyForPickup": "Ready for pickup",
+  "order.onTheWayStage": "On the way",
+  "order.complete": "Complete",
+  "order.delivered": "Delivered",
+  "order.pickedUpStage": "Picked up",
+  "order.placedDetail": "We have your order and the shop is confirming it.",
+  "order.kitchenDetail": "Bagels are being toasted and built.",
+  "order.headingTo": "Heading to {where}.",
+  "order.atCounter": "Waiting for you at the counter.",
+  "order.enjoy": "Enjoy it.",
+  "order.progress": "Order progress",
+  "gift.continueAsGuest": "Continue as guest",
+
+  "order.arrivingAround": "Arriving around {time}",
+  "order.estimated": "{eta} · estimated",
   "account.title": "Your account",
   "account.signInPrompt": "Sign in to keep your usuals and your order history in one place.",
   "account.joinOrSignIn": "Join or sign in",

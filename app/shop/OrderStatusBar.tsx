@@ -48,9 +48,12 @@ export default function OrderStatusBar() {
           <span className="relative inline-flex h-2 w-2 rounded-full bg-on-ink" />
         </span>
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-          {stage.label}
-          {progress.etaLabel ? (
-            <span className="font-normal opacity-80"> · {progress.etaLabel}</span>
+          {t(stage.label)}
+          {progress.eta ? (
+            <span className="font-normal opacity-80">
+              {" "}
+              · {t(progress.eta.key, { time: progress.eta.time })}
+            </span>
           ) : null}
         </span>
         <span className="shrink-0 text-[12px] font-medium uppercase tracking-[0.06em] underline underline-offset-2">

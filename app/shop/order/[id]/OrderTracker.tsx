@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "../../../i18n";
 import { useEffect, useState } from "react";
 import {
   findOrder,
@@ -27,6 +28,7 @@ const { ink, muted, faint, border, surface, controlBorder, sky } = PALETTE;
 // says so rather than implying a kitchen display somewhere is driving it, and
 // it never claims the order was handed over: only the counter knows that.
 export default function OrderTracker({ id }: { id: string }) {
+  const t = useT();
   const orders = useOrders();
   const order = findOrder(orders, id);
 
@@ -44,14 +46,13 @@ export default function OrderTracker({ id }: { id: string }) {
     return (
       <div className="mx-auto max-w-2xl px-5 py-12 text-center sm:px-6">
         <p className="text-[16px] font-medium" style={{ color: ink }}>
-          We can&rsquo;t find that order.
+          {t("order.notFound")}
         </p>
         <p className="mx-auto mt-2 max-w-xs text-[14px] leading-[1.5]" style={{ color: muted }}>
-          Orders are kept on the device they were placed from, so one placed on
-          another phone won&rsquo;t show here.
+          {t("order.keptOnDevice")}
         </p>
         <ButtonLink href="/shop" className="mt-6">
-          Back to the menu
+          {t("common.backToMenu")}
         </ButtonLink>
       </div>
     );
@@ -67,17 +68,17 @@ export default function OrderTracker({ id }: { id: string }) {
         className="inline-block cursor-pointer text-[13px] underline"
         style={{ color: muted }}
       >
-        ← Back to the menu
+        ← {t("common.backToMenu")}
       </Link>
 
       <h1
         className="mt-5 text-[26px] font-medium leading-[1.15] tracking-[-0.02em]"
         style={{ color: ink, fontFamily: DISPLAY_FONT }}
       >
-        {stage.label}
+        {t(stage.label)}
       </h1>
       <p className="mt-1.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
-        {stage.detail}
+        {t(stage.detail, stage.detailVars)}
       </p>
 
       {/* The bar. Its width is the estimate's progress, not a measurement —
@@ -89,7 +90,7 @@ export default function OrderTracker({ id }: { id: string }) {
         aria-valuenow={Math.round(progress.fraction * 100)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Order progress"
+        aria-label={t("order.progress")}
       >
         <div
           className="h-full rounded-full transition-[width] duration-700 ease-out"
@@ -98,8 +99,10 @@ export default function OrderTracker({ id }: { id: string }) {
       </div>
 
       <p className="mt-2 text-[13px]" style={{ color: faint }}>
-        {progress.etaLabel
-          ? `${progress.etaLabel} · estimated`
+        {progress.eta
+          ? t("order.estimated", {
+              eta: t(progress.eta.key, { time: progress.eta.time }),
+            })
           : "The shop will confirm when it's ready — we can't see the counter from here."}
       </p>
 
@@ -139,7 +142,7 @@ export default function OrderTracker({ id }: { id: string }) {
                     fontWeight: active ? 500 : 400,
                   }}
                 >
-                  {entry.label}
+                  {t(entry.label)}
                 </p>
                 {active ? (
                   <p className="m-0 mt-0.5 text-[13px] leading-[1.45]" style={{ color: muted }}>
@@ -161,7 +164,7 @@ export default function OrderTracker({ id }: { id: string }) {
           className="cursor-pointer underline underline-offset-2"
           style={{ color: ink }}
         >
-          Email the shop
+          {t("order.emailShop")}
         </a>
         .
       </p>
@@ -170,6 +173,7 @@ export default function OrderTracker({ id }: { id: string }) {
 }
 
 function Receipt({ order }: { order: PlacedOrder }) {
+  const t = useT();
   const bill = orderTotals(order);
   return (
     <div
@@ -246,7 +250,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
           className="cb-press mt-3 flex w-full cursor-pointer items-center justify-center rounded-full border px-4 py-2.5 text-[13px] font-medium transition-colors hover:bg-raise"
           style={{ borderColor: ink, color: ink }}
         >
-          Follow the courier
+          {t("order.followCourier")}
         </a>
       ) : null}
     </div>

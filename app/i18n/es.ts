@@ -191,6 +191,23 @@ export const es: Table = {
   "order.onTheWay": "En camino",
   "order.readyAround": "Listo hacia las {time}",
 
+  "order.placed": "Pedido recibido",
+  "order.inKitchen": "En la cocina",
+  "order.readyForPickup": "Listo para recoger",
+  "order.onTheWayStage": "En camino",
+  "order.complete": "Completado",
+  "order.delivered": "Entregado",
+  "order.pickedUpStage": "Recogido",
+  "order.placedDetail": "Tenemos tu pedido y la tienda lo está confirmando.",
+  "order.kitchenDetail": "Se están tostando y montando los bagels.",
+  "order.headingTo": "En camino a {where}.",
+  "order.atCounter": "Te espera en el mostrador.",
+  "order.enjoy": "Que aproveche.",
+  "order.progress": "Progreso del pedido",
+  "gift.continueAsGuest": "Continuar como invitado",
+
+  "order.arrivingAround": "Llega hacia las {time}",
+  "order.estimated": "{eta} · estimado",
   "account.title": "Tu cuenta",
   "account.signInPrompt":
     "Inicia sesión para tener tus habituales y tu historial en un solo sitio.",

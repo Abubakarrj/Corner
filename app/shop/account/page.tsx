@@ -40,13 +40,14 @@ const STATUS_STYLE: Record<OrderStatus, { bg: string; fg: string; border: string
 };
 
 function StatusChip({ status }: { status: OrderStatus }) {
+  const t = useT();
   const style = STATUS_STYLE[status];
   return (
     <span
       className="shrink-0 rounded-full border px-2.5 py-[3px] text-[11px] leading-none"
       style={{ backgroundColor: style.bg, color: style.fg, borderColor: style.border }}
     >
-      {STATUS_LABEL[status]}
+      {t(STATUS_LABEL[status])}
     </span>
   );
 }
@@ -93,7 +94,7 @@ export default function AccountPage() {
   const t = useT();
 
   const usuals = useMemo(() => summarizeUsuals(orders), [orders]);
-  // The reference's "Recent activity" is a short status feed above the
+  // The reference's "{t("account.recentActivity")}" is a short status feed above the
   // orders themselves — the last few things that changed, not the orders in
   // full. With one status in play it's the last few orders placed.
   const activity = useMemo(() => orders.slice(0, 3), [orders]);
@@ -108,13 +109,13 @@ export default function AccountPage() {
           className="text-[20px] font-medium"
           style={{ color: ink, fontFamily: DISPLAY_FONT }}
         >
-          Your account
+          {t("account.title")}
         </h1>
         <p className="mt-2 text-[14px] leading-[1.5]" style={{ color: muted }}>
-          Sign in to keep your usuals and your order history in one place.
+          {t("account.signInPrompt")}
         </p>
         <ButtonLink href="/membership" className="mt-6">
-          Join or sign in
+          {t("account.joinOrSignIn")}
         </ButtonLink>
       </div>
     );
@@ -166,7 +167,7 @@ export default function AccountPage() {
             router.replace("/shop");
           }}
         >
-          Sign out
+          {t("account.signOut")}
         </Button>
       </div>
 
@@ -176,21 +177,21 @@ export default function AccountPage() {
           style={{ borderColor: border, backgroundColor: surface }}
         >
           <p className="text-[14px] font-medium" style={{ color: ink }}>
-            No orders yet.
+            {t("account.noOrders")}
           </p>
           <p className="mx-auto mt-1.5 max-w-xs text-[13px] leading-[1.5]" style={{ color: muted }}>
             Once you&rsquo;ve ordered, your usuals show up here so a second
             round takes one tap.
           </p>
           <ButtonLink href="/shop" className="mt-5">
-            Browse the menu
+            {t("common.browseMenu")}
           </ButtonLink>
         </div>
       ) : (
         <>
           {usuals.length > 0 ? (
             <section className="mt-9">
-              <SectionHeading>Reorder your usuals</SectionHeading>
+              <SectionHeading>{t("account.reorderUsuals")}</SectionHeading>
               <div className="cb-stagger grid grid-cols-2 gap-3">
                 {usuals.map((usual) => {
                   const product = getProduct(usual.slug);
@@ -243,7 +244,7 @@ export default function AccountPage() {
           ) : null}
 
           <section className="mt-9">
-            <SectionHeading>Recent activity</SectionHeading>
+            <SectionHeading>{t("account.recentActivity")}</SectionHeading>
             <div className="cb-stagger flex flex-col gap-2">
               {activity.map((order) => (
                 <div
@@ -253,9 +254,11 @@ export default function AccountPage() {
                 >
                   <span className="min-w-0 truncate text-[14px]" style={{ color: ink }}>
                     {order.id} &middot;{" "}
-                    {STATUS_LABEL[
-                      progressFor(order).stages[progressFor(order).current].status
-                    ].toLowerCase()}
+                    {t(
+                      STATUS_LABEL[
+                        progressFor(order).stages[progressFor(order).current].status
+                      ],
+                    )}
                   </span>
                   <span className="shrink-0 text-[13px]" style={{ color: muted }}>
                     {formatOrderDate(order.placedAt)}
@@ -266,7 +269,7 @@ export default function AccountPage() {
           </section>
 
           <section className="mt-9">
-            <SectionHeading>Recent orders</SectionHeading>
+            <SectionHeading>{t("account.recentOrders")}</SectionHeading>
             <div className="cb-stagger flex flex-col gap-3">
               {orders.map((order) => (
                 <OrderCard key={order.id} order={order} />
@@ -283,7 +286,7 @@ export default function AccountPage() {
         <SectionHeading>{t("settings.language")}</SectionHeading>
         <div className="flex items-center justify-between gap-4">
           <p className="m-0 text-[13px] leading-[1.5]" style={{ color: muted }}>
-            Seven languages. Anything not translated yet stays in English.
+            {t("settings.languageNote")}
           </p>
           <LanguagePicker className="shrink-0" />
         </div>
@@ -292,7 +295,7 @@ export default function AccountPage() {
           <SectionHeading>{t("settings.appearance")}</SectionHeading>
           <div className="flex items-center justify-between gap-4">
             <p className="m-0 text-[13px] leading-[1.5]" style={{ color: muted }}>
-              Follows your phone until you set it here.
+              {t("settings.appearanceNote")}
             </p>
             <ThemeToggle className="shrink-0" />
           </div>
@@ -303,6 +306,7 @@ export default function AccountPage() {
 }
 
 function OrderCard({ order }: { order: PlacedOrder }) {
+  const t = useT();
   const { addItem } = useCart();
   const first = order.items[0];
   const product = first ? getProduct(first.slug) : undefined;
@@ -345,7 +349,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
           </span>
           {live ? (
             <ButtonLink href={`/shop/order/${order.id}`} size="sm">
-              Track order
+              {t("common.trackOrder")}
             </ButtonLink>
           ) : (
             <Button
