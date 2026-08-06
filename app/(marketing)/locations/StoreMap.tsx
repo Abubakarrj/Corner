@@ -137,6 +137,10 @@ export default function StoreMap({
   useEffect(() => {
     let cancelled = false;
 
+    // Caught and logged rather than left to float. An unhandled rejection here
+    // is invisible: the effect stops, no map is built, and what's on screen is
+    // the tinted holder, which looks exactly like a map that hasn't loaded
+    // yet. A blank panel should always be able to say why it's blank.
     void (async () => {
       const maps = await loadMaps();
       const holder = holderRef.current;
@@ -172,7 +176,9 @@ export default function StoreMap({
       infoRef.current = new maps.InfoWindow({ disableAutoPan: false });
       mapRef.current = map;
       setReady(true);
-    })();
+    })().catch((error: unknown) => {
+      console.error("[map] could not build the map", error);
+    });
 
     return () => {
       cancelled = true;

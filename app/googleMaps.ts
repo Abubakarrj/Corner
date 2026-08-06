@@ -49,15 +49,107 @@ export type GeocodedPlace = {
   lng: number;
 };
 
+type GeocodeResult = {
+  formatted_address?: string;
+  types?: string[];
+  partial_match?: boolean;
+  geometry?: {
+    location?: { lat?: number; lng?: number };
+    location_type?: string;
+  };
+};
+
+type GeocodeBody = {
+  status?: string;
+  error_message?: string;
+  results?: GeocodeResult[];
+};
+
+// A place too big to put a bagel in.
+//
+// This exists because of a genuinely nasty failure mode. We send
+// `components=country:US` to keep results stateside, but when the address
+// itself matches nothing, Google does not answer ZERO_RESULTS: it satisfies
+// the component filter on its own and returns *the United States*, status OK,
+// with the country's centroid in Kansas. That is a valid-looking result with
+// coordinates 700 miles from the shop, and every caller downstream would
+// believe it.
+//
+// So a result that names a country, a state or a county is refused for
+// anything that has to be a doorway, and so is APPROXIMATE geometry, which is
+// what Google returns for regions rather than buildings.
+const TOO_COARSE = new Set([
+  "country",
+  "administrative_area_level_1",
+  "administrative_area_level_2",
+]);
+
+function isDeliverable(result: GeocodeResult): boolean {
+  if ((result.types ?? []).some((type) => TOO_COARSE.has(type))) return false;
+  return result.geometry?.location_type !== "APPROXIMATE";
+}
+
+function toPlace(result: GeocodeResult | undefined, fallbackName: string): GeocodedPlace | null {
+  const lat = result?.geometry?.location?.lat;
+  const lng = result?.geometry?.location?.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  return { address: result?.formatted_address ?? fallbackName, lat, lng };
+}
+
+// Google answers 200 with a status string, so the HTTP code alone says
+// nothing. REQUEST_DENIED almost always means the Geocoding API isn't enabled
+// on the project, or the key is referrer-restricted and this is a server call.
+// Worth logging by name rather than swallowing.
+function resultsOf(body: GeocodeBody, what: string): GeocodeResult[] | null {
+  if (body.status !== "OK") {
+    if (body.status && body.status !== "ZERO_RESULTS") {
+      console.error(`[maps] geocode ${what} ${body.status}: ${body.error_message ?? ""}`);
+    }
+    return null;
+  }
+  return body.results ?? [];
+}
+
+// Resolves one of Google's own place ids.
+//
+// This is the path the address field uses, and it is exact: autocomplete
+// already decided which place the visitor meant, and the id names it with no
+// text to re-interpret. Re-geocoding the *words* instead is what produced
+// "United States" from a Wilshire Boulevard address.
+//
+// It is no less safe than geocoding text. The worry was never the id, it was
+// coordinates: an id is a name we hand to Google ourselves, and the position
+// still comes back from our own server call, which is the part that matters.
+export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | null> {
+  const key = googleMapsKey();
+  if (!key) return null;
+
+  // No `components` here. The id already is the answer, and the filter is
+  // what turns a miss into a country.
+  const params = new URLSearchParams({ place_id: placeId, key });
+
+  const response = await fetch(`${GEOCODE_URL}?${params}`, { next: { revalidate: 60 } });
+  if (!response.ok) return null;
+
+  const results = resultsOf((await response.json()) as GeocodeBody, "place_id");
+  return results ? toPlace(results[0], placeId) : null;
+}
+
 // Turns text into one canonical place.
 //
 // Returns null rather than throwing when Google has no answer: "we don't know
 // that address" is a normal outcome of somebody typing, not a fault. Biased to
 // the United States and to the shop's own area, because a bare street number
 // matches a hundred cities and the nearest one is almost always meant.
+//
+// `allowCoarse` is off by default, and the default is the safe one: every
+// caller that geocodes free text is deciding where to send a courier. Only the
+// finder's pickup and catering search turns it on, because there "Los Angeles"
+// is a legitimate answer, and the worst it does is point a map.
 export async function geocode(
   query: string,
   near?: [number, number],
+  { allowCoarse = false }: { allowCoarse?: boolean } = {},
 ): Promise<GeocodedPlace | null> {
   const key = googleMapsKey();
   if (!key) return null;
@@ -84,32 +176,25 @@ export async function geocode(
   });
   if (!response.ok) return null;
 
-  const body = (await response.json()) as {
-    status?: string;
-    error_message?: string;
-    results?: {
-      formatted_address?: string;
-      geometry?: { location?: { lat?: number; lng?: number } };
-    }[];
-  };
+  const results = resultsOf((await response.json()) as GeocodeBody, "address");
+  if (!results) return null;
 
-  // Google answers 200 with a status string, so the HTTP code alone says
-  // nothing. REQUEST_DENIED almost always means the Geocoding API isn't
-  // enabled on the project, or the key is referrer-restricted and this is a
-  // server call. Worth logging by name rather than swallowing.
-  if (body.status !== "OK") {
-    if (body.status && body.status !== "ZERO_RESULTS") {
-      console.error(`[maps] geocode ${body.status}: ${body.error_message ?? ""}`);
+  const usable = allowCoarse ? results[0] : results.find(isDeliverable);
+  if (!usable) {
+    if (results.length > 0) {
+      // Worth a line in the log. This is the shape of a typo, and it is also
+      // the shape of the country fallback, and the two are worth telling apart
+      // when somebody reports that an address they know is real was refused.
+      console.warn(
+        `[maps] no deliverable match for ${JSON.stringify(query)}; ` +
+          `best was ${JSON.stringify(results[0].formatted_address ?? "")} ` +
+          `(${(results[0].types ?? []).join(",")})`,
+      );
     }
     return null;
   }
 
-  const first = body.results?.[0];
-  const lat = first?.geometry?.location?.lat;
-  const lng = first?.geometry?.location?.lng;
-  if (typeof lat !== "number" || typeof lng !== "number") return null;
-
-  return { address: first?.formatted_address ?? query, lat, lng };
+  return toPlace(usable, query);
 }
 
 export type Drive = {

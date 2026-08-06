@@ -152,9 +152,19 @@ export default function SearchResults({
       const response = await fetch("/api/geo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // The address text, not the suggestion's coordinates. The server
-        // geocodes it itself — see /api/geo.
-        body: JSON.stringify({ action: "resolve", query: suggestion.id }),
+        // The place id and the words, never the suggestion's coordinates. The
+        // server resolves one of these itself, which is what keeps the range
+        // check on numbers we fetched. See /api/geo.
+        //
+        // Sending `query` as well as `placeId` matters: `id` is Google's place
+        // id, and geocoding *that* as text is what turned a Wilshire Boulevard
+        // address into "United States, 730 driving miles out".
+        body: JSON.stringify({
+          action: "resolve",
+          placeId: suggestion.id,
+          query: chosenText,
+          kind: isDelivery ? "address" : "region",
+        }),
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) throw new Error(body?.error ?? "Couldn't read that.");

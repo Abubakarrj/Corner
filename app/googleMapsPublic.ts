@@ -73,19 +73,46 @@ export function loadMaps(): Promise<typeof google.maps | null> {
     }
 
     await new Promise<void>((resolve, reject) => {
+      // The callback is the whole point, and getting this wrong is what made
+      // the map a blank panel.
+      //
+      // The script at maps/api/js is a *bootstrap*. It defines google.maps.Load
+      // and nothing else: no Map, no InfoWindow, no importLibrary. Its only job
+      // is to inject a second script that carries the actual library. So
+      // script.onload fires while google.maps is still an empty shell, and
+      // anything that touches it in that window throws.
+      //
+      // callback= is Google's own answer: they call it once the real library
+      // has landed. Waiting on that instead of onload is the difference
+      // between a map and a coloured rectangle.
+      const done = `__cbMapsReady_${Date.now().toString(36)}`;
+      const scope = window as unknown as Record<string, unknown>;
+      scope[done] = () => {
+        delete scope[done];
+        resolve();
+      };
+
       const script = document.createElement("script");
       // `libraries=places,marker` loads what the finder actually uses. Asking
       // for everything is a bigger download on a phone for no gain.
       script.src =
         `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}` +
-        `&libraries=places,marker&loading=async&v=weekly`;
+        `&libraries=places,marker&loading=async&v=weekly&callback=${done}`;
       script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Google Maps failed to load"));
+      script.onerror = () => {
+        delete scope[done];
+        reject(new Error("Google Maps failed to load"));
+      };
       document.head.appendChild(script);
     });
 
-    return window.google?.maps ?? null;
+    // Belt and braces. If the callback ever fires against a half-built
+    // namespace, saying so beats handing back an object with no Map on it.
+    if (typeof window.google?.maps?.importLibrary !== "function") {
+      console.error("[map] Google Maps loaded but importLibrary is missing.");
+      return null;
+    }
+    return window.google.maps;
   })().catch(() => null);
 
   return loader;
