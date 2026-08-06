@@ -1,14 +1,14 @@
 "use client";
 
 // Named imports: maplibre-gl dropped its default export in v6.
-import { addProtocol, Map as MapLibreMap, Marker, Popup } from "maplibre-gl";
+import { addProtocol, Map as MapLibreMap, Marker } from "maplibre-gl";
 import { layers, namedFlavor } from "@protomaps/basemaps";
 import { Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { mapsConfig } from "../../googleMapsPublic";
+import type { StoreLocation } from "./locations";
 import {
   pinSvg,
-  popupContent,
   type EngineFactory,
   type MapEngine,
   type MapTheme,
@@ -140,7 +140,13 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
   map.on("dragend", options.onMoved);
   map.on("zoomend", options.onMoved);
 
-  let markers: { id: string; marker: Marker }[] = [];
+  let markers: {
+    id: string;
+    kind: StoreLocation["kind"];
+    marker: Marker;
+    element: HTMLElement;
+  }[] = [];
+  let selected: string | null = null;
 
   const engine: MapEngine = {
     setTheme(theme) {
@@ -149,33 +155,35 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
       map.setStyle(style(theme));
     },
 
-    setMarkers(locations, onOrder) {
+    setMarkers(locations, onSelect) {
       markers.forEach((entry) => entry.marker.remove());
       markers = locations.map((location) => {
         const element = document.createElement("div");
-        element.innerHTML = pinSvg(location.kind);
+        element.innerHTML = pinSvg(location.kind, location.id === selected);
         element.style.cursor = "pointer";
         element.setAttribute("role", "button");
         element.setAttribute("aria-label", location.name);
-
-        const popup = new Popup({
-          offset: 34,
-          closeButton: false,
-          className: "cb-map-popup-shell",
-        }).setDOMContent(popupContent(location, () => onOrder(location)));
+        element.addEventListener("click", () => onSelect(location.id));
 
         const marker = new Marker({ element, anchor: "bottom" })
           .setLngLat([location.position[1], location.position[0]])
-          .setPopup(popup)
           .addTo(map);
 
-        return { id: location.id, marker };
+        return { id: location.id, kind: location.kind, marker, element };
       });
     },
 
-    openPopup(id) {
-      const entry = markers.find((candidate) => candidate.id === id);
-      if (entry && !entry.marker.getPopup()?.isOpen()) entry.marker.togglePopup();
+    setSelected(id) {
+      selected = id;
+      markers.forEach((entry) => {
+        entry.element.innerHTML = pinSvg(entry.kind, entry.id === id);
+        // The selected pin draws over its neighbours. Two shops a block apart
+        // otherwise overlap in whatever order they were added.
+        entry.element.parentElement?.style.setProperty(
+          "z-index",
+          entry.id === id ? "2" : "1",
+        );
+      });
     },
 
     panTo(point, zoom) {

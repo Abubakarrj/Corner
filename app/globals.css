@@ -404,61 +404,6 @@ body {
   transform: scale(0.97);
 }
 
-/* The map's popup, dressed in the app's own surfaces rather than Google's
-   white-on-drop-shadow default, which in dark mode was a floodlight over a
-   dark basemap.
-
-   The library builds its own shell around the content we hand it, so the
-   hooks here are its class names rather than ours. :has() keeps them to
-   popups we opened, and .cb-map-popup on our root is what it looks for. */
-.gm-style .gm-style-iw-c:has(.cb-map-popup) {
-  background: var(--cb-surface);
-  color: var(--cb-ink);
-  border-radius: 14px;
-  padding: 12px 14px;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
-  min-width: 190px;
-}
-.gm-style .gm-style-iw-c:has(.cb-map-popup) .gm-style-iw-d {
-  background: var(--cb-surface);
-  /* The library measures the content, then adds a scrollbar for the pixel it
-     rounded off. There is nothing to scroll in a three-line card. */
-  overflow: hidden !important;
-}
-/* The tip is the little triangle pointing at the pin: a rotated square with
-   its own background, in a box beside the bubble rather than inside it. It
-   has to be recoloured separately or it stays white under a themed body. */
-.gm-style .gm-style-iw-tc::after {
-  background: var(--cb-surface);
-}
-/* The close button is Google's own artwork and there is no supported way to
-   recolour it. Inverting it in dark mode turns the dark glyph light, which is
-   what it needs to be whichever way the library happens to draw it. */
-:root[data-theme="dark"] .gm-style-iw-c button.gm-ui-hover-effect > span {
-  filter: invert(1);
-}
-
-/* The same card under MapLibre, which builds a different shell around the
-   content we hand it. Two rule sets rather than one because the two libraries
-   have nothing in common structurally, and the point of both is that the popup
-   looks identical whichever is drawing the map. */
-.cb-map-popup-shell .maplibregl-popup-content {
-  background: var(--cb-surface);
-  color: var(--cb-ink);
-  border-radius: 14px;
-  padding: 12px 14px;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
-  min-width: 190px;
-}
-/* The tip is a bordered triangle, so it is coloured through border-color and
-   only on the edge facing the bubble. Which edge that is depends on which side
-   of the pin the popup opened, hence all four. */
-.cb-map-popup-shell .maplibregl-popup-tip {
-  border-top-color: var(--cb-surface);
-  border-bottom-color: var(--cb-surface);
-  border-left-color: var(--cb-surface);
-  border-right-color: var(--cb-surface);
-}
 /* MapLibre's attribution pill, in the app's surfaces rather than the default
    translucent white, which sat oddly on a cream basemap and badly on a dark
    one. Only the shell is restyled: the text and its links are the attribution

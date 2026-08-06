@@ -3,8 +3,9 @@
 import { loadMaps } from "../../googleMapsPublic";
 import type { StoreLocation } from "./locations";
 import {
+  PIN_SIZE,
+  PIN_SIZE_SELECTED,
   pinDataUri,
-  popupContent,
   type EngineFactory,
   type MapEngine,
   type MapTheme,
@@ -24,6 +25,7 @@ import {
 // trademark notices)" and "will not modify, obscure, or delete" it. So there
 // is no swapping it for a smaller pill, and nothing may be drawn over it. The
 // card rail in StoreMap.tsx sits clear of it for that reason.
+
 // Everything taken off the map, regardless of theme.
 //
 // Google's default styling is a general-purpose map: it labels every state,
@@ -132,9 +134,19 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
   map.addListener("dragend", options.onMoved);
   map.addListener("zoom_changed", options.onMoved);
 
-  const info = new maps.InfoWindow({ disableAutoPan: false });
-  let markers = new global.Map<string, google.maps.Marker>();
-  const opens = new global.Map<string, () => void>();
+  let entries: { id: string; kind: StoreLocation["kind"]; marker: google.maps.Marker }[] = [];
+  let selected: string | null = null;
+
+  const icon = (kind: StoreLocation["kind"], isSelected: boolean): google.maps.Icon => {
+    const size = isSelected ? PIN_SIZE_SELECTED : PIN_SIZE;
+    return {
+      url: pinDataUri(kind, isSelected),
+      scaledSize: new google.maps.Size(size.width, size.height),
+      // Anchored at the point of the teardrop, so growing it lifts the pin off
+      // its own coordinate rather than sliding it sideways.
+      anchor: new google.maps.Point(size.width / 2, size.height),
+    };
+  };
 
   const engine: MapEngine = {
     setTheme(theme) {
@@ -143,34 +155,28 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
       map.setOptions({ styles: MAP_STYLE[theme] });
     },
 
-    setMarkers(locations: StoreLocation[], onOrder) {
-      markers.forEach((marker) => marker.setMap(null));
-      markers = new global.Map();
-      opens.clear();
-
-      for (const location of locations) {
+    setMarkers(locations, onSelect) {
+      entries.forEach((entry) => entry.marker.setMap(null));
+      entries = locations.map((location) => {
         const marker = new google.maps.Marker({
           map,
           position: { lat: location.position[0], lng: location.position[1] },
-          icon: {
-            url: pinDataUri(location.kind),
-            scaledSize: new google.maps.Size(26, 34),
-            anchor: new google.maps.Point(13, 33),
-          },
+          icon: icon(location.kind, location.id === selected),
           title: location.name,
         });
-        const open = () => {
-          info.setContent(popupContent(location, () => onOrder(location)));
-          info.open({ map, anchor: marker });
-        };
-        marker.addListener("click", open);
-        markers.set(location.id, marker);
-        opens.set(location.id, open);
-      }
+        marker.addListener("click", () => onSelect(location.id));
+        return { id: location.id, kind: location.kind, marker };
+      });
     },
 
-    openPopup(id) {
-      opens.get(id)?.();
+    setSelected(id) {
+      selected = id;
+      entries.forEach((entry) => {
+        entry.marker.setIcon(icon(entry.kind, entry.id === id));
+        // The selected pin draws over its neighbours. Two shops a block apart
+        // otherwise overlap in whatever order they were added.
+        entry.marker.setZIndex(entry.id === id ? 2 : 1);
+      });
     },
 
     panTo(point, zoom) {
@@ -195,9 +201,8 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
     },
 
     destroy() {
-      markers.forEach((marker) => marker.setMap(null));
-      markers = new global.Map();
-      info.close();
+      entries.forEach((entry) => entry.marker.setMap(null));
+      entries = [];
     },
   };
 

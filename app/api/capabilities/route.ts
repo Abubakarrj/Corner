@@ -22,5 +22,11 @@ export function GET() {
     auth: isAuthConfigured(),
     payments: isToastConfigured(),
     chat: Boolean(process.env.ANTHROPIC_API_KEY),
+    // The one non-boolean here, and it is not a secret: a shop's phone number
+    // is on its window. It is null until a real one is set, because
+    // shopFacts falls back to a placeholder for the courier's benefit and
+    // offering a customer a Call button that rings +1 213 555 1234 is worse
+    // than offering no Call button at all.
+    phone: process.env.SHOP_PHONE?.trim() || null,
   });
 }

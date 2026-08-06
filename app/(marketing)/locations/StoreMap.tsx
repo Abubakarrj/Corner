@@ -5,9 +5,11 @@ import { PALETTE } from "../../shop/shopControls";
 import { mapsConfig } from "../../googleMapsPublic";
 import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
+import LocationSheet from "./LocationSheet";
+import { Button } from "../../ui/Button";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
-const { ink, onInk, muted } = PALETTE;
+const { ink, muted, olive, controlBorder } = PALETTE;
 
 // A real slippy map: it pans, it zooms, and "Search area" means something
 // because there are real bounds to read.
@@ -39,17 +41,16 @@ function LocateIcon() {
   );
 }
 
-// Where the map should be looking, and what should be open on it.
+// Where the map should be looking, and which shop the answer is about.
 //
 // One object rather than three props because they are one intention: a search
-// resolved, so point the camera there, get that close, and open that shop's
-// card. Sending them separately meant three effects racing to describe a
-// single answer.
+// resolved, so point the camera there, get that close, and put that shop's
+// card under the thumb. Sending them separately meant three effects racing to
+// describe a single answer.
 export type MapFocus = {
   at: [number, number];
   zoom?: number;
-  // The location whose popup should open, if any. This is how a pickup search
-  // ends up showing the shop's own card, address and all, over the shop.
+  // The shop the search found. Its card is scrolled to and its pin grows.
   openId?: string;
 };
 
@@ -84,11 +85,13 @@ export default function StoreMap({
   // to match. Derived from scroll position rather than driving it, so the
   // finger stays in charge.
   const [cardIndex, setCardIndex] = useState(0);
-  // Which card's Order button has been pressed. The button is white at rest
-  // and fills ink when it's chosen, and this holds that state long enough to
-  // be seen: the tap navigates away, so without the beat the confirmation
-  // would be a frame of colour nobody registers.
+  // Which card's Order has been pressed, which is now only a re-entrancy
+  // guard: the tap starts a 220ms beat before navigating, so the press is felt
+  // rather than swallowed by the transition, and a second tap inside that beat
+  // would choose twice.
   const [chosenId, setChosenId] = useState<string | null>(null);
+  // The shop whose details sheet is up, or null.
+  const [detailsFor, setDetailsFor] = useState<StoreLocation | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const settle = useRef<number | undefined>(undefined);
 
@@ -164,20 +167,44 @@ export default function StoreMap({
     if (ready) engineRef.current?.setTheme(theme);
   }, [theme, ready]);
 
-  // Markers, redrawn whenever the visible set changes.
+  // Markers, redrawn whenever the visible set changes. Tapping one scrolls the
+  // rail to its card rather than opening anything on the map: the card is
+  // where a shop is described, and it is already on screen.
   useEffect(() => {
     if (!ready) return;
-    engineRef.current?.setMarkers(locations, (location) => chooseRef.current(location));
+    engineRef.current?.setMarkers(locations, (id) => {
+      const index = locations.findIndex((location) => location.id === id);
+      if (index < 0) return;
+      railRef.current?.scrollTo({
+        left: index * (railRef.current.clientWidth || 0),
+        behavior: "smooth",
+      });
+      setCardIndex(index);
+    });
   }, [locations, ready]);
 
-  // Where to look, and what to open. Runs after the markers effect above, so
-  // the popup it asks for belongs to a marker that exists.
+  // Which pin is the one the card belongs to. Runs after the markers effect
+  // above, so the id it names belongs to a marker that exists.
+  useEffect(() => {
+    if (!ready) return;
+    engineRef.current?.setSelected(locations[cardIndex]?.id ?? null);
+  }, [cardIndex, locations, ready]);
+
+  // Where to look.
+  //
+  // The rail is scrolled rather than the index set directly: its own scroll
+  // handler is what owns cardIndex, so telling it where to go and letting it
+  // report back keeps one thing in charge of which card is current. Setting
+  // both would race, and the finger would lose.
   useEffect(() => {
     if (!ready || !focus) return;
-    const engine = engineRef.current;
-    if (!engine) return;
-    engine.panTo(focus.at, focus.zoom ?? 12);
-    if (focus.openId) engine.openPopup(focus.openId);
+    engineRef.current?.panTo(focus.at, focus.zoom ?? 12);
+    if (!focus.openId) return;
+    const index = locations.findIndex((location) => location.id === focus.openId);
+    const rail = railRef.current;
+    if (index >= 0 && rail) {
+      rail.scrollTo({ left: index * rail.clientWidth, behavior: "smooth" });
+    }
   }, [focus, ready, locations]);
 
   const onRailScroll = useCallback(() => {
@@ -315,41 +342,65 @@ export default function StoreMap({
                     itself stops at 2xl: across a 1440px desktop it was a shop
                     name at the far left and an Order button at the far right
                     with a metre of nothing between them. */}
-                <div className="mx-auto flex max-w-2xl items-center gap-3 rounded-2xl bg-surface p-4 shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
-                  <button
-                    type="button"
-                    onClick={() => order(location)}
-                    className="min-w-0 flex-1 cursor-pointer text-left"
-                  >
-                    <span
-                      className="block truncate text-[17px] font-medium leading-tight"
-                      style={{ color: ink }}
+                <div className="mx-auto max-w-2xl rounded-3xl bg-surface p-5 shadow-[0_4px_20px_rgba(0,0,0,0.16)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      {/* The shop's name, in the brand green and at a size
+                          that reads as a heading. It was 17px ink, the same
+                          weight as its own address, which made the card a
+                          block of grey text with a button beside it. */}
+                      <span
+                        className="block truncate text-[22px] font-medium leading-[1.15] tracking-[-0.01em]"
+                        style={{ color: olive }}
+                      >
+                        {location.name}
+                      </span>
+                      <span className="mt-1.5 block truncate text-[14px]" style={{ color: muted }}>
+                        {location.address}
+                      </span>
+                      <span className="block truncate text-[14px]" style={{ color: muted }}>
+                        {location.city}
+                      </span>
+                    </div>
+                    {/* Hours, directions, the phone. Everything that used to be
+                        crammed onto the pin's popup, which said all of this a
+                        second time three inches higher up the screen. */}
+                    <button
+                      type="button"
+                      onClick={() => setDetailsFor(location)}
+                      aria-label={`About ${location.name}`}
+                      className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
+                      style={{ borderColor: controlBorder }}
                     >
-                      {location.name}
-                    </span>
-                    <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
-                      {location.address}
-                    </span>
-                    <span className="block truncate text-[14px]" style={{ color: muted }}>
-                      {location.city}
-                    </span>
-                  </button>
-                  {/* White until it's the one chosen, then it fills ink.
-                      Flat ink from the start gave no way to tell a press
-                      had registered. */}
-                  <button
-                    type="button"
+                      <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden>
+                        <circle cx="9" cy="9" r="7.4" stroke={muted} strokeWidth="1.4" />
+                        <path
+                          d="M9 8.1v4.1"
+                          stroke={muted}
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="9" cy="5.6" r="0.95" fill={muted} />
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Full width, and the only button on the card. A 100px
+                      pill beside three lines of address was the smallest
+                      target on the screen and the most important one.
+
+                      The shared Button, not a bespoke one, so this and the
+                      sheet's "Order now" cannot drift into two different
+                      primaries for the same act. The press is felt through
+                      cb-press and the beat before navigating, rather than
+                      through a colour this button no longer owns. */}
+                  <Button
+                    block
+                    className="cb-press mt-4"
                     onClick={() => order(location)}
                     aria-label={`Order from ${location.name}`}
-                    style={{
-                      backgroundColor: chosenId === location.id ? ink : "var(--cb-surface)",
-                      color: chosenId === location.id ? onInk : ink,
-                      borderColor: ink,
-                    }}
-                    className="cb-press shrink-0 cursor-pointer rounded-full border px-4 py-2.5 text-[13px] font-medium hover:bg-raise"
                   >
                     Order
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -359,7 +410,7 @@ export default function StoreMap({
         {/* Which of them you're on. Only earns its place once there's more
             than one: a single dot says nothing. */}
         {locations.length > 1 ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-[138px] flex justify-center gap-1.5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[186px] flex justify-center gap-1.5">
             {locations.map((location, index) => (
               <span
                 key={location.id}
@@ -372,6 +423,15 @@ export default function StoreMap({
           </div>
         ) : null}
       </div>
+
+      <LocationSheet
+        location={detailsFor}
+        onClose={() => setDetailsFor(null)}
+        onOrder={(location) => {
+          setDetailsFor(null);
+          onChoose(location);
+        }}
+      />
     </div>
   );
 }
