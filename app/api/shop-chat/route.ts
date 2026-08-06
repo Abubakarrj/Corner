@@ -1,5 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt, RILEY_MAX_TOKENS } from "./riley";
+import {
+  emptyAttachments,
+  RILEY_TOOLS,
+  runTool,
+  type ChatAttachments,
+} from "./tools";
 
 // Riley — the shop's chat, answered by Claude rather than by the team.
 //
@@ -9,10 +15,18 @@ import { buildSystemPrompt, RILEY_MAX_TOKENS } from "./riley";
 // standing up somewhere to keep it. It also means a reload starts fresh,
 // which is the honest behaviour — nothing was being remembered anyway.
 //
-// Riley handles ordering, the menu, and how the app works. She cannot see
-// orders, take payment, or issue refunds, and her briefing (riley.ts) says so
-// in as many words — the failure worth guarding against here is not rudeness,
-// it's a confident wrong answer about a price or an order.
+// She has tools now (see ./tools.ts), so this runs an agentic loop rather than
+// a single call: ask, run whatever she reaches for, hand the results back, ask
+// again, until she has an answer. Two things fall out of that.
+//
+// First, the answer is grounded. Prices, allergens, opening hours and delivery
+// quotes come from the same modules the shop itself uses, so "that's $17.00"
+// is the number the till will ring rather than a number she remembered.
+//
+// Second, the reply is more than text. Tool calls also carry *attachments* —
+// product cards, an hours card, a delivery quote, quick replies, a basket
+// action — which the widget renders instead of Riley describing a menu in
+// prose with asterisks around the names.
 
 const MODEL = "claude-opus-5";
 
@@ -21,6 +35,12 @@ const MODEL = "claude-opus-5";
 // a bill. Trimmed from the front, so the recent turns survive.
 const MAX_TURNS = 24;
 const MAX_MESSAGE_CHARS = 2000;
+
+// Bounds one *reply*. Riley's tools are all cheap reads, so a well-behaved
+// turn is one or two rounds — search the menu, then show the cards. Six is
+// generous headroom; past that something is looping, and the loop is on our
+// bill and the visitor's clock.
+const MAX_TOOL_ROUNDS = 6;
 
 type Turn = { role: "user" | "assistant"; text: string };
 
@@ -40,6 +60,16 @@ function isTurn(value: unknown): value is Turn {
 function client(): Anthropic | null {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   return apiKey ? new Anthropic({ apiKey }) : null;
+}
+
+function merge(into: ChatAttachments, from: Partial<ChatAttachments> | undefined) {
+  if (!from) return;
+  if (from.products) into.products.push(...from.products);
+  if (from.info) into.info.push(...from.info);
+  if (from.actions) into.actions.push(...from.actions);
+  // Chips replace rather than accumulate: two sets of quick replies stacked
+  // under one message is a menu, and the last word should win.
+  if (from.chips) into.chips = from.chips;
 }
 
 export async function POST(request: Request) {
@@ -79,69 +109,134 @@ export async function POST(request: Request) {
 
   // Where the order is going, if the visitor has chosen — the difference
   // between "when will it get here" and "when can I collect it". Sent as a
-  // system message rather than folded into the system prompt so the cached
-  // prefix (the whole menu) stays byte-identical across every conversation.
+  // mid-conversation system message rather than folded into the system prompt
+  // so the cached prefix (the tools and the whole menu) stays byte-identical
+  // across every conversation. It has to follow a user turn and be last, which
+  // is exactly where it sits.
   const where = typeof body?.context === "string" ? body.context.slice(0, 200) : "";
 
-  try {
-    const response = await anthropic.beta.messages.create({
-      model: MODEL,
-      max_tokens: RILEY_MAX_TOKENS,
-      // Thinking stays on — disabling it on this model can leak <thinking>
-      // tags into the visible reply. Low effort is the right lever for a chat
-      // window instead: this is latency-sensitive, not intelligence-sensitive.
-      thinking: { type: "adaptive" },
-      output_config: { effort: "low" },
-      // The briefing is the same on every request and is most of the tokens,
-      // so it's cached. Anything that varies goes after it, never inside it.
-      system: [
-        {
-          type: "text",
-          text: buildSystemPrompt(),
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      // If the model's safety classifiers decline a request, this reruns it on
-      // Anthropic's recommended fallback rather than handing the visitor a
-      // dead end. Vanishingly unlikely for bagel questions; it costs nothing
-      // when it doesn't fire.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      messages: [
-        ...turns.map((turn) => ({ role: turn.role, content: turn.text })),
-        ...(where
-          ? [{ role: "system" as const, content: `Customer's order is set to: ${where}.` }]
-          : []),
-      ],
+  const messages: Anthropic.Beta.BetaMessageParam[] = turns.map((turn) => ({
+    role: turn.role,
+    content: turn.text,
+  }));
+  if (where) {
+    messages.push({
+      role: "system",
+      content: `The customer's order is set to: ${where}.`,
     });
+  }
 
-    // stop_reason first, always: on a refusal `content` is empty or partial,
-    // and reading content[0] would throw on the one path that most needs to
-    // return something sensible.
-    if (response.stop_reason === "refusal") {
-      return Response.json(
-        {
-          reply:
-            "I can't help with that one, sorry. If it's about an order, email cornerbagel@publicentity.co and a person will pick it up.",
-        },
-        { status: 200 },
+  const attachments = emptyAttachments();
+
+  try {
+    for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+      const response = await anthropic.beta.messages.create({
+        model: MODEL,
+        max_tokens: RILEY_MAX_TOKENS,
+        // Thinking stays on — disabling it on this model can leak <thinking>
+        // tags into the visible reply, and worse for a tool-using chat, it can
+        // put a tool call in the visible text where it silently never runs.
+        thinking: { type: "adaptive" },
+        // medium, not low. Low scopes work to exactly what was asked and
+        // reaches for tools noticeably less — the wrong trade now that
+        // reaching for a tool is how she gets a price right.
+        output_config: { effort: "medium" },
+        // Tools render *before* system, so this array is frozen and ordered:
+        // any churn in it invalidates the cached menu behind it.
+        tools: RILEY_TOOLS,
+        // The briefing is the same on every request and is most of the tokens,
+        // so it's cached. The breakpoint on the last system block covers the
+        // tools too. Anything that varies goes after it, never inside it.
+        system: [
+          {
+            type: "text",
+            text: buildSystemPrompt(),
+            cache_control: { type: "ephemeral" },
+          },
+        ],
+        // If the model's safety classifiers decline a request, this reruns it
+        // on Anthropic's recommended fallback rather than handing the visitor
+        // a dead end. Vanishingly unlikely for bagel questions; it costs
+        // nothing when it doesn't fire.
+        betas: ["server-side-fallback-2026-07-01"],
+        fallbacks: "default",
+        messages,
+      });
+
+      // stop_reason first, always: on a refusal `content` is empty or partial,
+      // and reading content[0] would throw on the one path that most needs to
+      // return something sensible.
+      if (response.stop_reason === "refusal") {
+        return Response.json(
+          {
+            reply:
+              "I can't help with that one, sorry. If it's about an order, email cornerbagel@publicentity.co and a person will pick it up.",
+            ...emptyAttachments(),
+          },
+          { status: 200 },
+        );
+      }
+
+      const calls = response.content.filter(
+        (block): block is Anthropic.Beta.BetaToolUseBlock => block.type === "tool_use",
       );
+
+      if (calls.length === 0) {
+        const reply = response.content
+          .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
+          .map((block) => block.text)
+          .join("")
+          .trim();
+
+        if (!reply && attachments.products.length === 0 && attachments.info.length === 0) {
+          return Response.json(
+            { error: "Riley didn't have a reply for that — try rephrasing?" },
+            { status: 502 },
+          );
+        }
+        return Response.json({ reply, ...attachments }, { status: 200 });
+      }
+
+      // Everything she asked for in this turn, run together. The results go
+      // back as one user message — splitting them across several is what
+      // quietly teaches the model to stop asking for things in parallel.
+      messages.push({ role: "assistant", content: response.content });
+
+      const results = await Promise.all(
+        calls.map(async (call) => {
+          try {
+            const outcome = await runTool(call.name, call.input);
+            merge(attachments, outcome.attach);
+            return {
+              type: "tool_result" as const,
+              tool_use_id: call.id,
+              content: JSON.stringify(outcome.forModel),
+            };
+          } catch (toolError) {
+            // Returned rather than thrown: a failed lookup is something Riley
+            // can work around ("I can't check that right now"), and dropping
+            // the result instead would leave the conversation malformed.
+            console.error(`[shop-chat] tool ${call.name} failed`, toolError);
+            return {
+              type: "tool_result" as const,
+              tool_use_id: call.id,
+              content: "That lookup failed. Tell them you couldn't check, don't guess.",
+              is_error: true,
+            };
+          }
+        }),
+      );
+
+      messages.push({ role: "user", content: results });
     }
 
-    const reply = response.content
-      .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
-      .map((block) => block.text)
-      .join("")
-      .trim();
-
-    if (!reply) {
-      return Response.json(
-        { error: "Riley didn't have a reply for that — try rephrasing?" },
-        { status: 502 },
-      );
-    }
-
-    return Response.json({ reply }, { status: 200 });
+    // Out of rounds. Whatever she attached along the way still goes back —
+    // a set of product cards with no sentence is worth more than an error.
+    console.warn("[shop-chat] hit the tool-round ceiling");
+    return Response.json(
+      { reply: "That took longer than it should have — ask me again?", ...attachments },
+      { status: 200 },
+    );
   } catch (error) {
     // Logged, not returned: an upstream error message can name the model, the
     // account, or the request — none of which belongs in a chat bubble.

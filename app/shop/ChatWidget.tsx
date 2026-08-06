@@ -3,6 +3,10 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
+import { useCart } from "./CartContext";
+import { requestOpenBasket } from "./openBasket";
+import { InfoPanel, ProductCards, RichText, ScreenButton } from "./chatContent";
+import { emptyAttachments, type ChatAttachments, type ProductCard } from "./chatTypes";
 import { DISPLAY_FONT } from "./shopControls";
 
 // One line naming where the order is going, for Riley's context.
@@ -94,7 +98,16 @@ const BOT_BUBBLE =
 const USER_BUBBLE =
   "w-fit max-w-[86%] rounded-2xl rounded-br-sm bg-ink px-3 py-2 text-[13px] leading-[1.5] text-on-ink";
 
-type Entry = { id: number; role: "bot" | "user"; text: string };
+// A bot turn is text plus whatever Riley attached to it — cards, an hours or
+// delivery panel, a next-screen button. Held per entry rather than only for
+// the latest reply, so scrolling back up shows the answer as it was given
+// instead of a paragraph with its cards missing.
+type Entry = {
+  id: number;
+  role: "bot" | "user";
+  text: string;
+  attachments?: ChatAttachments;
+};
 
 // The shop's chat, answered by Riley — see app/api/shop-chat/riley.ts.
 //
@@ -117,6 +130,13 @@ export default function ChatWidget() {
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Riley's own quick replies, from the last thing she said. They replace the
+  // opening topics once a conversation is under way.
+  const [chips, setChips] = useState<string[]>([]);
+
+  // Adding to the basket is the one thing she can change out here, so this is
+  // the only reason the widget touches the cart.
+  const { addItem } = useCart();
 
   // Where the order is going, if it's been chosen — the difference between
   // "when will it arrive" and "when can I collect it". Sent as context so
@@ -149,6 +169,7 @@ export default function ChatWidget() {
     const id = nextId.current++;
     const asked: Entry[] = [...entries, { id, role: "user", text }];
     setEntries(asked);
+    setChips([]);
     setError(null);
     setThinking(true);
 
@@ -164,17 +185,45 @@ export default function ChatWidget() {
           context: fulfillment ? describeContext(fulfillment) : undefined,
         }),
       });
-      const body = (await response.json().catch(() => null)) as {
-        reply?: string;
-        error?: string;
-      } | null;
+      const body = (await response.json().catch(() => null)) as
+        | (Partial<ChatAttachments> & { reply?: string; error?: string })
+        | null;
 
-      if (!response.ok || !body?.reply) {
+      if (!response.ok || (!body?.reply && !body?.products?.length && !body?.info?.length)) {
         throw new Error(body?.error ?? "Riley couldn't answer just now.");
       }
+
+      const attachments: ChatAttachments = {
+        ...emptyAttachments(),
+        products: body.products ?? [],
+        info: body.info ?? [],
+        chips: body.chips ?? [],
+        actions: body.actions ?? [],
+      };
+
+      // The one action Riley performs rather than proposes. It runs here, in
+      // the browser, because the basket is localStorage — the server has no
+      // way to reach it and no business knowing what's in it. Opening the
+      // drawer is the confirmation: the proof that something was added is
+      // seeing it sitting there, not a sentence claiming it.
+      for (const action of attachments.actions) {
+        if (action.type === "add_to_basket") {
+          addItem(action.slug, action.quantity, action.options);
+        }
+      }
+      if (attachments.actions.some((action) => action.type === "add_to_basket")) {
+        requestOpenBasket();
+      }
+
+      setChips(attachments.chips);
       setEntries((prior) => [
         ...prior,
-        { id: nextId.current++, role: "bot", text: body.reply as string },
+        {
+          id: nextId.current++,
+          role: "bot",
+          text: body.reply ?? "",
+          attachments,
+        },
       ]);
     } catch (askError) {
       // The failed turn is left out of the thread and the composer refilled
@@ -194,7 +243,11 @@ export default function ChatWidget() {
     void ask(text);
   }
 
-  const showChips = entries.length === 0 && !thinking;
+  // The opening topics until the conversation starts, then whatever Riley
+  // offered on her last reply. Either way they sit above the composer and read
+  // as something you might say — which is what they are.
+  const suggestions = entries.length === 0 ? [...TOPICS] : chips;
+  const showChips = suggestions.length > 0 && !thinking;
   const canSend = draft.trim().length > 0 && !thinking;
 
   return (
@@ -295,13 +348,42 @@ export default function ChatWidget() {
             // machine-generated.
             const previous = index === 0 ? null : entries[index - 1];
             const continues = previous?.role === "bot";
+            const attached = entry.attachments;
+            const openAction = attached?.actions.find((action) => action.type === "open");
             return (
-              <div key={entry.id} className="flex items-end gap-2">
-                <BagelAvatar hidden={continues} />
-                {/* whitespace-pre-wrap because Riley writes in paragraphs and
-                    occasionally a short list; collapsing those into one run
-                    is the difference between a readable answer and a wall. */}
-                <p className={`${BOT_BUBBLE} whitespace-pre-wrap`}>{entry.text}</p>
+              <div key={entry.id} className="flex flex-col gap-2">
+                <div className="flex items-end gap-2">
+                  <BagelAvatar hidden={continues} />
+                  {/* RichText, not raw text in a pre-wrap bubble. Models write
+                      markdown by default, and printing it verbatim is how
+                      "**The Veggie Stack** — $15.50" reached the screen with
+                      its asterisks showing. */}
+                  <div className={BOT_BUBBLE}>
+                    <RichText text={entry.text} />
+                  </div>
+                </div>
+
+                {/* Attachments sit under the bubble at full width rather than
+                    inside it: a card rail in a 86%-width bubble is a card rail
+                    with no room. Indented to the avatar's gutter so they still
+                    read as part of what she said. */}
+                {attached && (attached.products.length > 0 || attached.info.length > 0 || openAction) ? (
+                  <div className="ml-8 flex flex-col gap-2">
+                    {attached.info.map((card, cardIndex) => (
+                      <InfoPanel key={cardIndex} card={card} />
+                    ))}
+                    <ProductCards
+                      products={attached.products}
+                      onAdd={(product: ProductCard) => {
+                        addItem(product.slug, 1);
+                        requestOpenBasket();
+                      }}
+                    />
+                    {openAction ? (
+                      <ScreenButton action={openAction} onNavigate={() => setOpen(false)} />
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             );
           })}
@@ -336,7 +418,7 @@ export default function ChatWidget() {
             and they don't shove the greeting up the screen. */}
         {showChips ? (
           <div className="flex flex-wrap justify-end gap-1.5 border-t border-line-faint bg-surface px-3 pt-2.5">
-            {TOPICS.map((option) => (
+            {suggestions.map((option) => (
               <button
                 key={option}
                 type="button"
