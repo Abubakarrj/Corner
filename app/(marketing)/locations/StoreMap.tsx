@@ -13,9 +13,22 @@ const { ink, onInk, olive, muted } = PALETTE;
 //
 // Google Maps, on the one key that also does the geocoding, the routing and
 // the address search. That single key is the whole reason this replaced Radar
-// and MapLibre, and it is why there is no attribution pill any more: the Maps
-// JavaScript API draws its own logo and terms link into the canvas, which is
-// both required and already handled.
+// and MapLibre, and it is why there is no attribution pill of our own any
+// more: the Maps JavaScript API draws its own logo and terms link along the
+// base of the canvas.
+//
+// That strip is not decoration and it is not ours to restyle. The Maps
+// Platform terms say a customer "will display all attribution that Google
+// provides through the Services (including branding, logos, and copyright and
+// trademark notices)" and "will not modify, obscure, or delete" it. So there
+// is no swapping it for a tidier pill reading "© Google Maps", and nothing on
+// this screen may be drawn over it. What can go is the keyboard shortcuts
+// button, which is a control rather than attribution, and it has: see
+// keyboardShortcuts below.
+//
+// If the small pill is the look you want, the way to get it is a basemap
+// whose licence asks for that: OpenStreetMap data through MapLibre, self
+// hosted, where "© OpenStreetMap contributors" is the whole requirement.
 //
 // Styling is the JS `styles` array rather than a cloud-hosted Map ID, so the
 // only setup is enabling the APIs. That is a deliberate trade. Cloud styling
@@ -158,6 +171,12 @@ export default function StoreMap({
         // locate button so they match the app rather than the platform, and a
         // second set underneath them is clutter over a small screen.
         disableDefaultUI: true,
+        // Separate from disableDefaultUI, which explicitly does not cover it.
+        // This is what takes the "Keyboard shortcuts" button off the bottom
+        // bar, and it is a supported option rather than something hidden with
+        // CSS. Nothing here is reachable by keyboard anyway: the finder draws
+        // its own zoom pair and locate button, and those are real buttons.
+        keyboardShortcuts: false,
         clickableIcons: false,
         gestureHandling: "greedy",
         styles: MAP_STYLE[theme],
@@ -361,7 +380,14 @@ export default function StoreMap({
           <div
             ref={railRef}
             onScroll={onRailScroll}
-            className="pointer-events-auto absolute inset-x-0 bottom-3 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            // bottom-8, not bottom-3. The strip along the base of the map is
+            // Google's logo on the left and "Map data ©" and Terms on the
+            // right, and the Maps Platform terms are explicit that a customer
+            // "will not modify, obscure, or delete such attribution". At 12px
+            // the card sat across the logo, which is obscuring it. 32px clears
+            // the strip with room to spare. It reads better too, so there is
+            // nothing being traded off here.
+            className="pointer-events-auto absolute inset-x-0 bottom-8 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {locations.map((location) => (
               <div key={location.id} className="w-full shrink-0 snap-center">
@@ -414,7 +440,7 @@ export default function StoreMap({
         {/* Which of them you're on. Only earns its place once there's more
             than one: a single dot says nothing. */}
         {locations.length > 1 ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-[118px] flex justify-center gap-1.5">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[138px] flex justify-center gap-1.5">
             {locations.map((location, index) => (
               <span
                 key={location.id}
