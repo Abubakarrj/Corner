@@ -101,41 +101,36 @@ export default function LocationFinder() {
     return nearestLocations(searched.point, mode === "catering" ? "catering" : "shop");
   }, [mode, searched]);
 
-  // Pins and cards are two different questions, which is why they are two
-  // lists now rather than the one they used to be.
+  // What the search turned up: the pin on the map and the card under it, which
+  // are one thing and appear together.
   //
-  // `pins` is where we are: every location of this mode's kind, narrowed only
-  // by "Search area". They sit on the map from the first frame, because a map
-  // of the country with nothing marked on it says we don't exist.
-  const pins: StoreLocation[] = useMemo(() => {
+  // Empty until something is asked. The finder opens on a map with nothing on
+  // it, and typing is what puts our shop there. Presenting a card offering to
+  // take an order, next to a pin, before anybody has searched puts the last
+  // step of the flow on top of the first. Delivery always behaved this way;
+  // pickup and catering now match it.
+  const results: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    const byKind = LOCATIONS.filter((location) =>
-      mode === "catering" ? location.catering === true : location.kind === "shop",
-    );
-    return bounds
-      ? byKind.filter((location) => withinBounds(bounds, location.position))
-      : byKind;
-  }, [mode, bounds]);
 
-  // `cards` is the answer to a question, and until one is asked there isn't
-  // one. The rail stays empty on arrival: a card offering to order from a shop
-  // is a result, and presenting it before anybody has searched puts the last
-  // step of the flow on top of the first. Delivery has always behaved this
-  // way, and pickup and catering now match it.
-  const cards: StoreLocation[] = useMemo(() => {
-    if (mode === "delivery") return [];
     // "Search area" is a search: an explicit gesture at the map meaning this
     // rectangle, whatever was typed before it.
-    if (bounds) return pins;
+    if (bounds) {
+      return LOCATIONS.filter(
+        (location) =>
+          (mode === "catering" ? location.catering === true : location.kind === "shop") &&
+          withinBounds(bounds, location.position),
+      );
+    }
+
     if (!searched) return [];
 
     const near = nearby.filter((hit) => hit.miles <= SEARCH_RADIUS_MILES);
-    // Nothing in range still shows the closest one rather than an empty rail.
-    // The banner is what says it isn't nearby; taking the card away as well
+    // Nothing in range still shows the closest one rather than an empty map.
+    // The banner is what says it isn't nearby; taking the shop away as well
     // would leave somebody who searched a town we don't serve with no way to
-    // reach the shop that could still make their order.
+    // reach the counter that could still make their order.
     return (near.length > 0 ? near : nearby.slice(0, 1)).map((hit) => hit.location);
-  }, [mode, bounds, pins, searched, nearby]);
+  }, [mode, bounds, searched, nearby]);
 
   // `matching` is the Shops tab in the results: our own locations whose name
   // or address contains what's typed. That is a text search, and it's the
@@ -254,7 +249,8 @@ export default function LocationFinder() {
     mode === "delivery" ? query.trim().length > 0 : searched !== null || bounds !== null;
 
   const showToast =
-    !toastDismissed && (!asked || missed !== null || (mode !== "delivery" && cards.length === 0));
+    !toastDismissed &&
+    (!asked || missed !== null || (mode !== "delivery" && results.length === 0));
 
   const toastText = !asked
     ? mode === "delivery"
@@ -384,8 +380,7 @@ export default function LocationFinder() {
       </header>
 
       <StoreMap
-        locations={pins}
-        cards={cards}
+        locations={results}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
         onChoose={chooseLocation}

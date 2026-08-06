@@ -55,19 +55,15 @@ export type MapFocus = {
 
 export default function StoreMap({
   locations,
-  cards,
   showSearchArea,
   onSearchArea,
   onChoose,
   focus,
 }: {
-  // Pins on the map: where we are. Present from the first frame, because a map
-  // of the country with nothing marked on it says we don't exist.
+  // What the search turned up. The pin and its card are one thing and appear
+  // together, so this is one list: empty until something has been asked, and
+  // the finder opens on a map with nothing on it.
   locations: StoreLocation[];
-  // The rail along the bottom: the answer to a search. Empty until one has
-  // been made, since a card offering to order from a shop is a result and not
-  // a greeting.
-  cards: StoreLocation[];
   // Delivery has no "search this area", there is nothing to search until an
   // address is entered, so the button is the caller's decision, not ours.
   showSearchArea: boolean;
@@ -194,12 +190,12 @@ export default function StoreMap({
       const width = rail.clientWidth;
       if (width === 0) return;
       const index = Math.round(rail.scrollLeft / width);
-      const location = cards[index];
+      const location = locations[index];
       if (!location) return;
       setCardIndex(index);
       engineRef.current?.panTo(location.position);
     }, 120);
-  }, [cards]);
+  }, [locations]);
 
   function order(location: StoreLocation) {
     if (chosenId) return;
@@ -300,7 +296,7 @@ export default function StoreMap({
             momentum, rubber-banding, trackpads, keyboard arrows and
             screen-reader focus scrolling for free, and none of those are
             worth reimplementing. */}
-        {cards.length > 0 ? (
+        {locations.length > 0 ? (
           <div
             ref={railRef}
             onScroll={onRailScroll}
@@ -312,7 +308,7 @@ export default function StoreMap({
             // nothing being traded off here.
             className="pointer-events-auto absolute inset-x-0 bottom-8 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {cards.map((location) => (
+            {locations.map((location) => (
               <div key={location.id} className="w-full shrink-0 snap-center">
                 {/* Capped and centred. The slide stays full-width so the
                     snap points still land one card at a time, but the card
@@ -362,9 +358,9 @@ export default function StoreMap({
 
         {/* Which of them you're on. Only earns its place once there's more
             than one: a single dot says nothing. */}
-        {cards.length > 1 ? (
+        {locations.length > 1 ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-[138px] flex justify-center gap-1.5">
-            {cards.map((location, index) => (
+            {locations.map((location, index) => (
               <span
                 key={location.id}
                 className="block h-1.5 w-1.5 rounded-full transition-colors"
