@@ -13,8 +13,7 @@ import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
-import { useT } from "../../locale";
-import type { StringKey } from "../../strings";
+import { useT, type StringKey } from "../../i18n";
 import {
   LOCATIONS,
   nearestLocations,

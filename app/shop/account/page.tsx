@@ -20,7 +20,7 @@ import { useCart } from "../CartContext";
 import { Button, ButtonLink } from "../../ui/Button";
 import ThemeToggle from "../../ui/ThemeToggle";
 import LanguagePicker from "../../ui/LanguagePicker";
-import { useT } from "../../locale";
+import { useT } from "../../i18n";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";

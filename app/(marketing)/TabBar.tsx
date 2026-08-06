@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useT } from "../locale";
-import type { StringKey } from "../strings";
+import { useT, type StringKey } from "../i18n";
 import { useAccount } from "../account";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
 

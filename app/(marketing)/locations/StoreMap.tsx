@@ -7,7 +7,7 @@ import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
-import { useT } from "../../locale";
+import { useT } from "../../i18n";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
 const { ink, muted, controlBorder } = PALETTE;

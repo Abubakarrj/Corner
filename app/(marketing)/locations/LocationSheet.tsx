@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { Button } from "../../ui/Button";
 import { useCapabilities } from "../../capabilities";
-import { useT } from "../../locale";
+import { useT } from "../../i18n";
 import { PALETTE } from "../../shop/shopControls";
 import { SHOP_HOURS } from "../../shopFacts";
 import type { StoreLocation } from "./locations";

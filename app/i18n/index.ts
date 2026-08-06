@@ -7,8 +7,18 @@ import {
   LOCALE_STORAGE_KEY,
   localeById,
   type LocaleId,
-} from "./localeScript";
-import { STRINGS, type StringKey } from "./strings";
+} from "../localeScript";
+import { en, type StringKey, type Table } from "./en";
+import { es } from "./es";
+import { ko } from "./ko";
+import { ur } from "./ur";
+import { ja } from "./ja";
+import { zh } from "./zh";
+import { my } from "./my";
+
+export type { StringKey };
+
+const TABLES: Record<LocaleId, Table> = { en, es, ko, ur, ja, zh, my };
 
 // The chosen language, and the function that looks a string up in it.
 //
@@ -17,10 +27,6 @@ import { STRINGS, type StringKey } from "./strings";
 // an effect means one render with the wrong answer. getServerSnapshot reports
 // English, which is what the markup is rendered against, and the head script
 // in localeScript.ts has already set lang and dir before any of this runs.
-//
-// This module records and reads the preference. What it *means* for layout,
-// the lang attribute and the text direction, belongs to that script, so a
-// language set here and one restored on the next load can't disagree.
 
 const listeners = new Set<() => void>();
 
@@ -38,12 +44,12 @@ function read(): LocaleId {
     const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
     if (stored) return localeById(stored).id;
     // No stored choice: match the browser's languages, exactly as the head
-    // script does. Both have to agree or the first hydration would swap the
+    // script does. Both have to agree, or the first hydration would swap the
     // language out from under a visitor who never chose one.
     for (const candidate of navigator.languages ?? [navigator.language]) {
-      const lower = String(candidate).toLowerCase();
-      const exact = localeById(lower.split("-")[0]);
-      if (exact.id !== DEFAULT_LOCALE || lower.startsWith("en")) return exact.id;
+      const base = String(candidate).toLowerCase().split("-")[0];
+      const match = localeById(base);
+      if (match.id === base) return match.id;
     }
   } catch {
     // Private browsing, or no navigator. English.
@@ -70,17 +76,31 @@ export function setLocale(id: LocaleId) {
   listeners.forEach((listener) => listener());
 }
 
-// The lookup.
-//
+// The values a string can be given, as in t("finder.about", { name: "Koreatown" }).
+export type Vars = Record<string, string | number>;
+
+// Substitution is {name}, not string concatenation, and that is the whole
+// reason it exists. A sentence assembled from fragments in code assumes
+// English word order: "{name} is {miles} miles away" has the distance before
+// the shop in some languages and after it in others, and a translator who has
+// the whole sentence can move the pieces. One who is handed three fragments
+// cannot.
+function fill(text: string, vars?: Vars): string {
+  if (!vars) return text;
+  return text.replace(/\{(\w+)\}/g, (whole, key: string) =>
+    key in vars ? String(vars[key]) : whole,
+  );
+}
+
 // Falls back to English for any key a language hasn't been given yet, which is
 // what makes shipping a translation possible one screen at a time: a missing
 // string is an English word in the right place, not a blank or a key name.
-export function translate(locale: LocaleId, key: StringKey): string {
-  return STRINGS[locale]?.[key] ?? STRINGS.en[key] ?? key;
+export function translate(locale: LocaleId, key: StringKey, vars?: Vars): string {
+  return fill(TABLES[locale]?.[key] ?? en[key] ?? key, vars);
 }
 
 // The hook every component uses: `const t = useT();` then `t("finder.pickup")`.
-export function useT(): (key: StringKey) => string {
+export function useT(): (key: StringKey, vars?: Vars) => string {
   const locale = useLocale();
-  return (key: StringKey) => translate(locale, key);
+  return (key, vars) => translate(locale, key, vars);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { setLocale, useLocale, useT } from "../locale";
+import { setLocale, useLocale, useT } from "../i18n";
 import { LOCALES, localeById } from "../localeScript";
 
 // The language picker: a chip showing the current language, and a menu.
