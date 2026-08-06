@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { translate, useT } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { useCart } from "./CartContext";
@@ -9,10 +10,12 @@ import { InfoPanel, ProductCards, RichText, ScreenButton } from "./chatContent";
 import { emptyAttachments, type ChatAttachments, type ProductCard } from "./chatTypes";
 import { DISPLAY_FONT } from "./shopControls";
 
-// One line naming where the order is going, for Riley's context.
+// One line naming where the order is going, for Riley's context. English on
+// purpose: this is not shown to anybody, it goes into her prompt, and her
+// briefing is written in English.
 function describeContext(fulfillment: Fulfillment): string {
   const { mode, where } = describeFulfillment(fulfillment);
-  return `${mode} — ${where}`;
+  return `${translate("en", mode)} — ${where}`;
 }
 
 const ERROR_RED = "var(--cb-red)";
@@ -28,7 +31,12 @@ const ERROR_RED = "var(--cb-red)";
 // "Track my order" is deliberately not here: Riley can't see orders, so a
 // button promising she can would be the first thing a visitor tapped and the
 // first thing that disappointed them.
-const TOPICS = ["The menu", "How ordering works", "What's in a sandwich", "Gift cards"] as const;
+const TOPICS = [
+  "chat.topicMenu",
+  "chat.topicOrdering",
+  "chat.topicSandwich",
+  "chat.topicGift",
+] as const;
 
 function ChatBubbleIcon() {
   return (
@@ -125,6 +133,7 @@ type Entry = {
 // cannot see orders, take payment, or issue a refund. Her briefing says so;
 // the quick replies deliberately don't imply otherwise.
 export default function ChatWidget() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
@@ -246,7 +255,11 @@ export default function ChatWidget() {
   // The opening topics until the conversation starts, then whatever Riley
   // offered on her last reply. Either way they sit above the composer and read
   // as something you might say — which is what they are.
-  const suggestions = entries.length === 0 ? [...TOPICS] : chips;
+  // The opening topics are keys, so they are asked in the visitor's own
+  // language. Riley's own follow-up chips come back from her already written
+  // in it, so they pass through as they are.
+  const suggestions =
+    entries.length === 0 ? TOPICS.map((key) => t(key)) : chips;
   const showChips = suggestions.length > 0 && !thinking;
   const canSend = draft.trim().length > 0 && !thinking;
 
@@ -280,7 +293,7 @@ export default function ChatWidget() {
       <div
         inert={!open}
         role="dialog"
-        aria-label="Chat with Riley"
+        aria-label={t("chat.withRiley")}
         className={`mb-3 flex w-[calc(100vw-2.5rem)] max-w-[344px] origin-bottom-right flex-col overflow-hidden rounded-3xl border border-line-faint bg-surface shadow-[0_16px_44px_rgba(0,0,0,0.20)] transition-all duration-200 ease-out ${
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
@@ -329,7 +342,7 @@ export default function ChatWidget() {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            aria-label="Close chat"
+            aria-label={t("chat.close")}
             className="cb-press -mr-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-ink/80 transition-colors hover:bg-white/10 hover:text-on-ink dark:text-muted dark:hover:bg-raise dark:hover:text-ink"
           >
             <CloseIcon />
@@ -344,7 +357,7 @@ export default function ChatWidget() {
         >
           <div className="flex items-end gap-2">
             <BagelAvatar />
-            <p className={BOT_BUBBLE}>Hey, how can I help?</p>
+            <p className={BOT_BUBBLE}>{t("chat.greeting")}</p>
           </div>
 
           {entries.map((entry, index) => {
@@ -404,7 +417,7 @@ export default function ChatWidget() {
           {thinking ? (
             <div className="flex items-end gap-2">
               <BagelAvatar hidden={entries.at(-1)?.role === "bot"} />
-              <span className={BOT_BUBBLE} role="status" aria-label="Riley is typing">
+              <span className={BOT_BUBBLE} role="status" aria-label={t("chat.typing")}>
                 <span className="flex items-center gap-[3px] py-1">
                   {[0, 1, 2].map((index) => (
                     <span
@@ -459,7 +472,7 @@ export default function ChatWidget() {
           <input
             ref={inputRef}
             type="text"
-            aria-label="Type a message"
+            aria-label={t("chat.typeMessage")}
             placeholder={thinking ? "Riley is typing…" : "Message Riley"}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -475,7 +488,7 @@ export default function ChatWidget() {
               control rather than one waiting for input. */}
           <button
             type="submit"
-            aria-label="Send"
+            aria-label={t("chat.send")}
             disabled={!canSend}
             className={`cb-press flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors ${
               canSend
@@ -497,7 +510,7 @@ export default function ChatWidget() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Open chat"
+        aria-label={t("chat.open")}
         aria-expanded={open}
         aria-hidden={open}
         tabIndex={open ? -1 : undefined}

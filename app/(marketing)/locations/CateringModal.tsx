@@ -1,6 +1,7 @@
 "use client";
 
 import { SHOP_EMAIL } from "../../shopFacts";
+import { useT } from "../../i18n";
 import Modal from "../../ui/Modal";
 import { ButtonAnchor } from "../../ui/Button";
 import { PALETTE } from "../../shop/shopControls";
@@ -27,6 +28,7 @@ export default function CateringModal({
   location: StoreLocation | null;
   onClose: () => void;
 }) {
+  const t = useT();
   // The subject is the store's address so the shop can tell at a glance which
   // counter is being asked, without opening the mail.
   const mailto = location
@@ -38,22 +40,21 @@ export default function CateringModal({
     : "#";
 
   return (
-    <Modal open={location !== null} onClose={onClose} label="Catering">
+    <Modal open={location !== null} onClose={onClose} label={t("catering.title")}>
       <TrayIllustration />
 
       <p className="m-0 mt-5 text-[21px] font-medium leading-[1.2] tracking-[-0.01em] text-ink">
-        Catering, Right Around the Corner
+        {t("catering.heading")}
       </p>
       <p className="m-0 mt-3 text-[14px] leading-[1.55] text-muted">
-        Bagels, spreads, and sandwiches for office mornings, meetings,
-        celebrations, and everything in between.
+        {t("catering.blurb")}
       </p>
       <ButtonAnchor href={mailto} block className="mt-6">
-        Request Catering
+        {t("catering.request")}
       </ButtonAnchor>
 
       <p className="m-0 mt-3 text-center text-[12px] text-muted">
-        Catering packages start at 10 guests.
+        {t("catering.minimum")}
       </p>
     </Modal>
   );

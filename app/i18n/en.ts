@@ -191,6 +191,8 @@ export const en = {
   "checkout.somethingWentWrong": "Something went wrong.",
   "checkout.couldNotPrice": "We couldn't price that delivery.",
 
+  "checkout.fromWhere": "{mode} from {where}.",
+
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice":
     "Orders are kept on the device they were placed from, so one placed on another phone won't show here.",
@@ -275,6 +277,17 @@ export const en = {
   "catering.replyTime": "We usually reply the same day.",
 
   // ——— About ———
+  "catering.heading": "Catering, Right Around the Corner",
+  "catering.blurb": "Bagels, spreads, and sandwiches for office mornings, meetings, celebrations, and everything in between.",
+  "catering.request": "Request Catering",
+  "catering.minimum": "Catering packages start at 10 guests.",
+  "droplist.title": "Join our drop list!",
+  "droplist.blurb": "We'll email you the second something new drops.",
+  "droplist.already": "Already on the list",
+  "droplist.email": "Email address",
+  "droplist.terms": "Terms of Service",
+  "footer.privacy": "Privacy Policy",
+
   "about.tagline": "Right Around The Corner",
   "about.p1":
     "Corner Bagel was created with the belief that the best neighborhood places are simple, thoughtful, and made to be part of everyday life. We bring together naturally fermented, kettle-boiled bagels, house-made spreads, carefully sourced ingredients, and genuine hospitality to create food that's satisfying without being complicated.",

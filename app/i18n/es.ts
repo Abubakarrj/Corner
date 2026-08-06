@@ -179,6 +179,8 @@ export const es: Table = {
   "checkout.somethingWentWrong": "Algo salió mal.",
   "checkout.couldNotPrice": "No pudimos calcular esa entrega.",
 
+  "checkout.fromWhere": "{mode} en {where}.",
+
   "order.notFound": "No encontramos ese pedido.",
   "order.keptOnDevice":
     "Los pedidos se guardan en el dispositivo desde el que se hicieron, así que uno hecho en otro teléfono no aparecerá aquí.",
@@ -259,6 +261,17 @@ export const es: Table = {
     "Dinos la fecha, cuánta gente y más o menos lo que tienes en mente, y te respondemos con un plan y un precio.",
   "catering.emailUs": "Escríbenos sobre catering",
   "catering.replyTime": "Solemos responder el mismo día.",
+
+  "catering.heading": "Catering, a la vuelta de la esquina",
+  "catering.blurb": "Bagels, untables y sándwiches para mañanas de oficina, reuniones, celebraciones y todo lo que hay en medio.",
+  "catering.request": "Solicitar catering",
+  "catering.minimum": "Los paquetes de catering empiezan en 10 personas.",
+  "droplist.title": "¡Únete a nuestra lista!",
+  "droplist.blurb": "Te escribimos en cuanto salga algo nuevo.",
+  "droplist.already": "Ya estás en la lista",
+  "droplist.email": "Correo electrónico",
+  "droplist.terms": "Términos del servicio",
+  "footer.privacy": "Política de privacidad",
 
   "about.tagline": "Justo a la vuelta de la esquina",
   "about.p1":

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "./i18n";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { Button } from "./ui/Button";
 
@@ -117,6 +118,7 @@ function useConsentHeight(visible: boolean) {
 }
 
 export default function CookieConsent() {
+  const t = useT();
   const consented = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const ref = useConsentHeight(!consented);
   if (consented) return null;
@@ -125,7 +127,7 @@ export default function CookieConsent() {
     <div
       ref={ref}
       role="region"
-      aria-label="Cookie consent"
+      aria-label={t("consent.label")}
       // z-[1000] rather than the 200 this used to carry. Map libraries hand
       // their own panes, canvases and controls z-indexes in the hundreds
       // without setting one on the container — so nothing creates a stacking
@@ -163,21 +165,31 @@ export default function CookieConsent() {
 
             This is the general shape of the fix for any block that hasn't been
             translated yet. */}
+        {/* The sentence arrives as one string with {consent} in it, and is
+            split around that token so the clickable word can sit wherever the
+            language puts it. Building it as prefix + link + suffix in JSX
+            would have hard-coded English word order into the markup.
+
+            dir="auto" so an untranslated fallback still reads correctly inside
+            an RTL document: the browser takes the direction from the first
+            strong character rather than from the page. */}
         <p dir="auto" className="m-0 text-[13px] leading-[1.45] text-body">
-          By continuing to use this site, you{" "}
-          {/* "consent" was already painted brand red, which reads as a link
-              whether or not it is one. It now is one: it opens the cookie
-              policy. proxy.ts passes /cookie-policy through unrewritten so
-              this still resolves on the shop subdomain, where this banner
-              also renders. */}
-          <Link
-            href="/cookie-policy"
-            style={{ color: BRAND_RED }}
-            className="cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
-          >
-            consent
-          </Link>{" "}
-          to our use of cookies.
+          {(() => {
+            const [before, after = ""] = t("consent.text").split("{consent}");
+            return (
+              <>
+                {before}
+                <Link
+                  href="/cookie-policy"
+                  style={{ color: BRAND_RED }}
+                  className="cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
+                >
+                  {t("consent.link")}
+                </Link>
+                {after}
+              </>
+            );
+          })()}
         </p>
         {/* The app's own primary button, not a square of brand red. The red
             version was the last hand-rolled button left after the design pass,

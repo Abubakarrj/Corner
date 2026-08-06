@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useT } from "../../i18n";
+import { useT, type StringKey } from "../../i18n";
 import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
@@ -528,7 +528,7 @@ function Placed({
   where,
 }: {
   order: PlacedOrder | null;
-  where: { mode: string; where: string } | null;
+  where: { mode: StringKey; where: string } | null;
 }) {
   const t = useT();
   const bill = order ? orderTotals(order) : null;
@@ -559,8 +559,8 @@ function Placed({
       <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-muted">
         {where ? (
           <>
-            {where.mode} from <span className="font-medium text-ink">{where.where}</span>.
-            We&rsquo;ll have it ready.
+            {t("checkout.fromWhere", { mode: t(where.mode), where: where.where })}{" "}
+            {t("checkout.weWillHaveItReady")}
           </>
         ) : (
           <>{t("checkout.weWillHaveItReady")}</>

@@ -180,6 +180,8 @@ export const ur: Table = {
   "checkout.somethingWentWrong": "کچھ غلط ہو گیا۔",
   "checkout.couldNotPrice": "ہم اس ڈیلیوری کی قیمت نہیں لگا سکے۔",
 
+  "checkout.fromWhere": "{where} سے {mode}۔",
+
   "order.notFound": "ہمیں یہ آرڈر نہیں مل رہا۔",
   "order.keptOnDevice":
     "آرڈر اسی ڈیوائس پر محفوظ ہوتے ہیں جہاں سے دیے گئے، اس لیے کسی اور فون سے دیا گیا آرڈر یہاں نظر نہیں آئے گا۔",
@@ -258,6 +260,17 @@ export const ur: Table = {
     "ہمیں تاریخ، افراد کی تعداد اور تقریباً جو آپ کے ذہن میں ہے بتائیں، ہم منصوبہ اور قیمت کے ساتھ رابطہ کریں گے۔",
   "catering.emailUs": "کیٹرنگ کے بارے میں ای میل کریں",
   "catering.replyTime": "ہم عموماً اسی دن جواب دیتے ہیں۔",
+
+  "catering.heading": "کیٹرنگ، بالکل کونے کے پاس",
+  "catering.blurb": "دفتر کی صبحوں، میٹنگز، تقریبات اور ان کے درمیان ہر موقع کے لیے بیگل، اسپریڈ اور سینڈوچ۔",
+  "catering.request": "کیٹرنگ کی درخواست",
+  "catering.minimum": "کیٹرنگ پیکجز 10 مہمانوں سے شروع ہوتے ہیں۔",
+  "droplist.title": "ہماری فہرست میں شامل ہوں!",
+  "droplist.blurb": "کوئی نئی چیز آتے ہی ہم آپ کو ای میل کریں گے۔",
+  "droplist.already": "پہلے سے فہرست میں ہیں",
+  "droplist.email": "ای میل ایڈریس",
+  "droplist.terms": "سروس کی شرائط",
+  "footer.privacy": "پرائیویسی پالیسی",
 
   "about.tagline": "بالکل کونے کے پاس",
   "about.p1":

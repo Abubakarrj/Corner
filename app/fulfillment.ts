@@ -1,5 +1,7 @@
 "use client";
 
+import type { StringKey } from "./i18n";
+
 import { useSyncExternalStore } from "react";
 
 // Where an order is going. Nothing in the shop can be ordered without this:
@@ -109,15 +111,18 @@ export function peekFulfillment(): Fulfillment | null {
 
 // One line naming the destination, for the shop's header and the order
 // confirmation — the answer to "where is this going?".
+// The mode comes back as a string key, not a word, for the same reason the
+// order stages do: this module knows the shape of a destination and has no
+// business knowing what language to name it in.
 export function describeFulfillment(fulfillment: Fulfillment): {
-  mode: string;
+  mode: StringKey;
   where: string;
 } {
   if (fulfillment.mode === "delivery") {
-    return { mode: "Delivery", where: fulfillment.address };
+    return { mode: "finder.delivery", where: fulfillment.address };
   }
   return {
-    mode: fulfillment.mode === "catering" ? "Catering" : "Pickup",
+    mode: fulfillment.mode === "catering" ? "finder.catering" : "finder.pickup",
     where: fulfillment.label,
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useT } from "./i18n";
 import { usePathname } from "next/navigation";
 import { hasTabBar } from "./(marketing)/TabBar";
 
@@ -13,6 +14,7 @@ import { hasTabBar } from "./(marketing)/TabBar";
 // — server-side via the Host header. See the comment there for why.
 
 export default function PrivacyFooterLink() {
+  const t = useT();
   const pathname = usePathname();
   if (hasTabBar(pathname)) return null;
 
@@ -39,7 +41,7 @@ export default function PrivacyFooterLink() {
       }}
     >
       <Link href="/privacy-policy" className="hover:cursor-pointer">
-        Privacy Policy &nbsp; © 2026
+        {t("footer.privacy")} &nbsp; © 2026
       </Link>
     </div>
   );

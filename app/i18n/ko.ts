@@ -177,6 +177,8 @@ export const ko: Table = {
   "checkout.somethingWentWrong": "문제가 발생했습니다.",
   "checkout.couldNotPrice": "배달비를 계산하지 못했습니다.",
 
+  "checkout.fromWhere": "{where}에서 {mode}.",
+
   "order.notFound": "해당 주문을 찾을 수 없습니다.",
   "order.keptOnDevice":
     "주문은 주문한 기기에 저장되므로 다른 휴대폰에서 한 주문은 여기 표시되지 않습니다.",
@@ -255,6 +257,17 @@ export const ko: Table = {
     "날짜, 인원, 그리고 생각하고 계신 내용을 알려 주시면 계획과 가격을 알려 드리겠습니다.",
   "catering.emailUs": "케이터링 문의하기",
   "catering.replyTime": "보통 당일에 답장드립니다.",
+
+  "catering.heading": "코너에서 만나는 케이터링",
+  "catering.blurb": "사무실 아침, 회의, 축하 자리, 그 사이 어떤 자리든 어울리는 베이글과 스프레드, 샌드위치입니다.",
+  "catering.request": "케이터링 문의",
+  "catering.minimum": "케이터링은 10인분부터 가능합니다.",
+  "droplist.title": "신제품 소식 받기",
+  "droplist.blurb": "새로운 메뉴가 나오는 즉시 이메일로 알려 드립니다.",
+  "droplist.already": "이미 등록되어 있습니다",
+  "droplist.email": "이메일 주소",
+  "droplist.terms": "이용약관",
+  "footer.privacy": "개인정보 처리방침",
 
   "about.tagline": "바로 코너에서",
   "about.p1":

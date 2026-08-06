@@ -179,6 +179,8 @@ export const zh: Table = {
   "checkout.somethingWentWrong": "出了点问题。",
   "checkout.couldNotPrice": "我们无法计算该配送费用。",
 
+  "checkout.fromWhere": "在{where}{mode}。",
+
   "order.notFound": "找不到该订单。",
   "order.keptOnDevice": "订单保存在下单的设备上，所以在别的手机下的单不会显示在这里。",
   "order.emailShop": "给门店发邮件",
@@ -254,6 +256,17 @@ export const zh: Table = {
   "catering.body": "告诉我们日期、人数和大致想法，我们会带着方案和报价回复你。",
   "catering.emailUs": "发邮件咨询餐饮服务",
   "catering.replyTime": "我们通常当天回复。",
+
+  "catering.heading": "街角的餐饮服务",
+  "catering.blurb": "贝果、抹酱和三明治，适合办公室的早晨、会议、庆祝，以及这之间的一切场合。",
+  "catering.request": "申请餐饮服务",
+  "catering.minimum": "餐饮套餐从 10 人起订。",
+  "droplist.title": "加入我们的新品通知！",
+  "droplist.blurb": "一有新品我们就给你发邮件。",
+  "droplist.already": "已在名单中",
+  "droplist.email": "邮箱地址",
+  "droplist.terms": "服务条款",
+  "footer.privacy": "隐私政策",
 
   "about.tagline": "就在街角",
   "about.p1":

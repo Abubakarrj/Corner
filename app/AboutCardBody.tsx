@@ -1,3 +1,7 @@
+"use client";
+
+import { useT } from "./i18n";
+
 // This card used to hold a handful of short one-line facts ("No Online
 // Ordering", a partner-location list), sized by shrinking to fit the widest
 // single line. It now holds running paragraph copy instead, so it's sized
@@ -37,6 +41,7 @@ const bodyStyle = {
 
 // The about card's content — every child that gives the card its size.
 export default function AboutCardBody() {
+  const t = useT();
   return (
     <>
       {/* 1.15x the body size, down from 1.35x. The heading sat a third
@@ -48,46 +53,36 @@ export default function AboutCardBody() {
         className="m-0 mb-[0.75em] whitespace-nowrap"
         style={{ fontWeight: 500, fontSize: `calc(${cardFontSize} * 1.15)` }}
       >
-        Right Around The Corner
+        {t("about.tagline")}
       </p>
 
       <p
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Corner Bagel was created with the belief that the best neighborhood
-        places are simple, thoughtful, and made to be part of everyday life. We
-        bring together naturally fermented, kettle-boiled bagels, house-made
-        spreads, carefully sourced ingredients, and genuine hospitality to
-        create food that&rsquo;s satisfying without being complicated.
+        {t("about.p1")}
       </p>
       <p
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Our menu is intentionally focused. Rather than offering everything, we
-        choose to do a handful of things exceptionally well. Every bagel,
-        sandwich, and spread is prepared with care so you can enjoy a meal that
-        feels both familiar and memorable.
+        {t("about.p2")}
       </p>
       <p
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Whether you&rsquo;re grabbing breakfast before work, meeting a friend
-        over coffee, or bringing a dozen bagels home to your family, we&rsquo;re
-        honored that you chose to spend a small part of your day with us.
+        {t("about.p3")}
       </p>
       <p
         className="m-0 mx-auto mb-[2em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
-        Thank you for supporting a neighborhood business. We look forward to
-        welcoming you back, right around the corner.
+        {t("about.p4")}
       </p>
 
       <p className="m-0 mb-[0.3em] whitespace-nowrap">
-        To speak with a member of our team:
+        {t("about.speakToTeam")}
       </p>
       <a
         href="mailto:cornerbagel@publicentity.co"

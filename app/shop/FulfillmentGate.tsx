@@ -100,7 +100,7 @@ export function FulfillmentBanner() {
         className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]"
         style={{ color: ink, borderColor: controlBorder }}
       >
-        {mode}
+        {t(mode)}
       </span>
       <span className="min-w-0 flex-1 truncate text-[12px]" style={{ color: muted }}>
         {where}

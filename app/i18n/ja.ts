@@ -177,6 +177,8 @@ export const ja: Table = {
   "checkout.somethingWentWrong": "問題が発生しました。",
   "checkout.couldNotPrice": "その配達料を計算できませんでした。",
 
+  "checkout.fromWhere": "{where}での{mode}。",
+
   "order.notFound": "そのご注文が見つかりません。",
   "order.keptOnDevice":
     "ご注文は注文した端末に保存されるため、別の端末からのご注文はここには表示されません。",
@@ -255,6 +257,17 @@ export const ja: Table = {
     "日付、人数、だいたいのご希望をお知らせください。プランとお見積りをお返しします。",
   "catering.emailUs": "ケータリングについて問い合わせる",
   "catering.replyTime": "通常は当日中にご返信します。",
+
+  "catering.heading": "ケータリング、すぐ角のお店から",
+  "catering.blurb": "オフィスの朝、会議、お祝い、その間のどんな場面にも合うベーグル、スプレッド、サンドイッチ。",
+  "catering.request": "ケータリングを依頼",
+  "catering.minimum": "ケータリングは10名様から承ります。",
+  "droplist.title": "新着のお知らせを受け取る",
+  "droplist.blurb": "新しいものが出たらすぐにメールでお知らせします。",
+  "droplist.already": "すでに登録済みです",
+  "droplist.email": "メールアドレス",
+  "droplist.terms": "利用規約",
+  "footer.privacy": "プライバシーポリシー",
 
   "about.tagline": "すぐ角を曲がったところに",
   "about.p1":

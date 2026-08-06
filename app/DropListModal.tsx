@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useT } from "./i18n";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { hasConsented, subscribeConsentChanged } from "./CookieConsent";
 
@@ -141,6 +142,7 @@ function getConsentServerSnapshot() {
 }
 
 export default function DropListModal() {
+  const t = useT();
   const pathname = usePathname();
   const consented = useSyncExternalStore(
     subscribeConsentChanged,
@@ -348,7 +350,7 @@ export default function DropListModal() {
         <button
           type="button"
           onClick={() => close("dismissed")}
-          aria-label="Close"
+          aria-label={t("common.close")}
           className="absolute right-5 top-5 cursor-pointer text-body transition-opacity hover:opacity-60"
         >
           <svg
@@ -376,10 +378,10 @@ export default function DropListModal() {
           className="mb-2 pr-8 text-[20px] font-medium leading-tight text-heading"
           style={{ letterSpacing: "-0.03em" }}
         >
-          Join our drop list!
+          {t("droplist.title")}
         </h2>
         <p className="mb-4 text-[14px] leading-[145%] text-body">
-          We&rsquo;ll email you the second something new drops.
+          {t("droplist.blurb")}
         </p>
 
         <form onSubmit={onSubmit} noValidate>
@@ -405,7 +407,7 @@ export default function DropListModal() {
               inputMode="email"
               autoComplete="email"
               name="email"
-              aria-label="Email address"
+              aria-label={t("droplist.email")}
               placeholder="Email address"
               value={email}
               onChange={(event) => {
@@ -445,7 +447,7 @@ export default function DropListModal() {
             onClick={() => close("already")}
             className="mt-3 w-full cursor-pointer text-center text-[13px] text-body underline transition-opacity hover:opacity-70"
           >
-            Already on the list
+            {t("droplist.already")}
           </button>
         </form>
 
@@ -462,18 +464,14 @@ export default function DropListModal() {
             target="_blank"
             rel="noopener noreferrer"
             className="underline"
-          >
-            Terms of Service
-          </a>{" "}
+          >{t("droplist.terms")}</a>{" "}
           and{" "}
           <a
             href={PRIVACY_HREF}
             target="_blank"
             rel="noopener noreferrer"
             className="underline"
-          >
-            Privacy Policy
-          </a>
+          >{t("footer.privacy")}</a>
           . For support, email{" "}
           <a href="mailto:support@publicentity.co" className="underline">
             support@publicentity.co
