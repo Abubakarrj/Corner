@@ -143,6 +143,48 @@ export function searchLocations(
     .map((hit) => hit.location);
 }
 
+// How near a shop has to be to a searched place to count as being *in* it.
+//
+// A judgement, not a fact. Somebody searching "Santa Monica" is asking where
+// they can pick up around there, and a counter twelve miles inland is not an
+// answer to that question, however much we'd like it to be. Fifteen miles is
+// wide enough to cover a city and its neighbouring ones, tight enough that
+// "no shops in Pasadena" still gets said when it's true.
+export const SEARCH_RADIUS_MILES = 15;
+
+export type NearbyLocation = { location: StoreLocation; miles: number };
+
+// Our own shops, ranked by how far they are from a point.
+//
+// This is the other half of searching, and the half that was missing. The text
+// search below can only find a shop by something written on it: its name, its
+// address, or an alias somebody thought to list. That works for "ktown" and
+// for "90005", and it fails for every other way of naming the same patch of
+// city. "Beverly Hills" is not in the Koreatown shop's aliases and never will
+// be, because the list of places near a shop is not a list anybody can finish.
+//
+// Distance doesn't need the list. Once a searched place has coordinates, which
+// picking a suggestion already gives us, "which of ours is near here" is
+// arithmetic. So the two work together: words find a shop by its name, and
+// this finds it by where it is.
+//
+// Straight-line miles, deliberately. This ranks and it labels; it does not
+// decide anything. Driving distance is a billed call per shop per search, and
+// the difference between 5.8 and 7.1 miles changes nothing about which card
+// sits on top.
+export function nearestLocations(
+  point: [number, number],
+  kind: LocationKind,
+  pool: StoreLocation[] = LOCATIONS,
+): NearbyLocation[] {
+  return pool
+    .filter((location) =>
+      kind === "catering" ? location.catering === true : location.kind === kind,
+    )
+    .map((location) => ({ location, miles: milesBetween(point, location.position) }))
+    .sort((a, b) => a.miles - b.miles);
+}
+
 // What the map is currently showing, in plain numbers.
 //
 // This used to be Leaflet's LatLngBounds passed straight out of the map

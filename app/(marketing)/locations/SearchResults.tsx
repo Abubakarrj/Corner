@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PALETTE } from "../../shop/shopControls";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
-import { DELIVERY_ORIGIN, type StoreLocation } from "./locations";
+import { DELIVERY_ORIGIN, nearestLocations, type StoreLocation } from "./locations";
 
 const { ink, onInk, controlBorder, muted, faint, border } = PALETTE;
 
@@ -195,6 +195,11 @@ export default function SearchResults({
   const message = error?.forQuery === query ? error.message : null;
   const searching = status.forQuery === query && status.state === "searching";
   const rangeNotice = outOfRange?.forQuery === query ? outOfRange.resolved : null;
+  // Straight-line miles from the refused address to the closest counter. It
+  // labels rather than decides, so it doesn't need a routing call.
+  const nearestShop = rangeNotice
+    ? nearestLocations([rangeNotice.lat, rangeNotice.lng], "shop")[0] ?? null
+    : null;
 
   if (query.length < 3) return null;
   if (items.length === 0 && stores.length === 0 && !message && !searching && !rangeNotice) {
@@ -244,8 +249,16 @@ export default function SearchResults({
             That address is outside our delivery area.
           </p>
           <p className="m-0 mt-1 text-[13px]" style={{ color: muted }}>
-            {rangeNotice.address} is {rangeNotice.miles.toFixed(1)} driving miles
-            out; we deliver within {rangeNotice.radiusMiles}. Pickup is still open.
+            {rangeNotice.miles.toFixed(1)} driving miles out; we deliver within{" "}
+            {rangeNotice.radiusMiles}.
+            {/* Naming the shop and its distance, rather than "pickup is still
+                open" and leaving them to find it. The nearest counter to the
+                address they just typed is the one useful thing we know at this
+                point, and it is measured against our own locations rather than
+                assumed. */}
+            {nearestShop
+              ? ` ${nearestShop.location.name} is ${nearestShop.miles.toFixed(1)} miles away and open for pickup.`
+              : " Pickup is still open."}
           </p>
         </div>
       ) : message && !showStores ? (

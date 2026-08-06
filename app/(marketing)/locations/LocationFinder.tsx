@@ -15,11 +15,23 @@ import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import {
   LOCATIONS,
+  nearestLocations,
   searchLocations,
+  SEARCH_RADIUS_MILES,
   withinBounds,
   type MapBounds,
+  type NearbyLocation,
   type StoreLocation,
 } from "./locations";
+
+// "Pasadena, CA, USA" is how Google names a place and not how anybody says it.
+// The first two parts are the town and the state, which is what a sentence
+// wants; the country is noise in a banner about a bagel shop.
+function shortPlace(address: string): string {
+  const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
+  if (parts.length <= 1) return address;
+  return parts.slice(0, 2).join(", ").replace(/\s+\d{5}(-\d{4})?$/, "");
+}
 
 // Dressed in the shop's produce palette rather than the reference's own
 // greys: deep ink carries the active state, cream is the ground, and the
@@ -68,6 +80,12 @@ export default function LocationFinder() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
   const [focus, setFocus] = useState<[number, number] | null>(null);
+  // The place that was searched for, once it has coordinates. This is what
+  // turns "Beverly Hills" from a word we can't match into a point we can
+  // measure from, so the shops shown are the shops actually near it.
+  const [searched, setSearched] = useState<{ point: [number, number]; label: string } | null>(
+    null,
+  );
   const [toastDismissed, setToastDismissed] = useState(false);
   // The shop whose catering sheet is up, or null. Catering doesn't open the
   // menu — see CateringModal.
@@ -84,15 +102,34 @@ export default function LocationFinder() {
   // results would otherwise substring-match against a shop whose address
   // reads "CA 90005", find nothing, and empty the map at the exact moment
   // the visitor asked to look there.
+  // Ranked against the searched place when there is one, so the card under
+  // your thumb is the nearest shop to what you asked for rather than whichever
+  // one happens to be first in the file.
+  const nearby: NearbyLocation[] = useMemo(() => {
+    if (mode === "delivery" || !searched) return [];
+    return nearestLocations(searched.point, mode === "catering" ? "catering" : "shop");
+  }, [mode, searched]);
+
   const visible: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
     const byKind = LOCATIONS.filter((location) =>
       mode === "catering" ? location.catering === true : location.kind === "shop",
     );
-    return bounds
-      ? byKind.filter((location) => withinBounds(bounds, location.position))
-      : byKind;
-  }, [mode, bounds]);
+    // "Search area" is an explicit gesture at the map, so it wins: it means
+    // this rectangle, whatever was searched before it.
+    if (bounds) return byKind.filter((location) => withinBounds(bounds, location.position));
+
+    if (searched) {
+      const near = nearby.filter((hit) => hit.miles <= SEARCH_RADIUS_MILES);
+      // Nothing in range still shows the closest one rather than an empty map.
+      // The banner is what says it isn't nearby; taking the card away as well
+      // would leave somebody who searched a town we don't serve with no way to
+      // reach the shop that could still make their order.
+      return (near.length > 0 ? near : nearby.slice(0, 1)).map((hit) => hit.location);
+    }
+
+    return byKind;
+  }, [mode, bounds, searched, nearby]);
 
   // `matching` is the Shops tab in the results: our own locations whose name
   // or address contains what's typed. That is a text search, and it's the
@@ -156,22 +193,50 @@ export default function LocationFinder() {
     setCateringFor(null);
     setBounds(null);
     setFocus(null);
+    setSearched(null);
     setQuery("");
     setToastDismissed(false);
   }
 
-  // Delivery's prompt stands until an address is picked from the results —
-  // the picker itself is what commits, so there's no Continue button to press
-  // against text nobody has verified.
+  // A place picked out of the results, for pickup and catering: point the map
+  // at it, and measure our shops against it. Both, because either alone is
+  // half an answer — flying there without ranking leaves the wrong card under
+  // your thumb, and ranking without flying leaves you looking at the map you
+  // had before.
+  function lookAt(place: ResolvedPlace) {
+    setFocus([place.lat, place.lng]);
+    setSearched({ point: [place.lat, place.lng], label: place.address });
+    setBounds(null);
+    setToastDismissed(false);
+  }
+
+  // What the bar along the bottom says, and whether it says anything.
+  //
+  // Three situations, and they are worth telling apart. Delivery before an
+  // address is a prompt. A searched place with nothing of ours near it is an
+  // answer, and it should name the place asked about and how far the nearest
+  // counter is, because "no shops here yet" next to a map of Pasadena leaves
+  // somebody guessing whether we mean Pasadena or the whole company. An empty
+  // map after "Search area" is the third, and the old wording is right there.
+  const noun = mode === "catering" ? "catering" : "shops";
+  const missed =
+    searched && nearby.length > 0 && nearby[0].miles > SEARCH_RADIUS_MILES ? nearby[0] : null;
+
   const showToast =
     !toastDismissed &&
-    (mode === "delivery" ? query.trim().length === 0 : visible.length === 0);
+    (mode === "delivery"
+      ? query.trim().length === 0
+      : missed !== null || visible.length === 0);
+
   const toastText =
     mode === "delivery"
       ? "Enter an address above to get started."
-      : mode === "catering"
-        ? "No catering here yet."
-        : "No shops here yet.";
+      : missed
+        ? `No ${noun} in ${shortPlace(searched!.label)}. The nearest is ${missed.location.name}, ` +
+          `${missed.miles.toFixed(missed.miles < 10 ? 1 : 0)} miles away.`
+        : mode === "catering"
+          ? "No catering here yet."
+          : "No shops here yet.";
 
   return (
     // dvh, and the map takes the leftover height — so the header stays put,
@@ -254,6 +319,11 @@ export default function LocationFinder() {
             onChange={(event) => {
               setQuery(event.target.value);
               setBounds(null);
+              // Typing invalidates the place that was picked. Leaving it set
+              // would keep the map filtered to a town the field no longer
+              // names, with nothing on screen explaining why.
+              setSearched(null);
+              setToastDismissed(false);
             }}
             // 16px so iOS doesn't zoom the viewport on focus.
             className="w-full bg-transparent pb-[11px] text-[16px] leading-[19px] text-ink outline-none placeholder:text-faint"
@@ -279,7 +349,7 @@ export default function LocationFinder() {
           stores={matching}
           onValueChange={setQuery}
           onPickStore={pickFromSearch}
-          onPickPlace={(place) => setFocus([place.lat, place.lng])}
+          onPickPlace={lookAt}
           onResolvedAddress={chooseAddress}
         />
       </header>
