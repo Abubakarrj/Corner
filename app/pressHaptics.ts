@@ -43,12 +43,40 @@ import { hapticCount, primeHaptics, tapped } from "./haptics";
 // stepper buzzed once, because presses two and three landed inside the window
 // press one had opened. A counter compared across one event has no window to
 // fall inside.
+// ——— What is deliberately NOT in this list ———
+//
+// Anything whose press opens native UI. <select> was in here and it broke the
+// bagel picker on iOS: tapping a select opens a picker sheet, and this fires
+// label.click() on the hidden switch during that same click, then again 40ms
+// later while the sheet is animating in. A synthetic click on a <label for>
+// moves focus, and the sheet goes straight back down. From the counter it
+// looks like the dropdown is dead — which is exactly how it was reported.
+//
+// It only happens on a real iPhone. An emulator has no native sheet to
+// dismiss, so every automated check passed while the thing was broken.
+//
+// No haptic on a select at all rather than moving it to `change`: on iOS the
+// wheel picker can fire change per detent, and a phone that buzzes six times
+// while somebody scrolls to "Sesame" is worse than one that doesn't buzz. If
+// it's wanted later it needs testing on a device first.
+//
+// Same reasoning applies to anything else that opens system UI — file, date,
+// time and color inputs. None of them match the selector below, and none of
+// them should be added to it.
 const INTERACTIVE =
   'button, a[href], [role="button"], [role="tab"], [role="switch"], summary, ' +
-  'input[type="checkbox"], input[type="radio"], label[for], select, ' +
+  'input[type="checkbox"], input[type="radio"], label[for], ' +
   // The app's own marker for "this is pressable", which catches anything
   // styled as a control without being a <button> — see .cb-press in globals.css.
   ".cb-press";
+
+// A press that lands inside one of these is a press on native UI, whatever
+// else it also matched. `label[for]` pointing at a select is the case that
+// gets here — the label forwards the click to the control, and the control
+// opens a sheet.
+const OPENS_NATIVE_UI = 'select, input[type="file"], input[type="date"], ' +
+  'input[type="time"], input[type="datetime-local"], input[type="month"], ' +
+  'input[type="week"], input[type="color"]';
 
 export default function PressHaptics() {
   useEffect(() => {
@@ -71,8 +99,15 @@ export default function PressHaptics() {
       // is a loop that ends when the phone runs out of battery.
       if (target.closest("#cb-haptic-switch, [data-cb-haptic-sidecar]")) return;
 
+      // Before anything else: never touch a press that is opening system UI.
+      // See OPENS_NATIVE_UI — clicking our hidden switch mid-sheet closes it.
+      if (target.closest(OPENS_NATIVE_UI)) return;
+
       const control = target.closest(INTERACTIVE);
       if (!control) return;
+      // A label whose control opens a sheet is the same press by another name.
+      const forId = control.getAttribute("for");
+      if (forId && document.getElementById(forId)?.matches(OPENS_NATIVE_UI)) return;
       // Nothing happened, so nothing should say it did.
       if (control.matches(":disabled, [aria-disabled='true']")) return;
       // An escape hatch for anything that shouldn't buzz.
