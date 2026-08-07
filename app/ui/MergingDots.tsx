@@ -15,6 +15,13 @@
 // around it. A 22px-tall loader in a 13px conversation is a different object
 // asking to be looked at; this one is the weight of a word.
 //
+// The box is 11px tall for a 9px core, which is tighter than it looks like it
+// should be: the bud only ever travels sideways, so nothing needs vertical
+// room, and the blur spills outside the box anyway — a filter region is not
+// clipped by its element. Every pixel of height here becomes height in the
+// bubble around it, and a typing indicator as tall as a reply is a reply that
+// hasn't arrived.
+//
 // The fusing is the filter, not the spacing. Blurring the two together and
 // then throwing away everything under an alpha threshold turns two soft
 // overlapping circles into one hard-edged shape, and turns the moment they
@@ -58,7 +65,7 @@ export default function MergingDots({
 
       <span
         aria-hidden
-        className="relative block h-[14px] w-[30px]"
+        className="relative block h-[11px] w-[30px]"
         style={{ filter: `url(#${FILTER_ID})` }}
       >
         <span className="cb-mitosis-core absolute left-1/2 top-1/2 block h-[9px] w-[9px] rounded-full bg-current" />
