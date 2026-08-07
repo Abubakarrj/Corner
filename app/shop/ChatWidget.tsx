@@ -8,6 +8,7 @@ import { useCart } from "./CartContext";
 import ChatCart from "./ChatCart";
 import ChatCheckout from "./ChatCheckout";
 import ChatConfigure from "./ChatConfigure";
+import { MentionList, useMentions, type Mention } from "./ChatMentions";
 import PurchaseComplete from "./checkout/PurchaseComplete";
 import { useCheckout } from "./checkout/useCheckout";
 import MergingDots from "../ui/MergingDots";
@@ -61,6 +62,21 @@ function CloseIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 20 20" fill="none" aria-hidden>
       <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// The four-pointed star the reference uses for its empty state. Not the bagel
+// mark: the mark says "Riley", and this space is about what the panel can do
+// rather than about who is in it.
+function SparkIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="M10 2.4c.5 3.1 1.6 4.9 4.3 5.4v.4c-2.7.5-3.8 2.3-4.3 5.4h-.4c-.5-3.1-1.6-4.9-4.3-5.4v-.4c2.7-.5 3.8-2.3 4.3-5.4h.4Z"
+        fill="currentColor"
+        transform="translate(0 2)"
+      />
     </svg>
   );
 }
@@ -182,6 +198,10 @@ export default function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(0);
 
+  // The @ picker. Owns the token being typed and the items it matches; the
+  // composer below hands it keys and caret positions. See ChatMentions.tsx.
+  const mentions = useMentions(draft, setDraft, inputRef);
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -212,7 +232,7 @@ export default function ChatWidget() {
   // seconds of a loader. Streaming doesn't make her faster, it stops the wait
   // being spent on a blank panel — the first words land in about a second and
   // the rest arrives as it's written.
-  async function ask(text: string) {
+  async function ask(text: string, mentioned: Mention[] = []) {
     const id = nextId.current++;
     const asked: Entry[] = [...entries, { id, role: "user", text }];
     setEntries(asked);
@@ -268,6 +288,11 @@ export default function ChatWidget() {
             text: entry.text,
           })),
           context: fulfillment ? describeContext(fulfillment) : undefined,
+          // What they pinned with @. Slugs, not names: the server resolves
+          // them against the catalog and ignores whatever label came with
+          // them, so "@Good Lox Today" is an identity rather than a string she
+          // has to match back to an item.
+          mentions: mentioned.map((mention) => mention.slug),
           // So Riley answers in the language the rest of the screen is in.
           locale,
         }),
@@ -369,8 +394,12 @@ export default function ChatWidget() {
   function sendDraft() {
     const text = draft.trim();
     if (!text || thinking) return;
+    // Resolved before the box is cleared: `resolve` keeps only the mentions
+    // whose text survived editing, and there is no text to check afterwards.
+    const mentioned = mentions.resolve(text);
     setDraft("");
-    void ask(text);
+    mentions.clear();
+    void ask(text, mentioned);
   }
 
   // The opening topics until the conversation starts, then whatever Riley
@@ -397,13 +426,20 @@ export default function ChatWidget() {
         ? configured
           ? "configure"
           : "chat"
-        : itemCount === 0 && view !== "chat"
-          ? "chat"
+        : // A basket that emptied under a checkout (the last line removed, or
+          // another tab cleared it) falls back to the bag, not the
+          // conversation. The bag has something to say about being empty; the
+          // conversation would just be where you suddenly are.
+          itemCount === 0 && view === "checkout"
+          ? "cart"
           : view;
 
   const suggestions =
     entries.length === 0 ? TOPICS.map((key) => t(key)) : chips;
-  const showChips = suggestions.length > 0 && !thinking;
+  // Not while the @ picker is open. Two stacked lists over one input is a
+  // panel arguing with itself, and the one the visitor is actively typing into
+  // wins.
+  const showChips = suggestions.length > 0 && !thinking && mentions.query === null;
   const canSend = draft.trim().length > 0 && !thinking;
 
   return (
@@ -496,11 +532,13 @@ export default function ChatWidget() {
         </div>
 
         {/* Chat / Cart, as a segmented control.
-            Only once there is something to check out. An empty second tab on
-            a first visit is a promise the panel hasn't earned yet, and it
-            pushes the greeting down the screen to make room for nothing. It
-            appears the moment Riley puts something in. */}
-        {itemCount > 0 && shown !== "done" && shown !== "configure" ? (
+            It used to appear only once there was something in the basket, on
+            the grounds that an empty tab is a promise the panel hasn't earned.
+            That was the wrong read: the tab isn't a promise about the basket,
+            it's the map of the panel, and a control that materialises after
+            your first tap is a control you have to discover twice. It's here
+            from the start, with the count on it — zero included. */}
+        {shown !== "done" && shown !== "configure" ? (
           <div className="flex gap-1 border-b border-line-faint bg-panel p-1.5">
             {(["chat", "cart"] as const).map((id) => {
               // "checkout" is a step of the cart, so the Cart segment stays
@@ -519,11 +557,16 @@ export default function ChatWidget() {
                 >
                   {id === "cart" ? (
                     <>
-                      <span
-                        aria-hidden
-                        className="h-[6px] w-[6px] rounded-full"
-                        style={{ backgroundColor: "var(--cb-chat-good)" }}
-                      />
+                      {/* The green dot means "there's something in here", so
+                          it only shows when there is. On an empty bag it would
+                          be a status light reporting nothing. */}
+                      {itemCount > 0 ? (
+                        <span
+                          aria-hidden
+                          className="h-[6px] w-[6px] rounded-full"
+                          style={{ backgroundColor: "var(--cb-chat-good)" }}
+                        />
+                      ) : null}
                       <span className="tabular-nums">{itemCount}</span>
                       <span>{t("chat.tabCart")}</span>
                     </>
@@ -588,10 +631,27 @@ export default function ChatWidget() {
           ref={threadRef}
           className="flex max-h-[52vh] min-h-[86px] flex-col gap-2 overflow-y-auto bg-cream px-3.5 py-3.5"
         >
-          <div className="flex items-end gap-2">
-            <BagelAvatar />
-            <p className={BOT_BUBBLE}>{t("chat.greeting")}</p>
-          </div>
+          {/* Nothing said yet. A centred block rather than a greeting bubble
+              from Riley: a bubble is a turn in a conversation, and the
+              conversation hasn't started — it also puts the first thing you
+              read hard against the top-left of an otherwise empty panel. This
+              sits in the middle of the space it's explaining. */}
+          {entries.length === 0 && !thinking ? (
+            <div className="flex flex-1 flex-col items-center justify-center px-6 py-8 text-center">
+              <span
+                aria-hidden
+                className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-raise text-ink"
+              >
+                <SparkIcon />
+              </span>
+              <p className="m-0 text-[15px] font-medium leading-tight text-ink">
+                {t("chat.emptyTitle")}
+              </p>
+              <p className="m-0 mt-1.5 max-w-[15rem] text-[12px] leading-[1.5] text-muted">
+                {t("chat.emptyBody")}
+              </p>
+            </div>
+          ) : null}
 
           {entries.map((entry, index) => {
             if (entry.role === "user") {
@@ -695,6 +755,11 @@ export default function ChatWidget() {
           ) : null}
         </div>
 
+        {/* The @ picker takes the composer's shoulder when it's open, and the
+            quick replies stand down while it does — two stacked lists above
+            one input is a panel arguing with itself. */}
+        <MentionList state={mentions} onSyncCaret={() => inputRef.current?.focus()} />
+
         {/* Quick replies, docked above the composer rather than sitting in the
             thread. In the thread they read as something Riley said; here they
             read as something you might say next, which is what they are —
@@ -730,9 +795,26 @@ export default function ChatWidget() {
             ref={inputRef}
             type="text"
             aria-label={t("chat.typeMessage")}
-            placeholder={thinking ? "Riley is typing…" : "Message Riley"}
+            // Both of these were hardcoded English, on the one screen whose
+            // whole point is answering in the visitor's language.
+            placeholder={thinking ? `${t("chat.typing")}…` : t("chat.askAnything")}
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              mentions.syncCaret(event.target);
+            }}
+            // The picker owns the arrows, enter and escape while it's open;
+            // everything else falls through to the form, so typing never stops
+            // being typing.
+            onKeyDown={(event) => mentions.onKeyDown(event)}
+            onClick={(event) => mentions.syncCaret(event.currentTarget)}
+            // Off, all four: an @ picker over a browser's own autofill list is
+            // two menus fighting for the same rectangle, and none of the four
+            // has anything useful to say about a message to a bagel shop.
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="sentences"
+            spellCheck={false}
             // A filled field rather than an outlined pill: the outline was a
             // third rounded rectangle in a stack of them, and the fill sets
             // the input apart from the bubbles without adding another rule.

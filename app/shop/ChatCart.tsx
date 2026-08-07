@@ -16,17 +16,49 @@ import { Button } from "../ui/Button";
 // bar — none of which fits in a 344px column that also has a conversation in
 // it. What it shares is the data: useCartRows, so a quantity changed here is
 // the same line the checkout prices.
+function BagIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path
+        d="M4.4 6.6h11.2l-.9 9a1.6 1.6 0 0 1-1.6 1.4H6.9a1.6 1.6 0 0 1-1.6-1.4l-.9-9Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.4 8.2V5.9a2.6 2.6 0 0 1 5.2 0v2.3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
   const t = useT();
   const menu = useMenu();
   const rows = useCartRows();
   const { setQuantity, removeItem, setLineOptions, subtotalCents } = useCart();
 
+  // Reachable now that the tabs are there from the start, so it's a screen
+  // rather than a state nobody could get to: a mark, a line saying what's
+  // true, and a line saying what to do about it.
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-        <p className="m-0 text-[14px] font-medium text-ink">{t("cart.emptyDrawer")}</p>
-        <p className="m-0 text-[12px] leading-[1.5] text-muted">{t("chat.emptyCart")}</p>
+      <div className="flex min-h-[188px] flex-col items-center justify-center px-6 py-10 text-center">
+        <span
+          aria-hidden
+          className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-raise text-ink"
+        >
+          <BagIcon />
+        </span>
+        <p className="m-0 text-[15px] font-medium leading-tight text-ink">
+          {t("chat.bagEmptyTitle")}
+        </p>
+        <p className="m-0 mt-1.5 max-w-[15rem] text-[12px] leading-[1.5] text-muted">
+          {t("chat.bagEmptyBody")}
+        </p>
       </div>
     );
   }

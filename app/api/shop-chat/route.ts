@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { formatPrice, getProduct } from "../../shop/products";
 import { buildSystemPrompt, languageInstruction, RILEY_MAX_TOKENS } from "./riley";
 import {
   emptyAttachments,
@@ -63,6 +64,11 @@ import {
 // Overridable, so this is a config decision rather than a code one: set
 // RILEY_MODEL to any model id to move her without a deploy of this file.
 const MODEL = process.env.RILEY_MODEL ?? "claude-sonnet-5";
+
+// Where a turn goes when the one above doesn't answer at all. Opus, because
+// it is what this route ran on before and is known to work against this key —
+// a fallback whose only job is to be the boring option.
+const FALLBACK_MODEL = process.env.RILEY_FALLBACK_MODEL ?? "claude-opus-5";
 
 // Bounds one conversation. Long enough for a real back-and-forth about an
 // order, short enough that a stuck loop or a pasted wall of text can't run up
@@ -146,6 +152,19 @@ function merge(into: ChatAttachments, from: Partial<ChatAttachments> | undefined
   if (from.chips) into.chips = from.chips;
 }
 
+// An upstream failure, reduced to the two things worth knowing and nothing
+// else. A status and an error type ("not_found_error", "invalid_request_error",
+// "authentication_error") say what went wrong; the message that comes with them
+// can name the model, the account or the request, so it is logged and never
+// returned.
+function describeFailure(error: unknown): { status?: number; type?: string } {
+  if (error instanceof Anthropic.APIError) {
+    const body = error.error as { type?: string; error?: { type?: string } } | undefined;
+    return { status: error.status, type: body?.error?.type ?? body?.type };
+  }
+  return {};
+}
+
 type Send = (event: Record<string, unknown>) => void;
 
 // Runs `turn` against a stream of NDJSON lines.
@@ -186,6 +205,47 @@ function ndjson(turn: (send: Send) => Promise<void>): Response {
   });
 }
 
+// Which combinations this key can actually do.
+//
+// Riley went quiet the moment two things changed together — the model, and
+// streaming — and from the outside both fail the same way: a red line under
+// the bubble. Rather than guess, this tries each in turn with a one-token
+// question and reports what came back, so "she can't reply" becomes a fact
+// about which call the account can make.
+//
+// Safe to expose. It returns a status and an error type, never a message, and
+// never anything derived from the key. Three sixteen-token calls, and it is
+// worth what it costs the first time somebody has to ask why the chat is down.
+export async function GET() {
+  const configured = client();
+  if (!configured) return Response.json({ configured: false });
+  const anthropic = configured;
+
+  async function probe(model: string, streaming: boolean) {
+    const params = {
+      model,
+      max_tokens: 16,
+      messages: [{ role: "user" as const, content: "Say ok." }],
+    };
+    try {
+      if (streaming) await anthropic.beta.messages.stream(params).finalMessage();
+      else await anthropic.beta.messages.create(params);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, ...describeFailure(error) };
+    }
+  }
+
+  return Response.json({
+    configured: true,
+    model: MODEL,
+    fallbackModel: FALLBACK_MODEL,
+    direct: await probe(MODEL, false),
+    streaming: await probe(MODEL, true),
+    fallback: await probe(FALLBACK_MODEL, false),
+  });
+}
+
 export async function POST(request: Request) {
   let payload: unknown;
   try {
@@ -197,6 +257,7 @@ export async function POST(request: Request) {
   const body = payload as {
     messages?: unknown;
     context?: unknown;
+    mentions?: unknown;
     locale?: unknown;
   } | null;
 
@@ -208,6 +269,32 @@ export async function POST(request: Request) {
 
   if (turns.length === 0 || turns[turns.length - 1].role !== "user") {
     return ndjson(async (send) => send({ type: "error", error: "api.typeMessage" }));
+  }
+
+  // What they pinned with @, resolved here rather than trusted.
+  //
+  // The request carries slugs; the names come from the catalog. That ordering
+  // is the whole security of it — a crafted request can name a slug that
+  // doesn't exist (dropped) but cannot put words in the visitor's message,
+  // because nothing the client sent is echoed into the prompt.
+  //
+  // Capped at six. Anything past that is not somebody talking about their
+  // breakfast.
+  const mentioned = (Array.isArray(body?.mentions) ? body.mentions : [])
+    .filter((slug): slug is string => typeof slug === "string")
+    .slice(0, 6)
+    .map((slug) => getProduct(slug))
+    .filter((product): product is NonNullable<typeof product> => product !== undefined);
+
+  if (mentioned.length > 0) {
+    // Appended to the message it belongs to rather than sent as its own turn:
+    // it is a footnote on what they just said, and a separate turn would read
+    // as a second thing they said.
+    const last = turns[turns.length - 1];
+    const named = mentioned
+      .map((product) => `${product.name} (${product.slug}, ${formatPrice(product.priceCents)})`)
+      .join("; ");
+    last.text = `${last.text}\n\n[They picked these off the menu with @: ${named}. Those are the exact items, so you don't need to search for them.]`;
   }
 
   const language =
@@ -259,29 +346,31 @@ export async function POST(request: Request) {
       send({ type: "text", text: next });
     };
 
-    for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-      const stream = anthropic.beta.messages.stream({
-        model: MODEL,
+    // One turn's request, minus the two things that are allowed to vary when
+    // the first attempt fails. Everything above `model` is frozen and ordered
+    // because tools render before system, and churn in either invalidates the
+    // cached menu behind them.
+    const request = (model: string) =>
+      ({
+        model,
         max_tokens: RILEY_MAX_TOKENS,
         // Thinking stays on — disabling it on these models can leak <thinking>
         // tags into the visible reply, and worse for a tool-using chat, it can
         // put a tool call in the visible text where it silently never runs.
-        thinking: { type: "adaptive" },
+        thinking: { type: "adaptive" as const },
         // medium, not low. Low scopes work to exactly what was asked and
         // reaches for tools noticeably less — the wrong trade now that
         // reaching for a tool is how she gets a price right.
-        output_config: { effort: "medium" },
-        // Tools render *before* system, so this array is frozen and ordered:
-        // any churn in it invalidates the cached menu behind it.
+        output_config: { effort: "medium" as const },
         tools: RILEY_TOOLS,
         // The briefing is the same on every request and is most of the tokens,
         // so it's cached. The breakpoint on the last system block covers the
         // tools too. Anything that varies goes after it, never inside it.
         system: [
           {
-            type: "text",
+            type: "text" as const,
             text: buildSystemPrompt(),
-            cache_control: { type: "ephemeral" },
+            cache_control: { type: "ephemeral" as const },
           },
           // After the breakpoint, and only when there is one: the chosen
           // language. Putting it inside the block above would give every
@@ -290,23 +379,67 @@ export async function POST(request: Request) {
           // on every request.
           ...(language ? [{ type: "text" as const, text: language }] : []),
         ],
-        // If the model's safety classifiers decline a request, this reruns it
-        // on Anthropic's recommended fallback rather than handing the visitor
-        // a dead end. Vanishingly unlikely for bagel questions; it costs
-        // nothing when it doesn't fire.
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
         messages,
-      });
+      }) satisfies Anthropic.Beta.MessageCreateParamsNonStreaming;
 
+    // One round, streaming or not.
+    //
+    // The non-streaming branch exists as a recovery path, not as a feature —
+    // see the retry below. It accumulates the same `written` so everything
+    // downstream is identical either way; the only difference is that the
+    // whole reply lands in one go instead of at reading speed.
+    const round = async (model: string, streaming: boolean) => {
+      if (!streaming) {
+        const answer = await anthropic.beta.messages.create(request(model));
+        written += answer.content
+          .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
+          .map((block) => block.text)
+          .join("");
+        flush();
+        return answer;
+      }
+      const stream = anthropic.beta.messages.stream(request(model));
       // The only place text reaches the visitor. Fires as tokens land, so a
       // reply appears at reading speed rather than all at once when it ends.
       stream.on("text", (chunk) => {
         written += chunk;
         flush();
       });
+      return stream.finalMessage();
+    };
 
-      const response = await stream.finalMessage();
+    // What to try, and what to try if that fails.
+    //
+    // Riley stopped answering the moment this route started streaming on a
+    // different model, and those are the only two things that changed — so
+    // rather than guess which, the turn falls back across both at once: if the
+    // first attempt throws before a single character has been written, it runs
+    // again, not streaming, on the model that was working before.
+    //
+    // Only before anything is written, and only once. A retry after half a
+    // sentence is on screen would repeat it, and a retry that can retry is a
+    // way to spend somebody's money twice on a failure that isn't transient.
+    // GET /api/shop-chat says which combination the key can actually do.
+    let model = MODEL;
+    let streaming = true;
+    let recovered = false;
+
+    for (let index = 0; index <= MAX_TOOL_ROUNDS; index++) {
+      let response: Anthropic.Beta.BetaMessage;
+      try {
+        response = await round(model, streaming);
+      } catch (error) {
+        if (recovered || written) throw error;
+        console.error(
+          `[shop-chat] ${model} failed on the streaming path`,
+          describeFailure(error),
+          `— retrying on ${FALLBACK_MODEL} without streaming`,
+        );
+        recovered = true;
+        model = FALLBACK_MODEL;
+        streaming = false;
+        response = await round(model, streaming);
+      }
 
       // stop_reason first, always: on a refusal `content` is empty or partial,
       // and reading content[0] would throw on the one path that most needs to
