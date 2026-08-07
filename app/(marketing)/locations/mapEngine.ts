@@ -63,23 +63,62 @@ export type EngineFactory = (
 
 // ——— The pin ———
 
-// An inline SVG teardrop anchored at its point. Olive for the shops and sage
-// for catering kitchens, and a size that grows when it's the selected one, so
-// which pin the card belongs to is visible on the map. One of the few places the brand green still does the
-// work, because a pin is a mark on somebody else's map and it should read as
-// ours, where a black pin would read as the map's own.
+// An inline SVG teardrop anchored at its point, in the brand red, with the
+// bagel in the head of it.
+//
+// Red rather than the olive it was. A pin is a mark on somebody else's map and
+// its whole job is to be found on one — the olive sat a shade off the darker
+// greens of Google's own parks and terrain, which is a bad place for the one
+// thing on screen that has to be spotted. Red is unused anywhere in Google's
+// basemap and it is the shop's own colour, so the pin reads as ours twice
+// over: once by colour and once by shape.
+//
+// The mark itself is public/icon.svg, path for path, rather than a redrawn
+// circle. The hole is a subpath of the same path, so the pin's red shows
+// through it and the glyph reads as a bagel at 26px instead of a blob. Its
+// natural box is 3652x3123, scaled here to 12.6 wide and centred in the head.
+// 14 was the first try and crowded the white ring; the ring is what keeps the
+// pin legible against a dark basemap, so it gets to stay a ring.
+//
+// The wheat is the mark's own colour, not white. It clears 3:1 against the red
+// (about 4.2:1), which is the bar for a graphical object, and a white bagel
+// would be a generic white glyph rather than this shop's.
 export const PIN_SIZE = { width: 26, height: 34 };
 export const PIN_SIZE_SELECTED = { width: 34, height: 44 };
+
+const PIN_RED = "#be1923";
+// A catering kitchen, when there is one. Every location is kind "shop" today
+// (see the note at the top of locations.ts), so this is reserved rather than
+// live — but it stays a red, because the point of the change was that nothing
+// on this map is green any more.
+const PIN_RED_DEEP = "#8e1219";
+const BAGEL_WHEAT = "#efd6a6";
+
+// One path, lifted verbatim from public/icon.svg. Copied rather than fetched:
+// a data URI can't reference another file, and an <img> inside the pin would
+// be a second network request per marker.
+const BAGEL_PATH =
+  "M3416.84 467.112C2922.84 -147.665 1809.85 -156.838 930.967 446.928C52.0818 " +
+  "1050.69 -259.393 2038.01 234.608 2654.62C728.609 3271.23 1841.6 3278.57 " +
+  "2720.49 2674.81C3599.37 2071.04 3910.85 1083.72 3416.84 467.112ZM1998.33 " +
+  "1078.22C1817.79 1316.79 1486.47 1410.39 1486.47 1410.39C1486.47 1410.39 " +
+  "990.487 1551.69 1286.09 1162.64C1286.09 1162.64 1532.1 815.791 1790.02 " +
+  "815.791C1790.02 815.791 2178.86 839.652 1996.34 1078.22H1998.33Z";
 
 export function pinSvg(kind: StoreLocation["kind"], selected = false): string {
   // Custom properties don't resolve inside a data URI or a detached element,
   // so these are the literal token values rather than var() references.
-  const fill = kind === "shop" ? "#3e4a30" : "#b7c9a2";
+  const fill = kind === "shop" ? PIN_RED : PIN_RED_DEEP;
   const { width, height } = selected ? PIN_SIZE_SELECTED : PIN_SIZE;
+  // 12.6/3652 to get the mark to 12.6 wide; the translate centres what that
+  // leaves (12.6 x 10.77) on the head, whose arc is centred at 13,13 with a
+  // radius of 12.
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 26 34">
       <path d="M13 33C13 33 25 20.5 25 13A12 12 0 1 0 1 13C1 20.5 13 33 13 33Z"
             fill="${fill}" stroke="white" stroke-width="2"/>
-      <circle cx="13" cy="13" r="4.4" fill="white"/>
+      <g transform="translate(6.7 7.614) scale(0.00345)">
+        <path d="${BAGEL_PATH}" fill="${BAGEL_WHEAT}"/>
+      </g>
     </svg>`;
 }
 
