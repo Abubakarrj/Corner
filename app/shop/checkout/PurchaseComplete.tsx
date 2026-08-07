@@ -37,16 +37,26 @@ export default function PurchaseComplete({
   // back to and a sheet has to be dismissed.
   onDone,
   // Dismissing and leaving are different acts, and the sheet needs them to be:
-  // Done puts you back in the conversation with the panel still open, while
-  // Track order navigates to a full page and should take the panel with it.
-  // Falls back to onDone, so a surface that doesn't care passes one thing.
+  // Done puts you back in the conversation, while a link out of the panel
+  // should take the panel with it. Falls back to onDone, so a surface that
+  // doesn't care passes one thing.
   onLeave,
+  // Track the order *here*, without going anywhere.
+  //
+  // The chat panel has a tracker of its own now, and until this existed the
+  // button under a confirmation still linked out to /shop/order/… — so the one
+  // screen at the end of ordering-inside-the-chat threw you out of the chat.
+  // When this is passed the button stops being a link and becomes a button,
+  // because it no longer navigates. The page passes nothing and keeps the link,
+  // which is right there: a page has somewhere to go.
+  onTrack,
 }: {
   order: PlacedOrder | null;
   where: { mode: StringKey; where: string } | null;
   tender: Tender;
   onDone?: () => void;
   onLeave?: () => void;
+  onTrack?: () => void;
 }) {
   const t = useT();
   const bill = order ? orderTotals(order) : null;
@@ -137,7 +147,11 @@ export default function PurchaseComplete({
           {tender === "card" ? t("checkout.cardCharged") : t("checkout.payAtWindow")}
         </p>
 
-        {order ? (
+        {order && onTrack ? (
+          <Button onClick={onTrack} className="mt-6 w-full max-w-[280px]">
+            {t("common.trackOrder")}
+          </Button>
+        ) : order ? (
           <ButtonLink
             href={`/shop/order/${order.id}`}
             className="mt-6 w-full max-w-[280px]"

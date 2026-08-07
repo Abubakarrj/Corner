@@ -24,14 +24,28 @@
 // correctly announced. Credit where due — this is the mechanism the
 // `web-haptics` package uses, read out of its source rather than its README.
 //
-// ⚠️ The one thing that is *not* copied from it: it hides the switch with
-// `display: none`, and this uses opacity and a 1px box instead. A display:none
-// element is not rendered at all, and the reason iOS plays a sound here is
-// that it *is* rendering a control. Whether Apple's haptic survives display
-// removal is exactly the sort of thing that works on one iOS point release and
-// not the next; a rendered-but-invisible control has nothing to survive.
-// aria-hidden and tabIndex=-1 keep it out of the accessibility tree and the
-// tab order, which display:none was doing for free.
+// ⚠️ Two things here were mine and both were wrong, so they are written down
+// rather than quietly fixed:
+//
+//   1. I shrank the input to 1x1. The package leaves it at its natural size
+//      (`all: initial; appearance: auto`) and constrains nothing, which is the
+//      version with real-device evidence behind it. A switch squeezed to one
+//      pixel may not be laid out as a switch control at all, and this whole
+//      mechanism is Safari drawing a real control. So the *label* is the 1px
+//      box now and it clips; the control inside it renders at whatever size
+//      Safari wants.
+//
+//   2. Single toggles. The only haptic that has ever actually been felt from
+//      this app on an iPhone came from a two-beat call, so every one of these
+//      is at least two beats now. If a lone toggle is below the threshold
+//      somebody notices — and the evidence says it is — then one is not a
+//      quieter haptic, it is no haptic.
+//
+// What is still deliberately not copied: `display: none`. A display:none
+// element is not rendered, and the reason iOS makes a sound is that it *is*
+// rendering a control. Clipping keeps it in the render tree with nothing to
+// see. aria-hidden and tabIndex=-1 do what display:none was doing for the
+// accessibility tree and the tab order.
 //
 // Still a bonus, never the feedback itself. Every press has to look like it
 // landed without any of this — see `.cb-press` in globals.css. If a buzz is
@@ -52,9 +66,9 @@ export function primeHaptics() {
   ensureSidecar();
 }
 
-/** A press landed. The shortest thing either platform will do. */
+/** A press landed. Two quick beats on iOS, close enough to read as one tick. */
 export function tapped() {
-  fire([8], 1);
+  fire([8], 2, 40);
 }
 
 // The same tap, but only if nothing else has just buzzed.
@@ -76,24 +90,25 @@ let lastFiredAt = 0;
 
 /** Something was added, chosen, applied. A shade more than a press. */
 export function confirmed() {
-  fire([14], 1);
+  fire([14], 2, 90);
 }
 
 /** Two beats — an order placed, a card saved. Reserved for the once-a-visit
     things, so it keeps meaning something. */
 export function completed() {
-  fire([16, 40, 24], 2);
+  fire([16, 40, 24], 3, 70);
 }
 
 /** Something was refused: a field that won't pass, a button that can't. */
 export function refused() {
-  fire([22, 60, 22], 3);
+  fire([22, 60, 22], 3, 45);
 }
 
 // One call, two spellings. `pattern` is the Vibration API's alternating
-// on/off milliseconds; `beats` is how many times to toggle the switch, since
-// iOS gives one fixed tick per toggle and duration means nothing to it.
-function fire(pattern: number[], beats: number) {
+// on/off milliseconds, which Android honours exactly. `beats` and `gap` are
+// the iOS side, where the only dial is how many times the switch is toggled
+// and how far apart — Apple decides how hard and how long.
+function fire(pattern: number[], beats: number, gap: number) {
   try {
     if (typeof window === "undefined") return;
     // Somebody who has asked their OS to stop things moving has not asked for
@@ -106,7 +121,7 @@ function fire(pattern: number[], beats: number) {
       navigator.vibrate(pattern);
       return;
     }
-    toggle(beats);
+    toggle(beats, gap);
   } catch {
     // A device that won't buzz is a device that won't buzz.
   }
@@ -125,8 +140,9 @@ function ensureSidecar(): HTMLLabelElement | null {
   // So the global press listener can tell its own clicks apart from a
   // person's — see pressHaptics.ts, where not doing so is an infinite loop.
   label.setAttribute("data-cb-haptic-sidecar", "");
-  // Rendered, and invisible. Not display:none — see the note at the top.
-  // pointer-events off so a 1px box in the corner can never eat a real tap.
+  // The label is the hiding place: a 1px box that clips whatever is inside it.
+  // Rendered rather than display:none — see the note at the top — and
+  // pointer-events off so a pixel in the corner can never eat a real tap.
   label.style.cssText =
     "position:fixed;bottom:0;left:0;width:1px;height:1px;opacity:0;" +
     "pointer-events:none;overflow:hidden;z-index:-1";
@@ -138,9 +154,11 @@ function ensureSidecar(): HTMLLabelElement | null {
   input.id = SWITCH_ID;
   input.tabIndex = -1;
   input.setAttribute("aria-hidden", "true");
-  // `appearance: auto` matters: this only works while it is a real switch
-  // control rather than something a stylesheet has flattened.
-  input.style.cssText = "appearance:auto;width:1px;height:1px;margin:0";
+  // No size, on purpose. `all: initial` sheds anything the app's stylesheet
+  // would otherwise apply and `appearance: auto` keeps it a real switch
+  // control — the label above is what makes it invisible. Constraining this to
+  // a pixel is what broke it the first time.
+  input.style.cssText = "all:initial;appearance:auto";
 
   label.appendChild(input);
   document.body.appendChild(label);
@@ -149,13 +167,14 @@ function ensureSidecar(): HTMLLabelElement | null {
 }
 
 // Beats rather than a duration: iOS gives one tick per toggle, and how hard or
-// how long is Apple's to decide. Spaced by 60ms, which is far enough apart to
-// register as two and close enough to read as one event.
-function toggle(beats: number) {
+// how long is Apple's to decide. The gap is the only other dial — 40ms reads
+// as one firm tick, 90ms as two taps, and that is the whole vocabulary
+// available on this platform.
+function toggle(beats: number, gap: number) {
   const label = ensureSidecar();
   if (!label) return;
   for (let beat = 0; beat < beats; beat++) {
     if (beat === 0) label.click();
-    else window.setTimeout(() => label.click(), beat * 60);
+    else window.setTimeout(() => label.click(), beat * gap);
   }
 }

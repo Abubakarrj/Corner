@@ -627,12 +627,13 @@ export default function ChatWidget() {
                 if (checkout.placed) setAcknowledged(checkout.placed.id);
                 setView("chat");
               }}
-              // Track order goes to a full page, so the panel comes off with
-              // it rather than floating over the thing it just sent you to.
-              onLeave={() => {
+              // Track order stays here. The panel has a tracker of its own,
+              // and until this was wired the button under the confirmation
+              // still linked out to /shop/order/… — so the last screen of
+              // ordering-inside-the-chat was the one that threw you out of it.
+              onTrack={() => {
                 if (checkout.placed) setAcknowledged(checkout.placed.id);
-                setView("chat");
-                setOpen(false);
+                setView("track");
               }}
             />
           </div>
