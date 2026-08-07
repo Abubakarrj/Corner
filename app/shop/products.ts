@@ -78,6 +78,18 @@ export const BAGEL_SINGLE_CENTS = 350;
 export const BAGEL_PACK_DISCOUNT = 0.15;
 export const BAGEL_PACK_SIZES = [1, 3, 6, 12, 24] as const;
 
+// What the counter calls each one. The board's own words, not a count and a
+// noun assembled here — "Half Dozen Bagel (6)" is how the shop says it, and a
+// menu that renames its own products to something more regular is a menu
+// arguing with the person reading it out loud.
+const BAGEL_PACK_LABEL: Record<number, string> = {
+  1: "Single Bagel",
+  3: "Three Bagels",
+  6: "Half Dozen Bagel (6)",
+  12: "Dozen Bagels (12)",
+  24: "Two Dozen (24)",
+};
+
 /** What a pack of `count` costs in total, at the counter's own rounding. */
 export function bagelPackCents(count: number): number {
   const full = BAGEL_SINGLE_CENTS * count;
@@ -103,7 +115,7 @@ export const BAGEL_COUNT_GROUP: OptionGroup = {
   alwaysShow: true,
   choices: BAGEL_PACK_SIZES.map((count) => ({
     id: String(count),
-    label: count === 1 ? "Just the one" : `${count} bagels`,
+    label: BAGEL_PACK_LABEL[count],
     priceCents: bagelPackCents(count) - BAGEL_SINGLE_CENTS,
   })),
 };
@@ -603,8 +615,11 @@ export const PRODUCTS: Product[] = [
       "everything bagel",
       "plain bagel",
       "sesame bagel",
+      "single",
+      "three",
       "half dozen",
       "dozen",
+      "two dozen",
       "bakers dozen",
       "pack",
     ],
