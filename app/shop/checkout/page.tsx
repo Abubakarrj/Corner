@@ -1,30 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useLocale, useServerText, useT, type StringKey } from "../../i18n";
+import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { useMenu } from "../../i18n/menu";
 import Link from "next/link";
-import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
-import { totalsFor } from "../money";
-import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
 import { CLOSE_HOUR, clockLabel, weekdayLabel } from "../../shopFacts";
 import { useCapabilities } from "../../capabilities";
-import { orderTotals, recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
-import { Button, ButtonLink } from "../../ui/Button";
+import { PREP_MINUTES } from "../../account";
+import { Button } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
 import { Check, Disclosure, Field, Money, Section } from "./CheckoutSections";
-import PaymentSection, { type Tender } from "./PaymentSection";
+import { useCheckout } from "./useCheckout";
+import PurchaseComplete from "./PurchaseComplete";
+import PaymentSection from "./PaymentSection";
 import TipPicker from "./TipPicker";
 
 // Checkout, in the order the reference asks for it: who you are, where it's
 // going, what's in it, how you're paying, what you're adding, what it comes
 // to. One column on a phone — a two-column checkout on a 430px screen is two
 // half-width columns.
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function readyAt(minutes: number): string {
   const when = new Date(Date.now() + minutes * 60_000);
@@ -33,208 +29,56 @@ function readyAt(minutes: number): string {
 
 export default function CheckoutPage() {
   const t = useT();
-  // /api/delivery/quote and /api/shop-order answer with string keys.
-  const st = useServerText();
   const menu = useMenu();
   const tag = localeById(useLocale()).tag;
-  const { subtotalCents, clear } = useCart();
-  const fulfillment = useFulfillment();
-  const rows = useCartRows();
   const opening = useOpening();
   const { payments } = useCapabilities();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [curbside, setCurbside] = useState(false);
-  const [utensils, setUtensils] = useState(false);
-  const [note, setNote] = useState("");
-  const [tipCents, setTipCents] = useState(0);
-  const [tender, setTender] = useState<Tender>("counter");
-  const [status, setStatus] = useState<"idle" | "sending" | "placed">("idle");
-  const [placed, setPlaced] = useState<PlacedOrder | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // Set once someone has tried to submit, so the form doesn't scold you about
-  // an empty email before you've had a chance to fill it in.
-  const [tried, setTried] = useState(false);
-
-  const where = fulfillment ? describeFulfillment(fulfillment) : null;
-  const isDelivery = fulfillment?.mode === "delivery";
-  const deliveryAddress = fulfillment?.mode === "delivery" ? fulfillment.address : null;
-
-  // What the courier charges to take this order to this address, from Uber
-  // Direct via /api/delivery/quote. Fetched rather than assumed: a flat
-  // delivery fee is a bet that every address costs the same, and the shop
-  // covers the difference on the far ones.
-  //
-  // `null` while it's in flight, which is why the total is held back until it
-  // lands — showing a subtotal-only total on a delivery order and then adding
-  // six dollars at the last step is the oldest trick in online food, and it's
-  // not one this shop is going to do.
-  // Both are tagged with the address they belong to and read back only when
-  // that still matches — the same pattern the address search uses. Switching
-  // fulfillment mid-checkout would otherwise leave the previous address's fee
-  // on the screen while the new one is still in flight, and the moment to be
-  // showing a stale delivery fee is never.
-  // `failed` and `message` rather than one error string, because the string
-  // has to be translated and the effect must not depend on the translator.
-  // `t` is a new closure every render, so putting it in the dependency array
-  // would re-quote the delivery on every keystroke in the form. The effect
-  // records *that* it failed and whatever the server said; the sentence is
-  // chosen at render, where the language is already known.
-  const [quoted, setQuoted] = useState<{
-    forAddress: string;
-    quote: { quoteId: string; feeCents: number; etaMinutes: number | null } | null;
-    failed: boolean;
-    message: string | null;
-  } | null>(null);
-
-  const current = quoted?.forAddress === deliveryAddress ? quoted : null;
-  const quote = current?.quote ?? null;
-  const quoteError = current?.failed
-    ? (st(current.message) || t("checkout.couldNotPrice"))
-    : null;
-
-  useEffect(() => {
-    if (!deliveryAddress) return;
-    let live = true;
-    void fetch("/api/delivery/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address: deliveryAddress }),
-    })
-      .then(async (response) => {
-        const body = await response.json().catch(() => null);
-        if (!live) return;
-        setQuoted({
-          forAddress: deliveryAddress,
-          quote: response.ok ? body : null,
-          failed: !response.ok,
-          message: response.ok ? null : (body?.error ?? null),
-        });
-      })
-      .catch(() => {
-        if (!live) return;
-        setQuoted({ forAddress: deliveryAddress, quote: null, failed: true, message: null });
-      });
-    return () => {
-      live = false;
-    };
-  }, [deliveryAddress]);
-
-  // A row that never got its bagel chosen can't be made, and the endpoint
-  // refuses it — so the button refuses first, and says where to fix it.
-  const incomplete = rows.filter((row) => !row.complete);
-  // Sold out since the basket was filled. A basket outlives the morning, so
-  // this is ordinary rather than exceptional — it just can't be ordered.
-  const unavailable = rows.filter((row) => row.gone);
-  const totals = totalsFor({
+  // Everything this page *is* lives in useCheckout — the courier quote, the
+  // validation, the submit, the order record. The chat panel's sheet runs the
+  // same hook, which is the only thing keeping the two from quietly becoming
+  // two different transactions. See the note at the top of useCheckout.ts.
+  const checkout = useCheckout();
+  const {
+    rows,
+    itemCount,
     subtotalCents,
+    totals,
+    incomplete,
+    unavailable,
+    where,
+    isDelivery,
+    quote,
+    quoteError,
+    fulfillment,
+    firstName,
+    setFirstName,
+    lastName,
+    setLastName,
+    email,
+    setEmail,
+    phone,
+    setPhone,
+    firstNameError,
+    emailError,
+    curbside,
+    setCurbside,
+    utensils,
+    setUtensils,
+    note,
+    setNote,
     tipCents,
-    deliveryCents: quote?.feeCents ?? 0,
-  });
+    setTipCents,
+    tender,
+    setTender,
+    status,
+    error,
+    placed,
+  } = checkout;
 
-  const emailError = tried && !EMAIL.test(email.trim()) ? t("checkout.validEmail") : undefined;
-  const firstNameError = tried && firstName.trim().length === 0 ? t("checkout.required") : undefined;
-
-  const valid =
-    firstName.trim().length > 0 &&
-    EMAIL.test(email.trim()) &&
-    rows.length > 0 &&
-    incomplete.length === 0 &&
-    unavailable.length === 0 &&
-    // Nothing gets made outside opening hours, so nothing gets ordered. The
-    // app used to take the order at 3am on a Monday and promise it for
-    // 3:12am, which sends somebody to a locked window.
-    opening.acceptingOrders &&
-    // A delivery order can't be placed until a courier has priced it. Placing
-    // it anyway would mean promising a delivery nobody has agreed to make.
-    (!isDelivery || quote !== null);
-
-  async function onSubmit(event: React.FormEvent) {
+  function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setTried(true);
-    if (!valid || status !== "idle") return;
-
-    setStatus("sending");
-    setError(null);
-
-    try {
-      const response = await fetch("/api/shop-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-          email,
-          phone,
-          fulfillment,
-          // Uber's quote, so the courier booked on the far side is booked at
-          // the price shown here. The server re-quotes and compares rather
-          // than believing the fee — see /api/shop-order.
-          deliveryQuoteId: quote?.quoteId ?? null,
-          deliveryFeeCents: quote?.feeCents ?? 0,
-          curbside: curbside && !isDelivery,
-          utensils,
-          note,
-          // The tip is sent, and repriced server-side like everything else.
-          // A client-supplied money value is a suggestion, never a fact.
-          tipCents,
-          items: rows.map(({ line, product, unitCents }) => ({
-            slug: product.slug,
-            name: product.name,
-            quantity: line.quantity,
-            options: line.options,
-            priceCents: unitCents,
-          })),
-          subtotalCents,
-        }),
-      });
-      const result = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(st(result?.error) || t("checkout.somethingWentWrong"));
-      }
-
-      // The account page's history and its usuals list are built from this.
-      // Recorded after the endpoint accepts, so a rejected order doesn't show
-      // up as one that happened, and on this device only — there's no
-      // server-side order history to read back.
-      const record = recordOrder({
-        items: rows.map(({ line, product, unitCents, chosen }) => ({
-          slug: product.slug,
-          name: product.name,
-          quantity: line.quantity,
-          unitCents,
-          options: line.options,
-          optionsLabel: chosen.join(" · "),
-        })),
-        subtotalCents,
-        // Snapshotted so the tracker and the account history show what was
-        // actually owed, rather than re-deriving a number that leaves the tip
-        // out and calls the subtotal a total.
-        taxCents: totals.taxCents,
-        deliveryCents: totals.deliveryCents,
-        tipCents: totals.tipCents,
-        totalCents: totals.totalCents,
-        // The mode itself, not the string key that names it: this record is
-        // read back by progressFor() to decide whether an order is a delivery,
-        // and it outlives any one language. The tracker translates it at
-        // render through fulfillmentModeKey().
-        fulfillmentMode: fulfillment?.mode ?? "pickup",
-        fulfillmentWhere: where?.where ?? "Corner Bagel",
-        // Uber's live view of the courier, when one was booked. The tracker
-        // links to it rather than pretending to know where the driver is.
-        ...(typeof result?.trackingUrl === "string"
-          ? { trackingUrl: result.trackingUrl }
-          : {}),
-      });
-      setPlaced(record);
-      setStatus("placed");
-      clear();
-    } catch (submitError) {
-      setStatus("idle");
-      setError(submitError instanceof Error ? submitError.message : t("checkout.somethingWentWrong"));
-    }
+    void checkout.submit();
   }
 
   if (status === "placed") {
@@ -244,7 +88,7 @@ export default function CheckoutPage() {
     // screen whose entire job is telling somebody what they owe. A
     // confirmation has to describe what happened, not recompute from state
     // that has since moved on.
-    return <Placed order={placed} where={where} />;
+    return <PurchaseComplete order={placed} where={where} tender={tender} />;
   }
 
   if (rows.length === 0) {
@@ -257,8 +101,6 @@ export default function CheckoutPage() {
       </div>
     );
   }
-
-  const itemCount = rows.reduce((sum, row) => sum + row.line.quantity, 0);
 
   return (
     <form onSubmit={onSubmit} noValidate className="mx-auto max-w-lg px-4 pb-10 pt-6 sm:px-6">
@@ -549,82 +391,6 @@ export default function CheckoutPage() {
           : t("checkout.payAtWindow")}
       </p>
     </form>
-  );
-}
-
-// The confirmation. A food order's next question is always "where is it", so
-// the tracker is the primary action and the menu is the way back.
-function Placed({
-  order,
-  where,
-}: {
-  order: PlacedOrder | null;
-  where: { mode: StringKey; where: string } | null;
-}) {
-  const t = useT();
-  const bill = order ? orderTotals(order) : null;
-  return (
-    <div className="cb-rise mx-auto max-w-lg px-4 py-10 text-center sm:px-6">
-      <span
-        aria-hidden
-        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ backgroundColor: "var(--cb-good-bg)" }}
-      >
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <path
-            d="M6 13.4l4.6 4.6L20 8.6"
-            stroke="var(--cb-ink)"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-
-      <p
-        className="mt-4 text-[22px] font-medium leading-tight text-ink"
-        style={{ fontFamily: DISPLAY_FONT }}
-      >
-        {t("checkout.allSet")}
-      </p>
-      <p className="mx-auto mt-1.5 max-w-xs text-[14px] leading-[1.5] text-muted">
-        {where ? (
-          <>
-            {t("checkout.fromWhere", { mode: t(where.mode), where: where.where })}{" "}
-            {t("checkout.weWillHaveItReady")}
-          </>
-        ) : (
-          <>{t("checkout.weWillHaveItReady")}</>
-        )}
-      </p>
-
-      {bill ? (
-        <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft p-4 text-left">
-          <Money label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
-          <Money label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
-          {bill.deliveryCents > 0 ? (
-            <Money label={t("checkout.delivery")} amount={formatPrice(bill.deliveryCents)} />
-          ) : null}
-          {bill.tipCents > 0 ? <Money label={t("checkout.tip")} amount={formatPrice(bill.tipCents)} /> : null}
-          <div className="mt-1 border-t border-line pt-2">
-            <Money label={t("common.total")} amount={formatPrice(bill.totalCents)} strong />
-          </div>
-        </div>
-      ) : null}
-
-      {order ? (
-        <ButtonLink href={`/shop/order/${order.id}`} className="mt-6 w-full max-w-[280px]">
-          {t("common.trackOrder")}
-        </ButtonLink>
-      ) : null}
-
-      <Link
-        href="/shop"
-        className="cb-press mt-4 block cursor-pointer text-[14px] text-muted underline hover:text-ink"
-      >
-        {t("common.backToMenu")}
-      </Link>
-    </div>
   );
 }
 
