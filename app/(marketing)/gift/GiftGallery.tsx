@@ -6,7 +6,7 @@ import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import GiftAuthModal from "./GiftAuthModal";
 import GiftCardArt from "./GiftCardArt";
-import { CATEGORIES, GIFT_CARDS, type Category } from "./giftCards";
+import { CATEGORIES, CATEGORY_LABEL, GIFT_CARDS, type Category } from "./giftCards";
 
 const { cream, ink, onInk, controlBorder, muted } = PALETTE;
 
@@ -54,7 +54,7 @@ export default function GiftGallery() {
               {t("gift.tagline")}
             </h1>
             <p className="m-0 mt-3 text-[15px]" style={{ color: ink }}>
-              Have a gift card?{" "}
+              {t("gift.haveOne")}{" "}
               <button
                 type="button"
                 onClick={() => setRedeeming(true)}
@@ -86,7 +86,7 @@ export default function GiftGallery() {
                     }}
                     className="cb-press flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em]"
                   >
-                    {name}
+                    {t(CATEGORY_LABEL[name])}
                   </button>
                 );
               })}

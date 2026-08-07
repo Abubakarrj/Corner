@@ -72,7 +72,21 @@ let loader: Promise<typeof google.maps | null> | null = null;
 // Google's own loader is a few lines of minified IIFE whose only job is to add
 // this tag, and a dependency that exists to write one script element is a
 // dependency that can break the build for no benefit.
-export function loadMaps(): Promise<typeof google.maps | null> {
+// The map's own labels — street names, city names, "United States" — follow
+// the chosen language too.
+//
+// Google takes it as a bootstrap parameter, and the parameter is read once
+// when the script loads: there is no way to change it on a live map, and
+// loading a second copy of the library to change it is not one either. So the
+// language is settled at first load and stays for the session, which is right
+// for the case that matters (somebody picks a language, then opens the map)
+// and merely stale for the one that doesn't (somebody switches language with
+// a map already on screen, and the labels follow on the next full load).
+//
+// `region=US` stays fixed regardless. It biases results and disputed borders
+// to the country the shop is in, which is a fact about the shop, not about
+// who is reading.
+export function loadMaps(language = "en"): Promise<typeof google.maps | null> {
   loader ??= (async () => {
     if (window.google?.maps) return window.google.maps;
 
@@ -117,7 +131,9 @@ export function loadMaps(): Promise<typeof google.maps | null> {
       // for everything is a bigger download on a phone for no gain.
       script.src =
         `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}` +
-        `&libraries=places,marker&loading=async&v=weekly&callback=${done}`;
+        `&libraries=places,marker&loading=async&v=weekly` +
+        `&language=${encodeURIComponent(language)}&region=US` +
+        `&callback=${done}`;
       script.async = true;
       script.onerror = () => {
         delete scope[done];

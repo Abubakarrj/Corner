@@ -7,7 +7,8 @@ import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
-import { useT } from "../../i18n";
+import { useLocale, useT } from "../../i18n";
+import { localeById } from "../../localeScript";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
 const { ink, muted, controlBorder } = PALETTE;
@@ -90,6 +91,13 @@ export default function StoreMap({
 }) {
   const theme = useResolvedTheme();
   const t = useT();
+  // The basemap's labels are settled when the library loads and can't be
+  // changed on a live map — see loadMaps(). Captured at mount and deliberately
+  // not kept fresh: the create-once effect below reads it, and a value that
+  // updated afterwards would be a value nothing could act on. Switching
+  // language with a map already open changes the chrome and leaves the map's
+  // own labels until the next full load, which is what actually happens.
+  const languageRef = useRef(localeById(useLocale()).tag);
   const holderRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<MapEngine | null>(null);
   const [ready, setReady] = useState(false);
@@ -156,6 +164,7 @@ export default function StoreMap({
           east: INITIAL_BOUNDS[1][1],
         },
         onMoved: () => setMoved(true),
+        language: languageRef.current,
       });
       if (cancelled || !engine) {
         engine?.destroy();

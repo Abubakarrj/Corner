@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useServerText } from "../../i18n";
+import { useServerText, useT } from "../../i18n";
 import { PALETTE } from "../../shop/shopControls";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN, nearestLocations, type StoreLocation } from "./locations";
@@ -75,6 +75,7 @@ export default function SearchResults({
   onResolvedAddress: (place: ResolvedPlace) => void;
 }) {
   // /api/geo answers with string keys rather than sentences — see serverText().
+  const t = useT();
   const st = useServerText();
   const isDelivery = mode === "delivery";
   // Which tab is showing is derived, not stored, so it can follow the query
@@ -221,10 +222,14 @@ export default function SearchResults({
       {!isDelivery ? (
         <div className="flex items-center gap-3 pb-1 pt-4">
           {([
-            ["places", "Places", items.length],
+            ["places", "finder.places", items.length],
             // "Shops" under Pickup, "Kitchens" under Catering — the tab counts
             // ours, and which of ours depends on the mode.
-            ["stores", mode === "catering" ? "Kitchens" : "Shops", stores.length],
+            [
+              "stores",
+              mode === "catering" ? "finder.kitchens" : "finder.shops",
+              stores.length,
+            ],
           ] as const).map(([id, label, count]) => {
             const active = tab === id;
             return (
@@ -239,7 +244,11 @@ export default function SearchResults({
                 }}
                 className="cursor-pointer rounded-full px-5 py-2.5 text-[15px] font-medium leading-none transition-colors"
               >
-                {label} ({count})
+                {/* The count stays a parenthesised numeral rather than going
+                    into the string: every language here writes it that way,
+                    and a key per tab per mode would be four strings saying
+                    the same thing. */}
+                {t(label)} ({count})
               </button>
             );
           })}

@@ -1,7 +1,8 @@
 "use client";
 
 import { SHOP_EMAIL } from "../../shopFacts";
-import { useT } from "../../i18n";
+import { useLocale, useT } from "../../i18n";
+import { localeById, type Locale } from "../../localeScript";
 import Modal from "../../ui/Modal";
 import { ButtonAnchor } from "../../ui/Button";
 import { PALETTE } from "../../shop/shopControls";
@@ -29,14 +30,9 @@ export default function CateringModal({
   onClose: () => void;
 }) {
   const t = useT();
-  // The subject is the store's address so the shop can tell at a glance which
-  // counter is being asked, without opening the mail.
+  const locale = localeById(useLocale());
   const mailto = location
-    ? `mailto:${SHOP_EMAIL}?subject=${encodeURIComponent(
-        `${location.address}, ${location.city}`,
-      )}&body=${encodeURIComponent(
-        "Hello, looking to place a catering order for pickup",
-      )}`
+    ? cateringMailto(location, locale, t("catering.emailBody"))
     : "#";
 
   return (
@@ -57,6 +53,40 @@ export default function CateringModal({
         {t("catering.minimum")}
       </p>
     </Modal>
+  );
+}
+
+// The mail is written in the language the visitor has the app in, not in
+// English.
+//
+// Somebody who has read the whole site in Korean and pressed a Korean button
+// should not have a draft open in English — that's the moment the translation
+// stops being real. The shop's mail provider translates incoming mail for
+// them, so the cost lands where it can be absorbed and the benefit lands on
+// the person doing the writing.
+//
+// The subject keeps the address as written — it's how a courier and a map find
+// the place, and translating it makes it worse in every language including the
+// one it's in — and adds the language after it, so the shop knows which one to
+// reply in before opening the mail.
+//
+// The body is a short form rather than one sentence, because a catering
+// enquiry that arrives without a headcount or a date is a round trip, and the
+// labels are the part a translation actually helps with.
+//
+// Exported and pure so it can be checked without a running map: this sheet
+// only ever opens off the card rail, which needs a basemap to exist.
+export function cateringMailto(
+  location: Pick<StoreLocation, "address" | "city">,
+  locale: Locale,
+  body: string,
+): string {
+  const where = `${location.address}, ${location.city}`;
+  const subject =
+    locale.id === "en" ? where : `${where} · ${locale.native} (${locale.english})`;
+  return (
+    `mailto:${SHOP_EMAIL}?subject=${encodeURIComponent(subject)}` +
+    `&body=${encodeURIComponent(body)}`
   );
 }
 

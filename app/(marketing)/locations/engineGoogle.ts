@@ -99,7 +99,7 @@ const MAP_STYLE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
 };
 
 export const createGoogleEngine: EngineFactory = async (holder, options) => {
-  const maps = await loadMaps();
+  const maps = await loadMaps(options.language);
   if (!maps) return null;
 
   const { Map } = (await maps.importLibrary("maps")) as google.maps.MapsLibrary;

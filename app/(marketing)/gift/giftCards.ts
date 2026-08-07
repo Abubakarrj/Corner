@@ -1,3 +1,5 @@
+import type { StringKey } from "../../i18n/en";
+
 // The gift card designs, and the categories that filter them.
 //
 // Each design is drawn in CSS and SVG rather than being an image file, for
@@ -15,6 +17,32 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+// What each filter pill says, in whichever language is on. Kept as a map from
+// the category rather than as string keys on the categories themselves,
+// because the category *is* the id — it's what a card's `categories` array
+// holds and what the URL would carry — and an id that changes with the
+// language is not an id.
+export const CATEGORY_LABEL: Record<Category, StringKey> = {
+  Seasonal: "gift.catSeasonal",
+  Thanks: "gift.catThanks",
+  Congrats: "gift.catCongrats",
+  Birthday: "gift.catBirthday",
+  "Just because": "gift.catJustBecause",
+};
+
+// The word on a card that has one is a string key, not the word.
+//
+// This is a real product decision and worth writing down: the card the
+// recipient opens says what the *buyer* was reading when they bought it, not
+// what the recipient reads. That's the only version that's coherent — the
+// buyer has to see the card they're sending, and the app has no idea what
+// language the person receiving it wants. Somebody buying in Korean for an
+// English-speaking friend can pick English first.
+//
+// It works at all because the cards are drawn rather than being image files,
+// so there's one design and seven renderings of it. Real artwork would need
+// one file per language, or this goes back to being English.
+
 // The card colours are literals, not palette tokens, and must stay that way.
 // A gift card is printed artwork: a red gingham card is red gingham on a
 // cream ground whether the phone is in light mode or dark, the same way it
@@ -28,8 +56,8 @@ export type Category = (typeof CATEGORIES)[number];
 export type Art =
   | { kind: "gingham"; ink: string; ground: string }
   | { kind: "bagels"; ink: string; ground: string }
-  | { kind: "checker"; ink: string; ground: string; word: string }
-  | { kind: "wordmark"; ink: string; ground: string; word: string };
+  | { kind: "checker"; ink: string; ground: string; word: StringKey }
+  | { kind: "wordmark"; ink: string; ground: string; word: StringKey };
 
 export type GiftCard = {
   id: string;
@@ -56,7 +84,7 @@ export const GIFT_CARDS: GiftCard[] = [
     id: "thank-you-olive",
     label: "Olive gift card reading thank you",
     categories: ["Thanks"],
-    art: { kind: "wordmark", ink: CREAM, ground: OLIVE, word: "THANK YOU" },
+    art: { kind: "wordmark", ink: CREAM, ground: OLIVE, word: "gift.wordThankYou" },
   },
   {
     id: "bagels-wheat",
@@ -68,13 +96,13 @@ export const GIFT_CARDS: GiftCard[] = [
     id: "congrats-checker",
     label: "Checkerboard gift card reading congrats",
     categories: ["Congrats"],
-    art: { kind: "checker", ink: OLIVE, ground: SAGE, word: "CONGRATS" },
+    art: { kind: "checker", ink: OLIVE, ground: SAGE, word: "gift.wordCongrats" },
   },
   {
     id: "birthday-red",
     label: "Red gift card reading happy birthday",
     categories: ["Birthday"],
-    art: { kind: "wordmark", ink: CREAM, ground: RED, word: "HAPPY BIRTHDAY" },
+    art: { kind: "wordmark", ink: CREAM, ground: RED, word: "gift.wordBirthday" },
   },
   {
     id: "gingham-olive",

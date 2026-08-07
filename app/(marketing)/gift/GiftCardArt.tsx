@@ -1,9 +1,13 @@
+"use client";
+
+import { useT, type StringKey } from "../../i18n";
 import { CREAM, type Art } from "./giftCards";
 
 // Every card carries the wordmark and an outlined "GIFT CARD" badge, as in
 // the reference — that pairing is what makes a patterned rectangle read as a
 // gift card rather than wallpaper.
 function Chrome({ ink }: { ink: string }) {
+  const t = useT();
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 px-5">
       <span
@@ -16,7 +20,7 @@ function Chrome({ ink }: { ink: string }) {
         className="rounded-full border px-3 py-1 text-[10px] font-bold uppercase leading-none tracking-[0.14em]"
         style={{ color: ink, borderColor: ink }}
       >
-        Gift card
+        {t("gift.cardBadge")}
       </span>
     </div>
   );
@@ -64,7 +68,8 @@ function Bagels({ ink, ground }: { ink: string; ground: string }) {
 
 // Checkerboard with the message set across it, as in the reference's
 // "THANK YOU" card.
-function Checker({ ink, ground, word }: { ink: string; ground: string; word: string }) {
+function Checker({ ink, ground, word }: { ink: string; ground: string; word: StringKey }) {
+  const t = useT();
   const squares = `repeating-conic-gradient(${ground} 0% 25%, transparent 0% 50%)`;
   return (
     // The literal, not var(--cb-cream). The squares this shows between are
@@ -80,7 +85,7 @@ function Checker({ ink, ground, word }: { ink: string; ground: string; word: str
           className="text-center text-[30px] font-bold uppercase leading-[0.92] tracking-[-0.02em] sm:text-[36px]"
           style={{ color: ink }}
         >
-          {word}
+          {t(word)}
         </span>
       </div>
     </div>
@@ -88,7 +93,8 @@ function Checker({ ink, ground, word }: { ink: string; ground: string; word: str
 }
 
 // A solid ground with the message large across it.
-function Wordmark({ ink, ground, word }: { ink: string; ground: string; word: string }) {
+function Wordmark({ ink, ground, word }: { ink: string; ground: string; word: StringKey }) {
+  const t = useT();
   return (
     <div
       className="absolute inset-0 flex items-center justify-center px-6"
@@ -98,13 +104,14 @@ function Wordmark({ ink, ground, word }: { ink: string; ground: string; word: st
         className="text-center text-[32px] font-bold uppercase leading-[0.9] tracking-[-0.03em] sm:text-[40px]"
         style={{ color: ink }}
       >
-        {word}
+        {t(word)}
       </span>
     </div>
   );
 }
 
 export default function GiftCardArt({ art }: { art: Art }) {
+  const t = useT();
   // The worded designs carry their message as the whole face, so the
   // wordmark sits along the bottom rather than over the top of it.
   const worded = art.kind === "checker" || art.kind === "wordmark";
@@ -132,7 +139,7 @@ export default function GiftCardArt({ art }: { art: Art }) {
             className="rounded-full border px-2 py-[3px] text-[8px] font-bold uppercase leading-none tracking-[0.14em]"
             style={{ color: art.ink, borderColor: art.ink }}
           >
-            Gift card
+            {t("gift.cardBadge")}
           </span>
         </div>
       ) : (

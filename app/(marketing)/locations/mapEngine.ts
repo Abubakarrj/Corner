@@ -49,6 +49,11 @@ export type EngineOptions = {
   // Fired when the visitor drags or zooms, which is what earns "Search area"
   // its place on screen.
   onMoved: () => void;
+  // BCP 47 tag for the basemap's own labels — street and city names, country
+  // names. An engine that has no way to set it ignores this rather than
+  // pretending: Protomaps ships one name field per feature and it is whatever
+  // OpenStreetMap holds, which is usually the local one.
+  language: string;
 };
 
 export type EngineFactory = (
