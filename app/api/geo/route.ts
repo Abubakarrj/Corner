@@ -1,9 +1,9 @@
 import {
-  DELIVERY_ORIGIN,
   DELIVERY_RADIUS_MILES,
   milesBetween,
 } from "../../(marketing)/locations/locations";
 import { driveBetween, geocode, geocodePlaceId, suggest } from "../../googleMaps";
+import { deliveryOrigin } from "../../storePlaces";
 
 // Resolving an address, and deciding whether we'll deliver to it.
 //
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   if (body?.action === "suggest") {
     if (query.length < 3) return Response.json({ suggestions: [] });
-    const suggestions = await suggest(query, kind, DELIVERY_ORIGIN.position);
+    const suggestions = await suggest(query, kind, await deliveryOrigin());
     return Response.json({ suggestions });
   }
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   const place =
     (placeId ? await geocodePlaceId(placeId) : null) ??
     (query
-      ? await geocode(query, DELIVERY_ORIGIN.position, { allowCoarse: kind === "region" })
+      ? await geocode(query, await deliveryOrigin(), { allowCoarse: kind === "region" })
       : null);
 
   if (!place) {
@@ -100,12 +100,16 @@ export async function POST(request: Request) {
     });
   }
 
-  const drive = await driveBetween(DELIVERY_ORIGIN.position, [place.lat, place.lng]);
+  // The shop's real coordinates, not the ones typed next to its address —
+  // this is the centre the delivery radius is measured out of. See
+  // storePlaces.ts.
+  const origin = await deliveryOrigin();
+  const drive = await driveBetween(origin, [place.lat, place.lng]);
   // Falling back to the straight line rather than refusing: a routing failure
   // shouldn't stop somebody ordering. It reads short, so the radius is the
   // generous end of the truth — which is the right way to be wrong here, since
   // the courier quote later is the real gate on whether a delivery happens.
-  const miles = drive?.miles ?? milesBetween(DELIVERY_ORIGIN.position, [place.lat, place.lng]);
+  const miles = drive?.miles ?? milesBetween(origin, [place.lat, place.lng]);
 
   return Response.json({
     address: place.address,

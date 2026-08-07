@@ -15,7 +15,6 @@ import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import { useLocale, useT, type StringKey } from "../../i18n";
 import {
-  LOCATIONS,
   nearestLocations,
   searchLocations,
   SEARCH_RADIUS_MILES,
@@ -24,6 +23,7 @@ import {
   type NearbyLocation,
   type StoreLocation,
 } from "./locations";
+import useStoreLocations from "./useStoreLocations";
 
 // "Pasadena, CA, USA" is how Google names a place and not how anybody says it.
 // The first two parts are the town and the state, which is what a sentence
@@ -100,10 +100,20 @@ export default function LocationFinder() {
   // Ranked against the searched place when there is one, so the card under
   // your thumb is the nearest shop to what you asked for rather than whichever
   // one happens to be first in the file.
+  // The shops, with their pins resolved from their addresses rather than the
+  // approximate pair typed beside them. Everything below ranks, filters and
+  // frames against this rather than the constant, so a corrected coordinate
+  // corrects the distance and the framing too and not just the dot.
+  const locations = useStoreLocations();
+
   const nearby: NearbyLocation[] = useMemo(() => {
     if (mode === "delivery" || !searched) return [];
-    return nearestLocations(searched.point, mode === "catering" ? "catering" : "shop");
-  }, [mode, searched]);
+    return nearestLocations(
+      searched.point,
+      mode === "catering" ? "catering" : "shop",
+      locations,
+    );
+  }, [mode, searched, locations]);
 
   // What the search turned up: the pin on the map and the card under it, which
   // are one thing and appear together.
@@ -119,7 +129,7 @@ export default function LocationFinder() {
     // "Search area" is a search: an explicit gesture at the map meaning this
     // rectangle, whatever was typed before it.
     if (bounds) {
-      return LOCATIONS.filter(
+      return locations.filter(
         (location) =>
           (mode === "catering" ? location.catering === true : location.kind === "shop") &&
           withinBounds(bounds, location.position),
@@ -134,15 +144,15 @@ export default function LocationFinder() {
     // would leave somebody who searched a town we don't serve with no way to
     // reach the counter that could still make their order.
     return (near.length > 0 ? near : nearby.slice(0, 1)).map((hit) => hit.location);
-  }, [mode, bounds, searched, nearby]);
+  }, [mode, bounds, searched, nearby, locations]);
 
   // `matching` is the Shops tab in the results: our own locations whose name
   // or address contains what's typed. That is a text search, and it's the
   // only place one belongs.
   const matching: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    return searchLocations(query, mode === "pickup" ? "shop" : "catering");
-  }, [mode, query]);
+    return searchLocations(query, mode === "pickup" ? "shop" : "catering", locations);
+  }, [mode, query, locations]);
 
   // Choosing a shop: record where the order is going, then open the menu.
   // The shop is inert until this has happened — see the gate in
@@ -224,7 +234,11 @@ export default function LocationFinder() {
     setBounds(null);
     setToastDismissed(false);
 
-    const closest = nearestLocations(point, mode === "catering" ? "catering" : "shop")[0];
+    const closest = nearestLocations(
+      point,
+      mode === "catering" ? "catering" : "shop",
+      locations,
+    )[0];
     setFocus(
       closest
         ? { at: closest.location.position, zoom: 16, openId: closest.location.id }

@@ -143,11 +143,35 @@ export function loadMaps(language = "en"): Promise<typeof google.maps | null> {
       };
 
       const script = document.createElement("script");
-      // `libraries=places,marker` loads what the finder actually uses. Asking
-      // for everything is a bigger download on a phone for no gain.
+      // `libraries=places` is what the finder actually uses. Asking for
+      // everything is a bigger download on a phone for no gain, and `marker`
+      // was in this list without a single AdvancedMarkerElement behind it —
+      // the pins are custom SVG on the plain Marker, deliberately, because
+      // AdvancedMarkerElement needs a cloud Map ID and the point of this path
+      // is one variable and no dashboard work (see engineGoogle.ts).
+      //
+      // ——— On `v` ———
+      //
+      // quarterly, not weekly. Google publishes four channels: weekly (the
+      // default, and where new features land first), quarterly (the previous
+      // quarter's weekly, so it has had three months of everyone else finding
+      // the regressions), and beta/alpha ahead of both.
+      //
+      // Weekly is the right channel while you are building against something
+      // new. This map is not: a styled basemap, one marker class, and Places
+      // autocomplete, all of it years old. Nothing here benefits from a
+      // release that is days old, and a storefront's map is exactly the
+      // surface where a regression goes unnoticed — nobody opens /locations
+      // during a deploy. Quarterly trades features we aren't using for changes
+      // somebody else has already hit.
+      //
+      // Worth saying plainly: this is a stability choice and not an accuracy
+      // one. Where a pin *lands* has nothing to do with which build of the
+      // library drew it — that comes from the coordinates we hand it, which is
+      // what storePlaces.ts is for.
       script.src =
         `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}` +
-        `&libraries=places,marker&loading=async&v=weekly` +
+        `&libraries=places&loading=async&v=quarterly` +
         `&language=${encodeURIComponent(language)}&region=US` +
         `&callback=${done}`;
       script.async = true;

@@ -47,10 +47,15 @@ export type StoreLocation = {
 // Manhattan on the same reasoning about "Korean Town", which was wrong.
 // Worth confirming.
 //
-// The coordinates are approximate — the block, not the doorway. They are
-// only used to frame the map and to measure the delivery radius, and both
-// tolerate a hundred metres; resolving the address through Places once and
-// pasting the exact pair back here would settle it.
+// The coordinates are approximate — the block, not the doorway — and they are
+// now the fallback rather than the answer. app/storePlaces.ts resolves this
+// address through Geocoding on the server; the map merges the result over
+// what's written here (see useStoreLocations), and the delivery radius and the
+// courier's pickup point are measured from it directly.
+//
+// Which makes the address above the thing to keep true. These two numbers only
+// have to be close enough to bias the lookup toward the right block and to
+// draw a reasonable map when there is no key, and they are both.
 export const KOREATOWN: StoreLocation = {
   id: "koreatown",
   name: "Koreatown",

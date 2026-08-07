@@ -17,7 +17,6 @@ import {
   SHOP_PHONE,
 } from "../../shopFacts";
 import { createToastOrder, isToastConfigured } from "../../toast";
-import { DELIVERY_ORIGIN } from "../../(marketing)/locations/locations";
 import { geocode } from "../../googleMaps";
 import {
   createDelivery,
@@ -25,6 +24,7 @@ import {
   quoteDelivery,
   structuredAddress,
 } from "../../uberDirect";
+import { deliveryOrigin } from "../../storePlaces";
 
 // Order intake, behind /checkout on the shop subdomain.
 //
@@ -241,7 +241,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const place = await geocode(deliveryAddress, DELIVERY_ORIGIN.position);
+    // The counter, resolved from its address rather than the coordinates
+    // typed beside it. This is what the courier is sent to. See
+    // storePlaces.ts.
+    const origin = await deliveryOrigin();
+
+    const place = await geocode(deliveryAddress, origin);
     if (!place) {
       return Response.json({ error: "api.addressNotFound" }, { status: 400 });
     }
@@ -249,8 +254,8 @@ export async function POST(request: Request) {
 
     const fresh = await quoteDelivery({
       pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
-      pickupLat: DELIVERY_ORIGIN.position[0],
-      pickupLng: DELIVERY_ORIGIN.position[1],
+      pickupLat: origin[0],
+      pickupLng: origin[1],
       dropoffAddress: place.address,
       dropoffLat: place.lat,
       dropoffLng: place.lng,

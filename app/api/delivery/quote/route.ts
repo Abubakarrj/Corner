@@ -1,7 +1,8 @@
-import { DELIVERY_ORIGIN, DELIVERY_RADIUS_MILES } from "../../../(marketing)/locations/locations";
+import { DELIVERY_RADIUS_MILES } from "../../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../../googleMaps";
 import { PREP_MINUTES, SHOP_ADDRESS_PARTS } from "../../../shopFacts";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../../uberDirect";
+import { deliveryOrigin } from "../../../storePlaces";
 
 // What a courier will charge to take this order to this address, and when
 // they'll have it there.
@@ -31,7 +32,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "api.missingAddress" }, { status: 400 });
   }
 
-  const place = await geocode(address.trim(), DELIVERY_ORIGIN.position);
+  // Resolved from the shop's address rather than the pair typed beside it.
+  // This is the point a courier is sent to; a block's worth of error in it is
+  // somebody walking up and down W 8th Street with a bag. See storePlaces.ts.
+  const origin = await deliveryOrigin();
+
+  const place = await geocode(address.trim(), origin);
   if (!place) {
     return Response.json(
       { error: "api.addressNotFound" },
@@ -39,7 +45,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const drive = await driveBetween(DELIVERY_ORIGIN.position, [place.lat, place.lng]);
+  const drive = await driveBetween(origin, [place.lat, place.lng]);
   if (drive && drive.miles > DELIVERY_RADIUS_MILES) {
     return Response.json(
       {
@@ -59,8 +65,8 @@ export async function POST(request: Request) {
 
   const quote = await quoteDelivery({
     pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
-    pickupLat: DELIVERY_ORIGIN.position[0],
-    pickupLng: DELIVERY_ORIGIN.position[1],
+    pickupLat: origin[0],
+    pickupLng: origin[1],
     dropoffAddress: place.address,
     dropoffLat: place.lat,
     dropoffLng: place.lng,

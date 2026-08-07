@@ -32,9 +32,10 @@ import {
   PREP_MINUTES,
   SHOP_ADDRESS_PARTS,
 } from "../../shopFacts";
-import { DELIVERY_ORIGIN, DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
+import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../googleMaps";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../uberDirect";
+import { deliveryOrigin } from "../../storePlaces";
 
 // What Riley can actually do.
 //
@@ -548,7 +549,11 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       const address = typeof args.address === "string" ? args.address.trim() : "";
       if (!address) return { forModel: { error: "No address given." } };
 
-      const place = await geocode(address, DELIVERY_ORIGIN.position);
+      // Resolved from the shop's address, not the pair typed beside it.
+      // See storePlaces.ts.
+      const origin = await deliveryOrigin();
+
+      const place = await geocode(address, origin);
       if (!place) {
         return {
           forModel: {
@@ -558,7 +563,7 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
         };
       }
 
-      const drive = await driveBetween(DELIVERY_ORIGIN.position, [place.lat, place.lng]);
+      const drive = await driveBetween(origin, [place.lat, place.lng]);
       const miles = drive?.miles ?? null;
       const inRadius = miles === null || miles <= DELIVERY_RADIUS_MILES;
 
@@ -602,8 +607,8 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
 
       const quote = await quoteDelivery({
         pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
-        pickupLat: DELIVERY_ORIGIN.position[0],
-        pickupLng: DELIVERY_ORIGIN.position[1],
+        pickupLat: origin[0],
+        pickupLng: origin[1],
         dropoffAddress: place.address,
         dropoffLat: place.lat,
         dropoffLng: place.lng,
