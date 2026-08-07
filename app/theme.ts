@@ -37,15 +37,38 @@ function readPreference(): ThemePreference {
 // reading it in an effect means a render with the wrong answer first.
 // getServerSnapshot reports "system", which is what the markup is rendered
 // against.
+// Cached for the same reason the locale store is — see the note there.
+// getSnapshot runs on every render of every subscriber, so reading
+// localStorage inside it makes the cost of a render scale with how many
+// components are on the page.
 const listeners = new Set<() => void>();
+let preference: ThemePreference = "system";
+let listening = false;
+
+function refresh() {
+  const next = readPreference();
+  if (next === preference) return;
+  preference = next;
+  listeners.forEach((listener) => listener());
+}
 
 function subscribe(callback: () => void) {
+  if (!listening) {
+    listening = true;
+    preference = readPreference();
+    window.addEventListener(THEME_CHANGED_EVENT, refresh);
+    window.addEventListener("storage", (event) => {
+      if (event.key === null || event.key === THEME_STORAGE_KEY) refresh();
+    });
+  }
   listeners.add(callback);
-  window.addEventListener(THEME_CHANGED_EVENT, callback);
   return () => {
     listeners.delete(callback);
-    window.removeEventListener(THEME_CHANGED_EVENT, callback);
   };
+}
+
+function getPreference(): ThemePreference {
+  return preference;
 }
 
 function getServerSnapshot(): ThemePreference {
@@ -53,7 +76,7 @@ function getServerSnapshot(): ThemePreference {
 }
 
 export function useThemePreference(): ThemePreference {
-  return useSyncExternalStore(subscribe, readPreference, getServerSnapshot);
+  return useSyncExternalStore(subscribe, getPreference, getServerSnapshot);
 }
 
 // What the preference actually resolved to, which is the question anything
@@ -99,5 +122,5 @@ export function setThemePreference(next: ThemePreference) {
     // event below applies it — it just won't be remembered.
   }
   window.dispatchEvent(new Event(THEME_CHANGED_EVENT));
-  listeners.forEach((listener) => listener());
+  refresh();
 }

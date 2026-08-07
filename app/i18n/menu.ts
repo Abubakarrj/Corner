@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useLocale } from "./index";
 import { TABLES } from "./menuTables";
 import {
@@ -24,8 +25,10 @@ import {
 // nobody has translated shows its own name rather than an id.
 export function useMenuText(): (id: string, fallback: string) => string {
   const locale = useLocale();
-  const table = TABLES[locale];
-  return (id, fallback) => table?.[id] ?? fallback;
+  return useMemo(() => {
+    const table = TABLES[locale];
+    return (id: string, fallback: string) => table?.[id] ?? fallback;
+  }, [locale]);
 }
 
 // describeOptions() with the labels looked up. Shared by options() and
@@ -88,9 +91,12 @@ export type RecordedItem = {
 // write `m(\`name.${product.slug}\`, product.name)` and get to disagree about
 // which half is the fallback. Everything a screen renders off the menu goes
 // through one of these.
+// Memoised on the lookup, which is memoised on the locale. /shop renders 27
+// product cards and each one calls this; without it, every render of the
+// catalog built 27 objects of eight closures for no reason.
 export function useMenu(): MenuText {
   const m = useMenuText();
-  return {
+  return useMemo(() => ({
     name: (product) => m(`name.${product.slug}`, product.name),
     description: (product) => m(`desc.${product.slug}`, product.description),
     category: (category) => m(`cat.${category}`, category),
@@ -127,5 +133,5 @@ export function useMenu(): MenuText {
         options: chosenLabels(m, product, item.options).join(" · "),
       };
     },
-  };
+  }), [m]);
 }

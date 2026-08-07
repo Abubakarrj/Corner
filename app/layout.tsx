@@ -98,6 +98,20 @@ export default function RootLayout({
             a frame of the entire app laid out backwards, which is a worse
             flash than any colour. See LOCALE_SCRIPT. */}
         <script dangerouslySetInnerHTML={{ __html: LOCALE_SCRIPT }} />
+
+        {/* The map's hosts, warmed up before anything asks for them.
+            The basemap is the slowest thing in the app and none of it is ours:
+            /locations mounts, fetches its key, then fetches Google's bootstrap,
+            which fetches the real library, which fetches tiles — four round
+            trips to two origins, and the first two each start with a cold DNS
+            lookup and a TLS handshake. Preconnect gets both of those out of
+            the way while the page is still parsing, so the request that
+            matters starts on an open socket.
+            crossOrigin on the tile host because tiles are fetched as CORS
+            requests; a preconnect that doesn't match the request's mode opens
+            a second connection and helps nothing. */}
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
         <CapabilitiesProvider>

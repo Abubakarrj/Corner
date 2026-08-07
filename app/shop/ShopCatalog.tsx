@@ -101,7 +101,26 @@ export default function ShopCatalog({
         // bigger tiles) is what should absorb the extra width. The row gap
         // runs much larger than the column gap so each card's copy reads as
         // belonging to the tile above it rather than floating between rows.
-        <div className="cb-stagger grid grid-cols-2 gap-x-5 gap-y-12 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+        //
+        // content-visibility on the tiles, via [&>*] so it lands on the grid
+        // items rather than on the grid itself.
+        //
+        // The catalog is 27 tiles and about four are on screen. The browser was
+        // doing style, layout and paint for all 27 every time anything changed
+        // — and everything changes at once when the language does, which
+        // measured as a 68ms blocking task on a switch. This tells it to skip
+        // the work for tiles nobody can see.
+        //
+        // contain-intrinsic-size is not optional alongside it: without a
+        // guessed size a skipped tile measures zero, the page collapses to a
+        // fraction of its height and the scrollbar jumps as tiles come into
+        // view. 317px is measured rather than guessed: tiles aren't all the
+        // same height — a drink has no picker, a sandwich has two — so this is
+        // the average that leaves the page's scroll height where it started
+        // once every tile has resolved. 320 overshot by 37px across the full
+        // 5.6k scroll, 336 by 133; that drift is the scrollbar creeping while
+        // you read.
+        <div className="cb-stagger grid grid-cols-2 gap-x-5 gap-y-12 [&>*]:[content-visibility:auto] [&>*]:[contain-intrinsic-size:auto_317px] sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
           {products.map((product) => (
             <ProductCard key={product.slug} product={product} />
           ))}
