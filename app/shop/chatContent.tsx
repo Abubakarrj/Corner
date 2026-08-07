@@ -201,7 +201,10 @@ export function ProductCards({
                 type="button"
                 onClick={() => onAdd(product)}
                 className="cb-press mt-auto flex cursor-pointer items-center justify-center gap-1 rounded-full px-2 py-1.5 text-[11px] font-medium transition-opacity hover:opacity-90"
-                style={{ backgroundColor: "var(--cb-good-bg)", color: "var(--cb-ink)" }}
+                style={{
+                  backgroundColor: "var(--cb-chat-good)",
+                  color: "var(--cb-on-chat-good)",
+                }}
               >
                 <svg width="9" height="9" viewBox="0 0 12 12" fill="none" aria-hidden>
                   <path

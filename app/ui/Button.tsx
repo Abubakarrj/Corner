@@ -26,8 +26,12 @@ const BASE =
   "disabled:cursor-default disabled:opacity-35 disabled:active:scale-100";
 
 const VARIANTS = {
+  // primary/on-primary, not ink/on-ink. They resolve to exactly the same
+  // colours everywhere in the shop; the difference only shows inside the chat
+  // panel, where the text is near-white and the buttons are blue. See
+  // .cb-chat-surface in globals.css.
   primary:
-    "border border-ink bg-ink text-on-ink hover:opacity-90 disabled:hover:opacity-35",
+    "border border-primary bg-primary text-on-primary hover:opacity-90 disabled:hover:opacity-35",
   secondary:
     "border border-line-soft bg-surface text-ink hover:border-ink hover:bg-ink hover:text-on-ink " +
     "disabled:hover:border-line-soft disabled:hover:bg-surface disabled:hover:text-ink",

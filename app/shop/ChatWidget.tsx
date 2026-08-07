@@ -105,10 +105,12 @@ function BagelAvatar({ hidden = false }: { hidden?: boolean }) {
 // *above* the ground like a card. It was --cb-raise, which is a half-step
 // below: the bubbles were darker than the thread and barely separated from it,
 // which is the difference between a conversation and a block of text.
+// Riley on the raised grey, the visitor on the blue. Inside .cb-chat-surface
+// both of those are the panel's own tokens — see globals.css.
 const BOT_BUBBLE =
   "w-fit max-w-[86%] rounded-2xl rounded-bl-sm bg-surface px-3 py-2 text-[13px] leading-[1.5] text-ink";
 const USER_BUBBLE =
-  "w-fit max-w-[86%] rounded-2xl rounded-br-sm bg-ink px-3 py-2 text-[13px] leading-[1.5] text-on-ink";
+  "w-fit max-w-[86%] rounded-2xl rounded-br-sm bg-chat-accent px-3 py-2 text-[13px] leading-[1.5] text-white";
 
 // A bot turn is text plus whatever Riley attached to it — cards, an hours or
 // delivery panel, a next-screen button. Held per entry rather than only for
@@ -354,7 +356,10 @@ export default function ChatWidget() {
         inert={!open}
         role="dialog"
         aria-label={t("chat.withRiley")}
-        className={`mb-3 flex w-[calc(100vw-2.5rem)] max-w-[344px] origin-bottom-right flex-col overflow-hidden rounded-3xl border border-line-faint bg-surface shadow-[0_16px_44px_rgba(0,0,0,0.20)] transition-all duration-200 ease-out ${
+        // cb-chat-surface redefines the palette for everything inside, which
+        // is what lets the basket and the whole checkout render dark without a
+        // second copy of any of those components. See globals.css.
+        className={`cb-chat-surface mb-3 flex w-[calc(100vw-2.5rem)] max-w-[344px] origin-bottom-right flex-col overflow-hidden rounded-3xl border border-line-faint bg-panel shadow-[0_16px_44px_rgba(0,0,0,0.34)] transition-all duration-200 ease-out ${
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
             : "pointer-events-none translate-y-2 scale-95 opacity-0"
@@ -384,18 +389,18 @@ export default function ChatWidget() {
             do. One of the few places the two themes want different structure
             rather than a different shade — see the dark variant in
             globals.css. */}
-        <div className="flex items-center gap-2.5 border-b border-transparent bg-ink px-3.5 py-3 dark:border-line-faint dark:bg-panel">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface dark:bg-raise">
+        <div className="flex items-center gap-2.5 border-b border-line-faint bg-panel px-3.5 py-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-raise">
             <Image src="/icon.svg" alt="" width={20} height={20} unoptimized className="object-contain" />
           </span>
           <div className="min-w-0 flex-1">
             <p
-              className="m-0 text-[14px] font-medium leading-tight text-on-ink dark:text-heading"
+              className="m-0 text-[14px] font-medium leading-tight text-heading"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               Riley
             </p>
-            <p className="m-0 text-[11px] leading-tight text-on-ink/70 dark:text-muted">
+            <p className="m-0 text-[11px] leading-tight text-muted">
               Corner Bagel
             </p>
           </div>
@@ -403,7 +408,7 @@ export default function ChatWidget() {
             type="button"
             onClick={() => setOpen(false)}
             aria-label={t("chat.close")}
-            className="cb-press -mr-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-ink/80 transition-colors hover:bg-white/10 hover:text-on-ink dark:text-muted dark:hover:bg-raise dark:hover:text-ink"
+            className="cb-press -mr-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-raise hover:text-ink"
           >
             <CloseIcon />
           </button>
@@ -415,7 +420,7 @@ export default function ChatWidget() {
             pushes the greeting down the screen to make room for nothing. It
             appears the moment Riley puts something in. */}
         {itemCount > 0 && shown !== "done" ? (
-          <div className="flex gap-1 border-b border-line-faint bg-surface p-1.5">
+          <div className="flex gap-1 border-b border-line-faint bg-panel p-1.5">
             {(["chat", "cart"] as const).map((id) => {
               // "checkout" is a step of the cart, so the Cart segment stays
               // lit through it rather than the control appearing to lose its
@@ -436,7 +441,7 @@ export default function ChatWidget() {
                       <span
                         aria-hidden
                         className="h-[6px] w-[6px] rounded-full"
-                        style={{ backgroundColor: "var(--cb-olive)" }}
+                        style={{ backgroundColor: "var(--cb-chat-good)" }}
                       />
                       <span className="tabular-nums">{itemCount}</span>
                       <span>{t("chat.tabCart")}</span>
@@ -467,11 +472,11 @@ export default function ChatWidget() {
             />
           </div>
         ) : shown === "cart" ? (
-          <div className="max-h-[62vh] overflow-y-auto bg-surface">
+          <div className="max-h-[62vh] overflow-y-auto bg-cream">
             <ChatCart onCheckout={() => setView("checkout")} />
           </div>
         ) : shown === "checkout" ? (
-          <div className="max-h-[70vh] overflow-y-auto bg-surface">
+          <div className="max-h-[70vh] overflow-y-auto bg-cream">
             <ChatCheckout checkout={checkout} onBack={() => setView("chat")} />
           </div>
         ) : (
@@ -597,7 +602,7 @@ export default function ChatWidget() {
             read as something you might say next, which is what they are —
             and they don't shove the greeting up the screen. */}
         {showChips ? (
-          <div className="flex flex-wrap justify-end gap-1.5 border-t border-line-faint bg-surface px-3 pt-2.5">
+          <div className="flex flex-wrap justify-end gap-1.5 border-t border-line-faint bg-panel px-3 pt-2.5">
             {suggestions.map((option) => (
               <button
                 key={option}
@@ -619,7 +624,7 @@ export default function ChatWidget() {
             event.preventDefault();
             sendDraft();
           }}
-          className={`flex items-center gap-2 bg-surface px-3 pb-3 ${
+          className={`flex items-center gap-2 bg-panel px-3 pb-3 ${
             showChips ? "pt-2" : "border-t border-line-faint pt-3"
           }`}
         >
@@ -634,7 +639,7 @@ export default function ChatWidget() {
             // third rounded rectangle in a stack of them, and the fill sets
             // the input apart from the bubbles without adding another rule.
             // 16px so iOS doesn't zoom the page when it takes focus.
-            className="h-9 min-w-0 flex-1 rounded-full bg-raise px-3.5 text-[16px] text-ink outline-none transition-shadow placeholder:text-quiet focus:shadow-[inset_0_0_0_1.5px_var(--cb-ink)] sm:text-[13px]"
+            className="h-9 min-w-0 flex-1 rounded-full bg-surface px-3.5 text-[16px] text-ink outline-none transition-shadow placeholder:text-quiet focus:shadow-[inset_0_0_0_1.5px_var(--cb-chat-accent)] sm:text-[13px]"
           />
           {/* Outlined at rest, filled once there's something to send — the
               same white-then-olive language as the app's buttons. It used to
@@ -646,7 +651,7 @@ export default function ChatWidget() {
             disabled={!canSend}
             className={`cb-press flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-colors ${
               canSend
-                ? "cursor-pointer border-ink bg-ink text-on-ink hover:opacity-90"
+                ? "cursor-pointer border-chat-accent bg-chat-accent text-white hover:opacity-90"
                 : "cursor-default border-line-soft bg-transparent text-quiet"
             }`}
           >
@@ -664,7 +669,7 @@ export default function ChatWidget() {
           <button
             type="button"
             onClick={() => setView("cart")}
-            className="cb-press flex w-full cursor-pointer items-center justify-center gap-2 border-t border-line-faint bg-ink px-4 py-3 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+            className="cb-press flex w-full cursor-pointer items-center justify-center gap-2 border-t border-line-faint bg-chat-accent px-4 py-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
           >
             {t("chat.cartTotal", { total: formatPrice(subtotalCents) })}
           </button>

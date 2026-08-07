@@ -87,6 +87,15 @@
   --cb-line-grey: #e2e2e2;
   --cb-line-mute: #cfc8b2;
 
+  /* The primary action's fill, named by role rather than by colour.
+     It is --cb-ink everywhere in the app, and the only reason it exists as its
+     own token is that --cb-ink does double duty: it is the text colour *and*
+     the filled-button colour. Anywhere those need to part company — the chat
+     panel, whose text is near-white and whose buttons are blue — this is the
+     one that moves. */
+  --cb-primary: var(--cb-ink);
+  --cb-on-primary: var(--cb-on-ink);
+
   /* Accents. */
   --cb-red: #be1923;
   --cb-link: #062cb3;
@@ -182,6 +191,69 @@
  * two themes want a different structure rather than a different shade. */
 @custom-variant dark (&:where(:root[data-theme="dark"], :root[data-theme="dark"] *));
 
+/* ——— The chat panel's own surface ———
+ *
+ * The panel is a dark sheet with blue and green in it, in both themes, and
+ * that is deliberate rather than an oversight: it is a different surface from
+ * the shop, the way a message thread is a different surface from a web page,
+ * and it reads as one.
+ *
+ * It works by redefining the palette *inside* the panel rather than by giving
+ * every control a dark variant. Field, Check, Disclosure, TipPicker,
+ * PaymentSection and Button are all written against --cb-surface, --cb-ink,
+ * --cb-line-soft and friends; move those tokens and the whole checkout comes
+ * along without a second copy of any of it. A `dark:` variant per component
+ * would have been six files that drift.
+ *
+ * Every value here was measured, not eyeballed. The reference's blue is
+ * #3b7ff5, which gives white text 3.79:1 — under the 4.5 that 13px body copy
+ * needs. #2f6fe0 is the same blue two steps down and clears it at 4.70.
+ */
+.cb-chat-surface {
+  --cb-chat-accent: #2f6fe0;
+  --cb-chat-good: #30d158;
+  --cb-on-chat-good: #0b2c1a;
+
+  /* Grounds, lightest thing last. */
+  --cb-page: #1c1c1e;
+  --cb-cream: #1c1c1e;
+  --cb-panel: #141416;
+  --cb-surface: #2c2c2e;
+  --cb-raise: #3a3a3c;
+  --cb-tile: #3a3a3c;
+
+  /* Text. 15.25:1 down to 5.43:1 — the quiet end still clears AA on the
+     lighter of the two grounds it can land on. */
+  --cb-ink: #f2f2f7;
+  --cb-on-ink: #1c1c1e;
+  --cb-heading: #f2f2f7;
+  --cb-body: #d8d8dd;
+  --cb-muted: #a1a1a8;
+  --cb-faint: #a1a1a8;
+  --cb-quiet: #a1a1a8;
+  --cb-quieter: #9a9aa1;
+  --cb-hint: #a1a1a8;
+
+  /* The primary action parts company with the text colour here. This is the
+     one line that makes every Button in the panel blue. */
+  --cb-primary: var(--cb-chat-accent);
+  --cb-on-primary: #ffffff;
+
+  /* Rules, as light overlays rather than fixed greys, so they sit correctly
+     on both of the grounds above. */
+  --cb-line: rgba(255, 255, 255, 0.1);
+  --cb-line-soft: rgba(255, 255, 255, 0.16);
+  --cb-line-faint: rgba(255, 255, 255, 0.08);
+  --cb-line-mute: rgba(255, 255, 255, 0.24);
+  --cb-line-grey: rgba(255, 255, 255, 0.1);
+
+  --cb-good-bg: #173a26;
+  /* The brand red is unreadable on a near-black ground; this is the same hue
+     lifted until it clears AA, the same move the dark theme already makes. */
+  --cb-red: #ff7b74;
+  --cb-link: #7fb0ff;
+}
+
 @theme inline {
   --color-page: var(--cb-page);
   --color-cream: var(--cb-cream);
@@ -191,6 +263,11 @@
   --color-tile: var(--cb-tile);
   --color-ink: var(--cb-ink);
   --color-on-ink: var(--cb-on-ink);
+  --color-primary: var(--cb-primary);
+  --color-on-primary: var(--cb-on-primary);
+  --color-chat-accent: var(--cb-chat-accent);
+  --color-chat-good: var(--cb-chat-good);
+  --color-on-chat-good: var(--cb-on-chat-good);
   --color-sage: var(--cb-sage);
   --color-olive: var(--cb-olive);
   --color-sky: var(--cb-sky);

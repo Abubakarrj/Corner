@@ -55,8 +55,19 @@ export default function TipPicker({
                 setCustom("");
                 onTip(cents);
               }}
+              // text-ink on the inactive state is load-bearing and was missing:
+              // without it the percentage inherited whatever colour the
+              // surrounding page happened to set, which on the chat panel's
+              // dark ground made "22%" invisible while the dollar amount under
+              // it (which does set a colour) stayed readable.
+              //
+              // The active state is primary/on-primary rather than ink/on-ink,
+              // so a chosen tip is olive in the app and blue in the chat, like
+              // every other primary action.
               className={`cb-press cursor-pointer rounded-xl border px-2 py-3 text-center transition-colors ${
-                active ? "border-ink bg-ink text-on-ink" : "border-line-soft bg-surface hover:border-line-mute"
+                active
+                  ? "border-primary bg-primary text-on-primary"
+                  : "border-line-soft bg-surface text-ink hover:border-line-mute"
               }`}
             >
               <span className="block text-[15px] font-medium">
@@ -77,7 +88,7 @@ export default function TipPicker({
           aria-expanded={customOpen}
           className="cb-press flex-1 cursor-pointer rounded-xl border border-line-soft bg-surface px-3 py-2.5 text-[13px] text-ink transition-colors hover:border-line-mute"
         >
-          Enter custom tip amount
+          {t("checkout.enterCustomTip")}
         </button>
         <button
           type="button"
@@ -89,11 +100,11 @@ export default function TipPicker({
           aria-pressed={tipCents === 0}
           className={`cb-press cursor-pointer rounded-xl border px-4 py-2.5 text-[13px] transition-colors ${
             tipCents === 0
-              ? "border-ink bg-ink text-on-ink"
+              ? "border-primary bg-primary text-on-primary"
               : "border-line-soft bg-surface text-ink hover:border-line-mute"
           }`}
         >
-          No tip
+          {t("checkout.noTip")}
         </button>
       </div>
 
