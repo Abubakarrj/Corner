@@ -4,6 +4,7 @@ import "./globals.css";
 import CookieConsent from "./CookieConsent";
 import SessionSync from "./auth/SessionSync";
 import NavigationDepth from "./navigationDepth";
+import PressHaptics from "./pressHaptics";
 import { CapabilitiesProvider } from "./capabilities";
 import { THEME_SCRIPT } from "./themeScript";
 import { LOCALE_SCRIPT } from "./localeScript";
@@ -125,6 +126,11 @@ export default function RootLayout({
               Here rather than in a layout further down because it has to see
               every route, including the marketing ones. */}
           <NavigationDepth />
+          {/* Renders nothing. One delegated click listener that buzzes on any
+              control being pressed, so a haptic is a property of being pressed
+              rather than something each new button has to remember. Here
+              because it has to see the whole app. See pressHaptics.ts. */}
+          <PressHaptics />
         </CapabilitiesProvider>
       </body>
     </html>

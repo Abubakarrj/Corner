@@ -37,10 +37,42 @@
 // landed without any of this — see `.cb-press` in globals.css. If a buzz is
 // the only thing telling somebody it worked, the visual is wrong.
 
+// Build the switch now, not on the first buzz.
+//
+// This is the bug that made the whole thing look broken. `ensureSidecar()`
+// created the element and clicked it in the same tick, and a control Safari has
+// not laid out yet does not play anything — so the *first* haptic of a session
+// was always silently lost, and on a short visit that was every haptic. It only
+// ever worked by accident, on the second one, which is why an order going
+// through buzzed and nothing before it did.
+//
+// Called once from PressHaptics on mount, a long way before anybody presses
+// anything.
+export function primeHaptics() {
+  ensureSidecar();
+}
+
 /** A press landed. The shortest thing either platform will do. */
 export function tapped() {
   fire([8], 1);
 }
+
+// The same tap, but only if nothing else has just buzzed.
+//
+// The global listener fires this on every press, and a press that also does
+// something specific — adding to the basket, placing an order — has already
+// buzzed for that. Without this the two arrive together and read as one long
+// unpleasant rattle rather than as either of them.
+//
+// 300ms because that is comfortably longer than the gap between React's own
+// handler running and this listener seeing the event bubble up to document,
+// and comfortably shorter than two deliberate presses.
+export function tappedUnlessBusy() {
+  if (Date.now() - lastFiredAt < 300) return;
+  tapped();
+}
+
+let lastFiredAt = 0;
 
 /** Something was added, chosen, applied. A shade more than a press. */
 export function confirmed() {
@@ -68,6 +100,8 @@ function fire(pattern: number[], beats: number) {
     // their phone to buzz instead.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
+    lastFiredAt = Date.now();
+
     if (typeof navigator?.vibrate === "function") {
       navigator.vibrate(pattern);
       return;
@@ -88,6 +122,9 @@ function ensureSidecar(): HTMLLabelElement | null {
   const label = document.createElement("label");
   label.htmlFor = SWITCH_ID;
   label.setAttribute("aria-hidden", "true");
+  // So the global press listener can tell its own clicks apart from a
+  // person's — see pressHaptics.ts, where not doing so is an infinite loop.
+  label.setAttribute("data-cb-haptic-sidecar", "");
   // Rendered, and invisible. Not display:none — see the note at the top.
   // pointer-events off so a 1px box in the corner can never eat a real tap.
   label.style.cssText =
