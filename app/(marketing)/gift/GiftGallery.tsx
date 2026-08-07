@@ -67,9 +67,38 @@ export default function GiftGallery() {
 
           {/* Scrolls sideways rather than wrapping, as in the reference — the
               row is meant to run off the edge, which is what tells you there
-              are more than fit. Negative margin + matching padding so the
-              first and last pill still align with the page gutter. */}
-          <div className="mt-6 -mx-0 overflow-x-auto px-5 pb-1">
+              are more than fit.
+              This carries the same four fixes as the shop's category strip,
+              which had all of them worked out already and this row never got:
+
+               no scrollbar    the one that showed. `overflow-x-auto` with
+                               nothing suppressing the bar draws a track the
+                               full width of the row, which in dark mode is a
+                               black rule sitting under the pills. It appears
+                               and disappears with the scroll, so it doesn't
+                               read as a divider either — just as something
+                               broken.
+               touch-pan-x     tells the browser this is a horizontal
+                               scroller, so it can start on the first frame
+                               rather than holding the touch to work out which
+                               way you meant to go.
+               overscroll-x-contain  keeps a flick past the last pill from
+                               becoming the page's back-swipe on iOS.
+               snap-x          settles on a pill rather than halfway through a
+                               word.
+
+              No negative margin, unlike that one. It works there because the
+              shop's column carries its own px-5 for the margin to cancel;
+              here the gutter is on each block instead, so pulling the
+              scroller 20px wider than its container would push it under this
+              shell's overflow-hidden and quietly clip the first and last
+              pill. The padding alone already puts the row's edge where the
+              heading's is. (`-mx-0` was here before, doing nothing, which is
+              why the comment above it claimed a margin the row never had.) */}
+          <div
+            className="mt-6 snap-x overflow-x-auto overscroll-x-contain px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ touchAction: "pan-x", scrollPaddingInlineStart: "1.25rem" }}
+          >
             <div className="flex w-max items-center gap-2">
               {CATEGORIES.map((name) => {
                 const active = category === name;
@@ -84,7 +113,7 @@ export default function GiftGallery() {
                       color: active ? onInk : ink,
                       borderColor: active ? ink : controlBorder,
                     }}
-                    className="cb-press flex h-[34px] shrink-0 cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em]"
+                    className="cb-press flex h-[34px] shrink-0 snap-start cursor-pointer items-center rounded-full border px-4 text-[12px] font-medium uppercase leading-none tracking-[0.08em]"
                   >
                     {t(CATEGORY_LABEL[name])}
                   </button>

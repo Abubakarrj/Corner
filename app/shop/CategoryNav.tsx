@@ -75,7 +75,10 @@ export default function CategoryNav({
     //                    fast scroll feel like it snagged.
     //  snap-x            settles on a tab rather than halfway through a word.
     //                    "proximity", not "mandatory" — mandatory fights a
-    //                    deliberate small nudge.
+    //                    deliberate small nudge. Its scroll padding is the
+    //                    *inline* start, not the left: in Urdu the row starts
+    //                    at the right, and scroll-padding-left there reserves
+    //                    the gutter on the end nothing snaps to.
     //  no scrollbar      a scrollbar tracking along the hairline, appearing
     //                    and disappearing, is the "off" part.
     //
@@ -85,7 +88,7 @@ export default function CategoryNav({
     <div
       ref={scrollerRef}
       className="mb-5 -mx-5 snap-x overflow-x-auto overscroll-x-contain border-b border-line px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6"
-      style={{ touchAction: "pan-x", scrollPaddingLeft: "1.25rem" }}
+      style={{ touchAction: "pan-x", scrollPaddingInlineStart: "1.25rem" }}
     >
       <div className="flex w-max gap-7">
         <Link
