@@ -391,7 +391,6 @@ export const ko: Table = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "안녕하세요, 무엇을 도와드릴까요?",
-  "chat.bestMatch": "가장 잘 맞아요",
   "chat.added": "담았습니다",
   "chat.thinkingFor": "생각 중 {seconds}초",
   "chat.emptyCart": "장바구니가 아직 비어 있습니다. Riley에게 말씀하시면 담아 드립니다.",

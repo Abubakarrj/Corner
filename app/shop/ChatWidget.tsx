@@ -5,7 +5,6 @@ import { translate, useLocale, useServerText, useT } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { useCart } from "./CartContext";
-import { requestOpenBasket } from "./openBasket";
 import ChatCart from "./ChatCart";
 import ChatCheckout from "./ChatCheckout";
 import PurchaseComplete from "./checkout/PurchaseComplete";
@@ -152,6 +151,15 @@ export default function ChatWidget() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
+  // How long she has been thinking, in tenths, so the indicator can say it.
+  //
+  // The reference shows an elapsed time next to "Thinking", and it earns its
+  // place: three bouncing dots say "something is happening" and stop being
+  // reassuring at about four seconds, where a number that is still moving
+  // says the wait is real rather than stuck. Tenths rather than seconds
+  // because a counter that only changes once a second looks frozen for most
+  // of each one.
+  const [thinkingMs, setThinkingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
   // Riley's own quick replies, from the last thing she said. They replace the
   // opening topics once a conversation is under way.
@@ -185,6 +193,16 @@ export default function ChatWidget() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
+  // The counter is zeroed by ask(), not here: resetting it in the effect body
+  // would be a synchronous setState inside an effect, which is a cascading
+  // render for a number nobody has looked at yet.
+  useEffect(() => {
+    if (!thinking) return;
+    const started = Date.now();
+    const timer = window.setInterval(() => setThinkingMs(Date.now() - started), 100);
+    return () => window.clearInterval(timer);
+  }, [thinking]);
+
   // Keep the newest message in view as the thread grows.
   useEffect(() => {
     const thread = threadRef.current;
@@ -200,6 +218,7 @@ export default function ChatWidget() {
     setEntries(asked);
     setChips([]);
     setError(null);
+    setThinkingMs(0);
     setThinking(true);
 
     try {
@@ -234,16 +253,18 @@ export default function ChatWidget() {
 
       // The one action Riley performs rather than proposes. It runs here, in
       // the browser, because the basket is localStorage — the server has no
-      // way to reach it and no business knowing what's in it. Opening the
-      // drawer is the confirmation: the proof that something was added is
-      // seeing it sitting there, not a sentence claiming it.
+      // way to reach it and no business knowing what's in it.
+      //
+      // The confirmation used to be the full basket drawer flying open over
+      // the panel: proof that something was added is seeing it sitting there,
+      // not a sentence claiming it. That reasoning still holds, but the panel
+      // has its own cart now, so the proof is the count on the Cart tab and
+      // the total on the bar at the foot — both of which move on the same
+      // render, without burying the conversation that produced them.
       for (const action of attachments.actions) {
         if (action.type === "add_to_basket") {
           addItem(action.slug, action.quantity, action.options);
         }
-      }
-      if (attachments.actions.some((action) => action.type === "add_to_basket")) {
-        requestOpenBasket();
       }
 
       setChips(attachments.chips);
@@ -506,10 +527,15 @@ export default function ChatWidget() {
                     ))}
                     <ProductCards
                       products={attached.products}
-                      onAdd={(product: ProductCard) => {
-                        addItem(product.slug, 1);
-                        requestOpenBasket();
-                      }}
+                      // No requestOpenBasket() any more. Throwing the
+                      // full-screen basket drawer over the panel was the right
+                      // answer when the chat had no cart of its own and you
+                      // needed somewhere to see what she'd added — now it
+                      // buries the conversation you were having, which is the
+                      // one thing checking out in here exists to avoid. The
+                      // card says "Added" and the bar at the foot moves; that
+                      // is the confirmation, and the Cart tab is one tap away.
+                      onAdd={(product: ProductCard) => addItem(product.slug, 1)}
                     />
                     {openAction ? (
                       <ScreenButton
@@ -535,14 +561,25 @@ export default function ChatWidget() {
             <div className="flex items-end gap-2">
               <BagelAvatar hidden={entries.at(-1)?.role === "bot"} />
               <span className={BOT_BUBBLE} role="status" aria-label={t("chat.typing")}>
-                <span className="flex items-center gap-[3px] py-1">
-                  {[0, 1, 2].map((index) => (
-                    <span
-                      key={index}
-                      className="block h-[5px] w-[5px] animate-bounce rounded-full bg-faint motion-reduce:animate-none"
-                      style={{ animationDelay: `${index * 140}ms`, animationDuration: "900ms" }}
-                    />
-                  ))}
+                <span className="flex items-center gap-2 py-0.5">
+                  <span className="flex items-center gap-[3px]">
+                    {[0, 1, 2].map((index) => (
+                      <span
+                        key={index}
+                        className="block h-[5px] w-[5px] animate-bounce rounded-full bg-faint motion-reduce:animate-none"
+                        style={{ animationDelay: `${index * 140}ms`, animationDuration: "900ms" }}
+                      />
+                    ))}
+                  </span>
+                  {/* Held back for the first second. Showing "Thinking 0.1s"
+                      the instant she starts makes a fast answer look like it
+                      needed timing, and the number is only reassuring once
+                      there is something to reassure about. */}
+                  {thinkingMs >= 1000 ? (
+                    <span className="text-[11px] tabular-nums text-quiet">
+                      {t("chat.thinkingFor", { seconds: (thinkingMs / 1000).toFixed(1) })}
+                    </span>
+                  ) : null}
                 </span>
               </span>
             </div>

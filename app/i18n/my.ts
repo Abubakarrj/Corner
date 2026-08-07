@@ -391,7 +391,6 @@ export const my: Table = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "ဟိုင်း၊ ဘာများ ကူညီပေးရမလဲ?",
-  "chat.bestMatch": "အကိုက်ညီဆုံး",
   "chat.added": "ထည့်ပြီးပါပြီ",
   "chat.thinkingFor": "စဉ်းစားနေသည် {seconds} စက္ကန့်",
   "chat.emptyCart": "ခြင်းထဲတွင် ဘာမှ မရှိသေးပါ။ Riley ကို ပြောလိုက်ပါ၊ ထည့်ပေးပါမည်။",

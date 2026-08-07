@@ -5,7 +5,7 @@ import { useMenu } from "../i18n/menu";
 import { useCapabilities } from "../capabilities";
 import { formatPrice } from "./products";
 import { Button } from "../ui/Button";
-import { Disclosure, Field, Money } from "./checkout/CheckoutSections";
+import { Check, Disclosure, Field, Money } from "./checkout/CheckoutSections";
 import PaymentSection from "./checkout/PaymentSection";
 import TipPicker from "./checkout/TipPicker";
 import type { Checkout } from "./checkout/useCheckout";
@@ -55,6 +55,12 @@ export default function ChatCheckout({
     setPhone,
     firstNameError,
     emailError,
+    curbside,
+    setCurbside,
+    utensils,
+    setUtensils,
+    note,
+    setNote,
     tipCents,
     setTipCents,
     tender,
@@ -176,6 +182,42 @@ export default function ChatCheckout({
           autoComplete="tel"
         />
       </div>
+
+      {/* The note, the utensils and the kerbside pickup. Folded away because
+          most orders don't want any of them, but present — Riley tells people
+          to put "no onion" in the note, and a sheet that doesn't have one
+          would make a liar of her. */}
+      <Disclosure summary={t("checkout.anythingElse")}>
+        <div className="flex flex-col gap-2.5">
+          <label className="block">
+            <span className="mb-1 block text-[12px] text-muted">
+              {t("checkout.noteForKitchen")}
+            </span>
+            <textarea
+              rows={2}
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              placeholder={t("checkout.notePlaceholder")}
+              className="w-full resize-none rounded-xl border border-line-soft bg-surface px-3 py-2 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink sm:text-[13px]"
+            />
+          </label>
+
+          <Check
+            label={t("checkout.utensilsLabel")}
+            hint={t("checkout.utensilsHint")}
+            checked={utensils}
+            onChange={setUtensils}
+          />
+          {!isDelivery ? (
+            <Check
+              label={t("checkout.curbsidePickup")}
+              hint={t("checkout.curbsideHint")}
+              checked={curbside}
+              onChange={setCurbside}
+            />
+          ) : null}
+        </div>
+      </Disclosure>
 
       <div>
         <p className="mb-2 text-[12px] text-muted">{t("checkout.addTip")}</p>

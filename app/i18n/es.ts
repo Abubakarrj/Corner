@@ -395,7 +395,6 @@ export const es: Table = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "Hola, ¿en qué te ayudo?",
-  "chat.bestMatch": "Mejor opción",
   "chat.added": "Añadido",
   "chat.thinkingFor": "Pensando {seconds} s",
   "chat.emptyCart": "Aún no hay nada en la cesta. Pídele algo a Riley y te lo mete.",

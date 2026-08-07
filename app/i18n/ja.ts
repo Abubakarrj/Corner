@@ -391,7 +391,6 @@ export const ja: Table = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "こんにちは、ご用件をどうぞ。",
-  "chat.bestMatch": "いちばん近いもの",
   "chat.added": "追加しました",
   "chat.thinkingFor": "思考中 {seconds}秒",
   "chat.emptyCart": "カートはまだ空です。Riley に頼めば入れてくれます。",

@@ -389,7 +389,6 @@ export const zh: Table = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "你好，需要什么帮忙？",
-  "chat.bestMatch": "最匹配",
   "chat.added": "已加入",
   "chat.thinkingFor": "思考中 {seconds} 秒",
   "chat.emptyCart": "购物篮还是空的。跟 Riley 说一声，她会帮你放进去。",

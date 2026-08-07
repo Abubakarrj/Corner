@@ -15,6 +15,9 @@ export type OptionChoice = {
   // it's under; a lox spread adds fish. Held on the choice rather than the
   // item because the item's own list can't know which one you'll pick.
   allergens?: Allergen[];
+  // Only what the allergens don't already say — meat, pork, honey. See the
+  // note on DietaryFlag.
+  contains?: DietaryFlag[];
 };
 
 export type OptionGroup = {
@@ -126,6 +129,10 @@ export type Product = {
   // that one" and "safe for a dairy allergy" are different sentences and only
   // one of them is ours to say.
   allergens?: Allergen[];
+  // What it contains that a diet might rule out, over and above the allergen
+  // list — meat, pork, honey. Dairy, egg and fish are read off the allergens
+  // rather than repeated here. See DietaryFlag.
+  contains?: DietaryFlag[];
 };
 
 // The set worth naming, from the guide's own list.
@@ -283,6 +290,108 @@ export function possibleAllergens(product: Product): Allergen[] {
   return ORDER.filter((allergen) => found.has(allergen));
 }
 
+// ——— Diets ———
+//
+// A different question from allergens, and worth keeping separate.
+//
+// The allergen list answers "will this hurt me". This answers "will I eat
+// this", which is about religion, ethics and preference, and the honest answer
+// has a different shape: an allergen is a fact about the item, but a diet is a
+// fact about the person, and the same sandwich can suit or not depending on
+// which spread goes on it.
+//
+// So only the facts that aren't already allergens are stored — meat, pork and
+// honey. Dairy, egg and fish are read off the allergen list, because they are
+// the same fact and two copies of a fact is one copy that goes stale.
+export type DietaryFlag = "meat" | "pork" | "fish" | "dairy" | "egg" | "honey";
+
+export type Diet = "vegetarian" | "vegan" | "pork-free" | "dairy-free" | "fish-free";
+
+const RULED_OUT: Record<Diet, DietaryFlag[]> = {
+  vegetarian: ["meat", "pork", "fish"],
+  vegan: ["meat", "pork", "fish", "dairy", "egg", "honey"],
+  "pork-free": ["pork"],
+  "dairy-free": ["dairy"],
+  "fish-free": ["fish"],
+};
+
+export const DIETS = Object.keys(RULED_OUT) as Diet[];
+
+function flagsFrom(allergens: Allergen[] | undefined, contains: DietaryFlag[] | undefined) {
+  const found = new Set<DietaryFlag>(contains ?? []);
+  for (const allergen of allergens ?? []) {
+    if (allergen === "dairy" || allergen === "egg" || allergen === "fish") found.add(allergen);
+  }
+  return found;
+}
+
+/** What a specific line contains, choices included. */
+export function dietaryFlagsFor(
+  product: Product,
+  selected: SelectedOptions = {},
+): DietaryFlag[] {
+  const found = flagsFrom(product.allergens, product.contains);
+  for (const group of product.options ?? []) {
+    const choice = group.choices.find((option) => option.id === selected[group.id]);
+    if (!choice) continue;
+    for (const flag of flagsFrom(choice.allergens, choice.contains)) found.add(flag);
+  }
+  const ORDER: DietaryFlag[] = ["meat", "pork", "fish", "dairy", "egg", "honey"];
+  return ORDER.filter((flag) => found.has(flag));
+}
+
+// How an item stands against a diet, before any choice is made.
+//
+// Three answers rather than two, because "no" and "not as it comes" are
+// different things to be told. The Veggie Stack is vegan with no spread and
+// isn't with the default one; answering a flat "no" there loses a sale and
+// tells somebody the shop has less for them than it does.
+export type DietFit = "yes" | "with-choices" | "no";
+
+export function dietFit(product: Product, diet: Diet): DietFit {
+  const banned = RULED_OUT[diet];
+  const base = flagsFrom(product.allergens, product.contains);
+  // The item itself rules it out, so no choice can rescue it.
+  if (banned.some((flag) => base.has(flag))) return "no";
+
+  const groups = product.options ?? [];
+  if (groups.length === 0) return "yes";
+
+  // Every group needs at least one choice that keeps it in, and if every
+  // choice in every group does, it suits however it's ordered.
+  let needsChoosing = false;
+  for (const group of groups) {
+    const ok = group.choices.filter((choice) => {
+      const flags = flagsFrom(choice.allergens, choice.contains);
+      return !banned.some((flag) => flags.has(flag));
+    });
+    if (ok.length === 0) return "no";
+    if (ok.length < group.choices.length) needsChoosing = true;
+  }
+  return needsChoosing ? "with-choices" : "yes";
+}
+
+// The choices that keep an item inside a diet — what Riley offers instead.
+//
+// Empty when the item itself rules the diet out, rather than a list of
+// choices that can't rescue it. Returning "Bagel: plain, everything, sesame"
+// for a vegan asking about the Veggie Stack, whose cream cheese is baked into
+// the item, is an answer that reads like a yes.
+export function choicesFor(product: Product, diet: Diet): Record<string, string[]> {
+  const banned = RULED_OUT[diet];
+  if (dietFit(product, diet) === "no") return {};
+  const out: Record<string, string[]> = {};
+  for (const group of product.options ?? []) {
+    out[group.label] = group.choices
+      .filter((choice) => {
+        const flags = flagsFrom(choice.allergens, choice.contains);
+        return !banned.some((flag) => flags.has(flag));
+      })
+      .map((choice) => choice.label);
+  }
+  return out;
+}
+
 export function lineKey(slug: string, selected: SelectedOptions | undefined): string {
   const pairs = Object.entries(selected ?? {})
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
@@ -337,6 +446,7 @@ export const PRODUCTS: Product[] = [
   {
     slug: "baby-got-bec",
     allergens: ["wheat", "egg", "dairy"],
+    contains: ["meat", "pork"],
     name: "Baby Got BEC",
     priceCents: 1450,
     category: "Sandwiches",
@@ -354,6 +464,11 @@ export const PRODUCTS: Product[] = [
   {
     slug: "one-sec-please",
     allergens: ["wheat", "egg", "dairy"],
+    // Pork, on the assumption that breakfast sausage is pork unless the
+    // kitchen says otherwise. ⚠️ Worth confirming: this is the flag somebody
+    // avoiding pork will act on, and a wrong "no pork in that" is worse than
+    // no answer. If it turns out to be turkey, drop "pork" and keep "meat".
+    contains: ["meat", "pork"],
     name: "One Sec Please",
     priceCents: 1500,
     category: "Sandwiches",
@@ -376,6 +491,9 @@ export const PRODUCTS: Product[] = [
   {
     slug: "turkey-around-the-corner",
     allergens: ["wheat", "dairy"],
+    // Turkey, and the hot honey — which is why a vegan can't have this even
+    // without the meat, and why honey is a flag of its own.
+    contains: ["meat", "honey"],
     name: "Turkey Around The Corner",
     priceCents: 1600,
     category: "Sandwiches",
@@ -543,6 +661,7 @@ export const PRODUCTS: Product[] = [
   {
     slug: "hot-honey-schmear",
     allergens: ["dairy"],
+    contains: ["honey"],
     name: "Hot Honey",
     priceCents: 200,
     category: "Spreads",

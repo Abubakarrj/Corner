@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useT } from "../i18n";
 import { useMenu, type MenuText } from "../i18n/menu";
 import ProductImage from "./ProductImage";
@@ -143,6 +144,15 @@ export function ProductCards({
 }) {
   const t = useT();
   const menu = useMenu();
+  // Which of these have been added, so the button can say so.
+  //
+  // Local to this rail, which means per message, which is the right scope: the
+  // rail under "here are three sandwiches" should remember that you added one
+  // of them, and the rail under a later reply should start clean even if it
+  // names the same item. It is a record of what you did *here*, not of what is
+  // in the basket — the cart tab is for that, and reading the basket for this
+  // would light up items somebody added days ago.
+  const [added, setAdded] = useState<Record<string, true>>({});
   if (products.length === 0) return null;
 
   return (
@@ -182,13 +192,38 @@ export function ProductCards({
               >
                 {needLabel(menu, product.slug, product.needs[0])}
               </Link>
-            ) : (
+            ) : added[product.slug] ? (
+              // Stays a button rather than becoming a label: adding a second
+              // one is a normal thing to want, and a control that disables
+              // itself after one press is a control you have to leave the
+              // conversation to work around.
               <button
                 type="button"
                 onClick={() => onAdd(product)}
+                className="cb-press mt-auto flex cursor-pointer items-center justify-center gap-1 rounded-full px-2 py-1.5 text-[11px] font-medium transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "var(--cb-good-bg)", color: "var(--cb-ink)" }}
+              >
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <path
+                    d="M2.5 6.2 5 8.6l4.5-5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {t("chat.added")}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  onAdd(product);
+                  setAdded((was) => ({ ...was, [product.slug]: true }));
+                }}
                 className="cb-press mt-auto cursor-pointer rounded-full bg-ink px-2 py-1.5 text-[11px] font-medium text-on-ink transition-opacity hover:opacity-90"
               >
-                Add
+                {t("common.add")}
               </button>
             )}
           </div>

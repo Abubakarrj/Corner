@@ -3,6 +3,11 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   ALLERGEN_LABEL,
+  ALLERGEN_NOTE,
+  DIETS,
+  choicesFor,
+  dietFit,
+  dietaryFlagsFor,
   allergensFor,
   CATEGORIES,
   describeOptions,
@@ -82,10 +87,11 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "Search the live menu. Call this before naming any item, price, or ingredient. " +
       "never answer from memory, because prices and availability change and a wrong " +
-      "price costs somebody a trip. Also call it when asked what's vegetarian, what " +
-      "has no dairy, what's under a price, or what's in a category. Returns each " +
-      "item's real price, description, required choices, allergens and whether it " +
-      "sold out today.",
+      "price costs somebody a trip. Also call it when asked what's under a price or " +
+      "what's in a category. Returns each item's real price, description, required " +
+      "choices, allergens and whether it sold out today. For what somebody eats or " +
+      "avoids — vegetarian, vegan, no pork, no dairy — use check_diet instead: meat " +
+      "and honey are not allergens, so this tool cannot answer those.",
     input_schema: {
       type: "object",
       properties: {
@@ -111,6 +117,28 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
         },
       },
       required: [],
+    },
+  },
+  {
+    name: "check_diet",
+    description:
+      "What the shop has for a diet: vegetarian, vegan, pork-free, dairy-free or " +
+      "fish-free. Call this whenever somebody says what they do or don't eat, rather " +
+      "than working it out from the menu yourself. It returns three lists — what " +
+      "suits however it's ordered, what suits with the right choices (and which " +
+      "choices those are), and what doesn't — so you can offer the second group " +
+      "instead of turning somebody away. There is no gluten-free option; every " +
+      "bagel is wheat, and the tool says so.",
+    input_schema: {
+      type: "object",
+      properties: {
+        diet: {
+          type: "string",
+          enum: [...DIETS],
+          description: "The diet to check the menu against.",
+        },
+      },
+      required: ["diet"],
     },
   },
   {
@@ -383,6 +411,11 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
             chosen: describeOptions(product, chosen),
             price: formatPrice(unitPriceCents(product, chosen)),
             contains: allergensFor(product, chosen).map((allergen) => ALLERGEN_LABEL[allergen]),
+            // The dietary half of the same question. Separate from `contains`
+            // because they answer different things: that one is "will this hurt
+            // me", this is "will I eat this", and meat and honey appear on
+            // neither allergen list.
+            dietary: dietaryFlagsFor(product, chosen),
           },
         },
       };
@@ -434,6 +467,47 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
               note: "Before delivery and tip.",
             },
           ],
+        },
+      };
+    }
+
+    case "check_diet": {
+      const diet = String(args.diet ?? "");
+      if (!DIETS.some((known) => known === diet)) {
+        return { forModel: { error: "Unknown diet." } };
+      }
+      const eligible = PRODUCTS.filter((product) => product.category !== "Gift Cards");
+      const of = (fit: "yes" | "with-choices") =>
+        eligible
+          .filter((product) => dietFit(product, diet as (typeof DIETS)[number]) === fit)
+          .filter((product) => !soldOut(product.slug));
+
+      return {
+        forModel: {
+          diet,
+          // Split rather than one list, because "yes" and "yes if you skip the
+          // cream cheese" are different things to tell somebody, and flattening
+          // them is how a vegan gets handed a sandwich with dairy in it.
+          suits: of("yes").map((product) => ({
+            slug: product.slug,
+            name: product.name,
+            price: formatPrice(product.priceCents),
+          })),
+          suitsWithChoices: of("with-choices").map((product) => ({
+            slug: product.slug,
+            name: product.name,
+            price: formatPrice(product.priceCents),
+            // Only the choices that keep it inside the diet. Offer these by
+            // name rather than saying "some of the spreads work".
+            choose: choicesFor(product, diet as (typeof DIETS)[number]),
+          })),
+          // The one thing this shop cannot do, said before anybody has to ask
+          // twice. Every bagel and every sandwich is wheat.
+          note:
+            "There is nothing gluten-free on the menu: every bagel is wheat, so every " +
+            "sandwich is too. The spreads and the drinks have no wheat in them, but they " +
+            "are made and served in the same place. " +
+            ALLERGEN_NOTE,
         },
       };
     }

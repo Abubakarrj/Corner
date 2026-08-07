@@ -394,7 +394,6 @@ export const ur: Table = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "ہیلو، میں کیا مدد کروں؟",
-  "chat.bestMatch": "بہترین مماثلت",
   "chat.added": "شامل ہو گیا",
   "chat.thinkingFor": "سوچ رہی ہیں {seconds} س",
   "chat.emptyCart": "ٹوکری ابھی خالی ہے۔ Riley سے کچھ مانگیں، وہ ڈال دیں گی۔",

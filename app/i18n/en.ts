@@ -411,7 +411,6 @@ export const en = {
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
   "chat.greeting": "Hey, how can I help?",
-  "chat.bestMatch": "Best match",
   "chat.added": "Added",
   "chat.thinkingFor": "Thinking {seconds}s",
   "chat.emptyCart": "Nothing in the cart yet. Ask Riley for something and she'll put it in.",
