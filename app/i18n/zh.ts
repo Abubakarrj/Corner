@@ -256,6 +256,8 @@ export const zh: Table = {
   "order.atCounter": "已在柜台等你。",
   "order.enjoy": "请慢用。",
   "order.progress": "订单进度",
+  "order.shopConfirms": "门店做好后会确认。我们在这里看不到柜台。",
+  "order.fullDetails": "查看详情",
   "gift.continueAsGuest": "以访客身份继续",
 
   "order.arrivingAround": "约 {time} 送达",

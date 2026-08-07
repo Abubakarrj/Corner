@@ -255,6 +255,8 @@ export const my: Table = {
   "order.atCounter": "ကောင်တာတွင် စောင့်နေပါသည်။",
   "order.enjoy": "အရသာရှိရှိ သုံးဆောင်ပါ။",
   "order.progress": "အော်ဒါ အခြေအနေ",
+  "order.shopConfirms": "အဆင်သင့်ဖြစ်လျှင် ဆိုင်မှ အတည်ပြုပါမည်။ ဤနေရာမှ ကောင်တာကို မမြင်ရပါ။",
+  "order.fullDetails": "အပြည့်အစုံ ကြည့်ရန်",
   "gift.continueAsGuest": "ဧည့်သည်အဖြစ် ဆက်လက်",
 
   "order.arrivingAround": "{time} ခန့်တွင် ရောက်မည်",

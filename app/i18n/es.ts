@@ -257,6 +257,8 @@ export const es: Table = {
   "order.atCounter": "Te espera en el mostrador.",
   "order.enjoy": "Que aproveche.",
   "order.progress": "Progreso del pedido",
+  "order.shopConfirms": "La tienda confirmará cuando esté listo. Desde aquí no vemos el mostrador.",
+  "order.fullDetails": "Ver todo",
   "gift.continueAsGuest": "Continuar como invitado",
 
   "order.arrivingAround": "Llega hacia las {time}",

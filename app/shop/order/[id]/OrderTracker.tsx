@@ -107,7 +107,7 @@ export default function OrderTracker({ id }: { id: string }) {
           ? t("order.estimated", {
               eta: t(progress.eta.key, { time: progress.eta.time }),
             })
-          : "The shop will confirm when it's ready — we can't see the counter from here."}
+          : t("order.shopConfirms")}
       </p>
 
       {/* The stages, as a list rather than a horizontal stepper: four labels

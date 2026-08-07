@@ -476,64 +476,89 @@ body {
   animation: cbRise 420ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
 }
 
-/* ——— The merging loader ———
+/* ——— The mitosis loader ———
  *
- * Two dots that meet in the middle and part again. Under the gooey filter in
- * app/ui/MergingDots.tsx they fuse as they overlap, which is the whole effect;
- * the keyframes only move them.
+ * A blob that buds a smaller blob, swings it away and pulls it back. The goo
+ * filter in app/ui/MergingDots.tsx does the fusing; these keyframes only move
+ * the parts, and the shapes between them are the filter's doing.
  *
- * translate3d rather than left/right, so the whole thing runs on the
- * compositor: this animates continuously while a request is in flight, and a
- * loader that itself causes layout on every frame is a strange thing to make
- * somebody watch.
+ * Three animations, and the trick is that two of them have periods that don't
+ * divide each other. The bud leaves and returns every 1400ms; the arm carrying
+ * it goes round once every 3300ms. Because 3300 isn't a multiple of 1400, each
+ * split happens at a different angle from the last, and the loader never
+ * settles into a pattern you can predict — which is the difference between
+ * this and a metronome.
  *
- * The -50% pair is the centring — the dots are positioned at 50%/50% and pull
- * themselves back by half their own size, so the travel below is symmetric
- * about the middle without any measuring.
+ * translate3d and rotate only, so the whole thing runs on the compositor. This
+ * animates continuously while a request is in flight, and a loader that itself
+ * causes layout on every frame is a strange thing to make somebody watch.
+ *
+ * The -50% pair on the core is the centring: it sits at 50%/50% and pulls
+ * itself back by half its own size. The bud is positioned from the arm's
+ * origin, which is already the centre, so it only needs its own half.
  */
-@keyframes cbMergeLeft {
+@keyframes cbMitosisCore {
   0%,
   100% {
-    transform: translate3d(calc(-50% - 8px), -50%, 0) scale(1);
+    transform: translate3d(-50%, -50%, 0) scale(1);
   }
-  50% {
-    transform: translate3d(calc(-50% + 1px), -50%, 0) scale(0.82);
+  /* Smallest just after the bud has left, largest as it comes home — the
+     volume goes somewhere rather than appearing from nothing. */
+  45% {
+    transform: translate3d(-50%, -50%, 0) scale(0.93);
   }
 }
 
-@keyframes cbMergeRight {
+@keyframes cbMitosisOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cbMitosisBud {
+  /* Inside the core and too small to see: this is where it disappears. */
   0%,
   100% {
-    transform: translate3d(calc(-50% + 8px), -50%, 0) scale(1);
+    transform: translate3d(-50%, -50%, 0) scale(0.15);
   }
+  /* Out at the end of the arm, at full size. The neck forms on the way out
+     and snaps somewhere around here. */
   50% {
-    transform: translate3d(calc(-50% - 1px), -50%, 0) scale(0.82);
+    transform: translate3d(calc(-50% + 11px), -50%, 0) scale(1);
   }
 }
 
-.cb-merge-a {
-  animation: cbMergeLeft 1150ms cubic-bezier(0.62, 0, 0.38, 1) infinite;
+.cb-mitosis-core {
+  animation: cbMitosisCore 1400ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
-.cb-merge-b {
-  animation: cbMergeRight 1150ms cubic-bezier(0.62, 0, 0.38, 1) infinite;
+.cb-mitosis-orbit {
+  animation: cbMitosisOrbit 3300ms linear infinite;
 }
 
-/* Reduced motion gets the shape held mid-fuse, and the offset matters: at 3px
-   the two circles sit on top of each other and the filter resolves them to a
-   single dot, which is indistinguishable from a loader that failed. At 6px
-   they overlap by a little under half and the threshold draws the neck, so
-   what's held is visibly two things joined. */
+.cb-mitosis-bud {
+  animation: cbMitosisBud 1400ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+/* Reduced motion gets the shape held mid-split, and the offset matters: too
+   close and the filter resolves the two to a single dot, which is
+   indistinguishable from a loader that failed. At 7px the neck is drawn, so
+   what's held is visibly two things joined rather than one that never
+   moved. */
 @media (prefers-reduced-motion: reduce) {
-  .cb-merge-a,
-  .cb-merge-b {
+  .cb-mitosis-core,
+  .cb-mitosis-orbit,
+  .cb-mitosis-bud {
     animation: none;
   }
-  .cb-merge-a {
-    transform: translate3d(calc(-50% - 6px), -50%, 0);
+  .cb-mitosis-core {
+    transform: translate3d(-50%, -50%, 0);
   }
-  .cb-merge-b {
-    transform: translate3d(calc(-50% + 6px), -50%, 0);
+  .cb-mitosis-bud {
+    transform: translate3d(calc(-50% + 7px), -50%, 0);
   }
 }
 

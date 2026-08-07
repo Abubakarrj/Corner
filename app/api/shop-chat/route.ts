@@ -111,8 +111,22 @@ export function noEmDashes(text: string): string {
         after.length > 0 && after === after.toUpperCase() && after !== after.toLowerCase();
       return `${lead}${joinsSentences ? ". " : ", "}${after}`;
     })
-    .replace(/ \u2013 /g, ", ");
+    .replace(/ \u2013 /g, ", ")
+    .replace(SENTENCE_RUN_ON, "$1 $2");
 }
+
+// "Want to head to checkout?Just tap that" \u2014 a sentence ending and the next
+// one starting with no space between them. It reached the screen twice in one
+// conversation, and while the cause is upstream (a model writing it, or bold
+// markers closing against the next word and being stripped by RichText), the
+// fix belongs here: nothing downstream can tell the difference, and a space
+// that should be there is not a judgement call.
+//
+// Narrow on purpose. It fires only when a *lowercase* letter precedes the
+// punctuation, which is what keeps it away from the things that legitimately
+// run together: "U.S.A" keeps its stops, "$7.00" is digits, and an ellipsis
+// has no capital after it. "e.g.Foo" is caught and wanted.
+const SENTENCE_RUN_ON = /([a-z][.!?])([A-Z])/g;
 
 // The scrub above decides what to put in a dash's place by looking at the
 // character *after* it — which, mid-stream, may not have arrived. A dash at

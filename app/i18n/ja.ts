@@ -255,6 +255,8 @@ export const ja: Table = {
   "order.atCounter": "カウンターでお待ちしています。",
   "order.enjoy": "どうぞお召し上がりください。",
   "order.progress": "注文の進行状況",
+  "order.shopConfirms": "用意ができ次第、店舗からご確認します。ここからカウンターの様子は見えません。",
+  "order.fullDetails": "詳細を見る",
   "gift.continueAsGuest": "ゲストとして続ける",
 
   "order.arrivingAround": "{time}頃に到着",

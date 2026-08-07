@@ -270,6 +270,8 @@ export const en = {
   "order.atCounter": "Waiting for you at the counter.",
   "order.enjoy": "Enjoy it.",
   "order.progress": "Order progress",
+  "order.shopConfirms": "The shop will confirm when it's ready. We can't see the counter from here.",
+  "order.fullDetails": "Full details",
   "gift.continueAsGuest": "Continue as guest",
 
   "order.arrivingAround": "Arriving around {time}",

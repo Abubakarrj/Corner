@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { translate, useLocale, useServerText, useT } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
@@ -9,6 +8,7 @@ import { useCart } from "./CartContext";
 import ChatCart from "./ChatCart";
 import ChatCheckout from "./ChatCheckout";
 import ChatConfigure from "./ChatConfigure";
+import ChatTrack from "./ChatTrack";
 import { MentionList, useMentions, type Mention } from "./ChatMentions";
 import PurchaseComplete from "./checkout/PurchaseComplete";
 import { useCheckout } from "./checkout/useCheckout";
@@ -173,7 +173,9 @@ export default function ChatWidget() {
   // grew a third and fourth segment mid-transaction would be a navigation
   // problem, and there is nowhere useful to go from a form you are halfway
   // through except back.
-  const [view, setView] = useState<"chat" | "configure" | "cart" | "checkout" | "done">("chat");
+  const [view, setView] = useState<
+    "chat" | "configure" | "cart" | "checkout" | "done" | "track"
+  >("chat");
   // The item whose choices are open, if any. A slug rather than the product,
   // so this can't hold a stale copy of a catalog entry.
   const [configuring, setConfiguring] = useState<string | null>(null);
@@ -446,13 +448,20 @@ export default function ChatWidget() {
         ? configured
           ? "configure"
           : "chat"
-        : // A basket that emptied under a checkout (the last line removed, or
-          // another tab cleared it) falls back to the bag, not the
-          // conversation. The bag has something to say about being empty; the
-          // conversation would just be where you suddenly are.
-          itemCount === 0 && view === "checkout"
-          ? "cart"
-          : view;
+        : // Tracking needs an order to track. There is one for as long as this
+          // session has placed one, so this only catches a view left over
+          // after the record went (a cleared history in another tab).
+          view === "track"
+          ? placed
+            ? "track"
+            : "chat"
+          : // A basket that emptied under a checkout (the last line removed, or
+            // another tab cleared it) falls back to the bag, not the
+            // conversation. The bag has something to say about being empty; the
+            // conversation would just be where you suddenly are.
+            itemCount === 0 && view === "checkout"
+            ? "cart"
+            : view;
 
   const suggestions =
     entries.length === 0 ? TOPICS.map((key) => t(key)) : chips;
@@ -558,7 +567,7 @@ export default function ChatWidget() {
             it's the map of the panel, and a control that materialises after
             your first tap is a control you have to discover twice. It's here
             from the start, with the count on it — zero included. */}
-        {shown !== "done" && shown !== "configure" ? (
+        {shown !== "done" && shown !== "configure" && shown !== "track" ? (
           <div className="flex gap-1 border-b border-line-faint bg-panel p-1.5">
             {(["chat", "cart"] as const).map((id) => {
               // "checkout" is a step of the cart, so the Cart segment stays
@@ -622,6 +631,17 @@ export default function ChatWidget() {
               // it rather than floating over the thing it just sent you to.
               onLeave={() => {
                 if (checkout.placed) setAcknowledged(checkout.placed.id);
+                setView("chat");
+                setOpen(false);
+              }}
+            />
+          </div>
+        ) : shown === "track" && placed ? (
+          <div className="max-h-[70vh] overflow-y-auto bg-cream">
+            <ChatTrack
+              id={placed.id}
+              onBack={() => setView("chat")}
+              onLeave={() => {
                 setView("chat");
                 setOpen(false);
               }}
@@ -703,16 +723,25 @@ export default function ChatWidget() {
             const openAction = attached?.actions.find((action) => action.type === "open");
             return (
               <div key={entry.id} className="flex flex-col gap-2">
-                <div className="flex items-end gap-2">
-                  <BagelAvatar hidden={continues} />
-                  {/* RichText, not raw text in a pre-wrap bubble. Models write
-                      markdown by default, and printing it verbatim is how
-                      "**The Veggie Stack** — $15.50" reached the screen with
-                      its asterisks showing. */}
-                  <div className={BOT_BUBBLE}>
-                    <RichText text={entry.text} />
+                {/* No bubble until there are words in it.
+
+                    Attachments arrive on their own line and often land before
+                    the first token of the sentence that introduces them, which
+                    used to draw an empty bubble the size of its own padding —
+                    a little grey tab sitting above the loader, which is
+                    exactly as odd as it sounds. */}
+                {entry.text.length > 0 ? (
+                  <div className="flex items-end gap-2">
+                    <BagelAvatar hidden={continues} />
+                    {/* RichText, not raw text in a pre-wrap bubble. Models
+                        write markdown by default, and printing it verbatim is
+                        how "**The Veggie Stack** — $15.50" reached the screen
+                        with its asterisks showing. */}
+                    <div className={BOT_BUBBLE}>
+                      <RichText text={entry.text} />
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
                 {/* Attachments sit under the bubble at full width rather than
                     inside it: a card rail in a 86%-width bubble is a card rail
@@ -894,16 +923,17 @@ export default function ChatWidget() {
           </button>
         ) : placed ? (
           // Where the confirmation went. Dismissing it shouldn't lose the
-          // order — this is the one screen in the panel that knows an order
-          // exists, and the tracker is a page rather than a view in here, so
-          // the panel closes on the way out rather than sitting over it.
-          <Link
-            href={`/shop/order/${placed.id}`}
-            onClick={() => setOpen(false)}
+          // order, and following this doesn't leave the panel either: tracking
+          // is a view in here now, for the same reason the basket and the
+          // checkout are. Being sent to a page for the last step of ordering
+          // in a chat was the one handoff left.
+          <button
+            type="button"
+            onClick={() => setView("track")}
             className="cb-press flex w-full cursor-pointer items-center justify-center gap-2 border-t border-line-faint bg-chat-accent px-4 py-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
           >
             {t("chat.trackOrder", { id: placed.id })}
-          </Link>
+          </button>
         ) : null}
       </div>
 

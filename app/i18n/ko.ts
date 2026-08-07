@@ -255,6 +255,8 @@ export const ko: Table = {
   "order.atCounter": "카운터에서 기다리고 있습니다.",
   "order.enjoy": "맛있게 드세요.",
   "order.progress": "주문 진행 상황",
+  "order.shopConfirms": "준비되면 매장에서 확인해 드립니다. 여기서는 카운터를 볼 수 없어요.",
+  "order.fullDetails": "자세히 보기",
   "gift.continueAsGuest": "비회원으로 계속",
 
   "order.arrivingAround": "{time}쯤 도착",

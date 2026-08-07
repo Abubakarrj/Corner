@@ -258,6 +258,8 @@ export const ur: Table = {
   "order.atCounter": "کاؤنٹر پر آپ کا انتظار ہے۔",
   "order.enjoy": "مزے سے کھائیں۔",
   "order.progress": "آرڈر کی پیش رفت",
+  "order.shopConfirms": "تیار ہونے پر دکان تصدیق کرے گی۔ یہاں سے ہمیں کاؤنٹر نظر نہیں آتا۔",
+  "order.fullDetails": "مکمل تفصیلات",
   "gift.continueAsGuest": "بطور مہمان جاری رکھیں",
 
   "order.arrivingAround": "تقریباً {time} پر پہنچے گا",
