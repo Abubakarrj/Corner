@@ -6,6 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { useCart } from "./CartContext";
 import { requestOpenBasket } from "./openBasket";
+import ChatCart from "./ChatCart";
+import ChatCheckout from "./ChatCheckout";
+import PurchaseComplete from "./checkout/PurchaseComplete";
+import { useCheckout } from "./checkout/useCheckout";
+import { formatPrice } from "./products";
 import { InfoPanel, ProductCards, RichText, ScreenButton } from "./chatContent";
 import { emptyAttachments, type ChatAttachments, type ProductCard } from "./chatTypes";
 import { DISPLAY_FONT } from "./shopControls";
@@ -138,6 +143,12 @@ export default function ChatWidget() {
   // /api/shop-chat answers with string keys, not sentences — see serverText().
   const st = useServerText();
   const [open, setOpen] = useState(false);
+  // Which half of the panel is showing. "checkout" and "done" are steps of
+  // the cart tab rather than tabs of their own — a segmented control that
+  // grew a third and fourth segment mid-transaction would be a navigation
+  // problem, and there is nowhere useful to go from a form you are halfway
+  // through except back.
+  const [view, setView] = useState<"chat" | "cart" | "checkout" | "done">("chat");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -146,9 +157,15 @@ export default function ChatWidget() {
   // opening topics once a conversation is under way.
   const [chips, setChips] = useState<string[]>([]);
 
-  // Adding to the basket is the one thing she can change out here, so this is
-  // the only reason the widget touches the cart.
-  const { addItem } = useCart();
+  // Adding to the basket is the one thing Riley can change out here. The
+  // count and the subtotal are read for the tab and the bar.
+  const { addItem, itemCount, subtotalCents } = useCart();
+
+  // The transaction, shared with /shop/checkout. Mounted for the life of the
+  // panel rather than with the sheet, so a half-filled form survives flipping
+  // back to the conversation to ask Riley something — which is most of the
+  // reason to check out in here at all.
+  const checkout = useCheckout();
 
   // Where the order is going, if it's been chosen — the difference between
   // "when will it arrive" and "when can I collect it". Sent as context so
@@ -265,6 +282,21 @@ export default function ChatWidget() {
   // The opening topics are keys, so they are asked in the visitor's own
   // language. Riley's own follow-up chips come back from her already written
   // in it, so they pass through as they are.
+  // Which view is actually on screen, derived rather than stored.
+  //
+  // Two rules the panel would otherwise need effects for, and effects that
+  // set state from other state are how a panel ends up briefly showing the
+  // wrong thing. A placed order always wins — the sheet's own status is the
+  // truth about that, not a flag this component set afterwards. And a cart
+  // that has emptied (removed the last line, or a tab elsewhere cleared it)
+  // has no cart or checkout view left to show.
+  const shown =
+    checkout.status === "placed"
+      ? "done"
+      : itemCount === 0 && view !== "chat"
+        ? "chat"
+        : view;
+
   const suggestions =
     entries.length === 0 ? TOPICS.map((key) => t(key)) : chips;
   const showChips = suggestions.length > 0 && !thinking;
@@ -356,6 +388,73 @@ export default function ChatWidget() {
           </button>
         </div>
 
+        {/* Chat / Cart, as a segmented control.
+            Only once there is something to check out. An empty second tab on
+            a first visit is a promise the panel hasn't earned yet, and it
+            pushes the greeting down the screen to make room for nothing. It
+            appears the moment Riley puts something in. */}
+        {itemCount > 0 && shown !== "done" ? (
+          <div className="flex gap-1 border-b border-line-faint bg-surface p-1.5">
+            {(["chat", "cart"] as const).map((id) => {
+              // "checkout" is a step of the cart, so the Cart segment stays
+              // lit through it rather than the control appearing to lose its
+              // place halfway through a form.
+              const active = id === "chat" ? shown === "chat" : shown !== "chat";
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setView(id)}
+                  className={`flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full text-[13px] font-medium transition-colors ${
+                    active ? "bg-raise text-ink" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {id === "cart" ? (
+                    <>
+                      <span
+                        aria-hidden
+                        className="h-[6px] w-[6px] rounded-full"
+                        style={{ backgroundColor: "var(--cb-olive)" }}
+                      />
+                      <span className="tabular-nums">{itemCount}</span>
+                      <span>{t("chat.tabCart")}</span>
+                    </>
+                  ) : (
+                    t("chat.tabChat")
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {/* One scrolling body, whichever view is in it. The height is capped
+            rather than fixed so a two-line conversation doesn't open a
+            half-screen panel, and the cap is generous enough that the
+            checkout form isn't read through a letterbox. */}
+        {shown === "done" ? (
+          <div className="max-h-[70vh] overflow-y-auto bg-cream">
+            <PurchaseComplete
+              order={checkout.placed}
+              where={checkout.where}
+              tender={checkout.tender}
+              onDone={() => {
+                setView("chat");
+                setOpen(false);
+              }}
+            />
+          </div>
+        ) : shown === "cart" ? (
+          <div className="max-h-[62vh] overflow-y-auto bg-surface">
+            <ChatCart onCheckout={() => setView("checkout")} />
+          </div>
+        ) : shown === "checkout" ? (
+          <div className="max-h-[70vh] overflow-y-auto bg-surface">
+            <ChatCheckout checkout={checkout} onBack={() => setView("chat")} />
+          </div>
+        ) : (
+        <>
         {/* The thread, on its own ground so the composer below reads as a
             separate surface rather than more of the same panel. */}
         <div
@@ -413,7 +512,18 @@ export default function ChatWidget() {
                       }}
                     />
                     {openAction ? (
-                      <ScreenButton action={openAction} onNavigate={() => setOpen(false)} />
+                      <ScreenButton
+                        action={openAction}
+                        onNavigate={() => setOpen(false)}
+                        // The handoff. Riley offering "check out" now opens
+                        // the sheet in this panel instead of navigating to
+                        // /shop/checkout, which is the whole point of her
+                        // being able to fill a basket in here.
+                        openHere={(screen) => {
+                          setView(screen === "checkout" ? "checkout" : "cart");
+                          return true;
+                        }}
+                      />
                     ) : null}
                   </div>
                 ) : null}
@@ -506,6 +616,22 @@ export default function ChatWidget() {
             <SendArrowIcon />
           </button>
         </form>
+        </>
+        )}
+
+        {/* The persistent cart bar from the reference. Only in the
+            conversation: in the cart it would sit under the subtotal saying
+            the same number twice, and in the checkout it would compete with
+            the button that actually places the order. */}
+        {shown === "chat" && itemCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setView("cart")}
+            className="cb-press flex w-full cursor-pointer items-center justify-center gap-2 border-t border-line-faint bg-ink px-4 py-3 text-[13px] font-medium text-on-ink transition-opacity hover:opacity-90"
+          >
+            {t("chat.cartTotal", { total: formatPrice(subtotalCents) })}
+          </button>
+        ) : null}
       </div>
 
       {/* The launcher used to morph into an ✕ while the panel was open, which

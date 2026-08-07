@@ -5,7 +5,7 @@ import { useT } from "../i18n";
 import { useMenu, type MenuText } from "../i18n/menu";
 import ProductImage from "./ProductImage";
 import { formatPrice, getProduct } from "./products";
-import type { ChatAction, InfoCard, ProductCard } from "./chatTypes";
+import type { ChatAction, ChatScreen, InfoCard, ProductCard } from "./chatTypes";
 
 // What a reply from Riley is made of, once it stops being a wall of text.
 //
@@ -237,29 +237,58 @@ const SCREEN_HREF: Record<Extract<ChatAction, { type: "open" }>["screen"], strin
   gift: "/gift",
 };
 
+const CHROME =
+  "cb-press inline-flex cursor-pointer items-center gap-1.5 self-start rounded-full border border-ink px-3 py-1.5 text-[12px] font-medium text-ink transition-colors hover:bg-raise";
+
+function Arrow() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
+      <path
+        d="M3 6h6M6.5 3.5 9 6l-2.5 2.5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Riley offering to take you somewhere.
+//
+// Two shapes, and which one you get depends on whether the panel can do the
+// thing itself. The basket and the checkout live inside it now, so for those
+// this is a button that flips the panel's view — and that is the whole
+// handoff: she can open the sheet, and the sheet does the transaction.
+// Everything else stays a link out to a page, because the panel has no map or
+// account screen in it.
 export function ScreenButton({
   action,
   onNavigate,
+  openHere,
 }: {
   action: Extract<ChatAction, { type: "open" }>;
   onNavigate: () => void;
+  // Returns true if it handled the screen in place. Absent — or false — and
+  // this falls back to the link, so a screen the panel gains or loses needs
+  // no change here.
+  openHere?: (screen: ChatScreen) => boolean;
 }) {
+  if (openHere && CAN_OPEN_IN_PANEL.has(action.screen)) {
+    return (
+      <button type="button" onClick={() => openHere(action.screen)} className={CHROME}>
+        {action.label}
+        <Arrow />
+      </button>
+    );
+  }
   return (
-    <Link
-      href={SCREEN_HREF[action.screen]}
-      onClick={onNavigate}
-      className="cb-press inline-flex cursor-pointer items-center gap-1.5 self-start rounded-full border border-ink px-3 py-1.5 text-[12px] font-medium text-ink transition-colors hover:bg-raise"
-    >
+    <Link href={SCREEN_HREF[action.screen]} onClick={onNavigate} className={CHROME}>
       {action.label}
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden>
-        <path
-          d="M3 6h6M6.5 3.5 9 6l-2.5 2.5"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <Arrow />
     </Link>
   );
 }
+
+// Kept next to SCREEN_HREF so the two can't disagree about what a screen is.
+const CAN_OPEN_IN_PANEL = new Set<ChatScreen>(["basket", "checkout"]);

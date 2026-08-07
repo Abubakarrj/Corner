@@ -130,7 +130,10 @@ export default function PurchaseComplete({
         ) : null}
 
         {onDone ? (
-          <Button variant="secondary" onClick={onDone} className="mt-3 w-full max-w-[280px]">
+          // quiet, not secondary: Track order is the primary here and two
+          // full-width pills of similar weight under it read as a choice
+          // rather than a hierarchy. Dismissing is the tertiary action.
+          <Button variant="quiet" onClick={onDone} className="mt-2 w-full max-w-[280px]">
             {t("checkout.done")}
           </Button>
         ) : (
