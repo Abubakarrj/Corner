@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useList, useT } from "../../../i18n";
 import { useMenu } from "../../../i18n/menu";
 import { formatPrice, possibleAllergens, type Product } from "../../products";
@@ -29,13 +28,12 @@ export default function ProductView({ product }: { product: Product }) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
-      <Link
-        href="/shop"
-        className="mb-6 inline-block cursor-pointer text-[13px] text-muted underline"
-      >
-        ← {t("common.backToMenu")}
-      </Link>
-
+      {/* The "← Back to menu" link that used to sit here is gone. The header
+          above carries a back control on every shop page now, and this was the
+          third back-shaped thing within a hundred pixels of the top of a
+          product page. It also went somewhere slightly wrong: it always meant
+          the full catalog, so arriving from a search and pressing it threw the
+          search away. The header's goes where you actually came from. */}
       {/* A fixed-width image column (not a 50/50 split) — this is a
           placeholder tile, not photography yet, and a 50/50 grid let it
           grow to fill half the page on a wide screen, which read as

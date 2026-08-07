@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useT } from "../i18n";
+import BackButton from "../ui/BackButton";
 import { useEffect, useState } from "react";
 import { useAccount } from "../account";
 import { useCart } from "./CartContext";
@@ -65,6 +67,7 @@ function AccountIcon() {
 
 export default function ShopHeader() {
   const t = useT();
+  const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const { itemCount } = useCart();
@@ -100,6 +103,24 @@ export default function ShopHeader() {
             under a ~59px notch strip makes for a ~123px bar that eats the
             viewport. Desktop has no inset, so it keeps the roomier row. */}
         <div className="flex h-[52px] items-center gap-2 px-4 sm:h-16 sm:px-6">
+          {/* The way out, and in the shop it is the only one: there is no tab
+              bar under these pages (see hasTabBar), and installed to the home
+              screen there is no browser chrome either. It lives in the header
+              rather than on the destination bar below because the header is
+              sticky and that bar is not — a back control that scrolls off the
+              top of a long catalog is a back control at exactly the moment
+              somebody wants it.
+
+              Up a level when there is nothing of ours behind: the catalog from
+              anywhere in the shop, and from the catalog itself the map, which
+              is the screen the shop is entered through. */}
+          {searchOpen ? null : (
+            <BackButton
+              fallback={pathname === "/shop" ? "/locations" : "/shop"}
+              className="-ml-2.5"
+            />
+          )}
+
           {/* Keyed on open/closed so toggling remounts it, clearing the
               query and keyboard cursor without an effect writing state. */}
           <SearchBar
