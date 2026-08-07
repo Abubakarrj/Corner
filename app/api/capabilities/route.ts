@@ -17,10 +17,31 @@ import { isToastConfigured } from "../../toast";
 // address has an account.
 export const dynamic = "force-dynamic";
 
+// Whether the checkout offers a card at all.
+//
+// True when there's a processor configured. Also true in development, and on
+// any deploy that sets PAYMENTS_PREVIEW=1 — which is for looking at the card
+// screen, not for taking money. Nothing here makes a charge happen: what takes
+// money is Toast, and Toast is either configured or it isn't.
+//
+// The exception exists because the alternative was worse in a specific way.
+// Card entry is the most designed part of the checkout and it was invisible
+// unless you had production credentials, so the only way to review it was to
+// go live with it. A preview flag is the smaller risk, and it is opt-in.
+//
+// ⚠️ Don't set PAYMENTS_PREVIEW on a deploy real customers use. Without a
+// processor behind it, the checkout will say the card is charged when the shop
+// confirms the order, and nothing will charge it.
+function paymentsEnabled(): boolean {
+  if (isToastConfigured()) return true;
+  if (process.env.PAYMENTS_PREVIEW === "1") return true;
+  return process.env.NODE_ENV !== "production";
+}
+
 export function GET() {
   return Response.json({
     auth: isAuthConfigured(),
-    payments: isToastConfigured(),
+    payments: paymentsEnabled(),
     chat: Boolean(process.env.ANTHROPIC_API_KEY),
     // The one non-boolean here, and it is not a secret: a shop's phone number
     // is on its window. It is null until a real one is set, because

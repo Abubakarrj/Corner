@@ -15,8 +15,8 @@ import {
 // standing up somewhere to keep it. It also means a reload starts fresh,
 // which is the honest behaviour — nothing was being remembered anyway.
 //
-// She has tools now (see ./tools.ts), so this runs an agentic loop rather than
-// a single call: ask, run whatever she reaches for, hand the results back, ask
+// She has tools (see ./tools.ts), so this runs an agentic loop rather than a
+// single call: ask, run whatever she reaches for, hand the results back, ask
 // again, until she has an answer. Two things fall out of that.
 //
 // First, the answer is grounded. Prices, allergens, opening hours and delivery
@@ -27,8 +27,42 @@ import {
 // product cards, an hours card, a delivery quote, quick replies, a basket
 // action — which the widget renders instead of Riley describing a menu in
 // prose with asterisks around the names.
+//
+// ——— On the wire ———
+//
+// This answers newline-delimited JSON rather than one object at the end, and
+// that is the whole latency story. A turn is: think, reach for a tool, read
+// the result, write. Holding all of it back means six to eight seconds of a
+// visitor watching a loader with nothing in it. Streaming doesn't make any of
+// those steps quicker; it stops the wait being spent on a blank panel.
+//
+// Every line is a *snapshot*, not a delta:
+//
+//   {"type":"text","text":"…the whole reply so far…"}
+//   {"type":"attach","products":[…],"info":[…],"chips":[…],"actions":[…]}
+//   {"type":"error","error":"api.rileyDown"}
+//
+// Snapshots because the client then has no reassembly to get wrong, a dropped
+// line costs a frame instead of corrupting a sentence, and the em-dash scrub
+// below can rewrite text it has already sent. They are small — a reply is a
+// few hundred bytes — so sending the whole thing each time is cheaper than the
+// bugs the alternative buys.
+//
+// Errors travel as events on a 200 rather than as status codes, because by the
+// time one happens the response has usually started. One shape for the client
+// to handle beats two.
 
-const MODEL = "claude-opus-5";
+// Sonnet rather than Opus, and this is the second half of the latency work.
+//
+// Riley is a shop concierge: she looks things up with tools and writes three
+// sentences about a bagel. The reasoning that Opus is worth paying for doesn't
+// show up in that job, and the difference in time-to-first-token does — it is
+// the single biggest lever on this route after streaming. The tools are what
+// make her answers right; the model mostly has to write them down.
+//
+// Overridable, so this is a config decision rather than a code one: set
+// RILEY_MODEL to any model id to move her without a deploy of this file.
+const MODEL = process.env.RILEY_MODEL ?? "claude-sonnet-5";
 
 // Bounds one conversation. Long enough for a real back-and-forth about an
 // order, short enough that a stuck loop or a pasted wall of text can't run up
@@ -73,6 +107,15 @@ export function noEmDashes(text: string): string {
     .replace(/ \u2013 /g, ", ");
 }
 
+// The scrub above decides what to put in a dash's place by looking at the
+// character *after* it — which, mid-stream, may not have arrived. A dash at
+// the very end would become a comma on one frame and a full stop on the next,
+// visibly, so a trailing one is held back until the next chunk says what it
+// was joining.
+function scrubPartial(text: string): string {
+  return noEmDashes(text.replace(/[\u2014\u2015\u2013]\s*$/, ""));
+}
+
 type Turn = { role: "user" | "assistant"; text: string };
 
 function isTurn(value: unknown): value is Turn {
@@ -103,12 +146,52 @@ function merge(into: ChatAttachments, from: Partial<ChatAttachments> | undefined
   if (from.chips) into.chips = from.chips;
 }
 
+type Send = (event: Record<string, unknown>) => void;
+
+// Runs `turn` against a stream of NDJSON lines.
+//
+// Everything is enqueued through `send`, and the stream closes exactly once —
+// including when `turn` throws, which is what keeps a browser from sitting on
+// an open connection to a route that has already given up.
+function ndjson(turn: (send: Send) => Promise<void>): Response {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    async start(controller) {
+      const send: Send = (event) => {
+        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      };
+      try {
+        await turn(send);
+      } catch (error) {
+        // Logged, not returned: an upstream error message can name the model,
+        // the account, or the request — none of which belongs in a chat
+        // bubble.
+        console.error("[shop-chat] Riley failed to reply", error);
+        send({ type: "error", error: "api.rileyDown" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(body, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-store",
+      // Tells an nginx in front of this not to sit on the response until it's
+      // complete, which would undo the streaming entirely and be invisible in
+      // development.
+      "X-Accel-Buffering": "no",
+    },
+  });
+}
+
 export async function POST(request: Request) {
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "api.badJson" }, { status: 400 });
+    return ndjson(async (send) => send({ type: "error", error: "api.badJson" }));
   }
 
   const body = payload as {
@@ -124,7 +207,7 @@ export async function POST(request: Request) {
     .slice(-MAX_TURNS);
 
   if (turns.length === 0 || turns[turns.length - 1].role !== "user") {
-    return Response.json({ error: "api.typeMessage" }, { status: 400 });
+    return ndjson(async (send) => send({ type: "error", error: "api.typeMessage" }));
   }
 
   const language =
@@ -132,16 +215,14 @@ export async function POST(request: Request) {
 
   const anthropic = client();
   if (!anthropic) {
-    // No key configured. Answering 200 with a plain message, not a 500: the
-    // widget renders this as Riley's reply, so a visitor gets a sentence they
-    // can act on rather than a red error next to a bubble they just sent.
-    return Response.json(
-      {
-        reply:
-          "Riley can't answer right now. Email cornerbagel@publicentity.co and a person will get back to you.",
-        configured: false,
-      },
-      { status: 200 },
+    // No key configured. Sent as Riley's own reply rather than as an error, so
+    // a visitor gets a sentence they can act on instead of a red line next to
+    // the bubble they just sent.
+    return ndjson(async (send) =>
+      send({
+        type: "text",
+        text: "Riley can't answer right now. Email cornerbagel@publicentity.co and a person will get back to you.",
+      }),
     );
   }
 
@@ -164,14 +245,25 @@ export async function POST(request: Request) {
     });
   }
 
-  const attachments = emptyAttachments();
+  return ndjson(async (send) => {
+    const attachments = emptyAttachments();
+    // Across rounds, not per round: she may write a line, look something up,
+    // and carry on writing, and that is one reply to whoever is reading it.
+    let written = "";
+    let sent = "";
 
-  try {
+    const flush = () => {
+      const next = scrubPartial(written);
+      if (next === sent) return;
+      sent = next;
+      send({ type: "text", text: next });
+    };
+
     for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-      const response = await anthropic.beta.messages.create({
+      const stream = anthropic.beta.messages.stream({
         model: MODEL,
         max_tokens: RILEY_MAX_TOKENS,
-        // Thinking stays on — disabling it on this model can leak <thinking>
+        // Thinking stays on — disabling it on these models can leak <thinking>
         // tags into the visible reply, and worse for a tool-using chat, it can
         // put a tool call in the visible text where it silently never runs.
         thinking: { type: "adaptive" },
@@ -207,18 +299,24 @@ export async function POST(request: Request) {
         messages,
       });
 
+      // The only place text reaches the visitor. Fires as tokens land, so a
+      // reply appears at reading speed rather than all at once when it ends.
+      stream.on("text", (chunk) => {
+        written += chunk;
+        flush();
+      });
+
+      const response = await stream.finalMessage();
+
       // stop_reason first, always: on a refusal `content` is empty or partial,
       // and reading content[0] would throw on the one path that most needs to
       // return something sensible.
       if (response.stop_reason === "refusal") {
-        return Response.json(
-          {
-            reply:
-              "I can't help with that one, sorry. If it's about an order, email cornerbagel@publicentity.co and a person will pick it up.",
-            ...emptyAttachments(),
-          },
-          { status: 200 },
-        );
+        send({
+          type: "text",
+          text: "I can't help with that one, sorry. If it's about an order, email cornerbagel@publicentity.co and a person will pick it up.",
+        });
+        return;
       }
 
       const calls = response.content.filter(
@@ -226,22 +324,14 @@ export async function POST(request: Request) {
       );
 
       if (calls.length === 0) {
-        const reply = response.content
-          .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
-          .map((block) => block.text)
-          .join("")
-          .trim();
-
-        if (!reply && attachments.products.length === 0 && attachments.info.length === 0) {
-          return Response.json(
-            { error: "api.rileyNoReply" },
-            { status: 502 },
-          );
+        // Everything she wrote is already on screen; the trailing dash the
+        // partial scrub was holding back is now safe to resolve.
+        written = noEmDashes(written).trim();
+        flush();
+        if (!sent && attachments.products.length === 0 && attachments.info.length === 0) {
+          send({ type: "error", error: "api.rileyNoReply" });
         }
-        return Response.json(
-          { reply: noEmDashes(reply), ...attachments },
-          { status: 200 },
-        );
+        return;
       }
 
       // Everything she asked for in this turn, run together. The results go
@@ -275,22 +365,19 @@ export async function POST(request: Request) {
       );
 
       messages.push({ role: "user", content: results });
+
+      // Cards, panels and basket actions go out as soon as the round that
+      // produced them finishes, rather than waiting for the sentence that
+      // introduces them. The rail appearing a beat before "here are three"
+      // is the right way round: it's the answer, and the sentence is the
+      // caption.
+      send({ type: "attach", ...attachments });
     }
 
-    // Out of rounds. Whatever she attached along the way still goes back —
-    // a set of product cards with no sentence is worth more than an error.
+    // Out of rounds. Whatever she attached along the way is already on screen;
+    // this is the sentence to go with it.
     console.warn("[shop-chat] hit the tool-round ceiling");
-    return Response.json(
-      { reply: "That took longer than it should have — ask me again?", ...attachments },
-      { status: 200 },
-    );
-  } catch (error) {
-    // Logged, not returned: an upstream error message can name the model, the
-    // account, or the request — none of which belongs in a chat bubble.
-    console.error("[shop-chat] Riley failed to reply", error);
-    return Response.json(
-      { error: "api.rileyDown" },
-      { status: 502 },
-    );
-  }
+    written = `${written}${written ? "\n\n" : ""}That took longer than it should have, ask me again?`;
+    flush();
+  });
 }

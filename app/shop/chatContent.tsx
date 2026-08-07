@@ -132,15 +132,29 @@ function needLabel(menu: MenuText, slug: string, groupId: string | undefined): s
   return group ? menu.placeholder(group) : "";
 }
 
+// Whether this item has anything to choose at all — a bagel, a spread, a gift
+// card's amount. Read from the catalog rather than from the wire: the card
+// only carries the groups that are *required*, and a gift card whose amount
+// defaults to $25 has none of those and still shouldn't be added without
+// asking which one.
+function configurable(slug: string): boolean {
+  return (getProduct(slug)?.options?.length ?? 0) > 0;
+}
+
 // A rail, not a stack. Three items down the thread pushes the conversation off
 // the top of a 344px panel; three across keeps the reply and the options on
 // screen together, and the overflow is its own signal that there are more.
 export function ProductCards({
   products,
   onAdd,
+  onConfigure,
 }: {
   products: ProductCard[];
   onAdd: (product: ProductCard) => void;
+  // Opens the choices inside the panel. Optional, and the fallback is the link
+  // out to the item's page — so a surface that has nowhere to put a picker
+  // still behaves, rather than offering a button that does nothing.
+  onConfigure?: (product: ProductCard) => void;
 }) {
   const t = useT();
   const menu = useMenu();
@@ -178,13 +192,24 @@ export function ProductCards({
             </Link>
             <span className="text-[12px] text-muted">{formatPrice(product.priceCents)}</span>
 
-            {/* Three states, and the difference between them matters more
-                than it looks. Sold out can't be added at all. An item that
-                still needs a bagel chosen opens its page instead of adding —
-                a plus button that silently picked one for you is how somebody
-                gets a sesame they didn't ask for. */}
+            {/* Four states, and the differences matter more than they look.
+                Sold out can't be added at all. Anything with a choice on it
+                opens the picker rather than adding — a plus button that
+                silently picked for you is how somebody gets a sesame they
+                didn't ask for — and the button says which choice is waiting
+                ("Choose bagel") when there is one that has to be made. */}
             {product.soldOut ? (
               <span className="mt-auto pt-1 text-[11px] text-quiet">{t("common.soldOutToday")}</span>
+            ) : onConfigure && configurable(product.slug) ? (
+              <button
+                type="button"
+                onClick={() => onConfigure(product)}
+                className="cb-press mt-auto cursor-pointer rounded-full border border-line-soft px-2 py-1.5 text-center text-[11px] text-ink transition-colors hover:bg-raise"
+              >
+                {product.needs.length > 0
+                  ? needLabel(menu, product.slug, product.needs[0])
+                  : t("common.add")}
+              </button>
             ) : product.needs.length > 0 ? (
               <Link
                 href={`/shop/product/${product.slug}`}

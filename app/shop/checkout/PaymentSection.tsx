@@ -1,24 +1,26 @@
 "use client";
 
-// Payment.
+// Payment: how you're paying, and the card if that's how.
 //
-// The reference checkout has card fields on it. Those fields belong to Toast:
-// they're rendered inside Toast's own hosted payment element, so the number
-// goes from the browser straight to Toast's PCI environment and the
-// restaurant's site never touches it.
+// The card fields are real inputs, and the number they collect stays in the
+// browser. That is the whole design, and it's worth being precise about why,
+// because the two obvious ways to build this screen are both wrong.
 //
-// Rebuilding them here as ordinary <input>s would look identical and be a
-// different thing entirely — a live card number sitting in this page's memory,
-// in the request body, in whatever logs that body, and in any error report
-// that captures it. It would also put whoever deploys this into PCI DSS scope
-// for a form that doesn't charge anyone. So this section offers the tender the
-// shop actually takes today, and names the one it doesn't yet.
+// Rebuilding a card form and posting the number with the order would look
+// exactly like this and be a different thing entirely: a live PAN in the
+// request body, in whatever logs request bodies, and in any error report that
+// captures one — and whoever deploys it inside PCI DSS scope. Not building
+// the fields at all, which is what this file used to do, means a checkout
+// that doesn't look like a checkout.
 //
-// Wiring up card payment is: mount Toast's payment element in the slot below,
-// take the token it hands back, and send that token — never a PAN — to
-// /api/shop-order. See app/toast.ts.
+// So: the fields are here, they validate properly, and the only thing that
+// crosses the network is a brand and four digits. See the note at the top of
+// card.ts, which is also where the one function lives that changes when
+// Toast's hosted element is wired up.
 
 import { useT } from "../../i18n";
+import CardFields from "./CardFields";
+import type { CardEntry } from "./useCard";
 
 export type Tender = "counter" | "card";
 
@@ -26,13 +28,15 @@ export default function PaymentSection({
   tender,
   onTender,
   cardEnabled,
+  card,
 }: {
   tender: Tender;
   onTender: (next: Tender) => void;
-  // True once Toast's payment element is configured and mounted. Passed in
-  // rather than read here so the page decides, and so this component has an
-  // honest "on" state to grow into instead of a permanent apology.
+  // Whether this deployment can take a card at all. Passed in rather than read
+  // here so the surface decides, and so a shop with no processor offers no
+  // card rather than collecting a number it can't charge.
   cardEnabled: boolean;
+  card: CardEntry;
 }) {
   const t = useT();
   return (
@@ -55,10 +59,9 @@ export default function PaymentSection({
       />
 
       {tender === "card" && cardEnabled ? (
-        // Toast's payment element mounts here. Deliberately empty otherwise:
-        // an input that looks like a card field but isn't one is worse than
-        // no field at all.
-        <div id="toast-payment-element" className="mt-2 rounded-xl border border-line-soft p-4" />
+        <div className="mt-1">
+          <CardFields card={card} />
+        </div>
       ) : null}
     </div>
   );

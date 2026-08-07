@@ -7,6 +7,8 @@ import { totalsFor, type OrderTotals } from "../money";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
 import { recordOrder, type PlacedOrder } from "../../account";
+import { useCard, type CardEntry } from "./useCard";
+import { BRAND_LABEL } from "./card";
 import type { Tender } from "./PaymentSection";
 import type { CartRow } from "../CartContext";
 
@@ -33,6 +35,17 @@ import type { CartRow } from "../CartContext";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type CheckoutStatus = "idle" | "sending" | "placed";
+
+// Checkout in two steps, as in the reference: who you are, then how you're
+// paying.
+//
+// It isn't only cosmetic. A payment sheet is the one screen where somebody
+// should be looking at a total and a single button, and the old single column
+// put the tip, the kerbside checkbox and the order note between the fields and
+// the money. Splitting it also means the contact details are validated before
+// anything payment-shaped appears, so nobody reaches a card field and then
+// gets sent back up for a missing email.
+export type CheckoutStep = "details" | "payment";
 
 export type DeliveryQuote = {
   quoteId: string;
@@ -83,6 +96,17 @@ export type Checkout = {
   setTipCents: (value: number) => void;
   tender: Tender;
   setTender: (value: Tender) => void;
+  /** The card fields. Nothing on this object reaches the network but its
+      brand and last four — see the note at the top of card.ts. */
+  card: CardEntry;
+
+  // ——— The two steps ———
+  step: CheckoutStep;
+  /** Enough to move on: a name and an email that parses. */
+  detailsValid: boolean;
+  /** Marks the fields tried and advances if they pass. */
+  continueToPayment: () => void;
+  backToDetails: () => void;
 
   // ——— Placing it ———
   valid: boolean;
@@ -112,10 +136,16 @@ export function useCheckout(): Checkout {
   const [note, setNote] = useState("");
   const [tipCents, setTipCents] = useState(0);
   const [tender, setTender] = useState<Tender>("counter");
+  const [step, setStep] = useState<CheckoutStep>("details");
   const [status, setStatus] = useState<CheckoutStatus>("idle");
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
+
+  // The card fields, in their own hook so the number has no route into the
+  // request body below. `tried` is passed in for the same reason the name and
+  // email errors read it: nothing is marked wrong before somebody tries.
+  const card = useCard(tried);
 
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
   const isDelivery = fulfillment?.mode === "delivery";
@@ -198,9 +228,23 @@ export function useCheckout(): Checkout {
   const emailError = tried && !EMAIL.test(email.trim()) ? t("checkout.validEmail") : undefined;
   const firstNameError = tried && firstName.trim().length === 0 ? t("checkout.required") : undefined;
 
+  // Everything the first step is responsible for. Kept apart from `valid` so
+  // the Continue button can refuse for its own reasons and the Place order
+  // button can refuse for the rest — a delivery that hasn't been priced yet
+  // shouldn't grey out a Continue button that has nothing to do with it.
+  const detailsValid = firstName.trim().length > 0 && EMAIL.test(email.trim());
+
+  function continueToPayment() {
+    setTried(true);
+    if (detailsValid) setStep("payment");
+  }
+
+  function backToDetails() {
+    setStep("details");
+  }
+
   const valid =
-    firstName.trim().length > 0 &&
-    EMAIL.test(email.trim()) &&
+    detailsValid &&
     rows.length > 0 &&
     incomplete.length === 0 &&
     unavailable.length === 0 &&
@@ -210,7 +254,11 @@ export function useCheckout(): Checkout {
     opening.acceptingOrders &&
     // A delivery order can't be placed until a courier has priced it. Placing
     // it anyway would mean promising a delivery nobody has agreed to make.
-    (!isDelivery || quote !== null);
+    (!isDelivery || quote !== null) &&
+    // Paying by card means there has to be a card. Checked here rather than in
+    // the component so both surfaces get it, and so the rule sits next to the
+    // other five reasons an order can't go.
+    (tender !== "card" || card.complete);
 
   async function submit() {
     setTried(true);
@@ -254,6 +302,11 @@ export function useCheckout(): Checkout {
         throw new Error(st(result?.error) || t("checkout.somethingWentWrong"));
       }
 
+      // Read once, here, so the two lines below can't describe two different
+      // cards — and so the whole of what this transaction knows about the card
+      // is a single object with two harmless fields in it.
+      const paid = tender === "card" ? card.summary() : null;
+
       // The account page's history and its usuals list are built from this.
       // Recorded after the endpoint accepts, so a rejected order doesn't show
       // up as one that happened, and on this device only — there's no
@@ -286,6 +339,10 @@ export function useCheckout(): Checkout {
         ...(typeof result?.trackingUrl === "string"
           ? { trackingUrl: result.trackingUrl }
           : {}),
+        // The card, as a receipt describes one. Brand and four digits, on this
+        // device only — `summary()` is structurally incapable of handing over
+        // the number, which is the point of it.
+        ...(paid ? { cardBrand: BRAND_LABEL[paid.brand], cardLast4: paid.last4 } : {}),
       });
       setPlaced(record);
       setStatus("placed");
@@ -334,6 +391,12 @@ export function useCheckout(): Checkout {
     setTipCents,
     tender,
     setTender,
+    card,
+
+    step,
+    detailsValid,
+    continueToPayment,
+    backToDetails,
 
     valid,
     status,

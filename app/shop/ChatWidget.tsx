@@ -7,9 +7,11 @@ import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfil
 import { useCart } from "./CartContext";
 import ChatCart from "./ChatCart";
 import ChatCheckout from "./ChatCheckout";
+import ChatConfigure from "./ChatConfigure";
 import PurchaseComplete from "./checkout/PurchaseComplete";
 import { useCheckout } from "./checkout/useCheckout";
-import { formatPrice } from "./products";
+import MergingDots from "../ui/MergingDots";
+import { formatPrice, getProduct } from "./products";
 import { InfoPanel, ProductCards, RichText, ScreenButton } from "./chatContent";
 import { emptyAttachments, type ChatAttachments, type ProductCard } from "./chatTypes";
 import { DISPLAY_FONT } from "./shopControls";
@@ -149,19 +151,13 @@ export default function ChatWidget() {
   // grew a third and fourth segment mid-transaction would be a navigation
   // problem, and there is nowhere useful to go from a form you are halfway
   // through except back.
-  const [view, setView] = useState<"chat" | "cart" | "checkout" | "done">("chat");
+  const [view, setView] = useState<"chat" | "configure" | "cart" | "checkout" | "done">("chat");
+  // The item whose choices are open, if any. A slug rather than the product,
+  // so this can't hold a stale copy of a catalog entry.
+  const [configuring, setConfiguring] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
-  // How long she has been thinking, in tenths, so the indicator can say it.
-  //
-  // The reference shows an elapsed time next to "Thinking", and it earns its
-  // place: three bouncing dots say "something is happening" and stop being
-  // reassuring at about four seconds, where a number that is still moving
-  // says the wait is real rather than stuck. Tenths rather than seconds
-  // because a counter that only changes once a second looks frozen for most
-  // of each one.
-  const [thinkingMs, setThinkingMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
   // Riley's own quick replies, from the last thing she said. They replace the
   // opening topics once a conversation is under way.
@@ -195,16 +191,6 @@ export default function ChatWidget() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
-  // The counter is zeroed by ask(), not here: resetting it in the effect body
-  // would be a synchronous setState inside an effect, which is a cascading
-  // render for a number nobody has looked at yet.
-  useEffect(() => {
-    if (!thinking) return;
-    const started = Date.now();
-    const timer = window.setInterval(() => setThinkingMs(Date.now() - started), 100);
-    return () => window.clearInterval(timer);
-  }, [thinking]);
-
   // Keep the newest message in view as the thread grows.
   useEffect(() => {
     const thread = threadRef.current;
@@ -214,14 +200,63 @@ export default function ChatWidget() {
   // Riley's turn. The thread as it stands goes up, her reply comes back, and
   // both ends of that are derived from `entries` rather than tracked
   // separately — one source of truth for what the conversation is.
+  //
+  // The reply streams. /api/shop-chat answers newline-delimited JSON — see the
+  // note at the top of that file — and each line is a whole snapshot rather
+  // than a delta: the text so far, or the attachments so far. Snapshots mean
+  // this end has no reassembly to get wrong, and a dropped line costs a frame
+  // rather than corrupting the message.
+  //
+  // Why it matters here is latency. Riley thinks, then reaches for a tool,
+  // then writes; waiting for all three before showing anything is six or eight
+  // seconds of a loader. Streaming doesn't make her faster, it stops the wait
+  // being spent on a blank panel — the first words land in about a second and
+  // the rest arrives as it's written.
   async function ask(text: string) {
     const id = nextId.current++;
     const asked: Entry[] = [...entries, { id, role: "user", text }];
     setEntries(asked);
     setChips([]);
     setError(null);
-    setThinkingMs(0);
     setThinking(true);
+
+    // The bot entry is created on the first line that has something in it,
+    // and updated in place after that. Held by id rather than by index —
+    // nothing else can append to the thread mid-turn today, and this doesn't
+    // become a bug the day something can.
+    let replyId: number | null = null;
+    let attachments: ChatAttachments = emptyAttachments();
+    // How many of the actions have been run. Every attachment line carries the
+    // full list, so without this a basket action would be replayed on each one
+    // and three lines would put three bagels in the basket.
+    let ranActions = 0;
+    let sawAnything = false;
+
+    // The id is minted out here rather than inside the updater below. A state
+    // updater has to be pure — React is free to run it twice — and one that
+    // also allocated an id would append two bot bubbles the second time.
+    const write = (next: { text?: string; attach?: ChatAttachments }) => {
+      if (next.attach) attachments = next.attach;
+      const carried = attachments;
+      if (replyId === null) {
+        const created = nextId.current++;
+        replyId = created;
+        const opening = next.text ?? "";
+        setEntries((prior) => [
+          ...prior,
+          { id: created, role: "bot", text: opening, attachments: carried },
+        ]);
+        return;
+      }
+      const target = replyId;
+      setEntries((prior) =>
+        prior.map((entry) =>
+          entry.id === target
+            ? { ...entry, text: next.text ?? entry.text, attachments: carried }
+            : entry,
+        ),
+      );
+    };
 
     try {
       const response = await fetch("/api/shop-chat", {
@@ -237,56 +272,95 @@ export default function ChatWidget() {
           locale,
         }),
       });
-      const body = (await response.json().catch(() => null)) as
-        | (Partial<ChatAttachments> & { reply?: string; error?: string })
-        | null;
 
-      if (!response.ok || (!body?.reply && !body?.products?.length && !body?.info?.length)) {
-        throw new Error(body?.error ?? "api.rileyDown");
-      }
+      if (!response.ok || !response.body) throw new Error("api.rileyDown");
 
-      const attachments: ChatAttachments = {
-        ...emptyAttachments(),
-        products: body.products ?? [],
-        info: body.info ?? [],
-        chips: body.chips ?? [],
-        actions: body.actions ?? [],
-      };
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-      // The one action Riley performs rather than proposes. It runs here, in
-      // the browser, because the basket is localStorage — the server has no
-      // way to reach it and no business knowing what's in it.
-      //
-      // The confirmation used to be the full basket drawer flying open over
-      // the panel: proof that something was added is seeing it sitting there,
-      // not a sentence claiming it. That reasoning still holds, but the panel
-      // has its own cart now, so the proof is the count on the Cart tab and
-      // the total on the bar at the foot — both of which move on the same
-      // render, without burying the conversation that produced them.
-      for (const action of attachments.actions) {
-        if (action.type === "add_to_basket") {
-          addItem(action.slug, action.quantity, action.options);
+      // Read to the end even after the last useful line: the loop exits on
+      // done, and abandoning the reader early would leave the connection open.
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Everything up to the last newline is complete; whatever follows is
+        // half a line and waits for the next chunk.
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let event: {
+            type?: string;
+            text?: string;
+            error?: string;
+          } & Partial<ChatAttachments>;
+          try {
+            event = JSON.parse(line);
+          } catch {
+            // A malformed line is a bug on the other end, not something to
+            // put in front of a customer. Skipped, and the turn carries on.
+            continue;
+          }
+
+          if (event.type === "error") throw new Error(event.error ?? "api.rileyDown");
+
+          if (event.type === "attach") {
+            const next: ChatAttachments = {
+              products: event.products ?? [],
+              info: event.info ?? [],
+              chips: event.chips ?? [],
+              actions: event.actions ?? [],
+            };
+            // The one action Riley performs rather than proposes. It runs
+            // here, in the browser, because the basket is localStorage — the
+            // server has no way to reach it and no business knowing what's
+            // in it.
+            //
+            // The confirmation is the count on the Cart tab and the total on
+            // the bar at the foot, both of which move on the same render. It
+            // used to be the full basket drawer flying open over the panel,
+            // which buried the conversation that produced it.
+            for (const action of next.actions.slice(ranActions)) {
+              if (action.type === "add_to_basket") {
+                addItem(action.slug, action.quantity, action.options);
+              }
+            }
+            ranActions = next.actions.length;
+            sawAnything = true;
+            write({ attach: next });
+            setChips(next.chips);
+            continue;
+          }
+
+          if (event.type === "text" && typeof event.text === "string") {
+            sawAnything = true;
+            // The loader gives way to the words themselves. Running both — a
+            // bubble filling up with a spinner underneath it — says the same
+            // thing twice and the second one is wrong.
+            setThinking(false);
+            write({ text: event.text });
+          }
         }
       }
 
-      setChips(attachments.chips);
-      setEntries((prior) => [
-        ...prior,
-        {
-          id: nextId.current++,
-          role: "bot",
-          text: body.reply ?? "",
-          attachments,
-        },
-      ]);
+      if (!sawAnything) throw new Error("api.rileyNoReply");
     } catch (askError) {
-      // The failed turn is left out of the thread and the composer refilled
-      // with what they typed, so retrying is one tap rather than retyping.
-      setError(
-        askError instanceof Error ? askError.message : "checkout.somethingWentWrong",
-      );
-      setDraft(text);
-      setEntries((prior) => prior.filter((entry) => entry.id !== id));
+      const reason =
+        askError instanceof Error ? askError.message : "checkout.somethingWentWrong";
+      setError(reason);
+      // Nothing arrived, so nothing happened: the turn is taken back out of
+      // the thread and the composer refilled with what they typed, so retrying
+      // is one tap rather than retyping. Once part of a reply is on screen it
+      // stays — pulling a half-finished answer out from under someone reading
+      // it is worse than leaving it with an error beneath.
+      if (!sawAnything) {
+        setDraft(text);
+        setEntries((prior) => prior.filter((entry) => entry.id !== id));
+      }
     } finally {
       setThinking(false);
     }
@@ -307,18 +381,25 @@ export default function ChatWidget() {
   // in it, so they pass through as they are.
   // Which view is actually on screen, derived rather than stored.
   //
-  // Two rules the panel would otherwise need effects for, and effects that
+  // Three rules the panel would otherwise need effects for, and effects that
   // set state from other state are how a panel ends up briefly showing the
   // wrong thing. A placed order always wins — the sheet's own status is the
-  // truth about that, not a flag this component set afterwards. And a cart
-  // that has emptied (removed the last line, or a tab elsewhere cleared it)
-  // has no cart or checkout view left to show.
+  // truth about that, not a flag this component set afterwards. A cart that
+  // has emptied (removed the last line, or a tab elsewhere cleared it) has no
+  // cart or checkout view left to show — but it does still have a picker,
+  // since filling an empty basket is exactly what that screen is for. And a
+  // picker with no item in it isn't a screen at all.
+  const configured = configuring ? getProduct(configuring) : undefined;
   const shown =
     checkout.status === "placed"
       ? "done"
-      : itemCount === 0 && view !== "chat"
-        ? "chat"
-        : view;
+      : view === "configure"
+        ? configured
+          ? "configure"
+          : "chat"
+        : itemCount === 0 && view !== "chat"
+          ? "chat"
+          : view;
 
   const suggestions =
     entries.length === 0 ? TOPICS.map((key) => t(key)) : chips;
@@ -357,8 +438,10 @@ export default function ChatWidget() {
         role="dialog"
         aria-label={t("chat.withRiley")}
         // cb-chat-surface redefines the palette for everything inside, which
-        // is what lets the basket and the whole checkout render dark without a
-        // second copy of any of those components. See globals.css.
+        // is what lets the basket and the whole checkout take the panel's
+        // neutral greys and its blue without a second copy of any of those
+        // components. It follows the theme switch like everything else — light
+        // sheet in light, dark sheet in dark. See globals.css.
         className={`cb-chat-surface mb-3 flex w-[calc(100vw-2.5rem)] max-w-[344px] origin-bottom-right flex-col overflow-hidden rounded-3xl border border-line-faint bg-panel shadow-[0_16px_44px_rgba(0,0,0,0.34)] transition-all duration-200 ease-out ${
           open
             ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
@@ -382,13 +465,11 @@ export default function ChatWidget() {
             a 40px disc in it, which is a lot of furniture above a one-line
             greeting.
             
-            Olive in light, and a raised dark tone in dark rather than the
-            light end of the ramp --cb-ink flips to. Inverting it there is
-            token-consistent but puts the brightest object on the screen above
-            the conversation, which is the one thing a chat header shouldn't
-            do. One of the few places the two themes want different structure
-            rather than a different shade — see the dark variant in
-            globals.css. */}
+            --cb-panel rather than a fill of its own, which inside the chat
+            surface is the palest ground in light and the deepest one in dark.
+            Either way it sits a step apart from the thread below it without
+            being the brightest object on the screen, which is the one thing a
+            chat header shouldn't be. */}
         <div className="flex items-center gap-2.5 border-b border-line-faint bg-panel px-3.5 py-3">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-raise">
             <Image src="/icon.svg" alt="" width={20} height={20} unoptimized className="object-contain" />
@@ -419,7 +500,7 @@ export default function ChatWidget() {
             a first visit is a promise the panel hasn't earned yet, and it
             pushes the greeting down the screen to make room for nothing. It
             appears the moment Riley puts something in. */}
-        {itemCount > 0 && shown !== "done" ? (
+        {itemCount > 0 && shown !== "done" && shown !== "configure" ? (
           <div className="flex gap-1 border-b border-line-faint bg-panel p-1.5">
             {(["chat", "cart"] as const).map((id) => {
               // "checkout" is a step of the cart, so the Cart segment stays
@@ -468,6 +549,26 @@ export default function ChatWidget() {
               onDone={() => {
                 setView("chat");
                 setOpen(false);
+              }}
+            />
+          </div>
+        ) : shown === "configure" && configured ? (
+          <div className="max-h-[70vh] overflow-y-auto bg-cream">
+            <ChatConfigure
+              product={configured}
+              onAdd={(options, quantity) => {
+                addItem(configured.slug, quantity, options);
+                // Back to the conversation rather than into the basket. The
+                // thread is where they were, the cart bar at its foot has
+                // already moved, and a picker that ended by showing you the
+                // basket would make ordering two sandwiches a round trip
+                // through a screen you didn't ask for.
+                setConfiguring(null);
+                setView("chat");
+              }}
+              onBack={() => {
+                setConfiguring(null);
+                setView("chat");
               }}
             />
           </div>
@@ -541,6 +642,16 @@ export default function ChatWidget() {
                       // card says "Added" and the bar at the foot moves; that
                       // is the confirmation, and the Cart tab is one tap away.
                       onAdd={(product: ProductCard) => addItem(product.slug, 1)}
+                      // Anything with a choice on it opens the choices, in
+                      // here. This is the last place the panel handed you off
+                      // to the website: the card used to link out to
+                      // /shop/product/… the moment an item needed a bagel
+                      // picked, which is the one step of ordering that wasn't
+                      // a conversation.
+                      onConfigure={(product: ProductCard) => {
+                        setConfiguring(product.slug);
+                        setView("configure");
+                      }}
                     />
                     {openAction ? (
                       <ScreenButton
@@ -565,27 +676,14 @@ export default function ChatWidget() {
           {thinking ? (
             <div className="flex items-end gap-2">
               <BagelAvatar hidden={entries.at(-1)?.role === "bot"} />
-              <span className={BOT_BUBBLE} role="status" aria-label={t("chat.typing")}>
-                <span className="flex items-center gap-2 py-0.5">
-                  <span className="flex items-center gap-[3px]">
-                    {[0, 1, 2].map((index) => (
-                      <span
-                        key={index}
-                        className="block h-[5px] w-[5px] animate-bounce rounded-full bg-faint motion-reduce:animate-none"
-                        style={{ animationDelay: `${index * 140}ms`, animationDuration: "900ms" }}
-                      />
-                    ))}
-                  </span>
-                  {/* Held back for the first second. Showing "Thinking 0.1s"
-                      the instant she starts makes a fast answer look like it
-                      needed timing, and the number is only reassuring once
-                      there is something to reassure about. */}
-                  {thinkingMs >= 1000 ? (
-                    <span className="text-[11px] tabular-nums text-quiet">
-                      {t("chat.thinkingFor", { seconds: (thinkingMs / 1000).toFixed(1) })}
-                    </span>
-                  ) : null}
-                </span>
+              {/* The merging loader, and nothing beside it. There used to be
+                  an elapsed-time counter here, on the theory that a number
+                  still moving proves the wait is real — but a stopwatch on
+                  somebody else's reply only ever counts upward, and now that
+                  the reply streams in as it's written, the words themselves
+                  arrive long before the number would have been reassuring. */}
+              <span className={`${BOT_BUBBLE} py-2.5 text-faint`}>
+                <MergingDots label={t("chat.typing")} />
               </span>
             </div>
           ) : null}

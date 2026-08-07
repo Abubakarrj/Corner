@@ -11,16 +11,28 @@ import { useCapabilities } from "../../capabilities";
 import { PREP_MINUTES } from "../../account";
 import { Button } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
-import { Check, Disclosure, Field, Money, Section } from "./CheckoutSections";
+import { Check, Disclosure, Field, Section } from "./CheckoutSections";
 import { useCheckout } from "./useCheckout";
+import OrderSummary from "./OrderSummary";
+import SecureNote from "./SecureNote";
 import PurchaseComplete from "./PurchaseComplete";
 import PaymentSection from "./PaymentSection";
 import TipPicker from "./TipPicker";
 
-// Checkout, in the order the reference asks for it: who you are, where it's
-// going, what's in it, how you're paying, what you're adding, what it comes
-// to. One column on a phone — a two-column checkout on a 430px screen is two
-// half-width columns.
+// Checkout, in two steps: who you are and where it's going, then how you're
+// paying.
+//
+// It used to be one column of six sections, which put the tip picker, the
+// kerbside checkbox and the order note between the fields and the money. The
+// reference splits it, and the split is right for reasons beyond looking like
+// the reference: payment is the one screen where somebody should be looking at
+// a total and a single button, and contact details validated on the way in
+// means nobody reaches a card field and then gets sent back up for a missing
+// email.
+//
+// It is also the same two steps the chat sheet walks, running off the same
+// hook, sharing the same summary and the same fine print — so ordering through
+// Riley and ordering through this page cannot come out differently.
 
 function readyAt(minutes: number): string {
   const when = new Date(Date.now() + minutes * 60_000);
@@ -40,8 +52,8 @@ export default function CheckoutPage() {
   // two different transactions. See the note at the top of useCheckout.ts.
   const checkout = useCheckout();
   const {
+    step,
     rows,
-    itemCount,
     subtotalCents,
     totals,
     incomplete,
@@ -78,7 +90,11 @@ export default function CheckoutPage() {
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    void checkout.submit();
+    // One form, two buttons — which one it is depends on the step. The
+    // alternative, two forms, loses the browser's own "press enter in a field
+    // to move on", which on a phone is the return key on the keyboard.
+    if (step === "details") checkout.continueToPayment();
+    else void checkout.submit();
   }
 
   if (status === "placed") {
@@ -105,165 +121,52 @@ export default function CheckoutPage() {
   return (
     <form onSubmit={onSubmit} noValidate className="mx-auto max-w-lg px-4 pb-10 pt-6 sm:px-6">
       <h1
-        className="m-0 mb-6 text-[20px] font-medium text-ink"
+        className="m-0 mb-4 text-[20px] font-medium text-ink"
         style={{ fontFamily: DISPLAY_FONT }}
       >
-        Checkout
+        {t("checkout.title")}
       </h1>
 
-      <Section title={t("checkout.contact")}>
-        <div className="flex flex-col gap-3">
-          <Field
-            label={t("checkout.email")}
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={setEmail}
-            error={emailError}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={t("checkout.firstName")}
-              autoComplete="given-name"
-              required
-              value={firstName}
-              onChange={setFirstName}
-              error={firstNameError}
-            />
-            <Field
-              label={t("checkout.lastName")}
-              autoComplete="family-name"
-              value={lastName}
-              onChange={setLastName}
-            />
-          </div>
-          <Field
-            label={t("checkout.phone")}
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={setPhone}
-          />
-          <p className="m-0 text-[11px] leading-[1.5] text-quiet">
-            We use these to reach you about this order. Nothing else.
-          </p>
-        </div>
-      </Section>
-
-      <Section
-        title={isDelivery ? t("checkout.deliveryDetails") : t("checkout.pickupDetails")}
-        aside={
-          <Link
-            href="/locations"
-            className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
-          >
-            {isDelivery ? t("checkout.switchToPickup") : t("checkout.switchToDelivery")}
-          </Link>
-        }
-      >
-        <div className="rounded-xl border border-line-soft">
-          <div className="flex items-start gap-3 border-b border-line-faint p-4">
-            <ClockIcon />
-            <div className="min-w-0">
-              <p className="m-0 text-[14px] text-ink">
-                {/* On a delivery, the time is Uber's — it's their courier and
-                    their estimate of the drive. On a pickup it's the
-                    kitchen's prep time and nothing else. */}
-                {isDelivery ? "Delivery" : "Pickup"} around{" "}
-                {readyAt(isDelivery ? (quote?.etaMinutes ?? PREP_MINUTES) : PREP_MINUTES)}
-              </p>
-              {/* "Estimated" is doing real work here: nothing in this app can
-                  see the kitchen, so this is arithmetic on the clock, and
-                  saying otherwise would be a promise the shop didn't make. */}
-              <p className="m-0 text-[12px] text-muted">
-                {isDelivery && quote
-                  ? t("checkout.estimatedCourier")
-                  : t("checkout.estimatedShop")}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3 p-4">
-            <PinIcon />
-            <div className="min-w-0">
-              <p className="m-0 text-[14px] text-ink">{where?.where ?? "Corner Bagel"}</p>
-              {fulfillment && fulfillment.mode !== "delivery" ? (
-                <p className="m-0 text-[12px] text-muted">{fulfillment.detail}</p>
+      {/* Where you are, in two words. Not a numbered wizard rail: there are
+          two steps, both are named, and the second one is not somewhere you
+          can jump to — the way back is the button at the foot. */}
+      <ol className="m-0 mb-6 flex list-none items-center gap-2 p-0 text-[12px]">
+        {(["details", "payment"] as const).map((id, index) => {
+          const active = step === id;
+          const done = step === "payment" && id === "details";
+          return (
+            <li key={id} className="flex items-center gap-2">
+              {index > 0 ? (
+                <span aria-hidden className="h-px w-5 bg-line" />
               ) : null}
-            </div>
-          </div>
+              <span
+                aria-current={active ? "step" : undefined}
+                className={active ? "font-medium text-ink" : done ? "text-muted" : "text-quiet"}
+              >
+                {t(id === "details" ? "checkout.contact" : "checkout.payment")}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
 
-          {!isDelivery ? (
-            <div className="border-t border-line-faint p-4">
-              <Check
-                checked={curbside}
-                onChange={setCurbside}
-                label={t("checkout.curbsidePickup")}
-                hint={t("checkout.curbsideHint")}
-              />
-            </div>
-          ) : null}
-        </div>
-      </Section>
-
-      <Section title={t("checkout.orderDetails")}>
-        <Disclosure
-          summary={
-            itemCount === 1
-              ? t("checkout.itemCountOne")
-              : t("checkout.itemCount", { count: itemCount })
-          }
+      {/* The summary rides both steps, headed by the total. It is the number
+          somebody is checking, and the lines under it are for when that
+          number surprises them — which is why it's collapsed by default and
+          why the thumbnails are in it. Same component as the chat sheet. */}
+      <div className="mb-6 rounded-2xl border border-line-soft p-4">
+        <OrderSummary checkout={checkout} />
+        <Link
+          href="/shop/cart"
+          className="mt-3 inline-block cursor-pointer text-[13px] text-muted underline hover:text-ink"
         >
-          <div className="flex flex-col divide-y divide-line-faint">
-            {rows.map(({ line, product, key, lineCents, chosen }) => (
-              <div key={key} className="flex items-start justify-between gap-3 py-2.5">
-                <span className="min-w-0 text-[14px] text-ink">
-                  {menu.name(product)}{" "}
-                  <span className="text-quiet">×{line.quantity}</span>
-                  {chosen.length > 0 ? (
-                    <span className="mt-0.5 block text-[12px] text-muted">
-                      {menu.options(product, line.options).join(" · ")}
-                    </span>
-                  ) : null}
-                </span>
-                <span className="whitespace-nowrap text-[14px] text-ink">
-                  {formatPrice(lineCents)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <Link
-            href="/shop/cart"
-            className="mt-3 inline-block cursor-pointer text-[13px] text-muted underline hover:text-ink"
-          >
-            {t("checkout.editBasket")}
-          </Link>
-        </Disclosure>
+          {t("checkout.editBasket")}
+        </Link>
+      </div>
 
-        {unavailable.length > 0 ? (
-          <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
-            {t("checkout.soldOutLine", { name: menu.name(unavailable[0].product) })}{" "}
-            <Link href="/shop/cart" className="cursor-pointer underline">
-              {t("checkout.takeItOut")}
-            </Link>
-            .
-          </p>
-        ) : null}
-
-        {incomplete.length > 0 ? (
-          <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
-            {t("checkout.needsOptionsLine", { name: menu.name(incomplete[0].product) })}{" "}
-            <Link href="/shop/cart" className="cursor-pointer underline">
-              {t("checkout.chooseInBasket")}
-            </Link>
-            .
-          </p>
-        ) : null}
-      </Section>
-
+      {/* The shop being shut stops an order on either step, so it's said on
+          both — filling in a card and then being told is worse than being
+          told before you start. */}
       {!opening.acceptingOrders ? (
         <div className="mb-6 rounded-2xl border border-line-soft bg-sun-soft px-4 py-3">
           <p className="m-0 text-[14px] font-medium text-sun-ink">
@@ -289,107 +192,244 @@ export default function CheckoutPage() {
         </div>
       ) : null}
 
-      <Section title={t("checkout.payment")}>
-        <PaymentSection tender={tender} onTender={setTender} cardEnabled={payments} />
-      </Section>
+      {step === "details" ? (
+        <>
+          <Section title={t("checkout.contact")}>
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label={t("checkout.firstName")}
+                  autoComplete="given-name"
+                  required
+                  value={firstName}
+                  onChange={setFirstName}
+                  error={firstNameError}
+                />
+                <Field
+                  label={t("checkout.lastName")}
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={setLastName}
+                />
+              </div>
+              <Field
+                label={t("checkout.phone")}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={setPhone}
+              />
+              <Field
+                label={t("checkout.email")}
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={setEmail}
+                error={emailError}
+              />
+              <p className="m-0 text-[11px] leading-[1.5] text-quiet">
+                {t("checkout.contactNote")}
+              </p>
+            </div>
+          </Section>
 
-      <Section title={t("checkout.addTip")}>
-        <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
-      </Section>
+          <Section
+            title={isDelivery ? t("checkout.deliveryDetails") : t("checkout.pickupDetails")}
+            aside={
+              <Link
+                href="/locations"
+                className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
+              >
+                {isDelivery ? t("checkout.switchToPickup") : t("checkout.switchToDelivery")}
+              </Link>
+            }
+          >
+            <div className="rounded-xl border border-line-soft">
+              <div className="flex items-start gap-3 border-b border-line-faint p-4">
+                <ClockIcon />
+                <div className="min-w-0">
+                  <p className="m-0 text-[14px] text-ink">
+                    {/* On a delivery, the time is Uber's — it's their courier
+                        and their estimate of the drive. On a pickup it's the
+                        kitchen's prep time and nothing else. */}
+                    {t(isDelivery ? "checkout.deliveryAround" : "checkout.pickupAround", {
+                      time: readyAt(
+                        isDelivery ? (quote?.etaMinutes ?? PREP_MINUTES) : PREP_MINUTES,
+                      ),
+                    })}
+                  </p>
+                  {/* "Estimated" is doing real work here: nothing in this app
+                      can see the kitchen, so this is arithmetic on the clock,
+                      and saying otherwise would be a promise the shop didn't
+                      make. */}
+                  <p className="m-0 text-[12px] text-muted">
+                    {isDelivery && quote
+                      ? t("checkout.estimatedCourier")
+                      : t("checkout.estimatedShop")}
+                  </p>
+                </div>
+              </div>
 
-      <Section title={t("checkout.anythingElse")}>
-        <div className="flex flex-col gap-4">
-          <Check
-            checked={utensils}
-            onChange={setUtensils}
-            label={t("checkout.utensilsLabel")}
-            hint={t("checkout.utensilsHint")}
-          />
-          <div>
-            <label htmlFor="order-note" className="mb-1 block text-[12px] text-muted">
-              {t("checkout.noteForKitchen")}
-            </label>
-            <textarea
-              id="order-note"
-              rows={2}
-              maxLength={255}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder={t("checkout.notePlaceholder")}
-              className="w-full resize-none rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
-            />
-          </div>
-        </div>
-      </Section>
+              <div className="flex items-start gap-3 p-4">
+                <PinIcon />
+                <div className="min-w-0">
+                  <p className="m-0 text-[14px] text-ink">{where?.where ?? "Corner Bagel"}</p>
+                  {fulfillment && fulfillment.mode !== "delivery" ? (
+                    <p className="m-0 text-[12px] text-muted">{fulfillment.detail}</p>
+                  ) : null}
+                </div>
+              </div>
 
-      <div className="border-t border-line pt-5">
-        <Money label={t("common.subtotal")} amount={formatPrice(totals.subtotalCents)} />
-        <Money label={t("checkout.tax")} amount={formatPrice(totals.taxCents)} />
-        {isDelivery ? (
-          <Money
-            label={t("checkout.delivery")}
-            amount={quote ? formatPrice(totals.deliveryCents) : "—"}
-          />
-        ) : null}
-        {totals.tipCents > 0 ? <Money label={t("checkout.tip")} amount={formatPrice(totals.tipCents)} /> : null}
-        <div className="mt-1 border-t border-line pt-2">
-          <Money label={t("common.total")} amount={formatPrice(totals.totalCents)} strong />
-        </div>
-      </div>
+              {!isDelivery ? (
+                <div className="border-t border-line-faint p-4">
+                  <Check
+                    checked={curbside}
+                    onChange={setCurbside}
+                    label={t("checkout.curbsidePickup")}
+                    hint={t("checkout.curbsideHint")}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </Section>
 
-      {/* A courier that can't take the job is not an error the customer
-          caused, and it has a way out that isn't "try again" — so it says
-          what happened and points at pickup. */}
-      {quoteError ? (
-        <p role="alert" className="m-0 mt-4 text-[13px] text-brand-red">
-          {quoteError}{" "}
-          <Link href="/locations" className="cursor-pointer underline">
-            Switch to pickup
-          </Link>
-          .
-        </p>
-      ) : null}
+          {/* The note and the utensils, folded away. Most orders want neither,
+              and both are things you'd go looking for rather than things that
+              should sit between the address and the button. */}
+          <Section title={t("checkout.anythingElse")}>
+            <Disclosure summary={t("checkout.addANote")}>
+              <div className="flex flex-col gap-4">
+                <Check
+                  checked={utensils}
+                  onChange={setUtensils}
+                  label={t("checkout.utensilsLabel")}
+                  hint={t("checkout.utensilsHint")}
+                />
+                <div>
+                  <label htmlFor="order-note" className="mb-1 block text-[12px] text-muted">
+                    {t("checkout.noteForKitchen")}
+                  </label>
+                  <textarea
+                    id="order-note"
+                    rows={2}
+                    maxLength={255}
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    placeholder={t("checkout.notePlaceholder")}
+                    className="w-full resize-none rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+                  />
+                </div>
+              </div>
+            </Disclosure>
+          </Section>
 
-      {error ? (
-        <p role="alert" className="m-0 mt-4 text-[13px] text-brand-red">
-          {error}
-        </p>
-      ) : null}
+          {/* Said on this step, because the fix is in the basket and this is
+              the last screen that can point at it. */}
+          {unavailable.length > 0 ? (
+            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+              {t("checkout.soldOutLine", { name: menu.name(unavailable[0].product) })}{" "}
+              <Link href="/shop/cart" className="cursor-pointer underline">
+                {t("checkout.takeItOut")}
+              </Link>
+              .
+            </p>
+          ) : null}
 
-      <Button
-        type="submit"
-        block
-        disabled={
-          status === "sending" ||
-          incomplete.length > 0 ||
-          unavailable.length > 0 ||
-          !opening.acceptingOrders ||
-          (isDelivery && quote === null)
-        }
-        className="mt-5"
-      >
-        {status === "sending"
-          ? t("checkout.placingOrder")
-          : !opening.acceptingOrders
-            ? t("shop.closed")
-            : isDelivery && quote === null
-              ? quoteError
-                ? t("checkout.deliveryUnavailable")
-                : t("checkout.pricingDelivery")
-              : t("checkout.placeOrderWith", {
-                  total: formatPrice(totals.totalCents),
-                })}
-      </Button>
+          {incomplete.length > 0 ? (
+            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+              {t("checkout.needsOptionsLine", { name: menu.name(incomplete[0].product) })}{" "}
+              <Link href="/shop/cart" className="cursor-pointer underline">
+                {t("checkout.chooseInBasket")}
+              </Link>
+              .
+            </p>
+          ) : null}
 
-      {/* Says what actually happens, which depends on how the shop is set up
-          rather than on a hardcoded apology. Getting this wrong in the
-          reassuring direction — telling somebody they've paid when they
-          haven't — is the one failure mode worth designing against. */}
-      <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
-        {tender === "card"
-          ? t("checkout.cardCharged")
-          : t("checkout.payAtWindow")}
-      </p>
+          <Button type="submit" block>
+            {t("checkout.continue")}
+          </Button>
+        </>
+      ) : (
+        <>
+          <Section title={t("checkout.payment")}>
+            <div className="flex flex-col gap-4">
+              <PaymentSection
+                tender={tender}
+                onTender={setTender}
+                cardEnabled={payments}
+                card={checkout.card}
+              />
+              <SecureNote />
+            </div>
+          </Section>
+
+          <Section title={t("checkout.addTip")}>
+            <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
+          </Section>
+
+          {/* A courier that can't take the job is not an error the customer
+              caused, and it has a way out that isn't "try again" — so it says
+              what happened and points at pickup. */}
+          {quoteError ? (
+            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+              {quoteError}{" "}
+              <Link href="/locations" className="cursor-pointer underline">
+                {t("checkout.switchToPickup")}
+              </Link>
+              .
+            </p>
+          ) : null}
+
+          {error ? (
+            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+              {error}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            block
+            disabled={
+              status === "sending" ||
+              incomplete.length > 0 ||
+              unavailable.length > 0 ||
+              !opening.acceptingOrders ||
+              (isDelivery && quote === null)
+            }
+          >
+            {status === "sending"
+              ? t("checkout.placingOrder")
+              : !opening.acceptingOrders
+                ? t("shop.closed")
+                : isDelivery && quote === null
+                  ? quoteError
+                    ? t("checkout.deliveryUnavailable")
+                    : t("checkout.pricingDelivery")
+                  : t("checkout.placeOrderWith", {
+                      total: formatPrice(totals.totalCents),
+                    })}
+          </Button>
+
+          {/* Says what actually happens, which depends on how the shop is set
+              up rather than on a hardcoded apology. Getting this wrong in the
+              reassuring direction — telling somebody they've paid when they
+              haven't — is the one failure mode worth designing against. */}
+          <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
+            {tender === "card" ? t("checkout.cardCharged") : t("checkout.payAtWindow")}
+          </p>
+
+          <button
+            type="button"
+            onClick={checkout.backToDetails}
+            className="cb-press mx-auto mt-4 block cursor-pointer text-[13px] text-muted underline transition-opacity hover:opacity-70"
+          >
+            {t("common.back")}
+          </button>
+        </>
+      )}
     </form>
   );
 }

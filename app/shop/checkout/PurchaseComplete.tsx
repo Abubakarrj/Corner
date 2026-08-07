@@ -108,6 +108,18 @@ export default function PurchaseComplete({
             <div className="mt-1 border-t border-line pt-2">
               <Money label={t("common.total")} amount={formatPrice(bill.totalCents)} strong />
             </div>
+            {/* "Visa ending 4242", the way a receipt names a card. This is the
+                only place the card is described at all, it comes from the
+                order record on this device, and it is four digits and a brand
+                — the full number was never stored anywhere to print. */}
+            {order?.cardLast4 ? (
+              <p className="m-0 mt-2 text-[12px] text-muted">
+                {t("checkout.cardEnding", {
+                  brand: order.cardBrand ?? "Card",
+                  last4: order.cardLast4,
+                })}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

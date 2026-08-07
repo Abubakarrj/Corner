@@ -92,8 +92,20 @@ function getSnapshot(): Opening {
 // The server computes the same thing from the same clock, so the first paint
 // agrees with the markup. It can only differ if the render straddles the
 // opening minute itself, which resolves on the next tick.
+//
+// Held for half a minute rather than recomputed on every call, and that isn't
+// a saving — it's the contract. React calls this more than once per render and
+// compares the results by identity, so a fresh object each time is a store
+// that never looks settled: it warns in development ("the result of
+// getServerSnapshot should be cached to avoid an infinite loop") and can spin
+// during hydration. Thirty seconds is well inside the minute this thing
+// changes on, so the answer is no staler than it was.
+let served: { at: number; opening: Opening } | null = null;
+
 function getServerSnapshot(): Opening {
-  return compute();
+  const now = Date.now();
+  if (!served || now - served.at > 30_000) served = { at: now, opening: compute() };
+  return served.opening;
 }
 
 export function useOpening(): Opening {

@@ -82,6 +82,15 @@ export type PlacedOrder = {
   // it's the only live view of where the food is, and rebuilding a map of
   // somebody else's driver would be a worse version of a page that exists.
   trackingUrl?: string;
+  // "Visa ending 4242", as two harmless pieces. Written when the order was
+  // paid by card, so the confirmation and the account history can name the
+  // card the way a receipt does.
+  //
+  // A brand and four digits, and nothing else — this record lives in
+  // localStorage, and the full number is never anywhere it could be copied
+  // from. See the note at the top of app/shop/checkout/card.ts.
+  cardBrand?: string;
+  cardLast4?: string;
   status: OrderStatus;
 };
 

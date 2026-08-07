@@ -5,7 +5,9 @@ import { useMenu } from "../i18n/menu";
 import { useCapabilities } from "../capabilities";
 import { formatPrice } from "./products";
 import { Button } from "../ui/Button";
-import { Check, Disclosure, Field, Money } from "./checkout/CheckoutSections";
+import { Check, Disclosure, Field } from "./checkout/CheckoutSections";
+import OrderSummary from "./checkout/OrderSummary";
+import SecureNote from "./checkout/SecureNote";
 import PaymentSection from "./checkout/PaymentSection";
 import TipPicker from "./checkout/TipPicker";
 import type { Checkout } from "./checkout/useCheckout";
@@ -17,7 +19,7 @@ import type { Checkout } from "./checkout/useCheckout";
 // the same object /shop/checkout renders — and draws it at the panel's scale.
 // Everything that decides what is owed and whether it can be ordered lives in
 // useCheckout, so ordering through Riley and ordering through the page cannot
-// come out differently.
+// come out differently. Both surfaces now walk the same two steps, too.
 //
 // Riley does not reach this. She can put things in the basket and offer the
 // button that opens this sheet; the submit below is a person pressing a
@@ -35,8 +37,7 @@ export default function ChatCheckout({
   const { payments } = useCapabilities();
 
   const {
-    rows,
-    itemCount,
+    step,
     totals,
     incomplete,
     unavailable,
@@ -74,7 +75,8 @@ export default function ChatCheckout({
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        void checkout.submit();
+        if (step === "details") checkout.continueToPayment();
+        else void checkout.submit();
       }}
       className="flex flex-col gap-4 px-3.5 py-3.5"
     >
@@ -88,180 +90,161 @@ export default function ChatCheckout({
         </p>
       ) : null}
 
-      {/* Collapsed by default, as in the reference: the summary line and the
-          total are the two things worth seeing at a glance, and the lines
-          underneath are for checking rather than reading. */}
-      <Disclosure
-        summary={
-          <span className="flex w-full items-center justify-between gap-3">
-            <span>
-              {itemCount === 1
-                ? t("checkout.itemCountOne")
-                : t("checkout.itemCount", { count: itemCount })}
-            </span>
-            <span className="font-medium tabular-nums">{formatPrice(totals.totalCents)}</span>
-          </span>
-        }
-      >
-        <div className="flex flex-col divide-y divide-line-faint">
-          {rows.map(({ line, product, key, lineCents }) => (
-            <div key={key} className="flex items-start justify-between gap-3 py-2">
-              <span className="min-w-0 text-[13px] text-ink">
-                {menu.name(product)}{" "}
-                <span className="text-quiet">×{line.quantity}</span>
-                {menu.options(product, line.options).length > 0 ? (
-                  <span className="mt-0.5 block text-[11px] text-muted">
-                    {menu.options(product, line.options).join(" · ")}
-                  </span>
-                ) : null}
-              </span>
-              <span className="shrink-0 text-[13px] tabular-nums text-ink">
-                {formatPrice(lineCents)}
-              </span>
-            </div>
-          ))}
-        </div>
+      <OrderSummary checkout={checkout} />
 
-        <div className="mt-2 border-t border-line pt-2">
-          <Money label={t("common.subtotal")} amount={formatPrice(subtotalCents)} />
-          <Money label={t("checkout.tax")} amount={formatPrice(totals.taxCents)} />
-          {totals.deliveryCents > 0 ? (
-            <Money label={t("checkout.delivery")} amount={formatPrice(totals.deliveryCents)} />
-          ) : null}
-          {totals.tipCents > 0 ? (
-            <Money label={t("checkout.tip")} amount={formatPrice(totals.tipCents)} />
-          ) : null}
-        </div>
-      </Disclosure>
-
-      {/* The rows the endpoint would refuse. Said here rather than at the
-          button, because the fix is in the basket and this is the last screen
-          that can point at it. */}
-      {unavailable.length > 0 ? (
+      {/* The rows the endpoint would refuse. Said on the first step, because
+          the fix is in the basket and this is the last screen that can point
+          at it. */}
+      {step === "details" && unavailable.length > 0 ? (
         <p role="alert" className="m-0 text-[11px] text-brand-red">
           {t("checkout.soldOutLine", { name: menu.name(unavailable[0].product) })}
         </p>
       ) : null}
-      {incomplete.length > 0 ? (
+      {step === "details" && incomplete.length > 0 ? (
         <p role="alert" className="m-0 text-[11px] text-brand-red">
           {t("checkout.needsOptionsLine", { name: menu.name(incomplete[0].product) })}
         </p>
       ) : null}
 
-      <div className="flex flex-col gap-2.5">
-        <Field
-          label={t("checkout.firstName")}
-          value={firstName}
-          onChange={setFirstName}
-          autoComplete="given-name"
-          required
-          error={firstNameError}
-        />
-        <Field
-          label={t("checkout.lastName")}
-          value={lastName}
-          onChange={setLastName}
-          autoComplete="family-name"
-        />
-        <Field
-          label={t("checkout.email")}
-          value={email}
-          onChange={setEmail}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          required
-          error={emailError}
-        />
-        <Field
-          label={t("checkout.phone")}
-          value={phone}
-          onChange={setPhone}
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-        />
-      </div>
-
-      {/* The note, the utensils and the kerbside pickup. Folded away because
-          most orders don't want any of them, but present — Riley tells people
-          to put "no onion" in the note, and a sheet that doesn't have one
-          would make a liar of her. */}
-      <Disclosure summary={t("checkout.anythingElse")}>
-        <div className="flex flex-col gap-2.5">
-          <label className="block">
-            <span className="mb-1 block text-[12px] text-muted">
-              {t("checkout.noteForKitchen")}
-            </span>
-            <textarea
-              rows={2}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder={t("checkout.notePlaceholder")}
-              className="w-full resize-none rounded-xl border border-line-soft bg-surface px-3 py-2 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink sm:text-[13px]"
+      {step === "details" ? (
+        <>
+          <div className="flex flex-col gap-2.5">
+            <Field
+              label={t("checkout.firstName")}
+              value={firstName}
+              onChange={setFirstName}
+              autoComplete="given-name"
+              required
+              error={firstNameError}
             />
-          </label>
-
-          <Check
-            label={t("checkout.utensilsLabel")}
-            hint={t("checkout.utensilsHint")}
-            checked={utensils}
-            onChange={setUtensils}
-          />
-          {!isDelivery ? (
-            <Check
-              label={t("checkout.curbsidePickup")}
-              hint={t("checkout.curbsideHint")}
-              checked={curbside}
-              onChange={setCurbside}
+            <Field
+              label={t("checkout.lastName")}
+              value={lastName}
+              onChange={setLastName}
+              autoComplete="family-name"
             />
+            <Field
+              label={t("checkout.phone")}
+              value={phone}
+              onChange={setPhone}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+            />
+            <Field
+              label={t("checkout.email")}
+              value={email}
+              onChange={setEmail}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              required
+              error={emailError}
+            />
+          </div>
+
+          {/* The note, the utensils and the kerbside pickup. Folded away
+              because most orders want none of them, but present — Riley tells
+              people to put "no onion" in the note, and a sheet without one
+              would make a liar of her. */}
+          <Disclosure summary={t("checkout.anythingElse")}>
+            <div className="flex flex-col gap-2.5">
+              <label className="block">
+                <span className="mb-1 block text-[12px] text-muted">
+                  {t("checkout.noteForKitchen")}
+                </span>
+                <textarea
+                  rows={2}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder={t("checkout.notePlaceholder")}
+                  className="w-full resize-none rounded-xl border border-line-soft bg-surface px-3 py-2 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink sm:text-[13px]"
+                />
+              </label>
+
+              <Check
+                label={t("checkout.utensilsLabel")}
+                hint={t("checkout.utensilsHint")}
+                checked={utensils}
+                onChange={setUtensils}
+              />
+              {!isDelivery ? (
+                <Check
+                  label={t("checkout.curbsidePickup")}
+                  hint={t("checkout.curbsideHint")}
+                  checked={curbside}
+                  onChange={setCurbside}
+                />
+              ) : null}
+            </div>
+          </Disclosure>
+
+          <Button type="submit" block>
+            {t("checkout.continue")}
+          </Button>
+        </>
+      ) : (
+        <>
+          {/* Payment, then the tip. The order matters: the tip changes the
+              number on the button, so it has to come after the thing that
+              number is for — and it's the last decision, not one made on the
+              way past the card fields. Same order as the page. */}
+          <div className="flex flex-col gap-2.5">
+            <p className="m-0 text-[12px] text-muted">{t("checkout.payment")}</p>
+            <PaymentSection
+              tender={tender}
+              onTender={setTender}
+              cardEnabled={payments}
+              card={checkout.card}
+            />
+            <SecureNote />
+          </div>
+
+          <div>
+            <p className="mb-2 text-[12px] text-muted">{t("checkout.addTip")}</p>
+            <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
+          </div>
+
+          {/* A delivery can't be placed until the courier has priced it —
+              placing it anyway promises a delivery nobody agreed to make. */}
+          {isDelivery && quoting ? (
+            <p className="m-0 text-[11px] text-muted">{t("checkout.quotingDelivery")}</p>
           ) : null}
-        </div>
-      </Disclosure>
+          {quoteError ? (
+            <p role="alert" className="m-0 text-[11px] text-brand-red">
+              {quoteError}
+            </p>
+          ) : null}
+          {error ? (
+            <p role="alert" className="m-0 text-[11px] text-brand-red">
+              {error}
+            </p>
+          ) : null}
 
-      <div>
-        <p className="mb-2 text-[12px] text-muted">{t("checkout.addTip")}</p>
-        <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
-      </div>
+          <Button type="submit" block disabled={status === "sending"}>
+            {status === "sending"
+              ? t("checkout.placingOrder")
+              : isDelivery && quote === null
+                ? quoteError
+                  ? t("checkout.deliveryUnavailable")
+                  : t("checkout.pricingDelivery")
+                : t("checkout.placeOrderWith", {
+                    total: formatPrice(totals.totalCents),
+                  })}
+          </Button>
+        </>
+      )}
 
-      <div>
-        <p className="mb-2 text-[12px] text-muted">{t("checkout.payment")}</p>
-        <PaymentSection tender={tender} onTender={setTender} cardEnabled={payments} />
-      </div>
-
-      {/* A delivery can't be placed until the courier has priced it — placing
-          it anyway promises a delivery nobody agreed to make. */}
-      {isDelivery && quoting ? (
-        <p className="m-0 text-[11px] text-muted">{t("checkout.quotingDelivery")}</p>
-      ) : null}
-      {quoteError ? (
-        <p role="alert" className="m-0 text-[11px] text-brand-red">
-          {quoteError}
-        </p>
-      ) : null}
-
-      {error ? (
-        <p role="alert" className="m-0 text-[11px] text-brand-red">
-          {error}
-        </p>
-      ) : null}
-
-      <Button type="submit" block disabled={status === "sending"}>
-        {status === "sending"
-          ? t("checkout.placingOrder")
-          : isDelivery && quote === null
-            ? quoteError
-              ? t("checkout.deliveryUnavailable")
-              : t("checkout.pricingDelivery")
-            : t("checkout.placeOrderWith", { total: formatPrice(totals.totalCents) })}
-      </Button>
-
+      {/* One way back, and where it goes depends on how deep you are. From
+          payment it's the details you just filled in; from details it's the
+          conversation. A single "back to chat" from the payment step would
+          throw away a filled form to answer one question. */}
       <button
         type="button"
-        onClick={onBack}
+        onClick={step === "payment" ? checkout.backToDetails : onBack}
         className="cb-press mx-auto cursor-pointer text-[12px] text-muted underline transition-opacity hover:opacity-70"
       >
-        {t("chat.backToChat")}
+        {step === "payment" ? t("common.back") : t("chat.backToChat")}
       </button>
     </form>
   );

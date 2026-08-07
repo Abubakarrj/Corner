@@ -193,27 +193,77 @@
 
 /* ——— The chat panel's own surface ———
  *
- * The panel is a dark sheet with blue and green in it, in both themes, and
- * that is deliberate rather than an oversight: it is a different surface from
- * the shop, the way a message thread is a different surface from a web page,
- * and it reads as one.
+ * The panel is its own surface, the way a message thread is a different
+ * surface from a web page: neutral greys rather than the shop's cream and
+ * olive, a blue for anything you press, a green for anything that worked.
+ *
+ * What it is *not* is permanently dark. It was, and that was wrong: somebody
+ * reading the shop in daylight got a black sheet dropped on it, and the theme
+ * switch — which the rest of the app obeys to the last hairline — did nothing
+ * to the one panel that follows you from screen to screen. So the accents are
+ * fixed and the grounds follow the theme, which is the split that actually
+ * matches the intent. Blue and green in both; light in light, dark in dark.
  *
  * It works by redefining the palette *inside* the panel rather than by giving
  * every control a dark variant. Field, Check, Disclosure, TipPicker,
- * PaymentSection and Button are all written against --cb-surface, --cb-ink,
- * --cb-line-soft and friends; move those tokens and the whole checkout comes
- * along without a second copy of any of it. A `dark:` variant per component
- * would have been six files that drift.
+ * PaymentSection, CardFields and Button are all written against --cb-surface,
+ * --cb-ink, --cb-line-soft and friends; move those tokens and the whole
+ * checkout comes along without a second copy of any of it. A `dark:` variant
+ * per component would have been six files that drift.
  *
  * Every value here was measured, not eyeballed. The reference's blue is
  * #3b7ff5, which gives white text 3.79:1 — under the 4.5 that 13px body copy
- * needs. #2f6fe0 is the same blue two steps down and clears it at 4.70.
+ * needs. #2f6fe0 is the same blue two steps down and clears it at 4.70, and
+ * it doubles as a link-weight colour on the light grounds below.
  */
 .cb-chat-surface {
   --cb-chat-accent: #2f6fe0;
   --cb-chat-good: #30d158;
   --cb-on-chat-good: #0b2c1a;
 
+  /* Neutral greys, not the shop's cream. The panel is a sheet over the page,
+     and a cream sheet over a cream page has no edge. */
+  --cb-page: #f2f2f7;
+  --cb-cream: #f2f2f7;
+  --cb-panel: #ffffff;
+  --cb-surface: #ffffff;
+  --cb-raise: #e6e6eb;
+  --cb-tile: #e6e6eb;
+
+  --cb-ink: #1c1c1e;
+  --cb-on-ink: #ffffff;
+  --cb-heading: #1c1c1e;
+  --cb-body: #3a3a3c;
+  /* The quiet tiers, walked down until each clears 4.5:1 on #ffffff *and* on
+     the #f2f2f7 thread ground — 11px timestamps and hints land on both. */
+  --cb-muted: #5f5f66;
+  --cb-faint: #5f5f66;
+  --cb-quiet: #5f5f66;
+  --cb-quieter: #6b6b72;
+  --cb-hint: #5f5f66;
+
+  /* The primary action parts company with the text colour here. This is the
+     one line that makes every Button in the panel blue. */
+  --cb-primary: var(--cb-chat-accent);
+  --cb-on-primary: #ffffff;
+
+  /* Rules, as dark overlays rather than fixed greys, so they sit correctly on
+     both of the grounds above. */
+  --cb-line: rgba(0, 0, 0, 0.1);
+  --cb-line-soft: rgba(0, 0, 0, 0.16);
+  --cb-line-faint: rgba(0, 0, 0, 0.08);
+  --cb-line-mute: rgba(0, 0, 0, 0.28);
+  --cb-line-grey: rgba(0, 0, 0, 0.1);
+
+  --cb-good-bg: #e2f7e8;
+  --cb-red: #c8232c;
+  --cb-link: #2f6fe0;
+}
+
+/* The same panel at night. Only the grounds, the text and the rules move —
+   the accents above are deliberately not restated, because the blue and the
+   green are the panel's identity in either theme. */
+:root[data-theme="dark"] .cb-chat-surface {
   /* Grounds, lightest thing last. */
   --cb-page: #1c1c1e;
   --cb-cream: #1c1c1e;
@@ -234,13 +284,6 @@
   --cb-quieter: #9a9aa1;
   --cb-hint: #a1a1a8;
 
-  /* The primary action parts company with the text colour here. This is the
-     one line that makes every Button in the panel blue. */
-  --cb-primary: var(--cb-chat-accent);
-  --cb-on-primary: #ffffff;
-
-  /* Rules, as light overlays rather than fixed greys, so they sit correctly
-     on both of the grounds above. */
   --cb-line: rgba(255, 255, 255, 0.1);
   --cb-line-soft: rgba(255, 255, 255, 0.16);
   --cb-line-faint: rgba(255, 255, 255, 0.08);
@@ -431,6 +474,67 @@ body {
 
 .cb-rise {
   animation: cbRise 420ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+/* ——— The merging loader ———
+ *
+ * Two dots that meet in the middle and part again. Under the gooey filter in
+ * app/ui/MergingDots.tsx they fuse as they overlap, which is the whole effect;
+ * the keyframes only move them.
+ *
+ * translate3d rather than left/right, so the whole thing runs on the
+ * compositor: this animates continuously while a request is in flight, and a
+ * loader that itself causes layout on every frame is a strange thing to make
+ * somebody watch.
+ *
+ * The -50% pair is the centring — the dots are positioned at 50%/50% and pull
+ * themselves back by half their own size, so the travel below is symmetric
+ * about the middle without any measuring.
+ */
+@keyframes cbMergeLeft {
+  0%,
+  100% {
+    transform: translate3d(calc(-50% - 8px), -50%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(calc(-50% + 1px), -50%, 0) scale(0.82);
+  }
+}
+
+@keyframes cbMergeRight {
+  0%,
+  100% {
+    transform: translate3d(calc(-50% + 8px), -50%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(calc(-50% - 1px), -50%, 0) scale(0.82);
+  }
+}
+
+.cb-merge-a {
+  animation: cbMergeLeft 1150ms cubic-bezier(0.62, 0, 0.38, 1) infinite;
+}
+
+.cb-merge-b {
+  animation: cbMergeRight 1150ms cubic-bezier(0.62, 0, 0.38, 1) infinite;
+}
+
+/* Reduced motion gets the shape held mid-fuse, and the offset matters: at 3px
+   the two circles sit on top of each other and the filter resolves them to a
+   single dot, which is indistinguishable from a loader that failed. At 6px
+   they overlap by a little under half and the threshold draws the neck, so
+   what's held is visibly two things joined. */
+@media (prefers-reduced-motion: reduce) {
+  .cb-merge-a,
+  .cb-merge-b {
+    animation: none;
+  }
+  .cb-merge-a {
+    transform: translate3d(calc(-50% - 6px), -50%, 0);
+  }
+  .cb-merge-b {
+    transform: translate3d(calc(-50% + 6px), -50%, 0);
+  }
 }
 
 .cb-fade {
