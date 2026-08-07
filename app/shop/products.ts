@@ -39,18 +39,73 @@ export type OptionGroup = {
 // with different bagels are two lines rather than a quantity of two.
 export type SelectedOptions = Record<string, string>;
 
-// Three kinds, one price. Deliberately no default: an everything bagel and a
+// Six kinds, one price. Deliberately no default: an everything bagel and a
 // plain one are not interchangeable, and defaulting to plain would quietly
 // decide for anyone who tapped straight past.
+//
+// Wheat is on all six. Everything and sesame carry sesame; jalapeño cheddar
+// carries dairy, which is the one here that changes what a *sandwich* is —
+// pick it under a Veggie Stack and the line stops being dairy-free, and
+// dietFit() reads these rather than guessing from the name.
 export const BAGEL_GROUP: OptionGroup = {
   id: "bagel",
   label: "Bagel",
   choices: [
-    // Wheat is on all three; sesame is the one that differs.
     { id: "plain", label: "Plain", priceCents: 0, allergens: ["wheat"] },
     { id: "everything", label: "Everything", priceCents: 0, allergens: ["wheat", "sesame"] },
+    { id: "poppy", label: "Poppy", priceCents: 0, allergens: ["wheat"] },
+    { id: "salt", label: "Salt", priceCents: 0, allergens: ["wheat"] },
     { id: "sesame", label: "Sesame", priceCents: 0, allergens: ["wheat", "sesame"] },
+    {
+      id: "jalapeno-cheddar",
+      label: "Jalapeño Cheddar",
+      priceCents: 0,
+      allergens: ["wheat", "dairy"],
+    },
   ],
+};
+
+// ——— Buying more than one ———
+
+// A bagel is $3.50 on its own. Three, six, twelve or twenty-four are 15% off
+// that, per bagel.
+//
+// Derived rather than typed, which is the whole point of it being here. The
+// alternative is five prices written into the catalog, and the day the single
+// price or the discount moves, four of them are wrong and nothing says so. The
+// only numbers a person should have to edit are the two below.
+export const BAGEL_SINGLE_CENTS = 350;
+export const BAGEL_PACK_DISCOUNT = 0.15;
+export const BAGEL_PACK_SIZES = [1, 3, 6, 12, 24] as const;
+
+/** What a pack of `count` costs in total, at the counter's own rounding. */
+export function bagelPackCents(count: number): number {
+  const full = BAGEL_SINGLE_CENTS * count;
+  if (count <= 1) return full;
+  // Rounded once, on the pack total, rather than per bagel. Rounding the unit
+  // price first and multiplying makes a 24 drift by up to a dollar from what
+  // 15% off actually is.
+  return Math.round(full * (1 - BAGEL_PACK_DISCOUNT));
+}
+
+// How many. `alwaysShow` because the count is the line, not a modifier of it:
+// "Single Bagel" with the quantity hidden reads as one bagel whatever is in
+// the basket. Defaults to one, so the picker opens on the thing the price
+// under the name is quoting.
+//
+// Priced as surcharges over the single, the same shape the gift card's
+// amounts use — a choice adds the difference rather than replacing the price,
+// because that is what unitPriceCents() does with them.
+export const BAGEL_COUNT_GROUP: OptionGroup = {
+  id: "count",
+  label: "How many",
+  defaultChoiceId: "1",
+  alwaysShow: true,
+  choices: BAGEL_PACK_SIZES.map((count) => ({
+    id: String(count),
+    label: count === 1 ? "Just the one" : `${count} bagels`,
+    priceCents: bagelPackCents(count) - BAGEL_SINGLE_CENTS,
+  })),
 };
 
 // The board's add-on box: any spread +$1.50, lox spread +$2.00, and nothing
@@ -527,21 +582,35 @@ export const PRODUCTS: Product[] = [
   {
     slug: "single-bagel",
     allergens: ["wheat"],
-    name: "Single Bagel",
-    priceCents: 350,
+    // Not "Single Bagel" any more: it is sold by the one, the three, the six,
+    // the twelve and the two dozen, and a name that says "single" argues with
+    // the picker directly under it.
+    name: "Bagel",
+    priceCents: BAGEL_SINGLE_CENTS,
     category: "Bagels",
-    description: "Plain, everything, or sesame.",
+    description: "Plain, everything, poppy, salt, sesame, or jalapeño cheddar.",
     swatch: "#9A6B14",
     aliases: [
       "bagel",
+      "bagels",
       "plain",
       "everything",
+      "poppy",
+      "salt",
       "sesame",
+      "jalapeno",
+      "cheddar",
       "everything bagel",
       "plain bagel",
       "sesame bagel",
+      "half dozen",
+      "dozen",
+      "bakers dozen",
+      "pack",
     ],
-    options: [BAGEL_GROUP],
+    // Count first: how many is the question somebody answers before which
+    // kind, and it is the one that moves the price.
+    options: [BAGEL_COUNT_GROUP, BAGEL_GROUP],
   },
   {
     slug: "cream-cheese-plain",
