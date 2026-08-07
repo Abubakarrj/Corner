@@ -71,22 +71,25 @@ export function tapped() {
   fire([8], 2, 40);
 }
 
-// The same tap, but only if nothing else has just buzzed.
+// How many haptics have fired this session.
 //
-// The global listener fires this on every press, and a press that also does
-// something specific — adding to the basket, placing an order — has already
-// buzzed for that. Without this the two arrive together and read as one long
-// unpleasant rattle rather than as either of them.
+// Read by the press listener to answer one question exactly: did anything
+// already buzz during *this* click? A press that also does something specific
+// — adding to the basket, placing an order — has fired its own, stronger
+// pattern from a React handler, and the generic tap has to stand down or the
+// two arrive together as a rattle.
 //
-// 300ms because that is comfortably longer than the gap between React's own
-// handler running and this listener seeing the event bubble up to document,
-// and comfortably shorter than two deliberate presses.
-export function tappedUnlessBusy() {
-  if (Date.now() - lastFiredAt < 300) return;
-  tapped();
+// This used to be a 300ms window, which was wrong in a way that showed up on
+// exactly the control you would notice it on: tapping a quantity stepper three
+// times quickly buzzed once, because the second and third presses landed
+// inside the window the first one opened. A counter compared across the
+// capture and bubble phases of the same event has no window to fall inside —
+// see pressHaptics.ts.
+export function hapticCount(): number {
+  return fired;
 }
 
-let lastFiredAt = 0;
+let fired = 0;
 
 /** Something was added, chosen, applied. A shade more than a press. */
 export function confirmed() {
@@ -115,7 +118,7 @@ function fire(pattern: number[], beats: number, gap: number) {
     // their phone to buzz instead.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
-    lastFiredAt = Date.now();
+    fired += 1;
 
     if (typeof navigator?.vibrate === "function") {
       navigator.vibrate(pattern);

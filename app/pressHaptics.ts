@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { primeHaptics, tappedUnlessBusy } from "./haptics";
+import { hapticCount, primeHaptics, tapped } from "./haptics";
 
 // One listener, every control.
 //
@@ -26,16 +26,29 @@ import { primeHaptics, tappedUnlessBusy } from "./haptics";
 // completed on the element it started on. That is the event that means "they
 // pressed this".
 //
-// ——— Why the bubble phase, on document ———
+// ——— Why two listeners for one event ———
 //
-// React attaches its own handlers at the app root, which is inside document, so
-// by the time the event bubbles this far every onClick has run. That ordering
-// is what makes the coalescing in tappedUnlessBusy work: adding to the basket
-// has already fired its own, stronger buzz, and this one stands down instead of
-// arriving on top of it.
+// Some presses do something that has its own, stronger buzz: adding to the
+// basket, placing an order, a submit that gets refused. Those fire from a React
+// handler, and the generic tap has to stand down for them or both arrive
+// together as a rattle.
+//
+// Knowing whether that happened is a question about *this click*, so it's
+// answered by bracketing it. The capture listener runs before React's handlers
+// and notes the haptic count; the bubble listener runs after them and compares.
+// Same count, nothing else buzzed, so tap. Different, something already did.
+//
+// It replaced a 300ms "has anything buzzed recently" window, which failed on
+// exactly the control you'd notice it on: three quick taps on a quantity
+// stepper buzzed once, because presses two and three landed inside the window
+// press one had opened. A counter compared across one event has no window to
+// fall inside.
 const INTERACTIVE =
   'button, a[href], [role="button"], [role="tab"], [role="switch"], summary, ' +
-  'input[type="checkbox"], input[type="radio"], label[for], select';
+  'input[type="checkbox"], input[type="radio"], label[for], select, ' +
+  // The app's own marker for "this is pressable", which catches anything
+  // styled as a control without being a <button> — see .cb-press in globals.css.
+  ".cb-press";
 
 export default function PressHaptics() {
   useEffect(() => {
@@ -43,6 +56,11 @@ export default function PressHaptics() {
     // laid out yet plays nothing, so creating it on the first press means
     // losing the first press.
     primeHaptics();
+
+    let before = hapticCount();
+    const onCapture = () => {
+      before = hapticCount();
+    };
 
     const onClick = (event: MouseEvent) => {
       const target = event.target;
@@ -57,15 +75,20 @@ export default function PressHaptics() {
       if (!control) return;
       // Nothing happened, so nothing should say it did.
       if (control.matches(":disabled, [aria-disabled='true']")) return;
-      // An escape hatch for anything that shouldn't buzz — a control pressed
-      // repeatedly in a row, or one inside a scrolling surface.
+      // An escape hatch for anything that shouldn't buzz.
       if (control.closest("[data-no-haptic]")) return;
+      // Something with its own, stronger buzz already fired for this press.
+      if (hapticCount() !== before) return;
 
-      tappedUnlessBusy();
+      tapped();
     };
 
+    document.addEventListener("click", onCapture, true);
     document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    return () => {
+      document.removeEventListener("click", onCapture, true);
+      document.removeEventListener("click", onClick);
+    };
   }, []);
 
   return null;
