@@ -478,79 +478,70 @@ body {
 
 /* ——— The mitosis loader ———
  *
- * A blob that buds a smaller blob, swings it away and pulls it back. The goo
+ * A blob that buds a smaller blob, pushes it out and pulls it back. The goo
  * filter in app/ui/MergingDots.tsx does the fusing; these keyframes only move
- * the parts, and the shapes between them are the filter's doing.
+ * the parts, and every shape between them is the filter's doing.
  *
- * Three animations, and the trick is that two of them have periods that don't
- * divide each other. The bud leaves and returns every 1400ms; the arm carrying
- * it goes round once every 3300ms. Because 3300 isn't a multiple of 1400, each
- * split happens at a different angle from the last, and the loader never
- * settles into a pattern you can predict — which is the difference between
- * this and a metronome.
+ * Horizontal, and only horizontal. The first version put the bud on a rotating
+ * arm so each split left at a new angle, which was more interesting to write
+ * than to look at: in a line of chat the thing sits on a text baseline, and a
+ * blob budding *upwards* out of that line reads as something falling apart
+ * rather than something working. Left, then right, then left.
  *
- * translate3d and rotate only, so the whole thing runs on the compositor. This
- * animates continuously while a request is in flight, and a loader that itself
- * causes layout on every frame is a strange thing to make somebody watch.
+ * translate3d only, so the whole thing runs on the compositor. This animates
+ * continuously while a request is in flight, and a loader that itself causes
+ * layout on every frame is a strange thing to make somebody watch.
  *
- * The -50% pair on the core is the centring: it sits at 50%/50% and pulls
- * itself back by half its own size. The bud is positioned from the arm's
- * origin, which is already the centre, so it only needs its own half.
+ * The -50% pair is the centring: both blobs sit at 50%/50% and pull themselves
+ * back by half their own size, so the travel is symmetric about the middle
+ * without any measuring.
  */
 @keyframes cbMitosisCore {
+  /* Smallest while the bud is out, back to full as it comes home — the volume
+     goes somewhere rather than appearing from nothing. Twice the bud's
+     frequency, because the bud leaves twice per cycle. */
   0%,
+  50%,
   100% {
     transform: translate3d(-50%, -50%, 0) scale(1);
   }
-  /* Smallest just after the bud has left, largest as it comes home — the
-     volume goes somewhere rather than appearing from nothing. */
-  45% {
-    transform: translate3d(-50%, -50%, 0) scale(0.93);
-  }
-}
-
-@keyframes cbMitosisOrbit {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+  25%,
+  75% {
+    transform: translate3d(-50%, -50%, 0) scale(0.92);
   }
 }
 
 @keyframes cbMitosisBud {
-  /* Inside the core and too small to see: this is where it disappears. */
+  /* Inside the core and too small to see: this is where it disappears, twice
+     a cycle. Out to the right, home, out to the left, home. */
   0%,
+  50%,
   100% {
-    transform: translate3d(-50%, -50%, 0) scale(0.15);
+    transform: translate3d(-50%, -50%, 0) scale(0.14);
   }
-  /* Out at the end of the arm, at full size. The neck forms on the way out
-     and snaps somewhere around here. */
-  50% {
-    transform: translate3d(calc(-50% + 11px), -50%, 0) scale(1);
+  25% {
+    transform: translate3d(calc(-50% + 9px), -50%, 0) scale(1);
+  }
+  75% {
+    transform: translate3d(calc(-50% - 9px), -50%, 0) scale(1);
   }
 }
 
 .cb-mitosis-core {
-  animation: cbMitosisCore 1400ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
-}
-
-.cb-mitosis-orbit {
-  animation: cbMitosisOrbit 3300ms linear infinite;
+  animation: cbMitosisCore 1900ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 .cb-mitosis-bud {
-  animation: cbMitosisBud 1400ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  animation: cbMitosisBud 1900ms cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 /* Reduced motion gets the shape held mid-split, and the offset matters: too
    close and the filter resolves the two to a single dot, which is
-   indistinguishable from a loader that failed. At 7px the neck is drawn, so
+   indistinguishable from a loader that failed. At 6px the neck is drawn, so
    what's held is visibly two things joined rather than one that never
    moved. */
 @media (prefers-reduced-motion: reduce) {
   .cb-mitosis-core,
-  .cb-mitosis-orbit,
   .cb-mitosis-bud {
     animation: none;
   }
@@ -558,7 +549,7 @@ body {
     transform: translate3d(-50%, -50%, 0);
   }
   .cb-mitosis-bud {
-    transform: translate3d(calc(-50% + 7px), -50%, 0);
+    transform: translate3d(calc(-50% + 6px), -50%, 0);
   }
 }
 

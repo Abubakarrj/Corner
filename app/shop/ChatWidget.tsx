@@ -803,7 +803,12 @@ export default function ChatWidget() {
                   somebody else's reply only ever counts upward, and now that
                   the reply streams in as it's written, the words themselves
                   arrive long before the number would have been reassuring. */}
-              <span className={`${BOT_BUBBLE} py-2.5 text-faint`}>
+              {/* Sized to land on exactly the height of a one-line reply, so
+                  the bubble doesn't jump when the loader gives way to words.
+                  leading-none is load-bearing: the bubble's 1.5 line-height
+                  reserves room for descenders this box has no text in, which
+                  is where the extra six pixels were coming from. */}
+              <span className={`${BOT_BUBBLE} py-[10px] leading-none text-faint`}>
                 <MergingDots label={t("chat.typing")} />
               </span>
             </div>
