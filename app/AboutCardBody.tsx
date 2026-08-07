@@ -1,5 +1,6 @@
 "use client";
 
+import BagelMark from "./BagelMark";
 import { useT } from "./i18n";
 import { SHOP_EMAIL } from "./shopFacts";
 
@@ -90,10 +91,29 @@ export default function AboutCardBody() {
           where somebody is trying to reach the counter about something —
           the store sheet, the order tracker, Riley's dead ends. Putting it in
           the middle of the About copy is an invitation to ring during a
-          breakfast rush to ask a question the page just answered. */}
-      <a href={`mailto:${SHOP_EMAIL}`} className="underline whitespace-nowrap">
+          breakfast rush to ask a question the page just answered.
+
+          self-center is load-bearing, not tidying. This card is a flex column,
+          so a link in it stretches to the column's full width by default —
+          measured at 342px on a 390px phone for an address that draws about
+          165. That made the mailto a full-width tap band running under the
+          bagel icon, which is how a tap aimed at a 16px bagel opened an email.
+          Sized to its own text, it ends 48px short of the icon's column. */}
+      <a
+        href={`mailto:${SHOP_EMAIL}`}
+        className="cb-press self-center underline whitespace-nowrap"
+      >
         {SHOP_EMAIL}
       </a>
+
+      {/* The bagel, on phones only.
+          Above sm it's the fixed corner mark instead, which has room there and
+          lands 20px clear of this card. On a phone it has no such place to
+          stand, so it comes into the flow and takes its distance from the
+          email as layout rather than as luck — 2em of margin, the same in
+          every language, because it is measured from the line above it and not
+          from the viewport. See CornerBagelIcon for the measurements. */}
+      <BagelMark className="mt-[2em] self-center sm:hidden" />
     </>
   );
 }
