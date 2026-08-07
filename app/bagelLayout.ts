@@ -48,7 +48,16 @@ export const captionStyle = {
   color: "#C2C2C2",
 };
 
-// The reference caption the corner icon is positioned against — not real
-// content, just a fixed-width ruler the icon is measured off.
+// The reference caption the corner icon is positioned against.
+//
+// Not content — a ruler. It renders inside a `visibility: hidden` span whose
+// only job is to be a certain number of pixels wide, and the icon hangs off
+// its right-hand end. Nobody sees it and no screen reader announces it.
+//
+// Which is worth saying because it now reads as out of date: bagels come in
+// 1, 3, 6, 12 and 24. Correcting the words would move the icon, because the
+// width of this string *is* the position, and it would keep moving every time
+// the menu changed. It is frozen deliberately. The real sentence lives in the
+// catalog — see BAGEL_PACK_SIZES in app/shop/products.ts.
 export const CAPTION_REFERENCE =
   "Bagels available as 1, 3, 6. Mix and match bagel flavors";
