@@ -14,6 +14,7 @@ import {
 } from "./products";
 import ProductImage from "./ProductImage";
 import OptionPicker from "./OptionPicker";
+import useOptionPrompt from "./useOptionPrompt";
 import { useCart } from "./CartContext";
 import { requestOpenBasket } from "./openBasket";
 import { DISPLAY_FONT } from "./shopControls";
@@ -31,6 +32,7 @@ import { DISPLAY_FONT } from "./shopControls";
 export default function ProductCard({ product }: { product: Product }) {
   const t = useT();
   const menu = useMenu();
+  const optionPrompt = useOptionPrompt();
   const { addItem } = useCart();
   // The choices ride on the tile rather than sending people to the product
   // page for them: a bagel order is a handful of small decisions made fast,
@@ -38,6 +40,9 @@ export default function ProductCard({ product }: { product: Product }) {
   const [selected, setSelected] = useState(() => defaultOptions(product));
   const gone = soldOut(product.slug);
   const ready = optionsComplete(product, selected) && !gone;
+  // The tile's button says what's missing rather than just going dim — the
+  // same sentence the product page uses. See useOptionPrompt.
+  const prompt = gone ? null : optionPrompt(product, selected);
   const price = unitPriceCents(product, selected);
 
   return (
@@ -100,9 +105,9 @@ export default function ProductCard({ product }: { product: Product }) {
           setSelected(defaultOptions(product));
           requestOpenBasket();
         }}
-        className="cb-press mt-3 flex h-9 shrink-0 cursor-pointer items-center justify-between gap-2 rounded-full border border-line-soft bg-surface px-3.5 text-[10px] font-medium uppercase tracking-[0.09em] text-ink hover:border-ink hover:bg-ink hover:text-on-ink disabled:cursor-default disabled:opacity-35 disabled:hover:border-line-soft disabled:hover:bg-surface disabled:hover:text-ink"
+        className="cb-press mt-3 flex h-9 shrink-0 cursor-pointer items-center justify-between gap-2 rounded-full border border-line-soft bg-surface px-3.5 text-[10px] font-medium uppercase tracking-[0.09em] text-ink hover:border-ink hover:bg-ink hover:text-on-ink disabled:cursor-default disabled:opacity-[var(--cb-disabled)] disabled:hover:border-line-soft disabled:hover:bg-surface disabled:hover:text-ink"
       >
-        <span>{gone ? t("common.soldOut") : t("shop.addToBasket")}</span>
+        <span>{gone ? t("common.soldOut") : prompt ?? t("shop.addToBasket")}</span>
         <span className="tabular-nums">{formatPrice(price)}</span>
       </button>
     </div>

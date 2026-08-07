@@ -5,6 +5,7 @@ import { useList, useT } from "../i18n";
 import { useMenu } from "../i18n/menu";
 import ProductImage from "./ProductImage";
 import MixPicker from "./MixPicker";
+import useOptionPrompt from "./useOptionPrompt";
 import {
   allergensFor,
   applyOption,
@@ -43,12 +44,17 @@ export default function ChatConfigure({
   const t = useT();
   const list = useList();
   const menu = useMenu();
+  const optionPrompt = useOptionPrompt();
   const [selected, setSelected] = useState<SelectedOptions>(() => defaultOptions(product));
   const [quantity, setQuantity] = useState(1);
 
   const ready = optionsComplete(product, selected);
   const unit = unitPriceCents(product, selected);
   const size = packSize(product, selected);
+  // The same sentence the product page and the tile use — see
+  // useOptionPrompt. In here it matters more, not less: the panel is short,
+  // so the picker and the button are often the only two things on screen.
+  const prompt = optionPrompt(product, selected);
   // What this configuration carries, as configured. Not possibleAllergens():
   // on this screen a choice has been made, so "contains dairy" can be the
   // truth about the sandwich in front of you rather than about every sandwich
@@ -167,9 +173,9 @@ export default function ChatConfigure({
           type="button"
           disabled={!ready}
           onClick={() => onAdd(selected, quantity)}
-          className="cb-press flex h-9 flex-1 cursor-pointer items-center justify-between rounded-full bg-primary px-4 text-[13px] font-medium text-on-primary transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-40"
+          className="cb-press flex h-9 flex-1 cursor-pointer items-center justify-between rounded-full bg-primary px-4 text-[13px] font-medium text-on-primary transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-[var(--cb-disabled)]"
         >
-          <span>{t("common.add")}</span>
+          <span>{prompt ?? t("common.add")}</span>
           <span className="tabular-nums">{formatPrice(unit * quantity)}</span>
         </button>
       </div>

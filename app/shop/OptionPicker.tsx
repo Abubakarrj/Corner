@@ -118,8 +118,17 @@ export default function OptionPicker({
               // Named for screen readers even when the visible label is
               // hidden on the compact tiles.
               aria-label={compact ? menu.group(group) : undefined}
+              // An unanswered group carries a stronger edge than an answered
+              // one, so the thing still being asked for is the thing that
+              // stands out.
+              //
+              // It was ink/45, which is a difference you can measure and not
+              // one you can see: against the dark theme's surface it landed
+              // close enough to the answered border that both read as the same
+              // faint grey line. ink/70 is the same idea at a weight that
+              // survives the dark palette.
               className={`w-full cursor-pointer appearance-none border bg-surface text-ink outline-none transition-colors focus:border-ink ${field} ${
-                value ? "border-line-soft" : "border-ink/45"
+                value ? "border-line-soft" : "border-ink/70"
               }`}
               // The chevron is a background image rather than a sibling
               // element so it can't be clipped by the select's own box on

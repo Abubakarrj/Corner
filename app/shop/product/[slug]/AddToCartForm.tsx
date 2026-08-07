@@ -12,6 +12,7 @@ import {
   soldOut,
 } from "../../products";
 import OptionPicker from "../../OptionPicker";
+import useOptionPrompt from "../../useOptionPrompt";
 import { requestOpenBasket } from "../../openBasket";
 
 // The choices, the stepper, and the reference-style pill button: "ADD TO
@@ -20,6 +21,7 @@ import { requestOpenBasket } from "../../openBasket";
 export default function AddToCartForm({ slug }: { slug: string }) {
   const t = useT();
   const { addItem } = useCart();
+  const optionPrompt = useOptionPrompt();
   const product = getProduct(slug);
   const [selected, setSelected] = useState(() =>
     product ? defaultOptions(product) : {},
@@ -30,6 +32,9 @@ export default function AddToCartForm({ slug }: { slug: string }) {
 
   const gone = soldOut(product.slug);
   const ready = optionsComplete(product, selected) && !gone;
+  // What is still missing, if anything — the button says it. See
+  // useOptionPrompt: a dead button is not a message.
+  const prompt = gone ? null : optionPrompt(product, selected);
   const unit = unitPriceCents(product, selected);
 
   if (gone) {
@@ -85,9 +90,9 @@ export default function AddToCartForm({ slug }: { slug: string }) {
             // "Added" message needed here.
             requestOpenBasket();
           }}
-          className="flex h-10 flex-1 cursor-pointer items-center justify-between rounded-full border border-ink px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink transition-colors hover:bg-ink hover:text-on-ink disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-ink"
+          className="flex h-10 flex-1 cursor-pointer items-center justify-between rounded-full border border-ink px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-ink transition-colors hover:bg-ink hover:text-on-ink disabled:cursor-default disabled:opacity-[var(--cb-disabled)] disabled:hover:bg-transparent disabled:hover:text-ink"
         >
-          <span>{t("shop.addToBasket")}</span>
+          <span>{prompt ?? t("shop.addToBasket")}</span>
           <span>{formatPrice(unit * quantity)}</span>
         </button>
       </div>
