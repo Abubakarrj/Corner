@@ -233,7 +233,8 @@ export const ur: Table = {
   "order.notFound": "ہمیں یہ آرڈر نہیں مل رہا۔",
   "order.keptOnDevice":
     "آرڈر اسی ڈیوائس پر محفوظ ہوتے ہیں جہاں سے دیے گئے، اس لیے کسی اور فون سے دیا گیا آرڈر یہاں نظر نہیں آئے گا۔",
-  "order.emailShop": "اسٹور کو ای میل کریں",
+  "order.callShop": "دکان کو {phone} پر کال کریں",
+  "order.somethingWrong": "کیا اس آرڈر میں کوئی مسئلہ ہے؟",
   "order.followCourier": "کورئیر کو ٹریک کریں",
   "order.payCourier": "جب کورئیر پہنچے تو اسے ادائیگی کریں۔",
   "order.payAtWindow": "لیتے وقت کھڑکی پر ادائیگی کریں۔",

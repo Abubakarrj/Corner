@@ -230,7 +230,8 @@ export const ko: Table = {
   "order.notFound": "해당 주문을 찾을 수 없습니다.",
   "order.keptOnDevice":
     "주문은 주문한 기기에 저장되므로 다른 휴대폰에서 한 주문은 여기 표시되지 않습니다.",
-  "order.emailShop": "매장에 이메일 보내기",
+  "order.callShop": "매장에 전화하기 {phone}",
+  "order.somethingWrong": "이 주문에 문제가 있나요?",
   "order.followCourier": "배달원 위치 보기",
   "order.payCourier": "배달원이 도착하면 결제해 주세요.",
   "order.payAtWindow": "찾으실 때 창구에서 결제해 주세요.",

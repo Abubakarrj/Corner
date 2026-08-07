@@ -85,10 +85,25 @@ export const SHOP_ADDRESS_PARTS = {
   zip: "90005",
 };
 
-// The shop's phone, as Uber Direct wants it (E.164). Placeholder until the
-// real line is given — it is only ever dialled by a courier standing at the
-// door, so a wrong number here is a delivery that stalls on the pavement.
-export const SHOP_PHONE = process.env.SHOP_PHONE ?? "+12135551234";
+// The shop's phone, in E.164 because that is what Uber Direct wants and it is
+// the one format that is unambiguous everywhere else too.
+//
+// The real line, not a placeholder. It is dialled by a courier standing at the
+// door, printed on the window, and offered to anybody Riley can't help — so it
+// belongs in the source the same way the address does. Overridable by
+// SHOP_PHONE for a second shop or a staging deploy that shouldn't ring a real
+// counter.
+export const SHOP_PHONE = process.env.SHOP_PHONE ?? "+12134196038";
+
+// The same number as somebody would read it aloud. Every screen that shows a
+// phone number shows this one, and every link that dials one dials SHOP_PHONE
+// above — one number, two spellings, derived rather than typed twice.
+export function shopPhoneLabel(): string {
+  const digits = SHOP_PHONE.replace(/\D/g, "");
+  const local = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (local.length !== 10) return SHOP_PHONE;
+  return `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
+}
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DAY_LONG = [

@@ -232,7 +232,8 @@ export const es: Table = {
   "order.notFound": "No encontramos ese pedido.",
   "order.keptOnDevice":
     "Los pedidos se guardan en el dispositivo desde el que se hicieron, así que uno hecho en otro teléfono no aparecerá aquí.",
-  "order.emailShop": "Escribir a la tienda",
+  "order.callShop": "Llama a la tienda al {phone}",
+  "order.somethingWrong": "¿Algo va mal con este pedido?",
   "order.followCourier": "Seguir al repartidor",
   "order.payCourier": "Paga al repartidor cuando llegue.",
   "order.payAtWindow": "Paga en la ventanilla al recoger.",

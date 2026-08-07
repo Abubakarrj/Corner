@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { formatPrice, getProduct } from "../../shop/products";
+import { shopPhoneLabel } from "../../shopFacts";
 import { buildSystemPrompt, languageInstruction, RILEY_MAX_TOKENS } from "./riley";
 import {
   emptyAttachments,
@@ -376,7 +377,7 @@ export async function POST(request: Request) {
     return ndjson(async (send) =>
       send({
         type: "text",
-        text: "Riley can't answer right now. Email cornerbagel@publicentity.co and a person will get back to you.",
+        text: `Riley can't answer right now. Call the shop on ${shopPhoneLabel()} and a person will help.`,
       }),
     );
   }
@@ -523,7 +524,7 @@ export async function POST(request: Request) {
       if (response.stop_reason === "refusal") {
         send({
           type: "text",
-          text: "I can't help with that one, sorry. If it's about an order, email cornerbagel@publicentity.co and a person will pick it up.",
+          text: `I can't help with that one, sorry. If it's about an order, call the shop on ${shopPhoneLabel()}.`,
         });
         return;
       }

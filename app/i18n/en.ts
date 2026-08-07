@@ -244,7 +244,8 @@ export const en = {
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice":
     "Orders are kept on the device they were placed from, so one placed on another phone won't show here.",
-  "order.emailShop": "Email the shop",
+  "order.callShop": "Call the shop on {phone}",
+  "order.somethingWrong": "Something wrong with this order?",
   "order.followCourier": "Follow the courier",
   "order.payCourier": "Pay the courier when it arrives.",
   "order.payAtWindow": "Pay at the window when you collect.",

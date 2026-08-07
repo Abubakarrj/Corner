@@ -230,7 +230,8 @@ export const ja: Table = {
   "order.notFound": "そのご注文が見つかりません。",
   "order.keptOnDevice":
     "ご注文は注文した端末に保存されるため、別の端末からのご注文はここには表示されません。",
-  "order.emailShop": "店舗にメールする",
+  "order.callShop": "店舗に電話（{phone}）",
+  "order.somethingWrong": "このご注文に何か問題がありますか？",
   "order.followCourier": "配達員を追跡",
   "order.payCourier": "配達員が到着したらお支払いください。",
   "order.payAtWindow": "受け取りの際に窓口でお支払いください。",

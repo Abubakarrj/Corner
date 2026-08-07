@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "./i18n";
+import { SHOP_EMAIL, SHOP_PHONE, shopPhoneLabel } from "./shopFacts";
 
 // This card used to hold a handful of short one-line facts ("No Online
 // Ordering", a partner-location list), sized by shrinking to fit the widest
@@ -84,11 +85,17 @@ export default function AboutCardBody() {
       <p className="m-0 mb-[0.3em] whitespace-nowrap">
         {t("about.speakToTeam")}
       </p>
+      {/* The phone first, because the line above says "speak" and an inbox is
+          not speaking to anybody. The email stays underneath for the things
+          that want a paper trail — catering, press, a privacy request. */}
+      <a href={`tel:${SHOP_PHONE}`} className="underline whitespace-nowrap">
+        {shopPhoneLabel()}
+      </a>
       <a
-        href="mailto:cornerbagel@publicentity.co"
-        className="underline whitespace-nowrap"
+        href={`mailto:${SHOP_EMAIL}`}
+        className="mt-[0.2em] block underline whitespace-nowrap"
       >
-        cornerbagel@publicentity.co
+        {SHOP_EMAIL}
       </a>
     </>
   );

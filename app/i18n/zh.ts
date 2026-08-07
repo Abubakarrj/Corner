@@ -231,7 +231,8 @@ export const zh: Table = {
 
   "order.notFound": "找不到该订单。",
   "order.keptOnDevice": "订单保存在下单的设备上，所以在别的手机下的单不会显示在这里。",
-  "order.emailShop": "给门店发邮件",
+  "order.callShop": "致电门店 {phone}",
+  "order.somethingWrong": "这份订单有问题吗？",
   "order.followCourier": "追踪配送员",
   "order.payCourier": "配送员送达时付款。",
   "order.payAtWindow": "取餐时在窗口付款。",

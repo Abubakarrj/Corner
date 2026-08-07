@@ -14,7 +14,7 @@ import {
   useOrders,
   type PlacedOrder,
 } from "../../../account";
-import { SHOP_EMAIL } from "../../../shopFacts";
+import { SHOP_PHONE, shopPhoneLabel } from "../../../shopFacts";
 import { ButtonLink } from "../../../ui/Button";
 import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
@@ -161,14 +161,20 @@ export default function OrderTracker({ id }: { id: string }) {
 
       <Receipt order={order} />
 
+      {/* Call, not email. Something wrong with an order is a now problem —
+          the food is being made, or it isn't, or it's at the wrong door — and
+          an inbox answers tomorrow. The number is a tel: link so a phone
+          dials it; on a desktop it hands off to whatever handles calls, and
+          the number is legible either way rather than hidden behind a
+          label. */}
       <p className="mt-6 text-[13px] leading-[1.5]" style={{ color: muted }}>
-        Something wrong with this order?{" "}
+        {t("order.somethingWrong")}{" "}
         <a
-          href={`mailto:${SHOP_EMAIL}?subject=${encodeURIComponent(`Order ${order.id}`)}`}
+          href={`tel:${SHOP_PHONE}`}
           className="cursor-pointer underline underline-offset-2"
           style={{ color: ink }}
         >
-          {t("order.emailShop")}
+          {t("order.callShop", { phone: shopPhoneLabel() })}
         </a>
         .
       </p>
