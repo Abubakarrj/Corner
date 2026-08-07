@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { tapped } from "../haptics";
 
 // One button, three looks, two sizes.
 //
@@ -68,10 +71,25 @@ export function Button({
   block = false,
   className,
   children,
+  onClick,
   ...props
 }: Shared & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button {...props} className={classesFor(variant, size, block, className)}>
+    <button
+      {...props}
+      // A buzz on every press, where the platform has one. It rides onClick
+      // rather than onPointerDown so a press that slides off the button and
+      // lifts elsewhere — which is a cancel, not a press — stays silent.
+      //
+      // Android only, and deliberately not load-bearing: see app/haptics.ts.
+      // On an iPhone the whole of the feedback is .cb-press, which is why that
+      // class does the work it does.
+      onClick={(event) => {
+        tapped();
+        onClick?.(event);
+      }}
+      className={classesFor(variant, size, block, className)}
+    >
       {children}
     </button>
   );

@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { peekFulfillment, useFulfillment } from "../fulfillment";
+import { confirmed } from "../haptics";
 import {
   describeOptions,
   getProduct,
@@ -181,6 +182,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (slug: string, quantity = 1, options?: SelectedOptions) => {
       const product = getProduct(slug);
       if (!product) return;
+      // Here rather than on each button, because there are five of them now —
+      // the tile, the product page, Riley's cards, the in-chat picker, the
+      // basket's own stepper — and a confirmation that only some of them give
+      // is worse than none. Android only; see app/haptics.ts.
+      confirmed();
       // Normalised on the way in as well as on the way out, so a caller that
       // passes a half-filled or stale selection can't put a line in the
       // basket that priceOf() and describeOptions() then disagree about.

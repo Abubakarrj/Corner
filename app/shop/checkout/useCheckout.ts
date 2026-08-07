@@ -9,6 +9,7 @@ import { useOpening } from "../../useOpening";
 import { recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
 import { BRAND_LABEL } from "./card";
+import { completed, refused } from "../../haptics";
 import type { Tender } from "./PaymentSection";
 import type { CartRow } from "../CartContext";
 
@@ -262,7 +263,13 @@ export function useCheckout(): Checkout {
 
   async function submit() {
     setTried(true);
-    if (!valid || status !== "idle") return;
+    // A press that refuses is the case worth marking: the button doesn't move,
+    // the errors appear somewhere above the fold, and on a long form that is
+    // easy to miss entirely. Android only; see app/haptics.ts.
+    if (!valid || status !== "idle") {
+      if (status === "idle") refused();
+      return;
+    }
 
     setStatus("sending");
     setError(null);
@@ -346,6 +353,9 @@ export function useCheckout(): Checkout {
       });
       setPlaced(record);
       setStatus("placed");
+      // The once-a-visit one. Kept for this and nothing else, so it keeps
+      // meaning "that worked" rather than becoming background noise.
+      completed();
       clear();
     } catch (submitError) {
       setStatus("idle");

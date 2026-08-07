@@ -438,7 +438,7 @@ export default function DropListModal() {
             style={{ backgroundColor: BRAND_RED }}
             className="mt-3 w-full cursor-pointer rounded-xl py-3 text-[16px] font-medium text-on-ink transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-15 disabled:hover:opacity-15"
           >
-            {status === "sending" ? "One sec…" : "Notify me!"}
+            {status === "sending" ? t("droplist.oneSec") : t("droplist.notifyMe")}
           </button>
 
           {/* The way out for someone who already subscribed, so the only exit

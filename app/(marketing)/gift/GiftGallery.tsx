@@ -127,7 +127,7 @@ export default function GiftGallery() {
               <button
                 key={card.id}
                 type="button"
-                aria-label={card.label}
+                aria-label={t(card.label)}
                 onClick={() => setPendingCard(card.id)}
                 // 1.35:1, measured off the reference — taller than a credit
                 // card, which is what gives the artwork room to be artwork.

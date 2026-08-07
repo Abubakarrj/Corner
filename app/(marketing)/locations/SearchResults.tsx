@@ -189,7 +189,7 @@ export default function SearchResults({
       setError({
         forQuery: chosenText,
         message:
-          detailsError instanceof Error ? detailsError.message : "Couldn't read that.",
+          detailsError instanceof Error ? detailsError.message : "api.couldNotRead",
       });
     }
   }
@@ -258,19 +258,24 @@ export default function SearchResults({
       {rangeNotice ? (
         <div className="py-3">
           <p className="m-0 text-[14px] font-medium" style={{ color: ink }}>
-            That address is outside our delivery area.
+            {t("finder.outsideArea")}
           </p>
           <p className="m-0 mt-1 text-[13px]" style={{ color: muted }}>
-            {rangeNotice.miles.toFixed(1)} driving miles out; we deliver within{" "}
-            {rangeNotice.radiusMiles}.
+            {t("finder.milesOut", {
+              miles: rangeNotice.miles.toFixed(1),
+              radius: String(rangeNotice.radiusMiles),
+            })}{" "}
             {/* Naming the shop and its distance, rather than "pickup is still
                 open" and leaving them to find it. The nearest counter to the
                 address they just typed is the one useful thing we know at this
                 point, and it is measured against our own locations rather than
                 assumed. */}
             {nearestShop
-              ? ` ${nearestShop.location.name} is ${nearestShop.miles.toFixed(1)} miles away and open for pickup.`
-              : " Pickup is still open."}
+              ? t("finder.nearestOpen", {
+                  name: nearestShop.location.name,
+                  miles: nearestShop.miles.toFixed(1),
+                })
+              : t("finder.pickupStillOpen")}
           </p>
         </div>
       ) : message && !showStores ? (
@@ -284,11 +289,11 @@ export default function SearchResults({
         </p>
       ) : searching && rows.length === 0 ? (
         <p className="m-0 py-3 text-[13px]" style={{ color: faint }}>
-          Searching…
+          {t("finder.searching")}
         </p>
       ) : rows.length === 0 ? (
         <p className="m-0 py-3 text-[13px]" style={{ color: faint }}>
-          {showStores ? "No shops match that." : "Nothing found."}
+          {showStores ? t("finder.noShopsMatch") : t("finder.nothingFound")}
         </p>
       ) : (
         <ul className="m-0 max-h-[46vh] list-none overflow-y-auto p-0">

@@ -61,8 +61,11 @@ export type Art =
 
 export type GiftCard = {
   id: string;
-  // Read out to anyone who can't see the card face.
-  label: string;
+  // Read out to anyone who can't see the card face — a string key, so that
+  // description is in their language too. It was the English sentence, which
+  // meant the gallery looked translated and sounded English to the one visitor
+  // relying on it entirely.
+  label: StringKey;
   categories: Category[];
   art: Art;
 };
@@ -76,37 +79,37 @@ const WHEAT = "#EFE3C4";
 export const GIFT_CARDS: GiftCard[] = [
   {
     id: "gingham-red",
-    label: "Red gingham gift card",
+    label: "gift.artGinghamRed",
     categories: ["Seasonal", "Just because"],
     art: { kind: "gingham", ink: RED, ground: CREAM },
   },
   {
     id: "thank-you-olive",
-    label: "Olive gift card reading thank you",
+    label: "gift.artThankYouOlive",
     categories: ["Thanks"],
     art: { kind: "wordmark", ink: CREAM, ground: OLIVE, word: "gift.wordThankYou" },
   },
   {
     id: "bagels-wheat",
-    label: "Gift card patterned with bagels",
+    label: "gift.artBagelsWheat",
     categories: ["Just because", "Seasonal"],
     art: { kind: "bagels", ink: OLIVE, ground: WHEAT },
   },
   {
     id: "congrats-checker",
-    label: "Checkerboard gift card reading congrats",
+    label: "gift.artCongratsChecker",
     categories: ["Congrats"],
     art: { kind: "checker", ink: OLIVE, ground: SAGE, word: "gift.wordCongrats" },
   },
   {
     id: "birthday-red",
-    label: "Red gift card reading happy birthday",
+    label: "gift.artBirthdayRed",
     categories: ["Birthday"],
     art: { kind: "wordmark", ink: CREAM, ground: RED, word: "gift.wordBirthday" },
   },
   {
     id: "gingham-olive",
-    label: "Olive gingham gift card",
+    label: "gift.artGinghamOlive",
     categories: ["Thanks", "Congrats", "Just because"],
     art: { kind: "gingham", ink: OLIVE, ground: CREAM },
   },

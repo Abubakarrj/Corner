@@ -262,8 +262,8 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error: fresh.undeliverable
-            ? "No courier can reach that address right now. Pickup is still open."
-            : "We couldn't arrange delivery. Try again in a moment.",
+            ? "api.noCourierPickupOpen"
+            : "api.couldNotArrangeDelivery",
         },
         { status: fresh.undeliverable ? 422 : 502 },
       );

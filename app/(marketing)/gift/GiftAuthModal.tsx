@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useT } from "../../i18n";
+import { useT, type StringKey } from "../../i18n";
 import Modal from "../../ui/Modal";
 import { ButtonLink } from "../../ui/Button";
 import { PALETTE } from "../../shop/shopControls";
@@ -30,16 +30,22 @@ const { cream, surface, olive, controlBorder, sage } = PALETTE;
 //                      door closes rather than pretending.
 export type GiftIntent = "send" | "redeem";
 
-const COPY: Record<GiftIntent, { label: string; heading: string; lede: string }> = {
+// String keys rather than sentences, translated where they're rendered. This
+// map used to hold the English, which meant the one modal standing between
+// somebody and a gift card was the one modal that only spoke English.
+const COPY: Record<
+  GiftIntent,
+  { label: StringKey; heading: StringKey; lede: StringKey }
+> = {
   send: {
-    label: "Sign in to keep this gift card",
-    heading: "Sign in to continue gifting",
-    lede: "Excellent choice, let\u2019s get that into your account.",
+    label: "gift.signInKeepCard",
+    heading: "gift.signInToGift",
+    lede: "gift.giftLede",
   },
   redeem: {
-    label: "Sign in to redeem a gift card",
-    heading: "Sign in to redeem",
-    lede: "Gift card redeem coming right up!",
+    label: "gift.signInRedeemCard",
+    heading: "gift.signInRedeem",
+    lede: "gift.redeemLede",
   },
 };
 
@@ -62,14 +68,14 @@ export default function GiftAuthModal({
     // No z override. This used to sit at 180, which put it under the cookie
     // consent bar — a sheet that something else can paint over is not a
     // modal. Modal's default 1200 is the top of the stack.
-    <Modal open={open} onClose={onClose} label={copy.label}>
+    <Modal open={open} onClose={onClose} label={t(copy.label)}>
       <GiftIllustration />
 
       <p className="m-0 mt-5 text-center text-[20px] font-medium leading-[1.25] tracking-[-0.01em] text-ink">
-        {copy.heading}
+        {t(copy.heading)}
       </p>
       <p className="m-0 mt-2 text-center text-[14px] leading-[1.5] text-muted">
-        {copy.lede}
+        {t(copy.lede)}
       </p>
 
       <ButtonLink href="/membership" block className="mt-6">

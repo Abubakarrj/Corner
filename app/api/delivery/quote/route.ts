@@ -73,8 +73,8 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error: quote.undeliverable
-          ? "No courier can reach that address right now. Pickup is still open."
-          : "We couldn't get a delivery quote. Try again in a moment.",
+          ? "api.noCourierPickupOpen"
+          : "api.noQuoteTryAgain",
         outOfRange: quote.undeliverable,
       },
       { status: quote.undeliverable ? 422 : 502 },

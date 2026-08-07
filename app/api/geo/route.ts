@@ -77,8 +77,8 @@ export async function POST(request: Request) {
       {
         error:
           kind === "region"
-            ? "We couldn't find that place. Try a city, state or ZIP."
-            : "We couldn't find that address. Try adding the city or ZIP.",
+            ? "api.placeNotFound"
+            : "api.addressNeedsCity",
       },
       { status: 404 },
     );
