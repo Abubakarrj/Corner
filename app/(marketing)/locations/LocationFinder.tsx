@@ -13,7 +13,7 @@ import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
-import { useT, type StringKey } from "../../i18n";
+import { useLocale, useT, type StringKey } from "../../i18n";
 import {
   LOCATIONS,
   nearestLocations,
@@ -79,6 +79,8 @@ export default function LocationFinder() {
   // tab — reads as Home.
   const activeTab = useSearchParams().get("for") === "menu" ? "menu" : "home";
   const t = useT();
+  // Only used as the map's key — see the note where StoreMap is rendered.
+  const locale = useLocale();
   const [mode, setMode] = useState<Mode>("pickup");
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
@@ -385,7 +387,15 @@ export default function LocationFinder() {
         />
       </header>
 
+      {/* Keyed on the language, which forces a fresh map when it changes.
+          Google settles the basemap's labels when the library loads and there
+          is no way to change them on a live map, so switching language has to
+          throw the library away and load it again (see unloadMaps). A new key
+          unmounts the old map with the old library and mounts a new one that
+          asks for the new language — without it, the reload happens and the
+          dead Map instance stays on screen. */}
       <StoreMap
+        key={locale}
         locations={results}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}

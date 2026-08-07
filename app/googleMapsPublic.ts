@@ -75,18 +75,34 @@ let loader: Promise<typeof google.maps | null> | null = null;
 // The map's own labels — street names, city names, "United States" — follow
 // the chosen language too.
 //
-// Google takes it as a bootstrap parameter, and the parameter is read once
-// when the script loads: there is no way to change it on a live map, and
-// loading a second copy of the library to change it is not one either. So the
-// language is settled at first load and stays for the session, which is right
-// for the case that matters (somebody picks a language, then opens the map)
-// and merely stale for the one that doesn't (somebody switches language with
-// a map already on screen, and the labels follow on the next full load).
+// Google takes it as a bootstrap parameter, read once when the script loads.
+// There is no way to change it on a live map, so the only way to change it at
+// all is to throw the library away and load it again, which is what
+// `unloadMaps` below does.
+//
+// This used to settle the language at first load and keep it for the session,
+// on the reasoning that the case that matters is picking a language and *then*
+// opening the map. That reasoning had a hole in it: `loader` is a module
+// promise and this is a single-page app, so once the map had loaded in any
+// language, every later visit to the finder kept it — including after a full
+// navigation away and back. Somebody who browsed in Chinese and switched to
+// English got Chinese map labels under English chrome until they hard-reloaded
+// the tab, which most people never do. "Stale until the next full load" was
+// describing a load that doesn't happen.
 //
 // `region=US` stays fixed regardless. It biases results and disputed borders
 // to the country the shop is in, which is a fact about the shop, not about
 // who is reading.
+let loadedLanguage: string | null = null;
+
 export function loadMaps(language = "en"): Promise<typeof google.maps | null> {
+  // A different language than the one in the page: start again. Cheap to
+  // check, and it is the only thing standing between a language switch and a
+  // map that disagrees with the app around it.
+  if (loader && loadedLanguage !== null && loadedLanguage !== language) {
+    unloadMaps();
+  }
+  loadedLanguage = language;
   loader ??= (async () => {
     if (window.google?.maps) return window.google.maps;
 
@@ -152,6 +168,38 @@ export function loadMaps(language = "en"): Promise<typeof google.maps | null> {
   })().catch(() => null);
 
   return loader;
+}
+
+// Throws the library away so the next loadMaps() fetches a fresh one.
+//
+// Unsupported by Google, and unavoidable: the language is a bootstrap
+// parameter, so a different language means a different bootstrap, and a
+// bootstrap that has already run can only be re-run by removing what it left
+// behind. Three things to remove, and missing any one of them means the second
+// load short-circuits and nothing changes:
+//
+//   window.google      loadMaps returns early if this exists, and Google's own
+//                      bootstrap does the same.
+//   the script tags    both the one we appended and the ones Google's
+//                      bootstrap appended after it, which are the real library.
+//   our loader promise the memo that would otherwise hand back the old
+//                      namespace without loading anything at all.
+//
+// Anything still holding a Map instance from the old library keeps a dead
+// object. That is the caller's problem to avoid, and StoreMap avoids it by
+// remounting on a language change — see the key there.
+export function unloadMaps() {
+  loader = null;
+  if (typeof document === "undefined") return;
+  document
+    .querySelectorAll('script[src*="maps.googleapis.com/maps/api/js"]')
+    .forEach((script) => script.remove());
+  // Reflect rather than `delete window.google`: the ambient type for it comes
+  // from @types/google.maps and isn't optional there, so the operator is a
+  // type error even though the property is perfectly deletable. This removes
+  // the key outright, which matters — leaving it present and undefined is
+  // enough for some of Google's own existence checks to take the wrong branch.
+  Reflect.deleteProperty(window, "google");
 }
 
 // ——— Autocomplete ———
