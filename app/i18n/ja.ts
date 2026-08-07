@@ -427,7 +427,7 @@ export const ja: Table = {
   "chat.send": "送信",
   "chat.topicMenu": "メニューについて",
   "chat.topicOrdering": "注文の仕方",
-  "chat.topicSandwich": "サンドイッチの中身",
+  "chat.topicAbout": "Corner Bagel とは？",
   "chat.topicGift": "ギフトカード",
   "chat.failed": "Rileyがただいま応答できませんでした。少し経ってからお試しください。",
   "chat.unconfigured": "Rileyはただいま応答できません。{email}までご連絡ください。担当者が返信します。",

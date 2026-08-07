@@ -427,7 +427,7 @@ export const my: Table = {
   "chat.send": "ပို့ရန်",
   "chat.topicMenu": "မီနူး",
   "chat.topicOrdering": "ဘယ်လို မှာရမလဲ",
-  "chat.topicSandwich": "အသားညှပ်ပေါင်မုန့်ထဲ ဘာပါလဲ",
+  "chat.topicAbout": "Corner Bagel ဆိုတာ ဘာလဲ။",
   "chat.topicGift": "လက်ဆောင်ကတ်",
   "chat.failed": "Riley ယခု ဖြေကြားနိုင်ခြင်း မရှိပါ။ ခဏနေ ပြန်စမ်းပါ။",
   "chat.unconfigured": "Riley ယခု ဖြေကြားနိုင်ခြင်း မရှိပါ။ {email} သို့ အီးမေးလ်ပို့ပါ၊ ဝန်ထမ်းတစ်ဦးက ပြန်ဖြေပါမည်။",

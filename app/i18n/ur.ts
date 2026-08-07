@@ -430,7 +430,7 @@ export const ur: Table = {
   "chat.send": "بھیجیں",
   "chat.topicMenu": "مینو",
   "chat.topicOrdering": "آرڈر کیسے کریں",
-  "chat.topicSandwich": "سینڈوچ میں کیا ہے",
+  "chat.topicAbout": "کارنر بیگل کیا ہے؟",
   "chat.topicGift": "گفٹ کارڈ",
   "chat.failed": "Riley ابھی جواب نہیں دے سکیں۔ تھوڑی دیر بعد کوشش کریں۔",
   "chat.unconfigured": "Riley ابھی جواب نہیں دے سکتیں۔ {email} پر ای میل کریں، کوئی آپ سے رابطہ کرے گا۔",

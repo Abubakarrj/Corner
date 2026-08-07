@@ -431,7 +431,7 @@ export const es: Table = {
   "chat.send": "Enviar",
   "chat.topicMenu": "El menú",
   "chat.topicOrdering": "Cómo pedir",
-  "chat.topicSandwich": "Qué lleva un sándwich",
+  "chat.topicAbout": "¿Qué es Corner Bagel?",
   "chat.topicGift": "Tarjetas regalo",
   "chat.failed": "Riley no pudo responder ahora mismo. Inténtalo en un momento.",
   "chat.unconfigured":

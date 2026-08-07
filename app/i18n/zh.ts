@@ -425,7 +425,7 @@ export const zh: Table = {
   "chat.send": "发送",
   "chat.topicMenu": "菜单",
   "chat.topicOrdering": "怎么下单",
-  "chat.topicSandwich": "三明治里有什么",
+  "chat.topicAbout": "Corner Bagel 是什么？",
   "chat.topicGift": "礼品卡",
   "chat.failed": "Riley 暂时无法回复，请稍后再试。",
   "chat.unconfigured": "Riley 暂时无法回复。请发邮件到 {email}，会有同事回复你。",

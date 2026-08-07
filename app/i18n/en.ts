@@ -447,7 +447,7 @@ export const en = {
   "chat.send": "Send",
   "chat.topicMenu": "The menu",
   "chat.topicOrdering": "How ordering works",
-  "chat.topicSandwich": "What's in a sandwich",
+  "chat.topicAbout": "What is Corner Bagel?",
   "chat.topicGift": "Gift cards",
   "chat.failed": "Riley couldn't answer just now. Try again in a moment.",
   "chat.unconfigured":

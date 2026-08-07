@@ -427,7 +427,7 @@ export const ko: Table = {
   "chat.send": "보내기",
   "chat.topicMenu": "메뉴",
   "chat.topicOrdering": "주문 방법",
-  "chat.topicSandwich": "샌드위치 재료",
+  "chat.topicAbout": "Corner Bagel이 뭔가요?",
   "chat.topicGift": "기프트 카드",
   "chat.failed": "Riley가 지금 답변하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   "chat.unconfigured": "Riley가 지금 답변할 수 없습니다. {email}로 연락 주시면 담당자가 답변드립니다.",

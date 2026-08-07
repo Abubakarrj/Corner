@@ -39,10 +39,15 @@ const ERROR_RED = "var(--cb-red)";
 // "Track my order" is deliberately not here: Riley can't see orders, so a
 // button promising she can would be the first thing a visitor tapped and the
 // first thing that disappointed them.
+// "What is Corner Bagel?" in place of "What's in a sandwich". The sandwich
+// question was already answered by the screen behind the panel — every tile in
+// the catalog lists what's in it — and it sent somebody to a chat to read a
+// description. This one has no other answer on the site's shop half, and it's
+// the question a first visit actually starts with.
 const TOPICS = [
   "chat.topicMenu",
   "chat.topicOrdering",
-  "chat.topicSandwich",
+  "chat.topicAbout",
   "chat.topicGift",
 ] as const;
 
