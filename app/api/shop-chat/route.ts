@@ -205,44 +205,112 @@ function ndjson(turn: (send: Send) => Promise<void>): Response {
   });
 }
 
-// Which combinations this key can actually do.
+// A bisection of Riley's own request, one addition at a time.
 //
-// Riley went quiet the moment two things changed together — the model, and
-// streaming — and from the outside both fail the same way: a red line under
-// the bubble. Rather than guess, this tries each in turn with a one-token
-// question and reports what came back, so "she can't reply" becomes a fact
-// about which call the account can make.
+// The first version of this asked three questions — can the key reach the
+// model, can it stream, can it reach the fallback — and all three came back
+// yes while the chat stayed broken. That is exactly as useful as it sounds,
+// and the lesson is that a probe which doesn't send what the real request
+// sends can only ever rule things out.
 //
-// Safe to expose. It returns a status and an error type, never a message, and
-// never anything derived from the key. Three sixteen-token calls, and it is
-// worth what it costs the first time somebody has to ask why the chat is down.
+// So each rung below is the one above it plus one thing: the thinking budget,
+// then the effort, then the tools, then the cached briefing, then a
+// conversation that ends the way a real one does. Whichever rung is the first
+// to fail names the feature that broke, and the last two rungs are the real
+// request in both shapes.
+//
+// Safe to expose. Every failure is reduced to a status and an error type; the
+// message that comes with one can name the model, the account or the request,
+// so it is logged and never returned. A handful of small calls, and after the
+// first the briefing is a cache hit.
 export async function GET() {
   const configured = client();
   if (!configured) return Response.json({ configured: false });
   const anthropic = configured;
 
-  async function probe(model: string, streaming: boolean) {
-    const params = {
-      model,
-      max_tokens: 16,
-      messages: [{ role: "user" as const, content: "Say ok." }],
-    };
+  const hello = [{ role: "user" as const, content: "Say ok." }];
+
+  const rungs: [string, Anthropic.Beta.MessageCreateParamsNonStreaming][] = [
+    ["plain", { model: MODEL, max_tokens: 16, messages: hello }],
+    [
+      "thinking",
+      {
+        model: MODEL,
+        max_tokens: RILEY_MAX_TOKENS,
+        thinking: { type: "adaptive" },
+        messages: hello,
+      },
+    ],
+    [
+      "effort",
+      {
+        model: MODEL,
+        max_tokens: RILEY_MAX_TOKENS,
+        thinking: { type: "adaptive" },
+        output_config: { effort: "medium" },
+        messages: hello,
+      },
+    ],
+    [
+      "tools",
+      {
+        model: MODEL,
+        max_tokens: RILEY_MAX_TOKENS,
+        thinking: { type: "adaptive" },
+        output_config: { effort: "medium" },
+        tools: RILEY_TOOLS,
+        messages: hello,
+      },
+    ],
+    [
+      "briefing",
+      {
+        model: MODEL,
+        max_tokens: RILEY_MAX_TOKENS,
+        thinking: { type: "adaptive" },
+        output_config: { effort: "medium" },
+        tools: RILEY_TOOLS,
+        system: [
+          {
+            type: "text",
+            text: buildSystemPrompt(),
+            cache_control: { type: "ephemeral" },
+          },
+          { type: "text", text: "The customer's order is set to: Pickup, Corner Bagel." },
+        ],
+        messages: hello,
+      },
+    ],
+  ];
+
+  async function run(params: Anthropic.Beta.MessageCreateParamsNonStreaming, streaming: boolean) {
     try {
-      if (streaming) await anthropic.beta.messages.stream(params).finalMessage();
-      else await anthropic.beta.messages.create(params);
+      if (streaming) {
+        await anthropic.beta.messages.stream(params).finalMessage();
+      } else {
+        await anthropic.beta.messages.create(params);
+      }
       return { ok: true };
     } catch (error) {
+      console.error("[shop-chat] probe failed", describeFailure(error), error);
       return { ok: false, ...describeFailure(error) };
     }
   }
 
+  const results: Record<string, unknown> = {};
+  for (const [name, params] of rungs) results[name] = await run(params, false);
+  // The top rung in the shape a real turn uses.
+  results.streaming = await run(rungs[rungs.length - 1][1], true);
+  results.fallbackModel = await run(
+    { ...rungs[rungs.length - 1][1], model: FALLBACK_MODEL },
+    false,
+  );
+
   return Response.json({
     configured: true,
     model: MODEL,
-    fallbackModel: FALLBACK_MODEL,
-    direct: await probe(MODEL, false),
-    streaming: await probe(MODEL, true),
-    fallback: await probe(FALLBACK_MODEL, false),
+    fallback: FALLBACK_MODEL,
+    ...results,
   });
 }
 
@@ -314,23 +382,27 @@ export async function POST(request: Request) {
   }
 
   // Where the order is going, if the visitor has chosen — the difference
-  // between "when will it get here" and "when can I collect it". Sent as a
-  // mid-conversation system message rather than folded into the system prompt
-  // so the cached prefix (the tools and the whole menu) stays byte-identical
-  // across every conversation. It has to follow a user turn and be last, which
-  // is exactly where it sits.
+  // between "when will it get here" and "when can I collect it".
+  //
+  // A system *block* after the cache breakpoint, not a message. It used to be
+  // pushed onto the end of `messages` as a `role: "system"` turn, on the
+  // reasoning that keeping it out of the system prompt keeps the cached prefix
+  // (the tools and the whole menu) byte-identical across conversations. The
+  // reasoning was right and the mechanism was wrong: a conversation has to end
+  // on a user turn, and this left every request ending on a system one — for
+  // exactly the visitors who had chosen a location, which is everyone past the
+  // fulfillment gate. That is the shape of the bug that made Riley go quiet
+  // while a plain call to the same model on the same key answered fine.
+  //
+  // A block after the breakpoint gets the same property for free: the prefix
+  // above it is untouched, so the menu stays cached, and nothing varies inside
+  // the part that is.
   const where = typeof body?.context === "string" ? body.context.slice(0, 200) : "";
 
   const messages: Anthropic.Beta.BetaMessageParam[] = turns.map((turn) => ({
     role: turn.role,
     content: turn.text,
   }));
-  if (where) {
-    messages.push({
-      role: "system",
-      content: `The customer's order is set to: ${where}.`,
-    });
-  }
 
   return ndjson(async (send) => {
     const attachments = emptyAttachments();
@@ -373,11 +445,15 @@ export async function POST(request: Request) {
             cache_control: { type: "ephemeral" as const },
           },
           // After the breakpoint, and only when there is one: the chosen
-          // language. Putting it inside the block above would give every
-          // language its own cache entry of the whole menu, and English —
-          // which needs no instruction at all — would pay for the machinery
-          // on every request.
+          // language, and where the order is going. Putting either inside the
+          // block above would give every language and every pickup counter its
+          // own cache entry of the whole menu, and English collecting from the
+          // flagship — which needs no instruction at all — would pay for the
+          // machinery on every request.
           ...(language ? [{ type: "text" as const, text: language }] : []),
+          ...(where
+            ? [{ type: "text" as const, text: `The customer's order is set to: ${where}.` }]
+            : []),
         ],
         messages,
       }) satisfies Anthropic.Beta.MessageCreateParamsNonStreaming;
