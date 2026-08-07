@@ -11,7 +11,7 @@
 // it gets replaced by a comma. Unspaced, it reads as a range and is left
 // alone, which is what "7am–4pm" is. Spaced, this would reach a customer as
 // "7am, 4pm".
-export const SHOP_HOURS = "Every day, 7am–4pm";
+export const SHOP_HOURS = "Every Day, 7am–4pm";
 
 export const OPEN_HOUR = 7;
 export const CLOSE_HOUR = 16;

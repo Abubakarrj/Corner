@@ -61,7 +61,7 @@ export const en = {
   "finder.directions": "Directions",
   "finder.call": "Call",
   "finder.copyAddress": "Copy address",
-  "finder.hoursEveryDay": "Every day, {open}–{close}",
+  "finder.hoursEveryDay": "Every Day, {open}–{close}",
   "finder.copied": "Copied",
   "finder.about": "About {name}",
   "finder.orderFrom": "Order from {name}",
