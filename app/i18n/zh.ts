@@ -414,6 +414,7 @@ export const zh: Table = {
   "chat.backToChat": "返回聊天",
   "chat.checkoutHere": "在这里结账",
   "chat.cartTotal": "购物篮 · {total}",
+  "chat.trackOrder": "追踪订单 · {id}",
   "chat.tabCart": "购物篮",
   "chat.tabChat": "聊天",
   "chat.withRiley": "和 Riley 聊天",

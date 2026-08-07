@@ -36,11 +36,17 @@ export default function PurchaseComplete({
   // shows Track order + Back to the menu, because a page has somewhere to go
   // back to and a sheet has to be dismissed.
   onDone,
+  // Dismissing and leaving are different acts, and the sheet needs them to be:
+  // Done puts you back in the conversation with the panel still open, while
+  // Track order navigates to a full page and should take the panel with it.
+  // Falls back to onDone, so a surface that doesn't care passes one thing.
+  onLeave,
 }: {
   order: PlacedOrder | null;
   where: { mode: StringKey; where: string } | null;
   tender: Tender;
   onDone?: () => void;
+  onLeave?: () => void;
 }) {
   const t = useT();
   const bill = order ? orderTotals(order) : null;
@@ -135,7 +141,7 @@ export default function PurchaseComplete({
           <ButtonLink
             href={`/shop/order/${order.id}`}
             className="mt-6 w-full max-w-[280px]"
-            onClick={onDone}
+            onClick={onLeave ?? onDone}
           >
             {t("common.trackOrder")}
           </ButtonLink>

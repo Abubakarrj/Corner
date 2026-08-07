@@ -416,6 +416,7 @@ export const ja: Table = {
   "chat.backToChat": "チャットに戻る",
   "chat.checkoutHere": "ここで注文する",
   "chat.cartTotal": "カート · {total}",
+  "chat.trackOrder": "注文を追跡 · {id}",
   "chat.tabCart": "カート",
   "chat.tabChat": "チャット",
   "chat.withRiley": "Rileyとチャット",

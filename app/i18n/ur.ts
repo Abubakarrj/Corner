@@ -419,6 +419,7 @@ export const ur: Table = {
   "chat.backToChat": "چیٹ پر واپس",
   "chat.checkoutHere": "یہیں چیک آؤٹ کریں",
   "chat.cartTotal": "ٹوکری · {total}",
+  "chat.trackOrder": "آرڈر ٹریک کریں · {id}",
   "chat.tabCart": "ٹوکری",
   "chat.tabChat": "چیٹ",
   "chat.withRiley": "Riley سے بات کریں",

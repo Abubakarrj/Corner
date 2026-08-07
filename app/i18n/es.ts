@@ -420,6 +420,7 @@ export const es: Table = {
   "chat.backToChat": "Volver al chat",
   "chat.checkoutHere": "Pagar aquí",
   "chat.cartTotal": "Cesta · {total}",
+  "chat.trackOrder": "Seguir pedido · {id}",
   "chat.tabCart": "Cesta",
   "chat.tabChat": "Chat",
   "chat.withRiley": "Chatea con Riley",

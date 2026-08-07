@@ -416,6 +416,7 @@ export const my: Table = {
   "chat.backToChat": "စကားပြောသို့ ပြန်သွားရန်",
   "chat.checkoutHere": "ဤနေရာတွင် အော်ဒါတင်ရန်",
   "chat.cartTotal": "ခြင်း · {total}",
+  "chat.trackOrder": "အော်ဒါ ခြေရာခံရန် · {id}",
   "chat.tabCart": "ခြင်း",
   "chat.tabChat": "စကားပြော",
   "chat.withRiley": "Riley နှင့် စကားပြောရန်",

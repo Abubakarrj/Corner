@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { translate, useLocale, useServerText, useT } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
@@ -171,6 +172,15 @@ export default function ChatWidget() {
   // The item whose choices are open, if any. A slug rather than the product,
   // so this can't hold a stale copy of a catalog entry.
   const [configuring, setConfiguring] = useState<string | null>(null);
+  // The order whose confirmation has been read and dismissed.
+  //
+  // An id rather than a boolean, and that is the whole point: useCheckout's
+  // status goes to "placed" and stays there, so without this the panel showed
+  // the confirmation screen for the rest of the session — every reopen, every
+  // page. Closing the panel was the only way past it, which is why Done used
+  // to do that. Keyed on the id so a *second* order gets its own confirmation
+  // rather than inheriting the first one's dismissal.
+  const [acknowledged, setAcknowledged] = useState<string | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -419,8 +429,13 @@ export default function ChatWidget() {
   // since filling an empty basket is exactly what that screen is for. And a
   // picker with no item in it isn't a screen at all.
   const configured = configuring ? getProduct(configuring) : undefined;
+  // The order this session placed, if it placed one. It outlives the
+  // confirmation screen on purpose: once that has been dismissed the bar at
+  // the foot of the conversation keeps offering to track it.
+  const placed = checkout.status === "placed" ? checkout.placed : null;
+  const confirming = placed !== null && placed.id !== acknowledged;
   const shown =
-    checkout.status === "placed"
+    confirming
       ? "done"
       : view === "configure"
         ? configured
@@ -589,7 +604,19 @@ export default function ChatWidget() {
               order={checkout.placed}
               where={checkout.where}
               tender={checkout.tender}
+              // Back to Riley, not out of the panel. Closing was standing in
+              // for a dismissal this component couldn't express — the order is
+              // still placed, so without marking it read the confirmation just
+              // came back. Now it is marked read and the conversation is where
+              // you land, with the order still one tap away on the bar below.
               onDone={() => {
+                if (checkout.placed) setAcknowledged(checkout.placed.id);
+                setView("chat");
+              }}
+              // Track order goes to a full page, so the panel comes off with
+              // it rather than floating over the thing it just sent you to.
+              onLeave={() => {
+                if (checkout.placed) setAcknowledged(checkout.placed.id);
                 setView("chat");
                 setOpen(false);
               }}
@@ -841,11 +868,18 @@ export default function ChatWidget() {
         </>
         )}
 
-        {/* The persistent cart bar from the reference. Only in the
-            conversation: in the cart it would sit under the subtotal saying
-            the same number twice, and in the checkout it would compete with
-            the button that actually places the order. */}
-        {shown === "chat" && itemCount > 0 ? (
+        {/* The bar at the foot of the conversation, and what it says depends
+            on what there is to do next.
+
+            A basket in progress outranks an order already placed: the live
+            thing is the one you are still deciding about, and by the time an
+            order exists the basket it came from has been cleared, so the two
+            only compete once somebody starts a second order.
+
+            Only in the conversation. In the cart it would sit under the
+            subtotal saying the same number twice, and in the checkout it would
+            compete with the button that actually places the order. */}
+        {shown !== "chat" ? null : itemCount > 0 ? (
           <button
             type="button"
             onClick={() => setView("cart")}
@@ -853,6 +887,18 @@ export default function ChatWidget() {
           >
             {t("chat.cartTotal", { total: formatPrice(subtotalCents) })}
           </button>
+        ) : placed ? (
+          // Where the confirmation went. Dismissing it shouldn't lose the
+          // order — this is the one screen in the panel that knows an order
+          // exists, and the tracker is a page rather than a view in here, so
+          // the panel closes on the way out rather than sitting over it.
+          <Link
+            href={`/shop/order/${placed.id}`}
+            onClick={() => setOpen(false)}
+            className="cb-press flex w-full cursor-pointer items-center justify-center gap-2 border-t border-line-faint bg-chat-accent px-4 py-3 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+          >
+            {t("chat.trackOrder", { id: placed.id })}
+          </Link>
         ) : null}
       </div>
 

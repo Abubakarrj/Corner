@@ -416,6 +416,7 @@ export const ko: Table = {
   "chat.backToChat": "채팅으로 돌아가기",
   "chat.checkoutHere": "여기서 주문하기",
   "chat.cartTotal": "장바구니 · {total}",
+  "chat.trackOrder": "주문 추적 · {id}",
   "chat.tabCart": "장바구니",
   "chat.tabChat": "채팅",
   "chat.withRiley": "Riley와 채팅",

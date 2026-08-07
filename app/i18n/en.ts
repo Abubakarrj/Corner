@@ -436,6 +436,7 @@ export const en = {
   "chat.backToChat": "Back to chat",
   "chat.checkoutHere": "Check out here",
   "chat.cartTotal": "Cart · {total}",
+  "chat.trackOrder": "Track order · {id}",
   "chat.tabCart": "Cart",
   "chat.tabChat": "Chat",
   "chat.withRiley": "Chat with Riley",
