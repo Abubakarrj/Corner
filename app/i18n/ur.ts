@@ -437,6 +437,15 @@ export const ur: Table = {
   "chat.failed": "Riley ابھی جواب نہیں دے سکیں۔ تھوڑی دیر بعد کوشش کریں۔",
   "chat.unconfigured": "Riley ابھی جواب نہیں دے سکتیں۔ {email} پر ای میل کریں، کوئی آپ سے رابطہ کرے گا۔",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "من پسند ملائیں",
+  "mix.chosenOf": "{total} میں سے {chosen}",
+  "mix.pickMore": "مزید {count} منتخب کریں",
+  "mix.packFull": "آپ کا ڈبہ بھر گیا ہے",
+  "mix.addOne": "ایک {choice} شامل کریں",
+  "mix.removeOne": "ایک {choice} نکالیں",
+  "mix.mixed": "مخلوط",
+
   // ——— What the API routes answer with ———
   "api.badJson": "JSON باڈی درکار ہے۔",
   "api.validEmailAddress": "درست ای میل ایڈریس درج کریں۔",

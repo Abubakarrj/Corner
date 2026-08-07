@@ -138,6 +138,15 @@ export const en = {
   "product.each": "each",
   "product.eachPrice": "{price} each",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "Mix and match",
+  "mix.chosenOf": "{chosen} of {total}",
+  "mix.pickMore": "Choose {count} more",
+  "mix.packFull": "Your box is full",
+  "mix.addOne": "Add one {choice}",
+  "mix.removeOne": "Remove one {choice}",
+  "mix.mixed": "Mixed",
+
   // ——— The basket ———
   "cart.title": "Your basket",
   "cart.empty": "Your cart is empty.",

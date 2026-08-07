@@ -432,6 +432,15 @@ export const zh: Table = {
   "chat.failed": "Riley 暂时无法回复，请稍后再试。",
   "chat.unconfigured": "Riley 暂时无法回复。请发邮件到 {email}，会有同事回复你。",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "任意搭配",
+  "mix.chosenOf": "已选 {chosen}/{total}",
+  "mix.pickMore": "再选 {count} 个",
+  "mix.packFull": "盒子已装满",
+  "mix.addOne": "添加一个{choice}",
+  "mix.removeOne": "移除一个{choice}",
+  "mix.mixed": "混合",
+
   // ——— What the API routes answer with ———
   "api.badJson": "需要 JSON 请求体。",
   "api.validEmailAddress": "请填写有效的邮箱地址。",

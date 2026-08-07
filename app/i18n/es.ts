@@ -439,6 +439,15 @@ export const es: Table = {
   "chat.unconfigured":
     "Riley no puede responder ahora. Escribe a {email} y alguien te contestará.",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "Combina a tu gusto",
+  "mix.chosenOf": "{chosen} de {total}",
+  "mix.pickMore": "Elige {count} más",
+  "mix.packFull": "Tu caja está completa",
+  "mix.addOne": "Añadir un {choice}",
+  "mix.removeOne": "Quitar un {choice}",
+  "mix.mixed": "Surtido",
+
   // ——— What the API routes answer with ———
   "api.badJson": "Se esperaba un cuerpo JSON.",
   "api.validEmailAddress": "Escribe un correo electrónico válido.",

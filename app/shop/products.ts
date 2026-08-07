@@ -1,3 +1,12 @@
+import {
+  describeMix,
+  fitMix,
+  formatMix,
+  mixChoices,
+  mixTotal,
+  parseMix,
+} from "./bagelMix";
+
 // The catalog: the counter menu, transcribed from the printed board, plus
 // gift cards. Every name and price here is real.
 //
@@ -33,6 +42,17 @@ export type OptionGroup = {
   // The rule that hides those exists to keep "No spread" off every row; a
   // gift card's amount is the opposite case — it's the whole line.
   alwaysShow?: boolean;
+  // This group's value is a multiset, not one id: "three plain and three
+  // everything" rather than "everything". Set on the *product's* copy of a
+  // group, never on a group shared with items that take one answer — a
+  // sandwich is built on one bagel, and only a pack can be mixed.
+  //
+  // A mix group needs `count` on the same product. The pack size is what a
+  // value is read against and what it has to add up to; see bagelMix.ts, which
+  // owns the format and is the only place that parses it.
+  mix?: true;
+  // Which group says how many. Only read for a mix group.
+  countGroupId?: string;
 };
 
 // groupId -> choiceId. Stored on the cart line, so two of the same sandwich
@@ -118,6 +138,19 @@ export const BAGEL_COUNT_GROUP: OptionGroup = {
     label: BAGEL_PACK_LABEL[count],
     priceCents: bagelPackCents(count) - BAGEL_SINGLE_CENTS,
   })),
+};
+
+// The bagel group again, as a pack fills it: a multiset rather than one
+// answer, so six can be three plain and three everything.
+//
+// A separate object rather than `mix: true` on BAGEL_GROUP itself, because
+// that group is also every sandwich's "which bagel is this on", and a sandwich
+// is built on exactly one. Mixing is a property of buying a pack, not of the
+// flavours — see the note in bagelMix.ts.
+export const BAGEL_MIX_GROUP: OptionGroup = {
+  ...BAGEL_GROUP,
+  mix: true,
+  countGroupId: BAGEL_COUNT_GROUP.id,
 };
 
 // The board's add-on box: any spread +$1.50, lox spread +$2.00, and nothing
@@ -273,6 +306,26 @@ export function normalizeOptions(
   const clean: SelectedOptions = {};
   for (const group of groups) {
     const wanted = selected?.[group.id];
+
+    if (group.mix) {
+      // A multiset, repaired rather than replaced. parseMix has already
+      // dropped anything the menu no longer sells, and formatMix writes the
+      // result back in canonical order — which is what stops two spellings of
+      // the same pack becoming two basket lines.
+      //
+      // Not fitted to the pack size here. A pack that comes up short after a
+      // flavour was retired is incomplete, and incomplete is a state the app
+      // already knows how to show: the add button is off until it's answered.
+      // Quietly topping it up with more of something else would be this code
+      // deciding what somebody is having.
+      const size = packSize(product, selected);
+      const entries = parseMix(group, wanted, size);
+      const value = formatMix(group, entries, size);
+      if (value) clean[group.id] = value;
+      else if (group.defaultChoiceId) clean[group.id] = group.defaultChoiceId;
+      continue;
+    }
+
     const found = group.choices.find((choice) => choice.id === wanted);
     const fallback = group.choices.find((c) => c.id === group.defaultChoiceId);
     const choice = found ?? fallback;
@@ -281,8 +334,86 @@ export function normalizeOptions(
   return clean;
 }
 
+// Setting one group's answer, with the consequences for the others.
+//
+// Every picker went through `{ ...selected, [group.id]: choice.id }` inline,
+// which was right while a group's answer meant nothing to any other group. The
+// pack size means something to the mix: change six to twelve and a mix of
+// three plain and three everything now describes half a box.
+//
+// Doing nothing there leaves the add button disabled with nothing on screen
+// explaining why, so this refits — see fitMix, which only ever adds more of
+// something already chosen or takes some away. A pack that is all one flavour
+// needs no refitting at all: a bare choice id means "the whole pack", whatever
+// the pack turns out to be.
+//
+// Every picker calls this rather than spreading, so there is one place this
+// rule lives and no surface that quietly doesn't have it.
+export function applyOption(
+  product: Product,
+  selected: SelectedOptions,
+  groupId: string,
+  value: string,
+): SelectedOptions {
+  const next: SelectedOptions = { ...selected, [groupId]: value };
+
+  const mixGroup = (product.options ?? []).find((group) => group.mix);
+  if (!mixGroup || groupId !== mixGroup.countGroupId) return next;
+
+  const before = parseMix(mixGroup, selected[mixGroup.id], packSize(product, selected));
+  if (before.length <= 1) return next;
+
+  const after = packSize(product, next);
+  return { ...next, [mixGroup.id]: formatMix(mixGroup, fitMix(before, after), after) };
+}
+
+// How many the pack holds, for a product whose flavour group is mixable.
+//
+// One when there is no count group, which is every other item on the menu: a
+// sandwich has one bagel on it, and "the whole pack" is that bagel.
+export function packSize(
+  product: Product,
+  selected: SelectedOptions | undefined,
+): number {
+  const mixGroup = (product.options ?? []).find((group) => group.mix);
+  const countGroup = (product.options ?? []).find(
+    (group) => group.id === mixGroup?.countGroupId,
+  );
+  if (!countGroup) return 1;
+  const chosen = selected?.[countGroup.id] ?? countGroup.defaultChoiceId;
+  const size = Number.parseInt(chosen ?? "", 10);
+  return Number.isFinite(size) && size > 0 ? size : 1;
+}
+
+// Is this one group settled?
+//
+// Its own function because two callers need it and they must not drift:
+// optionsComplete below, which turns the add button on, and Riley's
+// add_to_basket, which tells her what to ask about. The old rule was "is there
+// a value", and a mix broke it — three of a six is a value and is not an
+// answer. If those two ever disagreed, Riley would add a half-filled box the
+// UI would refuse.
+export function groupAnswered(
+  product: Product,
+  selected: SelectedOptions,
+  group: OptionGroup,
+): boolean {
+  const value = selected[group.id];
+  if (!value) return false;
+  // A mix has to account for every bagel in the pack. Three chosen out of six
+  // is a question still open, and it is the one thing here that can be
+  // half-answered — every other group is answered or it isn't.
+  if (group.mix) {
+    const size = packSize(product, selected);
+    return mixTotal(parseMix(group, value, size)) === size;
+  }
+  return true;
+}
+
 export function optionsComplete(product: Product, selected: SelectedOptions): boolean {
-  return (product.options ?? []).every((group) => Boolean(selected[group.id]));
+  return (product.options ?? []).every((group) =>
+    groupAnswered(product, selected, group),
+  );
 }
 
 // The item's price with its choices priced in — the number a customer should
@@ -303,6 +434,12 @@ export function unitPriceCents(product: Product, selected: SelectedOptions): num
 export function describeOptions(product: Product, selected: SelectedOptions): string[] {
   const parts: string[] = [];
   for (const group of product.options ?? []) {
+    if (group.mix) {
+      const size = packSize(product, selected);
+      const entries = parseMix(group, selected[group.id], size);
+      parts.push(...describeMix(group, entries, size, (choice) => choice.label));
+      continue;
+    }
     const choice = group.choices.find((c) => c.id === selected[group.id]);
     if (!choice) continue;
     if (!group.alwaysShow && choice.priceCents === 0 && choice.id === group.defaultChoiceId) {
@@ -334,6 +471,17 @@ export function allergensFor(
 ): Allergen[] {
   const found = new Set<Allergen>(product.allergens ?? []);
   for (const group of product.options ?? []) {
+    if (group.mix) {
+      // Every flavour in the pack, not the first one. A dozen with two
+      // jalapeño cheddar in it contains dairy, and a box that only declared
+      // what the majority of it was would be the most dangerous kind of
+      // nearly-right.
+      const entries = parseMix(group, selected[group.id], packSize(product, selected));
+      for (const choice of mixChoices(group, entries)) {
+        for (const allergen of choice.allergens ?? []) found.add(allergen);
+      }
+      continue;
+    }
     const choice = group.choices.find((option) => option.id === selected[group.id]);
     for (const allergen of choice?.allergens ?? []) found.add(allergen);
   }
@@ -399,9 +547,14 @@ export function dietaryFlagsFor(
 ): DietaryFlag[] {
   const found = flagsFrom(product.allergens, product.contains);
   for (const group of product.options ?? []) {
-    const choice = group.choices.find((option) => option.id === selected[group.id]);
-    if (!choice) continue;
-    for (const flag of flagsFrom(choice.allergens, choice.contains)) found.add(flag);
+    // Same reasoning as allergensFor: a mix is every flavour in it, so one
+    // jalapeño cheddar in a dozen makes the line dairy.
+    const chosen = group.mix
+      ? mixChoices(group, parseMix(group, selected[group.id], packSize(product, selected)))
+      : group.choices.filter((option) => option.id === selected[group.id]);
+    for (const choice of chosen) {
+      for (const flag of flagsFrom(choice.allergens, choice.contains)) found.add(flag);
+    }
   }
   const ORDER: DietaryFlag[] = ["meat", "pork", "fish", "dairy", "egg", "honey"];
   return ORDER.filter((flag) => found.has(flag));
@@ -624,8 +777,9 @@ export const PRODUCTS: Product[] = [
       "pack",
     ],
     // Count first: how many is the question somebody answers before which
-    // kind, and it is the one that moves the price.
-    options: [BAGEL_COUNT_GROUP, BAGEL_GROUP],
+    // kind, and it is the one that moves the price. The flavour group is the
+    // mixable copy, so a dozen can be four things.
+    options: [BAGEL_COUNT_GROUP, BAGEL_MIX_GROUP],
   },
   {
     slug: "cream-cheese-plain",

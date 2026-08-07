@@ -434,6 +434,15 @@ export const ja: Table = {
   "chat.failed": "Rileyがただいま応答できませんでした。少し経ってからお試しください。",
   "chat.unconfigured": "Rileyはただいま応答できません。{email}までご連絡ください。担当者が返信します。",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "組み合わせ自由",
+  "mix.chosenOf": "{total}個中{chosen}個",
+  "mix.pickMore": "あと{count}個お選びください",
+  "mix.packFull": "箱がいっぱいです",
+  "mix.addOne": "{choice}を1つ追加",
+  "mix.removeOne": "{choice}を1つ削除",
+  "mix.mixed": "ミックス",
+
   // ——— What the API routes answer with ———
   "api.badJson": "JSON 本文が必要です。",
   "api.validEmailAddress": "有効なメールアドレスを入力してください。",

@@ -4,11 +4,14 @@ import { useState } from "react";
 import { useList, useT } from "../i18n";
 import { useMenu } from "../i18n/menu";
 import ProductImage from "./ProductImage";
+import MixPicker from "./MixPicker";
 import {
   allergensFor,
+  applyOption,
   defaultOptions,
   formatPrice,
   optionsComplete,
+  packSize,
   unitPriceCents,
   type Product,
   type SelectedOptions,
@@ -45,6 +48,7 @@ export default function ChatConfigure({
 
   const ready = optionsComplete(product, selected);
   const unit = unitPriceCents(product, selected);
+  const size = packSize(product, selected);
   // What this configuration carries, as configured. Not possibleAllergens():
   // on this screen a choice has been made, so "contains dairy" can be the
   // truth about the sandwich in front of you rather than about every sandwich
@@ -69,6 +73,26 @@ export default function ChatConfigure({
 
       {(product.options ?? []).map((group) => {
         const value = selected[group.id];
+
+        // A pack of more than one gets the box instead of the chips. Same
+        // control the item's own page uses, at the panel's size — the whole
+        // point of the chat being able to configure things is that it isn't a
+        // reduced version of the shop.
+        if (group.mix && size > 1) {
+          return (
+            <MixPicker
+              key={group.id}
+              group={group}
+              value={value}
+              total={size}
+              size="compact"
+              onChange={(next) =>
+                setSelected((was) => applyOption(product, was, group.id, next))
+              }
+            />
+          );
+        }
+
         return (
           <fieldset key={group.id} className="m-0 border-0 p-0">
             <legend className="mb-1.5 p-0 text-[11px] uppercase tracking-[0.07em] text-hint">
@@ -83,7 +107,7 @@ export default function ChatConfigure({
                     type="button"
                     aria-pressed={on}
                     onClick={() =>
-                      setSelected((was) => ({ ...was, [group.id]: choice.id }))
+                      setSelected((was) => applyOption(product, was, group.id, choice.id))
                     }
                     className={`cb-press cursor-pointer rounded-full border px-2.5 py-1.5 text-[12px] leading-none transition-colors ${
                       on

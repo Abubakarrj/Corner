@@ -3,10 +3,12 @@
 import { useMemo } from "react";
 import { useLocale } from "./index";
 import { TABLES } from "./menuTables";
+import { describeMix, parseMix } from "../shop/bagelMix";
 import {
   ALLERGEN_LABEL,
   formatPrice,
   getProduct,
+  packSize,
   type Allergen,
   type OptionChoice,
   type OptionGroup,
@@ -41,6 +43,19 @@ function chosenLabels(
   const chosen = selected ?? {};
   const parts: string[] = [];
   for (const group of product.options ?? []) {
+    // A mix — "3 Everything, 3 Plain" — through the same builder the English
+    // describer uses, so the two can't say different things about the same
+    // pack. Only the label function differs. See bagelMix.ts.
+    if (group.mix) {
+      const size = packSize(product, chosen);
+      const entries = parseMix(group, chosen[group.id], size);
+      parts.push(
+        ...describeMix(group, entries, size, (choice) =>
+          m(`choice.${group.id}.${choice.id}`, choice.label),
+        ),
+      );
+      continue;
+    }
     const choice = group.choices.find((c) => c.id === chosen[group.id]);
     if (!choice) continue;
     if (

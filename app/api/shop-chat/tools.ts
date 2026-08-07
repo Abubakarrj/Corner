@@ -11,6 +11,7 @@ import {
   allergensFor,
   CATEGORIES,
   describeOptions,
+  groupAnswered,
   formatPrice,
   getProduct,
   normalizeOptions,
@@ -156,7 +157,10 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
         options: {
           type: "object",
           description:
-            "A specific combination to price and check allergens for, e.g. {\"bagel\":\"sesame\",\"spread\":\"scallion\"}.",
+            'A specific combination to price and check allergens for, e.g. ' +
+            '{"bagel":"sesame","spread":"scallion"}. A group marked `mix` in ' +
+            'get_item_detail takes counts instead: {"count":"12",' +
+            '"bagel":"plain*6+everything*6"}, and they must add up to the count.',
           additionalProperties: { type: "string" },
         },
       },
@@ -350,6 +354,18 @@ function itemForModel(product: Product) {
       id: group.id,
       label: group.label,
       required: !group.defaultChoiceId,
+      // A group that takes a multiset rather than one answer, and how to
+      // write one. Told rather than assumed: without this Riley would send
+      // {"bagel":"everything"} for a dozen somebody asked to be split, and
+      // that is a dozen everything bagels, silently.
+      mix: group.mix
+        ? {
+            countGroup: group.countGroupId,
+            format:
+              'counts summing to the chosen count, e.g. "plain*6+everything*6" ' +
+              'for a dozen split evenly. One flavour throughout is just its id.',
+          }
+        : undefined,
       options: group.choices.map((choice) => ({
         id: choice.id,
         label: choice.label,
@@ -688,7 +704,14 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       // A group with no default that still isn't answered can't be made. Riley
       // is told which one is missing so she can ask rather than pick — a bagel
       // guessed on somebody's behalf is a bagel they didn't order.
-      const missing = (product.options ?? []).filter((group) => !chosen[group.id]);
+      // groupAnswered, not "is there a value": a pack of twelve with six
+      // flavours chosen has a value for the bagel group and is still six
+      // bagels short. The same function decides whether the add button is on,
+      // so Riley can't put something in a basket the shop's own UI would
+      // refuse. See products.ts.
+      const missing = (product.options ?? []).filter(
+        (group) => !groupAnswered(product, chosen, group),
+      );
       if (missing.length > 0) {
         return {
           forModel: {

@@ -21,6 +21,9 @@ import {
   PRODUCTS,
   SPREAD_GROUP,
   BAGEL_GROUP,
+  BAGEL_PACK_DISCOUNT,
+  BAGEL_PACK_SIZES,
+  bagelPackCents,
   SOLD_OUT,
   ALLERGEN_NOTE,
   getProduct,
@@ -92,7 +95,16 @@ function renderChoices(): string {
         : choice.label,
     )
     .join(", ");
-  return `Bagel kinds: ${bagels}\nSpreads that can go on a sandwich: ${spreads}`;
+  const packs = BAGEL_PACK_SIZES.map(
+    (count) => `${count} (${formatPrice(bagelPackCents(count))})`,
+  ).join(", ");
+  return (
+    `Bagel kinds: ${bagels}\n` +
+    `Bagels are sold in packs of: ${packs}. Anything above one is ` +
+    `${Math.round(BAGEL_PACK_DISCOUNT * 100)}% off the single price, and a pack ` +
+    `can be mixed — six can be three plain and three everything.\n` +
+    `Spreads that can go on a sandwich: ${spreads}`
+  );
 }
 
 export function buildSystemPrompt(): string {
@@ -136,9 +148,15 @@ is no item that isn't on this list.
 
 Every order starts by choosing where it's going: Pickup (the shop), Delivery
 (their address), or Catering. That happens on the map, which is the Home and
-Menu tabs. Until that's chosen the menu won't open. Sandwiches and single
+Menu tabs. Until that's chosen the menu won't open. Sandwiches and
 bagels need a bagel kind picked before they can go in the basket; sandwiches
 can take a spread as an add-on.
+
+Bagels come by the one, three, six, twelve or twenty-four, and a pack does not
+have to be all one kind. If somebody asks for a dozen without saying which,
+ask before you add it, and offer the split rather than making them ask for it:
+"all everything, or shall I mix them?" get_item_detail tells you how to write
+a mix.
 
 Delivery is by courier and covers ${DELIVERY_RADIUS_MILES} driving miles from
 the shop. The delivery fee is quoted per address when they reach checkout , 

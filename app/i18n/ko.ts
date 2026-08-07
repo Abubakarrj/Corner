@@ -434,6 +434,15 @@ export const ko: Table = {
   "chat.failed": "Riley가 지금 답변하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   "chat.unconfigured": "Riley가 지금 답변할 수 없습니다. {email}로 연락 주시면 담당자가 답변드립니다.",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "골라 담기",
+  "mix.chosenOf": "{total}개 중 {chosen}개",
+  "mix.pickMore": "{count}개 더 선택하세요",
+  "mix.packFull": "상자가 다 찼습니다",
+  "mix.addOne": "{choice} 하나 추가",
+  "mix.removeOne": "{choice} 하나 빼기",
+  "mix.mixed": "혼합",
+
   // ——— What the API routes answer with ———
   "api.badJson": "JSON 본문이 필요합니다.",
   "api.validEmailAddress": "올바른 이메일 주소를 입력해 주세요.",

@@ -434,6 +434,15 @@ export const my: Table = {
   "chat.failed": "Riley ယခု ဖြေကြားနိုင်ခြင်း မရှိပါ။ ခဏနေ ပြန်စမ်းပါ။",
   "chat.unconfigured": "Riley ယခု ဖြေကြားနိုင်ခြင်း မရှိပါ။ {email} သို့ အီးမေးလ်ပို့ပါ၊ ဝန်ထမ်းတစ်ဦးက ပြန်ဖြေပါမည်။",
 
+  // ——— Mix and match: a pack that isn't all one flavour ———
+  "mix.title": "စိတ်ကြိုက် ရောစပ်ရွေးရန်",
+  "mix.chosenOf": "{total} ခုအနက် {chosen} ခု",
+  "mix.pickMore": "နောက်ထပ် {count} ခု ရွေးပါ",
+  "mix.packFull": "သင့်သေတ္တာ ပြည့်သွားပါပြီ",
+  "mix.addOne": "{choice} တစ်ခု ထည့်ရန်",
+  "mix.removeOne": "{choice} တစ်ခု ဖယ်ရန်",
+  "mix.mixed": "ရောစပ်",
+
   // ——— What the API routes answer with ———
   "api.badJson": "JSON body လိုအပ်ပါသည်။",
   "api.validEmailAddress": "မှန်ကန်သော အီးမေးလ်လိပ်စာ ထည့်ပါ။",
