@@ -5,6 +5,7 @@ import { useT } from "../i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
+import { canGoBack } from "../navigationDepth";
 import { ButtonLink } from "../ui/Button";
 import { PALETTE } from "./shopControls";
 import { useOpening } from "../useOpening";
@@ -83,8 +84,23 @@ export default function FulfillmentGate({ children }: { children: React.ReactNod
 // The standing answer to "where is this order going?", shown under the shop
 // header on every page beneath it — including the cart and checkout, which is
 // where getting it wrong costs the most.
+function BackChevron() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M10 3.2 5.2 8l4.8 4.8"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function FulfillmentBanner() {
   const t = useT();
+  const router = useRouter();
   const fulfillment = useFulfillment();
   const opening = useOpening();
   if (!fulfillment) return null;
@@ -93,9 +109,37 @@ export function FulfillmentBanner() {
 
   return (
     <div
-      className="flex items-center gap-3 border-b px-4 py-2 sm:px-6"
+      className="flex items-center gap-2 border-b px-4 py-2 sm:gap-3 sm:px-6"
       style={{ backgroundColor: cream, borderColor: border }}
     >
+      {/* Back, at the left of the bar this is about.
+
+          Installed to the home screen there is no browser chrome, so once you
+          are in the shop there is nothing that means "back" — and the screen
+          people want back is the map they just came from. "Change" goes there
+          too, but it reads as an edit rather than a way out, and a chevron in
+          the top-left corner is the shape everyone already knows.
+
+          It really is back, not a second link to /locations: if you got here
+          from a product page that is where it returns you. What it will not do
+          is leave — canGoBack() counts the app's own navigations rather than
+          trusting history.length, which cannot tell our entries from the site
+          somebody was on before (see navigationDepth.ts). With nothing of ours
+          behind it, the map is the honest destination for this particular bar,
+          and the app is never something a back button can fall out of. */}
+      <button
+        type="button"
+        aria-label={t("common.back")}
+        onClick={() => {
+          if (canGoBack()) router.back();
+          else router.push("/locations");
+        }}
+        className="cb-press -ml-1.5 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-60"
+        style={{ color: ink }}
+      >
+        <BackChevron />
+      </button>
+
       <span
         className="shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]"
         style={{ color: ink, borderColor: controlBorder }}

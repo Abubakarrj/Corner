@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CookieConsent from "./CookieConsent";
 import SessionSync from "./auth/SessionSync";
+import NavigationDepth from "./navigationDepth";
 import { CapabilitiesProvider } from "./capabilities";
 import { THEME_SCRIPT } from "./themeScript";
 import { LOCALE_SCRIPT } from "./localeScript";
@@ -118,6 +119,12 @@ export default function RootLayout({
           {children}
           <CookieConsent />
           <SessionSync />
+          {/* Renders nothing. It counts the app's own navigations so a back
+              control can tell "the page before this one was ours" from "the
+              page before this one was another site" — see navigationDepth.ts.
+              Here rather than in a layout further down because it has to see
+              every route, including the marketing ones. */}
+          <NavigationDepth />
         </CapabilitiesProvider>
       </body>
     </html>
