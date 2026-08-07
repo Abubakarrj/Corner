@@ -18,6 +18,8 @@
 // take the token it hands back, and send that token — never a PAN — to
 // /api/shop-order. See app/toast.ts.
 
+import { useT } from "../../i18n";
+
 export type Tender = "counter" | "card";
 
 export default function PaymentSection({
@@ -32,14 +34,15 @@ export default function PaymentSection({
   // honest "on" state to grow into instead of a permanent apology.
   cardEnabled: boolean;
 }) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-2">
       <Option
         id="counter"
         checked={tender === "counter"}
         onSelect={() => onTender("counter")}
-        label="Pay at the window"
-        hint="We'll have it ready. Card, Apple Pay, Google Pay or cash when you collect."
+        label={t("checkout.tenderCounter")}
+        hint={t("checkout.tenderCounterHint")}
       />
 
       <Option
@@ -47,8 +50,8 @@ export default function PaymentSection({
         checked={tender === "card"}
         onSelect={() => onTender("card")}
         disabled={!cardEnabled}
-        label="Pay now by card"
-        hint="Charged when the shop confirms your order."
+        label={t("checkout.tenderCard")}
+        hint={t("checkout.tenderCardHint")}
       />
 
       {tender === "card" && cardEnabled ? (

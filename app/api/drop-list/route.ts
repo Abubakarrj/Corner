@@ -166,7 +166,7 @@ function onSignup(email: string) {
 export async function POST(request: Request) {
   if (isRateLimited(clientIp(request))) {
     return Response.json(
-      { error: "Too many attempts. Try again in a few minutes." },
+      { error: "api.tooManyAttempts" },
       { status: 429 },
     );
   }
@@ -175,7 +175,7 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const body = payload as
@@ -185,7 +185,7 @@ export async function POST(request: Request) {
   const email = body?.email;
   if (!isValidEmail(email)) {
     return Response.json(
-      { error: "Enter a valid email address." },
+      { error: "api.validEmailAddress" },
       { status: 400 },
     );
   }
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
 
   if (!(await hasMxRecord(email))) {
     return Response.json(
-      { error: "That email address doesn't look real — check for a typo." },
+      { error: "api.emailNotReal" },
       { status: 400 },
     );
   }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
+import { useMenu } from "../i18n/menu";
 import { useState } from "react";
 import {
   defaultOptions,
@@ -29,6 +30,7 @@ import { DISPLAY_FONT } from "./shopControls";
 // Links are /shop-rooted, not /-rooted — see the note in ShopHeader.tsx.
 export default function ProductCard({ product }: { product: Product }) {
   const t = useT();
+  const menu = useMenu();
   const { addItem } = useCart();
   // The choices ride on the tile rather than sending people to the product
   // page for them: a bagel order is a handful of small decisions made fast,
@@ -48,7 +50,7 @@ export default function ProductCard({ product }: { product: Product }) {
       >
         <ProductImage
           swatch={product.swatch}
-          name={product.name}
+          name={menu.name(product)}
           className="aspect-square w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
         {gone ? (
@@ -72,10 +74,10 @@ export default function ProductCard({ product }: { product: Product }) {
           className="mt-3.5 cursor-pointer text-[15px] leading-[1.3] text-ink transition-opacity hover:opacity-70"
           style={{ fontFamily: DISPLAY_FONT }}
         >
-          {product.name}
+          {menu.name(product)}
         </Link>
         <p className="mt-1.5 line-clamp-2 text-[12px] leading-[1.5] text-faint">
-          {product.description}
+          {menu.description(product)}
         </p>
       </div>
 
@@ -100,7 +102,7 @@ export default function ProductCard({ product }: { product: Product }) {
         }}
         className="cb-press mt-3 flex h-9 shrink-0 cursor-pointer items-center justify-between gap-2 rounded-full border border-line-soft bg-surface px-3.5 text-[10px] font-medium uppercase tracking-[0.09em] text-ink hover:border-ink hover:bg-ink hover:text-on-ink disabled:cursor-default disabled:opacity-35 disabled:hover:border-line-soft disabled:hover:bg-surface disabled:hover:text-ink"
       >
-        <span>{gone ? "Sold out" : "Add to basket"}</span>
+        <span>{gone ? t("common.soldOut") : t("shop.addToBasket")}</span>
         <span className="tabular-nums">{formatPrice(price)}</span>
       </button>
     </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
+import { useMenu } from "../i18n/menu";
 import { useEffect, useRef } from "react";
 import { CATEGORIES, type Product, type SortValue } from "./products";
 
@@ -21,6 +22,7 @@ export default function CategoryNav({
   activeSort: SortValue;
 }) {
   const t = useT();
+  const menu = useMenu();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
@@ -29,15 +31,24 @@ export default function CategoryNav({
   // looks like the tap did nothing. Put it back in view on arrival, without
   // animating: this is where the strip should already have been, not a
   // movement worth showing.
+  //
+  // Measured off getBoundingClientRect and applied as a *delta* to scrollLeft,
+  // rather than computing an absolute offsetLeft. Both halves of that matter
+  // in Urdu: the strip is laid out right-to-left, so the tab that runs off the
+  // edge runs off the *left* one, and an RTL scroller's scrollLeft starts at 0
+  // at the right and counts down into negatives. Absolute arithmetic written
+  // for the left-to-right case sends it hard against the wrong end. Deltas are
+  // signed the same way in both directions, so this needs no branch.
   useEffect(() => {
     const scroller = scrollerRef.current;
     const active = activeRef.current;
     if (!scroller || !active) return;
-    const overflowsRight =
-      active.offsetLeft + active.offsetWidth > scroller.clientWidth;
-    if (overflowsRight) {
-      scroller.scrollLeft = active.offsetLeft - 20;
-    }
+    const tab = active.getBoundingClientRect();
+    const view = scroller.getBoundingClientRect();
+    const pastEnd = tab.right - (view.right - 20);
+    const pastStart = view.left + 20 - tab.left;
+    if (pastEnd > 0) scroller.scrollLeft += pastEnd;
+    else if (pastStart > 0) scroller.scrollLeft -= pastStart;
   }, [activeCategory]);
 
   // Preserves whichever sort is active across a category switch — sort and
@@ -91,7 +102,7 @@ export default function CategoryNav({
             href={hrefFor(category)}
             className={`${tabBase} ${category === activeCategory ? tabActive : tabIdle}`}
           >
-            {category}
+            {menu.category(category)}
           </Link>
         ))}
       </div>

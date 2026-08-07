@@ -13,14 +13,14 @@ import {
 // everywhere except a local http dev server.
 export async function POST(request: Request) {
   if (!isAuthConfigured()) {
-    return Response.json({ error: "Sign-in is unavailable right now. Try again in a moment." }, { status: 503 });
+    return Response.json({ error: "api.signInUnavailable" }, { status: 503 });
   }
 
   let payload: unknown;
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const body = payload as { email?: unknown; code?: unknown };
@@ -28,19 +28,19 @@ export async function POST(request: Request) {
   const code = typeof body.code === "string" ? body.code.trim() : "";
 
   if (!email || !/^\d{4,8}$/.test(code)) {
-    return Response.json({ error: "Enter the code we emailed you." }, { status: 400 });
+    return Response.json({ error: "api.enterCode" }, { status: 400 });
   }
 
   const result = await verifyEmailCode(email, code);
   if (!result.ok) {
     if (result.wrongCode) {
       return Response.json(
-        { error: "That code didn't work. It may have expired — send a new one." },
+        { error: "api.codeWrong" },
         { status: 401 },
       );
     }
     console.error(`[auth] verify failed: ${result.error}`);
-    return Response.json({ error: "We couldn't check that code." }, { status: 502 });
+    return Response.json({ error: "api.codeCheckFailed" }, { status: 502 });
   }
 
   const store = await cookies();

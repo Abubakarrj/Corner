@@ -1,0 +1,327 @@
+// The menu, translated — the tables themselves.
+//
+// Split out of menu.ts, which is a client module because it exports a hook.
+// This one has no hooks and no "use client", so /api/shop-chat can import it
+// to tell Riley what the menu is called in the language the visitor is
+// reading. A route importing a "use client" module either pulls the client
+// half into the server bundle or fails the build trying.
+import type { LocaleId } from "../localeScript";
+
+// Kept apart from the UI string tables, and keyed differently, because the two
+// are different kinds of text. A button label is written once and belongs to
+// the app. A product name belongs to the shop and changes when the shop
+// changes it, so the English stays where it has always been, in
+// app/shop/products.ts, and this is an overlay on top of it.
+//
+// That has a useful consequence: adding a product needs no change here. It
+// appears in every language in English until somebody translates it, which is
+// the same failure mode as the rest of the app and the right one for a menu
+// that gets a new sandwich on a Tuesday.
+//
+// Ids are "<kind>.<id>", and the kinds are:
+//   name.<slug>        a product's name
+//   desc.<slug>        its description
+//   cat.<Category>     a category tab
+//   opt.<groupId>      an option group's label ("Bagel", "Spread")
+//   choice.<groupId>.<id>  a choice within one ("Everything", "Lox spread")
+//   allergen.<id>      an allergen
+//   choose.<groupId>   the placeholder a group with no default opens on
+//
+// Choices carry their group because choice ids are only unique inside one:
+// "plain" is the bagel in the Bagel group and plain cream cheese in the
+// Spread group, and keying on the bare id made a spread read "Plain".
+//
+// ——— On allergens ———
+//
+// These are translated rather than left in English, and they are the strings
+// in this file to get wrong least. Somebody reading "ဂျုံ" instead of "wheat"
+// is making a decision about whether they can eat something. Each one is the
+// plain everyday word for the ingredient in that language, not a clinical or
+// regulatory term, because the person reading it is standing at a counter.
+
+type MenuTable = Record<string, string>;
+
+const es: MenuTable = {
+  "cat.Sandwiches": "Sándwiches", "cat.Bagels": "Bagels", "cat.Spreads": "Untables",
+  "cat.Drinks": "Bebidas", "cat.Gift Cards": "Tarjetas regalo",
+
+  "opt.bagel": "Bagel", "opt.spread": "Untable", "opt.amount": "Importe",
+  "choose.bagel": "Elige tu bagel",
+  "choice.bagel.plain": "Natural", "choice.bagel.everything": "Everything",
+  "choice.bagel.sesame": "Sésamo",
+  "choice.spread.none": "Sin untable", "choice.spread.plain": "Queso crema natural",
+  "choice.spread.scallion": "Cebollino",
+  "choice.spread.jalapeno": "Jalapeño", "choice.spread.veggie": "Verduras",
+  "choice.spread.garlic-herb": "Ajo y hierbas", "choice.spread.strawberry": "Fresa",
+  "choice.spread.vegan-plain": "Vegano natural", "choice.spread.lox": "Untable de salmón",
+
+  "allergen.wheat": "trigo", "allergen.dairy": "lácteos", "allergen.egg": "huevo",
+  "allergen.fish": "pescado", "allergen.sesame": "sésamo", "allergen.soy": "soja",
+  "allergen.peanuts": "cacahuate",
+
+  "name.tomato-please": "Tomate, por favor", "desc.tomato-please": "Tomate, pepino, cebolla roja, alcaparras.",
+  "name.egg-and-schmear": "Huevo y untable", "desc.egg-and-schmear": "Dos huevos, cebollino.",
+  "name.baby-got-bec": "Baby Got BEC", "desc.baby-got-bec": "Bacon, huevo, queso.",
+  "name.one-sec-please": "Un segundo, por favor", "desc.one-sec-please": "Salchicha, huevo, queso.",
+  "name.the-veggie-stack": "La torre vegetal", "desc.the-veggie-stack": "Aguacate, tomate, pepino, brotes, cebolla encurtida.",
+  "name.turkey-around-the-corner": "Pavo a la vuelta de la esquina", "desc.turkey-around-the-corner": "Pavo, tomate, rúcula, cebolla encurtida, miel picante.",
+  "name.spicy-tuna-sando": "Sándwich de atún picante", "desc.spicy-tuna-sando": "Ensalada de atún picante, pepino, cebollino, sésamo, nori.",
+  "name.good-lox-today": "¡Buen salmón hoy!", "desc.good-lox-today": "Salmón ahumado, tomate, cebolla roja, alcaparras, eneldo.",
+  "name.single-bagel": "Bagel suelto", "desc.single-bagel": "Natural, everything o sésamo.",
+  "name.cream-cheese-plain": "Queso crema natural", "desc.cream-cheese-plain": "Batido en casa, la base de todo lo demás.",
+  "name.cream-cheese-scallion": "Queso crema con cebollino", "desc.cream-cheese-scallion": "Batido natural, cargado de cebollino fresco.",
+  "name.cream-cheese-jalapeno": "Queso crema con jalapeño", "desc.cream-cheese-jalapeno": "Batido natural con jalapeño repartido.",
+  "name.cream-cheese-veggie": "Queso crema con verduras", "desc.cream-cheese-veggie": "Batido natural con verduras integradas.",
+  "name.cream-cheese-garlic-herb": "Queso crema de ajo y hierbas", "desc.cream-cheese-garlic-herb": "Batido natural con ajo y hierbas.",
+  "name.lox-spread": "Untable de salmón", "desc.lox-spread": "Queso crema batido con salmón ahumado.",
+  "name.cream-cheese-strawberry": "Queso crema de fresa", "desc.cream-cheese-strawberry": "Batido natural, endulzado con fresa.",
+  "name.cream-cheese-vegan-plain": "Queso crema vegano natural", "desc.cream-cheese-vegan-plain": "El untable de siempre, sin lácteos.",
+  "name.peanut-butter": "Crema de cacahuate", "desc.peanut-butter": "Untada gruesa, de esquina a esquina.",
+  "name.jelly": "Mermelada", "desc.jelly": "Sola, o encima de la crema de cacahuate.",
+  "name.butter": "Mantequilla", "desc.butter": "Sobre un bagel recién salido del agua y del horno.",
+  "name.hot-honey-schmear": "Miel picante", "desc.hot-honey-schmear": "Primero dulce, luego el picante que sube despacio.",
+  "name.chili-crisp": "Chili crujiente", "desc.chili-crisp": "Crujiente, aceitoso y más picante de lo que parece.",
+  "name.choco-milk": "Batido de chocolate", "desc.choco-milk": "Para el camino de vuelta.",
+  "name.orange-juice": "Zumo de naranja", "desc.orange-juice": "Frío, y lo que pide un sándwich de huevo.",
+  "name.cloud-cold-brew": "Cold brew Cloud", "desc.cloud-cold-brew": "Infusionado en frío y servido con hielo.",
+  "name.cloud-tea": "Té Cloud", "desc.cloud-tea": "Hecho en tetera, servido en taza.",
+  "name.gift-card": "Tarjeta regalo", "desc.gift-card": "Se gasta como dinero, en el mostrador o en la app.",
+};
+
+const ko: MenuTable = {
+  "cat.Sandwiches": "샌드위치", "cat.Bagels": "베이글", "cat.Spreads": "스프레드",
+  "cat.Drinks": "음료", "cat.Gift Cards": "기프트 카드",
+
+  "opt.bagel": "베이글", "opt.spread": "스프레드", "opt.amount": "금액",
+  "choose.bagel": "베이글 선택",
+  "choice.bagel.plain": "플레인", "choice.bagel.everything": "에브리띵",
+  "choice.bagel.sesame": "참깨",
+  "choice.spread.none": "스프레드 없음", "choice.spread.plain": "플레인 크림치즈",
+  "choice.spread.scallion": "쪽파",
+  "choice.spread.jalapeno": "할라피뇨", "choice.spread.veggie": "야채",
+  "choice.spread.garlic-herb": "마늘 & 허브", "choice.spread.strawberry": "딸기",
+  "choice.spread.vegan-plain": "비건 플레인", "choice.spread.lox": "훈제연어 스프레드",
+
+  "allergen.wheat": "밀", "allergen.dairy": "유제품", "allergen.egg": "달걀",
+  "allergen.fish": "생선", "allergen.sesame": "참깨", "allergen.soy": "대두",
+  "allergen.peanuts": "땅콩",
+
+  "name.tomato-please": "토마토 주세요", "desc.tomato-please": "토마토, 오이, 적양파, 케이퍼.",
+  "name.egg-and-schmear": "에그 & 스프레드", "desc.egg-and-schmear": "달걀 두 개, 쪽파.",
+  "name.baby-got-bec": "베이비 갓 BEC", "desc.baby-got-bec": "베이컨, 달걀, 치즈.",
+  "name.one-sec-please": "잠시만요", "desc.one-sec-please": "소시지, 달걀, 치즈.",
+  "name.the-veggie-stack": "베지 스택", "desc.the-veggie-stack": "아보카도, 토마토, 오이, 새싹, 절인 양파.",
+  "name.turkey-around-the-corner": "코너의 터키", "desc.turkey-around-the-corner": "터키, 토마토, 루꼴라, 절인 양파, 핫허니.",
+  "name.spicy-tuna-sando": "매운 참치 샌드", "desc.spicy-tuna-sando": "매운 참치 샐러드, 오이, 쪽파, 참깨, 김.",
+  "name.good-lox-today": "오늘 훈제연어 좋아요!", "desc.good-lox-today": "훈제연어, 토마토, 적양파, 케이퍼, 딜.",
+  "name.single-bagel": "베이글 한 개", "desc.single-bagel": "플레인, 에브리띵 또는 참깨.",
+  "name.cream-cheese-plain": "플레인 크림치즈", "desc.cream-cheese-plain": "매장에서 직접 휘핑한, 모든 것의 기본.",
+  "name.cream-cheese-scallion": "쪽파 크림치즈", "desc.cream-cheese-scallion": "플레인에 신선한 쪽파를 듬뿍.",
+  "name.cream-cheese-jalapeno": "할라피뇨 크림치즈", "desc.cream-cheese-jalapeno": "플레인에 할라피뇨를 섞었습니다.",
+  "name.cream-cheese-veggie": "야채 크림치즈", "desc.cream-cheese-veggie": "플레인에 야채를 넣어 섞었습니다.",
+  "name.cream-cheese-garlic-herb": "마늘 & 허브 크림치즈", "desc.cream-cheese-garlic-herb": "플레인에 마늘과 허브를 넣었습니다.",
+  "name.lox-spread": "훈제연어 스프레드", "desc.lox-spread": "크림치즈에 훈제연어를 휘핑해 넣었습니다.",
+  "name.cream-cheese-strawberry": "딸기 크림치즈", "desc.cream-cheese-strawberry": "플레인에 딸기로 단맛을 더했습니다.",
+  "name.cream-cheese-vegan-plain": "비건 플레인 크림치즈", "desc.cream-cheese-vegan-plain": "유제품 없이 만든 기본 스프레드.",
+  "name.peanut-butter": "땅콩버터", "desc.peanut-butter": "가장자리까지 두툼하게.",
+  "name.jelly": "잼", "desc.jelly": "그대로, 또는 땅콩버터 위에.",
+  "name.butter": "버터", "desc.butter": "삶아 바로 구운 베이글 위에.",
+  "name.hot-honey-schmear": "핫허니", "desc.hot-honey-schmear": "처음엔 달고, 뒤에서 천천히 매워집니다.",
+  "name.chili-crisp": "칠리 크리스프", "desc.chili-crisp": "바삭하고 기름지며 보기보다 맵습니다.",
+  "name.choco-milk": "초코 우유", "desc.choco-milk": "돌아가는 길에.",
+  "name.orange-juice": "오렌지 주스", "desc.orange-juice": "시원하고, 에그 샌드위치 옆에 딱.",
+  "name.cloud-cold-brew": "클라우드 콜드브루", "desc.cloud-cold-brew": "천천히 우려 얼음 위에 부었습니다.",
+  "name.cloud-tea": "클라우드 티", "desc.cloud-tea": "주전자로 우려 잔에 담아냅니다.",
+  "name.gift-card": "기프트 카드", "desc.gift-card": "매장에서도 앱에서도 현금처럼 쓸 수 있습니다.",
+};
+
+const ur: MenuTable = {
+  "cat.Sandwiches": "سینڈوچ", "cat.Bagels": "بیگل", "cat.Spreads": "اسپریڈ",
+  "cat.Drinks": "مشروبات", "cat.Gift Cards": "گفٹ کارڈ",
+
+  "opt.bagel": "بیگل", "opt.spread": "اسپریڈ", "opt.amount": "رقم",
+  "choose.bagel": "بیگل منتخب کریں",
+  "choice.bagel.plain": "سادہ", "choice.bagel.everything": "ایوری تھنگ",
+  "choice.bagel.sesame": "تل",
+  "choice.spread.none": "اسپریڈ نہیں", "choice.spread.plain": "سادہ کریم چیز",
+  "choice.spread.scallion": "ہرا پیاز",
+  "choice.spread.jalapeno": "ہالوپینو", "choice.spread.veggie": "سبزیاں",
+  "choice.spread.garlic-herb": "لہسن اور جڑی بوٹیاں", "choice.spread.strawberry": "اسٹرابیری",
+  "choice.spread.vegan-plain": "ویگن سادہ", "choice.spread.lox": "سالمن اسپریڈ",
+
+  "allergen.wheat": "گندم", "allergen.dairy": "دودھ کی مصنوعات", "allergen.egg": "انڈا",
+  "allergen.fish": "مچھلی", "allergen.sesame": "تل", "allergen.soy": "سویا",
+  "allergen.peanuts": "مونگ پھلی",
+
+  "name.tomato-please": "ٹماٹر، مہربانی", "desc.tomato-please": "ٹماٹر، کھیرا، سرخ پیاز، کیپرز۔",
+  "name.egg-and-schmear": "انڈا اور اسپریڈ", "desc.egg-and-schmear": "دو انڈے، ہرا پیاز۔",
+  "name.baby-got-bec": "بیبی گاٹ BEC", "desc.baby-got-bec": "بیکن، انڈا، پنیر۔",
+  "name.one-sec-please": "ایک سیکنڈ، مہربانی", "desc.one-sec-please": "ساسیج، انڈا، پنیر۔",
+  "name.the-veggie-stack": "ویجی اسٹیک", "desc.the-veggie-stack": "ایوکاڈو، ٹماٹر، کھیرا، انکرے، اچار والا پیاز۔",
+  "name.turkey-around-the-corner": "کونے والا ٹرکی", "desc.turkey-around-the-corner": "ٹرکی، ٹماٹر، اروگولا، اچار والا پیاز، مسالے دار شہد۔",
+  "name.spicy-tuna-sando": "مسالے دار ٹونا سینڈوچ", "desc.spicy-tuna-sando": "مسالے دار ٹونا سلاد، کھیرا، ہرا پیاز، تل، نوری۔",
+  "name.good-lox-today": "آج سالمن اچھا ہے!", "desc.good-lox-today": "اسموکڈ سالمن، ٹماٹر، سرخ پیاز، کیپرز، ڈل۔",
+  "name.single-bagel": "ایک بیگل", "desc.single-bagel": "سادہ، ایوری تھنگ یا تل۔",
+  "name.cream-cheese-plain": "سادہ کریم چیز", "desc.cream-cheese-plain": "گھر پر پھینٹا ہوا، باقی سب کی بنیاد۔",
+  "name.cream-cheese-scallion": "ہرے پیاز والا کریم چیز", "desc.cream-cheese-scallion": "سادہ پھینٹا ہوا، تازہ ہرے پیاز سے بھرپور۔",
+  "name.cream-cheese-jalapeno": "ہالوپینو کریم چیز", "desc.cream-cheese-jalapeno": "سادہ پھینٹے میں ہالوپینو ملا ہوا۔",
+  "name.cream-cheese-veggie": "سبزیوں والا کریم چیز", "desc.cream-cheese-veggie": "سادہ پھینٹے میں سبزیاں شامل۔",
+  "name.cream-cheese-garlic-herb": "لہسن اور جڑی بوٹیوں والا کریم چیز", "desc.cream-cheese-garlic-herb": "سادہ پھینٹے میں لہسن اور جڑی بوٹیاں۔",
+  "name.lox-spread": "سالمن اسپریڈ", "desc.lox-spread": "کریم چیز میں سالمن پھینٹا ہوا۔",
+  "name.cream-cheese-strawberry": "اسٹرابیری کریم چیز", "desc.cream-cheese-strawberry": "سادہ پھینٹا ہوا، اسٹرابیری سے میٹھا۔",
+  "name.cream-cheese-vegan-plain": "ویگن سادہ کریم چیز", "desc.cream-cheese-vegan-plain": "وہی سادہ اسپریڈ، دودھ کے بغیر۔",
+  "name.peanut-butter": "مونگ پھلی کا مکھن", "desc.peanut-butter": "کنارے تک گاڑھا لگایا ہوا۔",
+  "name.jelly": "جیلی", "desc.jelly": "اکیلی، یا مونگ پھلی کے مکھن کے اوپر۔",
+  "name.butter": "مکھن", "desc.butter": "پانی سے نکل کر تندور میں گئے بیگل پر۔",
+  "name.hot-honey-schmear": "مسالے دار شہد", "desc.hot-honey-schmear": "پہلے میٹھا، پھر آہستہ آہستہ تیکھا۔",
+  "name.chili-crisp": "چلی کرسپ", "desc.chili-crisp": "کرکرا، تیل والا، اور دِکھنے سے زیادہ تیز۔",
+  "name.choco-milk": "چاکلیٹ دودھ", "desc.choco-milk": "واپسی کے راستے کے لیے۔",
+  "name.orange-juice": "اورنج جوس", "desc.orange-juice": "ٹھنڈا، اور انڈے کے سینڈوچ کے ساتھ بالکل ٹھیک۔",
+  "name.cloud-cold-brew": "کلاؤڈ کولڈ بریو", "desc.cloud-cold-brew": "آہستہ بھگویا اور برف پر ڈالا گیا۔",
+  "name.cloud-tea": "کلاؤڈ چائے", "desc.cloud-tea": "کیتلی میں بنی، کپ میں پیش کی گئی۔",
+  "name.gift-card": "گفٹ کارڈ", "desc.gift-card": "نقد کی طرح چلتا ہے، کاؤنٹر پر یا ایپ میں۔",
+};
+
+const ja: MenuTable = {
+  "cat.Sandwiches": "サンドイッチ", "cat.Bagels": "ベーグル", "cat.Spreads": "スプレッド",
+  "cat.Drinks": "ドリンク", "cat.Gift Cards": "ギフトカード",
+
+  "opt.bagel": "ベーグル", "opt.spread": "スプレッド", "opt.amount": "金額",
+  "choose.bagel": "ベーグルを選択",
+  "choice.bagel.plain": "プレーン", "choice.bagel.everything": "エブリシング",
+  "choice.bagel.sesame": "ごま",
+  "choice.spread.none": "スプレッドなし", "choice.spread.plain": "プレーン・クリームチーズ",
+  "choice.spread.scallion": "青ねぎ",
+  "choice.spread.jalapeno": "ハラペーニョ", "choice.spread.veggie": "野菜",
+  "choice.spread.garlic-herb": "ガーリック＆ハーブ", "choice.spread.strawberry": "いちご",
+  "choice.spread.vegan-plain": "ヴィーガン・プレーン", "choice.spread.lox": "スモークサーモンスプレッド",
+
+  "allergen.wheat": "小麦", "allergen.dairy": "乳", "allergen.egg": "卵",
+  "allergen.fish": "魚", "allergen.sesame": "ごま", "allergen.soy": "大豆",
+  "allergen.peanuts": "ピーナッツ",
+
+  "name.tomato-please": "トマトをどうぞ", "desc.tomato-please": "トマト、きゅうり、赤玉ねぎ、ケーパー。",
+  "name.egg-and-schmear": "エッグ＆スプレッド", "desc.egg-and-schmear": "卵2個、青ねぎ。",
+  "name.baby-got-bec": "ベイビー・ガット・BEC", "desc.baby-got-bec": "ベーコン、卵、チーズ。",
+  "name.one-sec-please": "ちょっと待ってね", "desc.one-sec-please": "ソーセージ、卵、チーズ。",
+  "name.the-veggie-stack": "ベジスタック", "desc.the-veggie-stack": "アボカド、トマト、きゅうり、スプラウト、玉ねぎのピクルス。",
+  "name.turkey-around-the-corner": "角のターキー", "desc.turkey-around-the-corner": "ターキー、トマト、ルッコラ、玉ねぎのピクルス、ホットハニー。",
+  "name.spicy-tuna-sando": "スパイシーツナサンド", "desc.spicy-tuna-sando": "スパイシーツナサラダ、きゅうり、青ねぎ、ごま、のり。",
+  "name.good-lox-today": "今日のサーモンは上等！", "desc.good-lox-today": "スモークサーモン、トマト、赤玉ねぎ、ケーパー、ディル。",
+  "name.single-bagel": "ベーグル1個", "desc.single-bagel": "プレーン、エブリシング、またはごま。",
+  "name.cream-cheese-plain": "プレーンクリームチーズ", "desc.cream-cheese-plain": "店で泡立てた、すべての土台。",
+  "name.cream-cheese-scallion": "青ねぎクリームチーズ", "desc.cream-cheese-scallion": "プレーンに新鮮な青ねぎをたっぷり。",
+  "name.cream-cheese-jalapeno": "ハラペーニョクリームチーズ", "desc.cream-cheese-jalapeno": "プレーンにハラペーニョを混ぜて。",
+  "name.cream-cheese-veggie": "野菜クリームチーズ", "desc.cream-cheese-veggie": "プレーンに野菜を混ぜ込んで。",
+  "name.cream-cheese-garlic-herb": "ガーリック＆ハーブクリームチーズ", "desc.cream-cheese-garlic-herb": "プレーンにガーリックとハーブを。",
+  "name.lox-spread": "スモークサーモンスプレッド", "desc.lox-spread": "クリームチーズにスモークサーモンを泡立てて。",
+  "name.cream-cheese-strawberry": "いちごクリームチーズ", "desc.cream-cheese-strawberry": "プレーンをいちごで甘く。",
+  "name.cream-cheese-vegan-plain": "ヴィーガン・プレーンクリームチーズ", "desc.cream-cheese-vegan-plain": "いつものプレーンを、乳製品なしで。",
+  "name.peanut-butter": "ピーナッツバター", "desc.peanut-butter": "端から端まで、たっぷりと。",
+  "name.jelly": "ジャム", "desc.jelly": "そのままでも、ピーナッツバターの上にも。",
+  "name.butter": "バター", "desc.butter": "茹でて焼き上げたばかりのベーグルに。",
+  "name.hot-honey-schmear": "ホットハニー", "desc.hot-honey-schmear": "まず甘く、そこからゆっくり辛くなります。",
+  "name.chili-crisp": "チリクリスプ", "desc.chili-crisp": "カリカリで、油っぽくて、見た目より辛い。",
+  "name.choco-milk": "チョコミルク", "desc.choco-milk": "帰り道に。",
+  "name.orange-juice": "オレンジジュース", "desc.orange-juice": "冷たくて、エッグサンドの隣にちょうどいい。",
+  "name.cloud-cold-brew": "クラウド・コールドブリュー", "desc.cloud-cold-brew": "じっくり抽出して氷の上に。",
+  "name.cloud-tea": "クラウド・ティー", "desc.cloud-tea": "ポットで淹れて、カップでお出しします。",
+  "name.gift-card": "ギフトカード", "desc.gift-card": "店頭でもアプリでも、現金のように使えます。",
+};
+
+const zh: MenuTable = {
+  "cat.Sandwiches": "三明治", "cat.Bagels": "贝果", "cat.Spreads": "抹酱",
+  "cat.Drinks": "饮品", "cat.Gift Cards": "礼品卡",
+
+  "opt.bagel": "贝果", "opt.spread": "抹酱", "opt.amount": "金额",
+  "choose.bagel": "选择贝果",
+  "choice.bagel.plain": "原味", "choice.bagel.everything": "综合口味",
+  "choice.bagel.sesame": "芝麻",
+  "choice.spread.none": "不加抹酱", "choice.spread.plain": "原味奶油乳酪",
+  "choice.spread.scallion": "香葱",
+  "choice.spread.jalapeno": "墨西哥辣椒", "choice.spread.veggie": "蔬菜",
+  "choice.spread.garlic-herb": "蒜香香草", "choice.spread.strawberry": "草莓",
+  "choice.spread.vegan-plain": "纯素原味", "choice.spread.lox": "烟熏三文鱼抹酱",
+
+  "allergen.wheat": "小麦", "allergen.dairy": "乳制品", "allergen.egg": "鸡蛋",
+  "allergen.fish": "鱼类", "allergen.sesame": "芝麻", "allergen.soy": "大豆",
+  "allergen.peanuts": "花生",
+
+  "name.tomato-please": "请给我番茄", "desc.tomato-please": "番茄、黄瓜、红洋葱、酸豆。",
+  "name.egg-and-schmear": "鸡蛋抹酱", "desc.egg-and-schmear": "两个鸡蛋，香葱。",
+  "name.baby-got-bec": "培根蛋起司", "desc.baby-got-bec": "培根、鸡蛋、起司。",
+  "name.one-sec-please": "稍等一下", "desc.one-sec-please": "香肠、鸡蛋、起司。",
+  "name.the-veggie-stack": "蔬菜叠叠乐", "desc.the-veggie-stack": "牛油果、番茄、黄瓜、芽苗、腌洋葱。",
+  "name.turkey-around-the-corner": "街角火鸡", "desc.turkey-around-the-corner": "火鸡、番茄、芝麻菜、腌洋葱、辣蜂蜜。",
+  "name.spicy-tuna-sando": "辣味金枪鱼三明治", "desc.spicy-tuna-sando": "辣味金枪鱼沙拉、黄瓜、香葱、芝麻、海苔。",
+  "name.good-lox-today": "今天的三文鱼不错！", "desc.good-lox-today": "烟熏三文鱼、番茄、红洋葱、酸豆、莳萝。",
+  "name.single-bagel": "单个贝果", "desc.single-bagel": "原味、综合口味或芝麻。",
+  "name.cream-cheese-plain": "原味奶油奶酪", "desc.cream-cheese-plain": "店内现打，其他一切的基础。",
+  "name.cream-cheese-scallion": "香葱奶油奶酪", "desc.cream-cheese-scallion": "原味打发，加满新鲜香葱。",
+  "name.cream-cheese-jalapeno": "墨西哥辣椒奶油奶酪", "desc.cream-cheese-jalapeno": "原味打发，拌入墨西哥辣椒。",
+  "name.cream-cheese-veggie": "蔬菜奶油奶酪", "desc.cream-cheese-veggie": "原味打发，拌入蔬菜。",
+  "name.cream-cheese-garlic-herb": "蒜香香草奶油奶酪", "desc.cream-cheese-garlic-herb": "原味打发，加入大蒜和香草。",
+  "name.lox-spread": "烟熏三文鱼抹酱", "desc.lox-spread": "奶油奶酪打入烟熏三文鱼。",
+  "name.cream-cheese-strawberry": "草莓奶油奶酪", "desc.cream-cheese-strawberry": "原味打发，用草莓调甜。",
+  "name.cream-cheese-vegan-plain": "纯素原味奶油奶酪", "desc.cream-cheese-vegan-plain": "还是那款原味抹酱，不含乳制品。",
+  "name.peanut-butter": "花生酱", "desc.peanut-butter": "厚厚一层，抹到边角。",
+  "name.jelly": "果酱", "desc.jelly": "单独吃，或抹在花生酱上。",
+  "name.butter": "黄油", "desc.butter": "抹在刚出锅进炉的贝果上。",
+  "name.hot-honey-schmear": "辣蜂蜜", "desc.hot-honey-schmear": "先甜，随后辣意慢慢上来。",
+  "name.chili-crisp": "辣椒脆", "desc.chili-crisp": "又脆又香，比看上去更辣。",
+  "name.choco-milk": "巧克力牛奶", "desc.choco-milk": "回程路上喝。",
+  "name.orange-juice": "橙汁", "desc.orange-juice": "冰冰凉凉，配鸡蛋三明治刚好。",
+  "name.cloud-cold-brew": "云朵冷萃", "desc.cloud-cold-brew": "慢泡冷萃，倒在冰上。",
+  "name.cloud-tea": "云朵茶", "desc.cloud-tea": "整壶冲泡，按杯供应。",
+  "name.gift-card": "礼品卡", "desc.gift-card": "像现金一样用，柜台或 App 都行。",
+};
+
+const my: MenuTable = {
+  "cat.Sandwiches": "အသားညှပ်ပေါင်မုန့်", "cat.Bagels": "ဘေဂယ်", "cat.Spreads": "အနှစ်များ",
+  "cat.Drinks": "သောက်စရာ", "cat.Gift Cards": "လက်ဆောင်ကတ်",
+
+  "opt.bagel": "ဘေဂယ်", "opt.spread": "အနှစ်", "opt.amount": "ပမာဏ",
+  "choose.bagel": "ဘေဂယ် ရွေးပါ",
+  "choice.bagel.plain": "ရိုးရိုး", "choice.bagel.everything": "အားလုံးပါ",
+  "choice.bagel.sesame": "နှမ်း",
+  "choice.spread.none": "အနှစ် မထည့်ပါ", "choice.spread.plain": "ရိုးရိုး ခရင်မ်ချိစ်",
+  "choice.spread.scallion": "ကြက်သွန်မြိတ်",
+  "choice.spread.jalapeno": "ဟာလာပီညို", "choice.spread.veggie": "ဟင်းသီးဟင်းရွက်",
+  "choice.spread.garlic-herb": "ကြက်သွန်ဖြူနှင့် ဟင်းခတ်အမွှေး", "choice.spread.strawberry": "စတော်ဘယ်ရီ",
+  "choice.spread.vegan-plain": "သက်သတ်လွတ် ရိုးရိုး", "choice.spread.lox": "ဆယ်လ်မွန် အနှစ်",
+
+  "allergen.wheat": "ဂျုံ", "allergen.dairy": "နို့ထွက်ပစ္စည်း", "allergen.egg": "ကြက်ဥ",
+  "allergen.fish": "ငါး", "allergen.sesame": "နှမ်း", "allergen.soy": "ပဲပုပ်",
+  "allergen.peanuts": "မြေပဲ",
+
+  "name.tomato-please": "ခရမ်းချဉ်သီး ပေးပါ", "desc.tomato-please": "ခရမ်းချဉ်သီး၊ သခွားသီး၊ ကြက်သွန်နီ၊ ကေပါ။",
+  "name.egg-and-schmear": "ကြက်ဥနှင့် အနှစ်", "desc.egg-and-schmear": "ကြက်ဥ နှစ်လုံး၊ ကြက်သွန်မြိတ်။",
+  "name.baby-got-bec": "ဘေကွန်၊ ကြက်ဥ၊ ဒိန်ခဲ", "desc.baby-got-bec": "ဘေကွန်၊ ကြက်ဥ၊ ဒိန်ခဲ။",
+  "name.one-sec-please": "ခဏလေး ပေးပါ", "desc.one-sec-please": "ဝက်အူချောင်း၊ ကြက်ဥ၊ ဒိန်ခဲ။",
+  "name.the-veggie-stack": "ဟင်းသီးဟင်းရွက် အထပ်", "desc.the-veggie-stack": "ထောပတ်သီး၊ ခရမ်းချဉ်သီး၊ သခွားသီး၊ အညွန့်၊ ကြက်သွန်သနပ်။",
+  "name.turkey-around-the-corner": "လမ်းထောင့်က ကြက်ဆင်", "desc.turkey-around-the-corner": "ကြက်ဆင်၊ ခရမ်းချဉ်သီး၊ အာရူဂူလာ၊ ကြက်သွန်သနပ်၊ အစပ်ပျားရည်။",
+  "name.spicy-tuna-sando": "အစပ် တူနာ ပေါင်မုန့်", "desc.spicy-tuna-sando": "အစပ် တူနာ သုပ်၊ သခွားသီး၊ ကြက်သွန်မြိတ်၊ နှမ်း၊ ရေညှိပြား။",
+  "name.good-lox-today": "ဒီနေ့ ဆယ်လ်မွန် ကောင်းတယ်!", "desc.good-lox-today": "မီးခိုးတိုက် ဆယ်လ်မွန်၊ ခရမ်းချဉ်သီး၊ ကြက်သွန်နီ၊ ကေပါ၊ ဒီလ်။",
+  "name.single-bagel": "ဘေဂယ် တစ်လုံး", "desc.single-bagel": "ရိုးရိုး၊ အားလုံးပါ သို့မဟုတ် နှမ်း။",
+  "name.cream-cheese-plain": "ရိုးရိုး ခရင်မ်ချိစ်", "desc.cream-cheese-plain": "ဆိုင်တွင်ပင် မွှေထားပြီး ကျန်အားလုံး၏ အခြေခံ။",
+  "name.cream-cheese-scallion": "ကြက်သွန်မြိတ် ခရင်မ်ချိစ်", "desc.cream-cheese-scallion": "ရိုးရိုးမွှေထားပြီး ကြက်သွန်မြိတ်စိမ်း အပြည့်။",
+  "name.cream-cheese-jalapeno": "ဟာလာပီညို ခရင်မ်ချိစ်", "desc.cream-cheese-jalapeno": "ရိုးရိုးမွှေထားပြီး ဟာလာပီညို ရောထားသည်။",
+  "name.cream-cheese-veggie": "ဟင်းသီးဟင်းရွက် ခရင်မ်ချိစ်", "desc.cream-cheese-veggie": "ရိုးရိုးမွှေထားပြီး ဟင်းသီးဟင်းရွက်များ ရောထားသည်။",
+  "name.cream-cheese-garlic-herb": "ကြက်သွန်ဖြူ ဟင်းခတ် ခရင်မ်ချိစ်", "desc.cream-cheese-garlic-herb": "ရိုးရိုးမွှေထားပြီး ကြက်သွန်ဖြူနှင့် ဟင်းခတ်အမွှေးများ ထည့်ထားသည်။",
+  "name.lox-spread": "ဆယ်လ်မွန် အနှစ်", "desc.lox-spread": "ခရင်မ်ချိစ်ထဲ ဆယ်လ်မွန် မွှေထည့်ထားသည်။",
+  "name.cream-cheese-strawberry": "စတော်ဘယ်ရီ ခရင်မ်ချိစ်", "desc.cream-cheese-strawberry": "ရိုးရိုးမွှေထားပြီး စတော်ဘယ်ရီဖြင့် ချိုမြိန်စေသည်။",
+  "name.cream-cheese-vegan-plain": "သက်သတ်လွတ် ရိုးရိုး ခရင်မ်ချိစ်", "desc.cream-cheese-vegan-plain": "ရိုးရိုးအနှစ်ကို နို့ထွက်ပစ္စည်း မပါဘဲ ပြုလုပ်ထားသည်။",
+  "name.peanut-butter": "မြေပဲထောပတ်", "desc.peanut-butter": "အနားစွန်းအထိ ထူထူသုတ်ထားသည်။",
+  "name.jelly": "ယို", "desc.jelly": "သီးသန့်လည်းရ၊ မြေပဲထောပတ်အပေါ်လည်းရ။",
+  "name.butter": "ထောပတ်", "desc.butter": "ရေမှထုတ်ပြီး မီးဖိုထဲဝင်ခါစ ဘေဂယ်ပေါ်တွင်။",
+  "name.hot-honey-schmear": "အစပ် ပျားရည်", "desc.hot-honey-schmear": "အစတွင် ချိုပြီး နောက်မှ တဖြည်းဖြည်း စပ်လာသည်။",
+  "name.chili-crisp": "ငရုတ်သီး ကြွပ်ကြွပ်", "desc.chili-crisp": "ကြွပ်ပြီး ဆီများကာ မြင်ရသည်ထက် စပ်သည်။",
+  "name.choco-milk": "ချောကလက် နို့", "desc.choco-milk": "ပြန်လမ်းအတွက်။",
+  "name.orange-juice": "လိမ္မော်ရည်", "desc.orange-juice": "အေးပြီး ကြက်ဥပေါင်မုန့်နှင့် အံကိုက်။",
+  "name.cloud-cold-brew": "Cloud အအေးဖျော် ကော်ဖီ", "desc.cloud-cold-brew": "ဖြည်းဖြည်းစိမ်ပြီး ရေခဲပေါ် လောင်းထားသည်။",
+  "name.cloud-tea": "Cloud လက်ဖက်ရည်", "desc.cloud-tea": "အိုးဖြင့်ဖျော်ပြီး ခွက်ဖြင့် တိုက်သည်။",
+  "name.gift-card": "လက်ဆောင်ကတ်", "desc.gift-card": "ကောင်တာမှာဖြစ်စေ အက်ပ်မှာဖြစ်စေ ငွေသားလို သုံးနိုင်သည်။",
+};
+
+export type { MenuTable };
+export const TABLES: Partial<Record<LocaleId, MenuTable>> = { es, ko, ur, ja, zh, my };

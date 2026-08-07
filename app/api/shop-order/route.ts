@@ -100,7 +100,7 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const body = payload as
@@ -110,7 +110,7 @@ export async function POST(request: Request) {
   const { name, email } = body ?? {};
   if (!isNonEmptyString(name) || !isValidEmail(email)) {
     return Response.json(
-      { error: "Fill in your name and email." },
+      { error: "api.fillNameEmail" },
       { status: 400 },
     );
   }
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
 
   const rawItems = body?.items;
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
-    return Response.json({ error: "Your cart is empty." }, { status: 400 });
+    return Response.json({ error: "api.cartEmpty" }, { status: 400 });
   }
 
   // Recompute against the catalog rather than trusting client-submitted
@@ -159,11 +159,11 @@ export async function POST(request: Request) {
       !Number.isInteger(quantity) ||
       quantity <= 0
     ) {
-      return Response.json({ error: "Invalid cart item." }, { status: 400 });
+      return Response.json({ error: "api.invalidCartItem" }, { status: 400 });
     }
     const product = getProduct(slug);
     if (!product) {
-      return Response.json({ error: "Invalid cart item." }, { status: 400 });
+      return Response.json({ error: "api.invalidCartItem" }, { status: 400 });
     }
     // Gone since the basket was filled. 409 rather than 400: the request is
     // well-formed, the world moved.
@@ -232,18 +232,18 @@ export async function POST(request: Request) {
 
   if (forDelivery) {
     if (!deliveryAddress) {
-      return Response.json({ error: "Missing delivery address." }, { status: 400 });
+      return Response.json({ error: "api.missingAddress" }, { status: 400 });
     }
     if (!isUberConfigured()) {
       return Response.json(
-        { error: "Delivery is unavailable right now. Pickup is still open." },
+        { error: "api.deliveryDownPickupOpen" },
         { status: 503 },
       );
     }
 
     const place = await geocode(deliveryAddress, DELIVERY_ORIGIN.position);
     if (!place) {
-      return Response.json({ error: "We couldn't find that address." }, { status: 400 });
+      return Response.json({ error: "api.addressNotFound" }, { status: 400 });
     }
     dropoff = place;
 
@@ -342,7 +342,7 @@ export async function POST(request: Request) {
       // this fails loudly instead.
       console.error(`[shop-order] Toast submission failed: ${sent.reason}`);
       return Response.json(
-        { error: "We couldn't send that to the shop. Please try again in a moment." },
+        { error: "api.orderSendFailed" },
         { status: 502 },
       );
     }

@@ -30,7 +30,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function POST(request: Request) {
   if (!isAuthConfigured()) {
     return Response.json(
-      { error: "Sign-in is unavailable right now. Try again in a moment." },
+      { error: "api.signInUnavailable" },
       { status: 503 },
     );
   }
@@ -39,18 +39,18 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const email = (payload as { email?: unknown })?.email;
   if (typeof email !== "string" || !EMAIL.test(email.trim())) {
-    return Response.json({ error: "Enter a valid email." }, { status: 400 });
+    return Response.json({ error: "checkout.validEmail" }, { status: 400 });
   }
   const address = email.trim().toLowerCase();
 
   if (tooMany(address)) {
     return Response.json(
-      { error: "That's a few codes already. Give it ten minutes." },
+      { error: "api.codeRateLimit" },
       { status: 429 },
     );
   }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
   if (!result.ok) {
     console.error(`[auth] passwordless start failed: ${result.error}`);
     return Response.json(
-      { error: "We couldn't send that code. Try again in a moment." },
+      { error: "api.codeSendFailed" },
       { status: 502 },
     );
   }

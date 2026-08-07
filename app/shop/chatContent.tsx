@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
+import { useMenu, type MenuText } from "../i18n/menu";
 import ProductImage from "./ProductImage";
-import { formatPrice } from "./products";
+import { formatPrice, getProduct } from "./products";
 import type { ChatAction, InfoCard, ProductCard } from "./chatTypes";
 
 // What a reply from Riley is made of, once it stops being a wall of text.
@@ -123,6 +124,13 @@ export function RichText({ text }: { text: string }) {
 
 // ——— Product cards ———
 
+// "Choose bagel", in the visitor's language. The card carries the group's id;
+// the group itself is on the product, which the browser already has.
+function needLabel(menu: MenuText, slug: string, groupId: string | undefined): string {
+  const group = getProduct(slug)?.options?.find((option) => option.id === groupId);
+  return group ? menu.placeholder(group) : "";
+}
+
 // A rail, not a stack. Three items down the thread pushes the conversation off
 // the top of a 344px panel; three across keeps the reply and the options on
 // screen together, and the overflow is its own signal that there are more.
@@ -134,6 +142,7 @@ export function ProductCards({
   onAdd: (product: ProductCard) => void;
 }) {
   const t = useT();
+  const menu = useMenu();
   if (products.length === 0) return null;
 
   return (
@@ -146,7 +155,7 @@ export function ProductCards({
           <Link href={`/shop/product/${product.slug}`} className="cursor-pointer">
             <ProductImage
               swatch={product.swatch}
-              name={product.name}
+              name={menu.name(product)}
               className="h-[74px] w-full rounded-none"
             />
           </Link>
@@ -155,7 +164,7 @@ export function ProductCards({
               href={`/shop/product/${product.slug}`}
               className="cursor-pointer text-[12px] font-medium leading-[1.3] text-ink hover:underline"
             >
-              {product.name}
+              {menu.name(product)}
             </Link>
             <span className="text-[12px] text-muted">{formatPrice(product.priceCents)}</span>
 
@@ -171,7 +180,7 @@ export function ProductCards({
                 href={`/shop/product/${product.slug}`}
                 className="cb-press mt-auto cursor-pointer rounded-full border border-line-soft px-2 py-1.5 text-center text-[11px] text-ink transition-colors hover:bg-raise"
               >
-                Choose {product.needs[0].toLowerCase()}
+                {needLabel(menu, product.slug, product.needs[0])}
               </Link>
             ) : (
               <button

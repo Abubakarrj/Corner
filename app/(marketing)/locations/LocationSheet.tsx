@@ -4,9 +4,10 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { Button } from "../../ui/Button";
 import { useCapabilities } from "../../capabilities";
-import { useT } from "../../i18n";
+import { useLocale, useT } from "../../i18n";
+import { localeById } from "../../localeScript";
 import { PALETTE } from "../../shop/shopControls";
-import { SHOP_HOURS } from "../../shopFacts";
+import { CLOSE_HOUR, OPEN_HOUR, clockLabel } from "../../shopFacts";
 import type { StoreLocation } from "./locations";
 
 const { ink, muted, controlBorder, olive } = PALETTE;
@@ -116,6 +117,7 @@ export default function LocationSheet({
 }) {
   const { phone } = useCapabilities();
   const t = useT();
+  const tag = localeById(useLocale()).tag;
   // Tagged with the shop it belongs to rather than reset by an effect, the
   // same way the address search keys its results. A bare boolean would need
   // clearing when the sheet changes shop, and a tick left over from the last
@@ -151,7 +153,10 @@ export default function LocationSheet({
           {location.city}
         </p>
         <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: muted }}>
-          {SHOP_HOURS}
+          {t("finder.hoursEveryDay", {
+            open: clockLabel(OPEN_HOUR, tag),
+            close: clockLabel(CLOSE_HOUR, tag),
+          })}
         </p>
       </div>
 

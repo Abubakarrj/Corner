@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "../../i18n";
+import { useMenu } from "../../i18n/menu";
 import { useBasketMoved, useCart, useCartRows, MAX_PER_LINE } from "../CartContext";
 import OptionPicker from "../OptionPicker";
 import { formatPrice } from "../products";
@@ -11,6 +12,7 @@ import { DISPLAY_FONT } from "../shopControls";
 
 export default function CartPage() {
   const t = useT();
+  const menu = useMenu();
   const { setQuantity, removeItem, setLineOptions, subtotalCents } = useCart();
   const rows = useCartRows();
   const moved = useBasketMoved();
@@ -31,8 +33,7 @@ export default function CartPage() {
 
       {moved ? (
         <p className="mb-5 rounded-xl border border-line-soft bg-sky-soft px-3 py-2.5 text-[12px] leading-[1.5] text-sky-ink">
-          You started this basket for {moved.from}. It&rsquo;s going to {moved.to} now —
-          same food, different handover.
+          {t("cart.movedFrom", { from: moved.from, to: moved.to })}
         </p>
       ) : null}
 
@@ -51,7 +52,7 @@ export default function CartPage() {
                 <Link href={`/shop/product/${product.slug}`} className="shrink-0 cursor-pointer">
                   <ProductImage
                     swatch={product.swatch}
-                    name={product.name}
+                    name={menu.name(product)}
                     className="h-20 w-20 rounded-lg"
                   />
                 </Link>
@@ -62,7 +63,7 @@ export default function CartPage() {
                       href={`/shop/product/${product.slug}`}
                       className="cursor-pointer text-[14px] font-medium text-ink hover:underline"
                     >
-                      {product.name}
+                      {menu.name(product)}
                     </Link>
                     <span className="whitespace-nowrap text-[14px] text-ink">
                       {formatPrice(lineCents)}
@@ -70,11 +71,11 @@ export default function CartPage() {
                   </div>
                   {chosen.length > 0 ? (
                     <span className="text-[13px] text-muted">
-                      {chosen.join(" · ")}
+                      {menu.options(product, line.options).join(" · ")}
                     </span>
                   ) : null}
                   <span className="text-[13px] text-faint">
-                    {formatPrice(unitCents)} each
+                    {t("product.eachPrice", { price: formatPrice(unitCents) })}
                   </span>
                   {gone ? (
                     <span className="mt-1 w-fit rounded-full bg-sun-soft px-2 py-[3px] text-[11px] font-medium leading-none text-sun-ink">
@@ -102,7 +103,7 @@ export default function CartPage() {
                     <div className="flex items-center rounded-full border border-line-soft">
                       <button
                         type="button"
-                        aria-label={`Decrease quantity of ${product.name}`}
+                        aria-label={t("cart.decreaseOf", { name: menu.name(product) })}
                         onClick={() => setQuantity(key, line.quantity - 1)}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
@@ -113,7 +114,7 @@ export default function CartPage() {
                       </span>
                       <button
                         type="button"
-                        aria-label={`Increase quantity of ${product.name}`}
+                        aria-label={t("cart.increaseOf", { name: menu.name(product) })}
                         onClick={() => setQuantity(key, line.quantity + 1)}
                         disabled={line.quantity >= MAX_PER_LINE}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"

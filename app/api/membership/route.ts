@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const body = payload as Record<string, unknown> | null;
@@ -46,13 +46,13 @@ export async function POST(request: Request) {
   }
 
   if (intent !== "join" && intent !== "signin" && intent !== "recover") {
-    return Response.json({ error: "Unknown request." }, { status: 400 });
+    return Response.json({ error: "api.unknownRequest" }, { status: 400 });
   }
   if (!isValidEmail(email)) {
-    return Response.json({ error: "Enter a valid email address." }, { status: 400 });
+    return Response.json({ error: "api.validEmailAddress" }, { status: 400 });
   }
   if (intent === "join" && !isNonEmptyString(name)) {
-    return Response.json({ error: "Enter your name." }, { status: 400 });
+    return Response.json({ error: "api.enterName" }, { status: 400 });
   }
 
   console.info(

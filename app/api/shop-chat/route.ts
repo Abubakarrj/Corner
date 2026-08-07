@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { buildSystemPrompt, RILEY_MAX_TOKENS } from "./riley";
+import { buildSystemPrompt, languageInstruction, RILEY_MAX_TOKENS } from "./riley";
 import {
   emptyAttachments,
   RILEY_TOOLS,
@@ -108,10 +108,14 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
-  const body = payload as { messages?: unknown; context?: unknown } | null;
+  const body = payload as {
+    messages?: unknown;
+    context?: unknown;
+    locale?: unknown;
+  } | null;
 
   const rawTurns = Array.isArray(body?.messages) ? body.messages : [];
   const turns = rawTurns
@@ -120,8 +124,11 @@ export async function POST(request: Request) {
     .slice(-MAX_TURNS);
 
   if (turns.length === 0 || turns[turns.length - 1].role !== "user") {
-    return Response.json({ error: "Type a message first." }, { status: 400 });
+    return Response.json({ error: "api.typeMessage" }, { status: 400 });
   }
+
+  const language =
+    typeof body?.locale === "string" ? languageInstruction(body.locale) : null;
 
   const anthropic = client();
   if (!anthropic) {
@@ -184,6 +191,12 @@ export async function POST(request: Request) {
             text: buildSystemPrompt(),
             cache_control: { type: "ephemeral" },
           },
+          // After the breakpoint, and only when there is one: the chosen
+          // language. Putting it inside the block above would give every
+          // language its own cache entry of the whole menu, and English —
+          // which needs no instruction at all — would pay for the machinery
+          // on every request.
+          ...(language ? [{ type: "text" as const, text: language }] : []),
         ],
         // If the model's safety classifiers decline a request, this reruns it
         // on Anthropic's recommended fallback rather than handing the visitor
@@ -221,7 +234,7 @@ export async function POST(request: Request) {
 
         if (!reply && attachments.products.length === 0 && attachments.info.length === 0) {
           return Response.json(
-            { error: "Riley didn't have a reply for that — try rephrasing?" },
+            { error: "api.rileyNoReply" },
             { status: 502 },
           );
         }
@@ -276,7 +289,7 @@ export async function POST(request: Request) {
     // account, or the request — none of which belongs in a chat bubble.
     console.error("[shop-chat] Riley failed to reply", error);
     return Response.json(
-      { error: "Riley couldn't answer just now. Try again in a moment." },
+      { error: "api.rileyDown" },
       { status: 502 },
     );
   }

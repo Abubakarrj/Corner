@@ -1,3 +1,5 @@
+import type { StringKey } from "../../../i18n/en";
+
 // What a gift card purchase is, and what makes one valid.
 //
 // Kept apart from the form so both sides can use it: the page validates with
@@ -9,11 +11,14 @@ export const GIFT_AMOUNTS_CENTS = [500, 2500, 5000, 10000] as const;
 export const GIFT_MIN_CENTS = 500;
 export const GIFT_MAX_CENTS = 10000;
 
+// String keys rather than words: this module is imported by /api/gift-card,
+// which has no locale and no business having one. Every screen that renders
+// these translates them at the point of render.
 export const DELIVERY_METHODS = [
-  { id: "email", label: "Send this card via Email" },
-  { id: "text", label: "Send this card via Text" },
-  { id: "self", label: "Send this card To Me first" },
-] as const;
+  { id: "email", label: "gift.methodEmail" },
+  { id: "text", label: "gift.methodText" },
+  { id: "self", label: "gift.methodSelf" },
+] as const satisfies readonly { id: string; label: StringKey }[];
 
 export type DeliveryMethod = (typeof DELIVERY_METHODS)[number]["id"];
 
@@ -47,55 +52,69 @@ export function isValidAmount(cents: number): boolean {
   );
 }
 
-export function contactError(method: DeliveryMethod, contact: string): string | null {
+export function contactError(method: DeliveryMethod, contact: string): StringKey | null {
   if (method === "self") return null;
   const value = contact.trim();
   if (value.length === 0) {
-    return method === "email" ? "Enter the recipient's email." : "Enter the recipient's number.";
+    return method === "email" ? "gift.errEnterEmail" : "gift.errEnterNumber";
   }
   if (method === "email") {
-    return EMAIL.test(value) ? null : "That doesn't look like an email address.";
+    return EMAIL.test(value) ? null : "gift.errNotEmail";
   }
   const digits = value.match(PHONE_DIGITS)?.length ?? 0;
-  return digits >= 10 ? null : "That doesn't look like a phone number.";
+  return digits >= 10 ? null : "gift.errNotPhone";
 }
 
 // A date can be today or later, never earlier. Compared as calendar days in
 // the visitor's own timezone rather than as timestamps — "today" means the
 // date on their phone, and a UTC comparison would reject this morning for
 // anybody west of Greenwich.
-export function dateError(deliverOn: string | null): string | null {
+export function dateError(deliverOn: string | null): StringKey | null {
   if (deliverOn === null) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(deliverOn)) return "Pick a delivery date.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(deliverOn)) return "gift.errPickDate";
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  return deliverOn < todayKey ? "That date has already passed." : null;
+  return deliverOn < todayKey ? "gift.errDatePassed" : null;
 }
 
-export function giftOrderError(order: GiftOrder): string | null {
-  if (!isValidAmount(order.amountCents)) return "Choose an amount.";
+export function giftOrderError(order: GiftOrder): StringKey | null {
+  if (!isValidAmount(order.amountCents)) return "gift.errChooseAmount";
   const contact = contactError(order.method, order.recipientContact);
   if (contact) return contact;
   const date = dateError(order.deliverOn);
   if (date) return date;
-  if (order.message.length > MESSAGE_MAX) return "That message is too long.";
+  if (order.message.length > MESSAGE_MAX) return "gift.errMessageLong";
   return null;
 }
 
 // How the confirmation describes the delivery. One function so the screen
 // after payment and the receipt can't word it differently.
-export function describeDelivery(order: GiftOrder): string {
-  const when = order.deliverOn ? `on ${formatDeliveryDate(order.deliverOn)}` : "right away";
-  if (order.method === "self") return `Coming to you ${when}.`;
+//
+// Four keys rather than one sentence assembled from parts. "Going to Sam on
+// Fri, Aug 7" is English putting the who before the when; Japanese puts both
+// before the verb and Urdu reads the other way, so a `${who} ${when}` template
+// only ever works in the language it was written in.
+export function describeDelivery(
+  order: GiftOrder,
+  tag = "en-US",
+): { key: StringKey; vars: Record<string, string> } {
+  const date = order.deliverOn ? formatDeliveryDate(order.deliverOn, tag) : null;
   const who = order.recipientName.trim() || order.recipientContact.trim();
-  return `Going to ${who} ${when}.`;
+  if (order.method === "self") {
+    return date
+      ? { key: "gift.comingToYouOn", vars: { date } }
+      : { key: "gift.comingToYouNow", vars: {} };
+  }
+  return date
+    ? { key: "gift.goingToOn", vars: { who, date } }
+    : { key: "gift.goingToNow", vars: { who } };
 }
 
-export function formatDeliveryDate(iso: string): string {
+export function formatDeliveryDate(iso: string, tag = "en-US"): string {
   // Parsed as local rather than UTC: new Date("2026-08-06") is midnight UTC,
   // which prints as the 5th anywhere west of Greenwich.
   const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString([], {
+  return new Date(year, month - 1, day).toLocaleDateString(tag, {
     weekday: "short",
     month: "short",
     day: "numeric",

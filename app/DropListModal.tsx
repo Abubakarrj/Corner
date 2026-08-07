@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useT } from "./i18n";
+import { useServerText, useT } from "./i18n";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { hasConsented, subscribeConsentChanged } from "./CookieConsent";
 
@@ -143,6 +143,8 @@ function getConsentServerSnapshot() {
 
 export default function DropListModal() {
   const t = useT();
+  // The API answers with string keys, not sentences — see serverText().
+  const st = useServerText();
   const pathname = usePathname();
   const consented = useSyncExternalStore(
     subscribeConsentChanged,
@@ -305,7 +307,7 @@ export default function DropListModal() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        throw new Error(body?.error ?? "Something went wrong.");
+        throw new Error(body?.error ?? "checkout.somethingWentWrong");
       }
       // Signing up dismisses the modal — there is no confirmation step, so the
       // page the visitor came for is handed straight back to them.
@@ -315,7 +317,7 @@ export default function DropListModal() {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : "Something went wrong.",
+          : "checkout.somethingWentWrong",
       );
     }
   }
@@ -408,7 +410,7 @@ export default function DropListModal() {
               autoComplete="email"
               name="email"
               aria-label={t("droplist.email")}
-              placeholder="Email address"
+              placeholder={t("droplist.email")}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -424,7 +426,7 @@ export default function DropListModal() {
               style={{ color: BRAND_RED }}
               className="mt-2 text-[12px]"
             >
-              {error}
+              {st(error)}
             </p>
           ) : null}
 

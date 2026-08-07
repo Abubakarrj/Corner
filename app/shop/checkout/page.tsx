@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useT, type StringKey } from "../../i18n";
+import { useLocale, useServerText, useT, type StringKey } from "../../i18n";
+import { localeById } from "../../localeScript";
+import { useMenu } from "../../i18n/menu";
 import Link from "next/link";
 import { useCart, useCartRows } from "../CartContext";
 import { formatPrice } from "../products";
 import { totalsFor } from "../money";
 import { describeFulfillment, useFulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
-import { CLOSE_LABEL } from "../../shopFacts";
+import { CLOSE_HOUR, clockLabel, weekdayLabel } from "../../shopFacts";
 import { useCapabilities } from "../../capabilities";
 import { orderTotals, recordOrder, PREP_MINUTES, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
@@ -31,6 +33,10 @@ function readyAt(minutes: number): string {
 
 export default function CheckoutPage() {
   const t = useT();
+  // /api/delivery/quote and /api/shop-order answer with string keys.
+  const st = useServerText();
+  const menu = useMenu();
+  const tag = localeById(useLocale()).tag;
   const { subtotalCents, clear } = useCart();
   const fulfillment = useFulfillment();
   const rows = useCartRows();
@@ -87,7 +93,7 @@ export default function CheckoutPage() {
   const current = quoted?.forAddress === deliveryAddress ? quoted : null;
   const quote = current?.quote ?? null;
   const quoteError = current?.failed
-    ? (current.message ?? t("checkout.couldNotPrice"))
+    ? (st(current.message) || t("checkout.couldNotPrice"))
     : null;
 
   useEffect(() => {
@@ -186,7 +192,7 @@ export default function CheckoutPage() {
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(result?.error ?? t("checkout.somethingWentWrong"));
+        throw new Error(st(result?.error) || t("checkout.somethingWentWrong"));
       }
 
       // The account page's history and its usuals list are built from this.
@@ -210,7 +216,11 @@ export default function CheckoutPage() {
         deliveryCents: totals.deliveryCents,
         tipCents: totals.tipCents,
         totalCents: totals.totalCents,
-        fulfillmentMode: where?.mode ?? "Pickup",
+        // The mode itself, not the string key that names it: this record is
+        // read back by progressFor() to decide whether an order is a delivery,
+        // and it outlives any one language. The tracker translates it at
+        // render through fulfillmentModeKey().
+        fulfillmentMode: fulfillment?.mode ?? "pickup",
         fulfillmentWhere: where?.where ?? "Corner Bagel",
         // Uber's live view of the courier, when one was booked. The tracker
         // links to it rather than pretending to know where the driver is.
@@ -358,15 +368,22 @@ export default function CheckoutPage() {
       </Section>
 
       <Section title={t("checkout.orderDetails")}>
-        <Disclosure summary={`${itemCount} item${itemCount === 1 ? "" : "s"}`}>
+        <Disclosure
+          summary={
+            itemCount === 1
+              ? t("checkout.itemCountOne")
+              : t("checkout.itemCount", { count: itemCount })
+          }
+        >
           <div className="flex flex-col divide-y divide-line-faint">
             {rows.map(({ line, product, key, lineCents, chosen }) => (
               <div key={key} className="flex items-start justify-between gap-3 py-2.5">
                 <span className="min-w-0 text-[14px] text-ink">
-                  {product.name} <span className="text-quiet">×{line.quantity}</span>
+                  {menu.name(product)}{" "}
+                  <span className="text-quiet">×{line.quantity}</span>
                   {chosen.length > 0 ? (
                     <span className="mt-0.5 block text-[12px] text-muted">
-                      {chosen.join(" · ")}
+                      {menu.options(product, line.options).join(" · ")}
                     </span>
                   ) : null}
                 </span>
@@ -386,7 +403,7 @@ export default function CheckoutPage() {
 
         {unavailable.length > 0 ? (
           <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
-            {unavailable[0].product.name} sold out today.{" "}
+            {t("checkout.soldOutLine", { name: menu.name(unavailable[0].product) })}{" "}
             <Link href="/shop/cart" className="cursor-pointer underline">
               {t("checkout.takeItOut")}
             </Link>
@@ -396,7 +413,7 @@ export default function CheckoutPage() {
 
         {incomplete.length > 0 ? (
           <p role="alert" className="m-0 mt-3 text-[12px] text-brand-red">
-            {incomplete[0].product.name} still needs its options.{" "}
+            {t("checkout.needsOptionsLine", { name: menu.name(incomplete[0].product) })}{" "}
             <Link href="/shop/cart" className="cursor-pointer underline">
               {t("checkout.chooseInBasket")}
             </Link>
@@ -412,8 +429,20 @@ export default function CheckoutPage() {
           </p>
           <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
             {opening.open
-              ? `There isn't time to make this before we shut at ${CLOSE_LABEL}. Your basket keeps — order again when we open.`
-              : `${opening.label.replace("Closed · o", "O")}. Your basket keeps until then.`}
+              ? t("checkout.noTimeBefore", { time: clockLabel(CLOSE_HOUR, tag) })
+              : opening.next
+                ? t(
+                    opening.next.when === "today"
+                      ? "checkout.opensToday"
+                      : opening.next.when === "tomorrow"
+                        ? "checkout.opensTomorrow"
+                        : "checkout.opensDay",
+                    {
+                      time: clockLabel(opening.next.hour, tag),
+                      day: weekdayLabel(opening.next.day, tag),
+                    },
+                  )
+                : t("checkout.basketKeeps")}
           </p>
         </div>
       ) : null}
@@ -505,7 +534,9 @@ export default function CheckoutPage() {
               ? quoteError
                 ? t("checkout.deliveryUnavailable")
                 : t("checkout.pricingDelivery")
-              : `Place order · ${formatPrice(totals.totalCents)}`}
+              : t("checkout.placeOrderWith", {
+                  total: formatPrice(totals.totalCents),
+                })}
       </Button>
 
       {/* Says what actually happens, which depends on how the shop is set up

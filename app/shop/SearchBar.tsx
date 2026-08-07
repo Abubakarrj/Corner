@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useT } from "../i18n";
+import { useMenu } from "../i18n/menu";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice, searchProducts } from "./products";
 import ProductImage from "./ProductImage";
@@ -47,6 +48,7 @@ export default function SearchBar({
   onClose: () => void;
 }) {
   const t = useT();
+  const menu = useMenu();
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(-1);
@@ -186,7 +188,7 @@ export default function SearchBar({
                 >
                   <ProductImage
                     swatch={product.swatch}
-                    name={product.name}
+                    name={menu.name(product)}
                     className="h-9 w-9 shrink-0 rounded-md"
                   />
                   <span className="min-w-0 flex-1">
@@ -194,10 +196,10 @@ export default function SearchBar({
                       className="block truncate text-[13px] text-ink"
                       style={{ fontFamily: DISPLAY_FONT }}
                     >
-                      {product.name}
+                      {menu.name(product)}
                     </span>
                     <span className="block truncate text-[10px] uppercase tracking-[0.07em] text-hint">
-                      {product.category}
+                      {menu.category(product.category)}
                     </span>
                   </span>
                   <span className="shrink-0 text-[12px] tabular-nums text-muted">

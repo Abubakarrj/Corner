@@ -1,7 +1,13 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { minutesUntilClose, openingStatus, PREP_MINUTES } from "./shopFacts";
+import {
+  isOpenNow,
+  minutesUntilClose,
+  nextOpeningAt,
+  PREP_MINUTES,
+  type NextOpening,
+} from "./shopFacts";
 
 // Whether the counter is open, as something a component can render.
 //
@@ -16,7 +22,14 @@ import { minutesUntilClose, openingStatus, PREP_MINUTES } from "./shopFacts";
 // at ("opens at 7am").
 export type Opening = {
   open: boolean;
-  label: string;
+  // When the window opens again, in parts, or null while it's open.
+  //
+  // Parts, not the finished "Closed · opens tomorrow at 7am" this used to
+  // carry. That sentence was English, and the screen that showed it reached
+  // into it with `.replace("Closed · o", "O")` to get a different one out —
+  // which is a string operation on a translation, and works in exactly one
+  // language. The screens build what they need from these three fields.
+  next: NextOpening | null;
   minutesLeft: number;
   // Enough time to make the order before the window shuts. Being open is not
   // the same as being able to take an order at 1:58pm.
@@ -24,13 +37,13 @@ export type Opening = {
 };
 
 function compute(): Opening {
-  const status = openingStatus();
   const minutesLeft = minutesUntilClose();
+  const open = isOpenNow();
   return {
-    open: status.open,
-    label: status.label,
+    open,
+    next: nextOpeningAt(),
     minutesLeft,
-    acceptingOrders: status.open && minutesLeft >= PREP_MINUTES,
+    acceptingOrders: open && minutesLeft >= PREP_MINUTES,
   };
 }
 
@@ -39,11 +52,16 @@ const listeners = new Set<() => void>();
 
 function refresh() {
   const next = compute();
+  // `next` is a fresh object every tick, so it's compared field by field —
+  // a reference check here would replace the snapshot every minute and
+  // re-render every subscriber for nothing.
   if (
     next.open === snapshot.open &&
-    next.label === snapshot.label &&
     next.acceptingOrders === snapshot.acceptingOrders &&
-    next.minutesLeft === snapshot.minutesLeft
+    next.minutesLeft === snapshot.minutesLeft &&
+    next.next?.when === snapshot.next?.when &&
+    next.next?.day === snapshot.next?.day &&
+    next.next?.hour === snapshot.next?.hour
   ) {
     return;
   }

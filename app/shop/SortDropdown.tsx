@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useT } from "../i18n";
 import { SORT_OPTIONS, type SortValue } from "./products";
 import type { Product } from "./products";
 import { CONTROL_PILL } from "./shopControls";
@@ -53,6 +54,7 @@ export default function SortDropdown({
   activeSort: SortValue;
   activeCategory: Product["category"] | undefined;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -93,7 +95,7 @@ export default function SortDropdown({
         aria-haspopup="listbox"
         className={`${CONTROL_PILL} flex cursor-pointer items-center gap-1.5 px-3 transition-colors hover:border-ink`}
       >
-        Sort: {activeLabel}
+        {t("shop.sortPrefix", { label: activeLabel ? t(activeLabel) : "" })}
         <ChevronIcon open={open} />
       </button>
 
@@ -111,7 +113,7 @@ export default function SortDropdown({
               onClick={() => setOpen(false)}
               className="flex cursor-pointer items-center justify-between px-3.5 py-2 text-[12px] text-ink transition-colors hover:bg-raise"
             >
-              {option.label}
+              {t(option.label)}
               {option.value === activeSort ? <CheckIcon /> : null}
             </Link>
           ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useT } from "../../i18n";
+import { useServerText, useT, type StringKey } from "../../i18n";
 import { useEffect, useRef, useState } from "react";
 import { signIn } from "../../account";
 import { Button } from "../../ui/Button";
@@ -33,15 +33,10 @@ type Intent = "signin" | "join";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const COPY: Record<Intent, { title: string; blurb: string }> = {
-  signin: {
-    title: "Login",
-    blurb: "We'll email you a code — there's no password to remember.",
-  },
-  join: {
-    title: "Join",
-    blurb: "Save your usual, reorder in a tap, and hear about drops first.",
-  },
+// String keys, resolved at render — see the note in app/i18n.
+const COPY: Record<Intent, { title: StringKey; blurb: StringKey }> = {
+  signin: { title: "membership.loginTitle", blurb: "membership.loginBlurb" },
+  join: { title: "membership.joinTitle", blurb: "membership.joinBlurb" },
 };
 
 export default function MembershipForm({
@@ -50,6 +45,8 @@ export default function MembershipForm({
   initialStep?: Intent;
 }) {
   const t = useT();
+  // The API answers with string keys, not sentences — see serverText().
+  const st = useServerText();
   const router = useRouter();
   const [intent, setIntent] = useState<Intent>(initialStep);
   const [step, setStep] = useState<Step>("email");
@@ -79,12 +76,14 @@ export default function MembershipForm({
         body: JSON.stringify({ email: address }),
       });
       const body = (await response.json().catch(() => null)) as { error?: string } | null;
-      if (!response.ok) throw new Error(body?.error ?? "We couldn't send that code.");
+      if (!response.ok) throw new Error(body?.error ?? "api.codeSendFailed");
       setStep("code");
       setCode("");
       return true;
     } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : "Something went wrong.");
+      setError(
+        sendError instanceof Error ? sendError.message : "checkout.somethingWentWrong",
+      );
       return false;
     } finally {
       setBusy(false);
@@ -95,7 +94,7 @@ export default function MembershipForm({
     event.preventDefault();
     const address = email.trim().toLowerCase();
     if (!EMAIL.test(address)) {
-      setError("Enter a valid email.");
+      setError("checkout.validEmail");
       return;
     }
     if (busy) return;
@@ -106,7 +105,7 @@ export default function MembershipForm({
     event.preventDefault();
     const digits = code.trim();
     if (digits.length < 4) {
-      setError("Enter the code we emailed you.");
+      setError("api.enterCode");
       return;
     }
     if (busy) return;
@@ -124,14 +123,16 @@ export default function MembershipForm({
         user?: { email: string; name: string };
       } | null;
       if (!response.ok || !body?.user) {
-        throw new Error(body?.error ?? "We couldn't check that code.");
+        throw new Error(body?.error ?? "api.codeCheckFailed");
       }
       // The cookie is already set. This is the local echo, so the next screen
       // knows who you are without waiting on a round trip.
       signIn(body.user);
       router.push("/shop/account");
     } catch (verifyError) {
-      setError(verifyError instanceof Error ? verifyError.message : "Something went wrong.");
+      setError(
+        verifyError instanceof Error ? verifyError.message : "checkout.somethingWentWrong",
+      );
       setCode("");
       codeRef.current?.focus();
     } finally {
@@ -151,7 +152,7 @@ export default function MembershipForm({
         {step === "code" ? (
           <div className="px-5 pt-4">
             <IconButton
-              label="Back"
+              label={t("common.back")}
               onClick={() => {
                 setStep("email");
                 setError(null);
@@ -173,13 +174,13 @@ export default function MembershipForm({
           {step === "email" ? (
             <>
               <h1 className="m-0 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink">
-                {copy.title}
+                {t(copy.title)}
               </h1>
-              <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">{copy.blurb}</p>
+              <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">{t(copy.blurb)}</p>
 
               <form onSubmit={onSubmitEmail} noValidate className="mt-7 flex flex-col">
                 <Field
-                  label="Email"
+                  label={t("checkout.email")}
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -188,17 +189,17 @@ export default function MembershipForm({
                     setEmail(next);
                     setError(null);
                   }}
-                  hint={error ?? undefined}
+                  hint={error ? st(error) : undefined}
                 />
 
                 <Button type="submit" block className="mt-6" disabled={busy}>
-                  {busy ? "Sending…" : "Email me a code"}
+                  {busy ? t("membership.sending") : t("membership.emailMeCode")}
                 </Button>
 
                 <p className="m-0 mt-4 text-center text-[13px] text-muted">
                   {intent === "signin" ? (
                     <>
-                      New here?{" "}
+                      {t("membership.newHere")}{" "}
                       <Quiet onClick={() => setIntent("join")}>{t("membership.createAccount")}</Quiet>
                     </>
                   ) : (
@@ -215,15 +216,25 @@ export default function MembershipForm({
                 {t("membership.checkEmail")}
               </h1>
               <p className="m-0 mt-2 text-[14px] leading-[1.5] text-muted">
-                We sent a code to{" "}
-                <span className="text-ink">{email.trim().toLowerCase()}</span>. It&rsquo;s
-                good for a few minutes.
+                {(() => {
+                  // Split around {email} so the address can sit wherever the
+                  // sentence puts it, and still be marked up as the one part
+                  // of it that isn't prose.
+                  const [before, after = ""] = t("membership.codeGoodFor").split("{email}");
+                  return (
+                    <>
+                      {before}
+                      <span className="text-ink">{email.trim().toLowerCase()}</span>
+                      {after}
+                    </>
+                  );
+                })()}
               </p>
 
               <form onSubmit={onSubmitCode} noValidate className="mt-7 flex flex-col">
                 <Field
                   ref={codeRef}
-                  label="Code"
+                  label={t("membership.code")}
                   inputMode="numeric"
                   // one-time-code lets iOS and Android offer the code straight
                   // from the notification, which is most of the point of doing
@@ -235,20 +246,20 @@ export default function MembershipForm({
                     setCode(next.replace(/\D/g, ""));
                     setError(null);
                   }}
-                  hint={error ?? undefined}
+                  hint={error ? st(error) : undefined}
                   className="text-center text-[22px] tracking-[0.3em]"
                 />
 
                 <Button type="submit" block className="mt-6" disabled={busy}>
-                  {busy ? "Checking…" : "Continue"}
+                  {busy ? t("membership.checking") : t("membership.continue")}
                 </Button>
 
                 <p className="m-0 mt-4 text-center text-[13px] text-muted">
                   {resent ? (
-                    "Sent again — check your inbox."
+                    t("membership.sentAgain")
                   ) : (
                     <>
-                      Didn&rsquo;t arrive?{" "}
+                      {t("membership.didntArrive")}{" "}
                       <Quiet
                         onClick={async () => {
                           const sent = await sendCode(email.trim().toLowerCase());

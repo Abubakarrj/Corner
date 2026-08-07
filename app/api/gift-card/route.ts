@@ -22,6 +22,13 @@ import { isToastConfigured } from "../../toast";
 // copy of these checks is a convenience for the person filling it in, not a
 // guarantee: anything that reaches this endpoint could have skipped the form
 // entirely.
+//
+// Every `error` below is a *string key*, not a sentence. This route has no
+// locale and no way to get one that isn't a guess — an Accept-Language header
+// says what the browser was installed as, not what the visitor chose in the
+// app. So it names the sentence and the screen says it, through
+// useServerText() in app/i18n. Keys are also stabler than prose for anything
+// that ever wants to branch on which error came back.
 
 function isValidEmail(input: unknown): input is string {
   return typeof input === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
@@ -32,13 +39,13 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const body = (payload ?? {}) as Record<string, unknown>;
 
   if (!isValidEmail(body.buyerEmail)) {
-    return Response.json({ error: "Enter a valid email." }, { status: 400 });
+    return Response.json({ error: "checkout.validEmail" }, { status: 400 });
   }
 
   // The amount is the whole transaction, so it gets the strictest look: an
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
   // rounding problem to fix quietly — it's rejected.
   const amountCents = body.amountCents;
   if (typeof amountCents !== "number" || !isValidAmount(amountCents)) {
-    return Response.json({ error: "That isn't a gift card amount we sell." }, { status: 400 });
+    return Response.json({ error: "gift.errNotAnAmount" }, { status: 400 });
   }
 
   const method = body.method;
@@ -55,7 +62,7 @@ export async function POST(request: Request) {
     typeof method !== "string" ||
     !DELIVERY_METHODS.some((option) => option.id === method)
   ) {
-    return Response.json({ error: "Choose how to send it." }, { status: 400 });
+    return Response.json({ error: "gift.errChooseSend" }, { status: 400 });
   }
 
   const recipientContact =
@@ -75,7 +82,7 @@ export async function POST(request: Request) {
   const designId = typeof body.designId === "string" ? body.designId : "";
   const design = GIFT_CARDS.find((card) => card.id === designId);
   if (!design) {
-    return Response.json({ error: "Pick a card design." }, { status: 400 });
+    return Response.json({ error: "gift.errPickDesign" }, { status: 400 });
   }
 
   const message =

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useServerText } from "../../i18n";
 import { PALETTE } from "../../shop/shopControls";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN, nearestLocations, type StoreLocation } from "./locations";
@@ -73,6 +74,8 @@ export default function SearchResults({
   onPickPlace: (place: ResolvedPlace) => void;
   onResolvedAddress: (place: ResolvedPlace) => void;
 }) {
+  // /api/geo answers with string keys rather than sentences — see serverText().
+  const st = useServerText();
   const isDelivery = mode === "delivery";
   // Which tab is showing is derived, not stored, so it can follow the query
   // without an effect resetting it: our own shops win by default whenever
@@ -127,7 +130,7 @@ export default function SearchResults({
         setSuggestions({ forQuery: input, items: [] });
         setError({
           forQuery: input,
-          message: searchError instanceof Error ? searchError.message : "Search failed.",
+          message: searchError instanceof Error ? searchError.message : "finder.searchFailed",
         });
       } finally {
         if (!controller.signal.aborted) setStatus({ forQuery: input, state: "idle" });
@@ -167,7 +170,7 @@ export default function SearchResults({
         }),
       });
       const body = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(body?.error ?? "Couldn't read that.");
+      if (!response.ok) throw new Error(body?.error ?? "api.addressNotFound");
       const resolved = body as ResolvedPlace;
 
       if (isDelivery) {
@@ -268,7 +271,7 @@ export default function SearchResults({
         // under Pickup or Catering found nothing and blamed the address
         // search for it.
         <p className="m-0 py-3 text-[13px]" style={{ color: "var(--cb-red)" }}>
-          {message}
+          {st(message)}
         </p>
       ) : searching && rows.length === 0 ? (
         <p className="m-0 py-3 text-[13px]" style={{ color: faint }}>

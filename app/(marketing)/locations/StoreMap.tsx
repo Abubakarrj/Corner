@@ -386,7 +386,7 @@ export default function StoreMap({
                   <button
                     type="button"
                     onClick={() => setDetailsFor(location)}
-                    aria-label={`About ${location.name}`}
+                    aria-label={t("finder.about", { name: location.name })}
                     className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors hover:bg-raise"
                     style={{ borderColor: controlBorder }}
                   >
@@ -404,7 +404,7 @@ export default function StoreMap({
                     size="sm"
                     variant="secondary"
                     onClick={() => order(location)}
-                    aria-label={`Order from ${location.name}`}
+                    aria-label={t("finder.orderFrom", { name: location.name })}
                   >
                     {t("finder.order")}
                   </Button>

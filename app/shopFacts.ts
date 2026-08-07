@@ -23,10 +23,32 @@ export const CLOSE_HOUR = 16;
 // for as long as one was missed. A time that appears in prose is still the
 // same fact as the number the clock compares against, and it should come from
 // the same place.
-function clockLabel(hour24: number): string {
-  const period = hour24 >= 12 ? "pm" : "am";
-  const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
-  return `${hour}${period}`;
+// The default is the shop's own house style, "7am", closed up and lowercase.
+// Every other language gets what its locale data says, because "午前7時" is
+// not a variant of "7am" that can be reached by lowercasing anything.
+export function clockLabel(hour24: number, tag = "en-US"): string {
+  if (tag.startsWith("en")) {
+    const period = hour24 >= 12 ? "pm" : "am";
+    const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
+    return `${hour}${period}`;
+  }
+  try {
+    return new Date(2000, 0, 1, hour24).toLocaleTimeString(tag, { hour: "numeric" });
+  } catch {
+    return clockLabel(hour24);
+  }
+}
+
+// A weekday name, in whichever language is asking. The English array below is
+// still what shopClock() matches against — that one is a parse, not a label,
+// and it has to stay in the locale the formatter is pinned to.
+export function weekdayLabel(day: number, tag = "en-US"): string {
+  try {
+    // 2024-01-07 was a Sunday, so day 0 lands on the 7th.
+    return new Date(2024, 0, 7 + day).toLocaleDateString(tag, { weekday: "long" });
+  } catch {
+    return DAY_LONG[day] ?? "";
+  }
 }
 
 export const OPEN_LABEL = clockLabel(OPEN_HOUR);
@@ -144,8 +166,40 @@ export function nextOpening(now: Date = new Date()): string | null {
   return null;
 }
 
+// When the window opens next, as parts rather than a sentence — the same
+// answer nextOpening() gives, for the screens that have to say it in a
+// language this module doesn't know. `day` is a JavaScript weekday, and only
+// meaningful when `when` is "day".
+export type NextOpening = {
+  when: "today" | "tomorrow" | "day";
+  day: number;
+  hour: number;
+};
+
+export function nextOpeningAt(now: Date = new Date()): NextOpening | null {
+  if (isOpenNow(now)) return null;
+  const { day, hour } = shopClock(now);
+  if (OPEN_DAYS.includes(day) && hour < OPEN_HOUR) {
+    return { when: "today", day, hour: OPEN_HOUR };
+  }
+  for (let ahead = 1; ahead <= 7; ahead += 1) {
+    const next = (day + ahead) % 7;
+    if (!OPEN_DAYS.includes(next)) continue;
+    return {
+      when: ahead === 1 ? "tomorrow" : "day",
+      day: next,
+      hour: OPEN_HOUR,
+    };
+  }
+  return null;
+}
+
 // One line for a header or a chat: open and until when, or shut and until
 // when. Deliberately not "Open now!" — the useful half is the time.
+//
+// English, and that's deliberate: this one goes into Riley's briefing and the
+// order endpoint's log, neither of which has a visitor attached. The screens
+// build the same sentence from nextOpeningAt() and the string tables.
 export function openingStatus(now: Date = new Date()): {
   open: boolean;
   label: string;

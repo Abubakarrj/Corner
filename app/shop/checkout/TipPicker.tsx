@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "../../i18n";
 import { formatPrice } from "../products";
 import { TIP_PRESETS, tipFor } from "../money";
 
@@ -19,6 +20,7 @@ export default function TipPicker({
   tipCents: number;
   onTip: (cents: number) => void;
 }) {
+  const t = useT();
   const [custom, setCustom] = useState("");
   const [customOpen, setCustomOpen] = useState(false);
 
@@ -101,7 +103,7 @@ export default function TipPicker({
           <input
             type="text"
             inputMode="decimal"
-            aria-label="Custom tip amount"
+            aria-label={t("checkout.customTipAmount")}
             placeholder="0.00"
             value={custom}
             onChange={(event) => applyCustom(event.target.value)}

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
+import { useMenu } from "../i18n/menu";
 import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
@@ -31,6 +32,7 @@ export default function CrossSellStrip({
   onNavigate: () => void;
 }) {
   const t = useT();
+  const menu = useMenu();
   const { addItem } = useCart();
 
   if (products.length === 0) return null;
@@ -49,7 +51,7 @@ export default function CrossSellStrip({
             <Link href={`/shop/product/${product.slug}`} onClick={onNavigate} className="relative block cursor-pointer">
               <ProductImage
                 swatch={product.swatch}
-                name={product.name}
+                name={menu.name(product)}
                 className="aspect-square w-full rounded-lg"
               />
               {/* Quick-add only for things that can be made without asking
@@ -63,7 +65,7 @@ export default function CrossSellStrip({
                     event.preventDefault();
                     addItem(product.slug);
                   }}
-                  aria-label={t("shop.addNamed", { name: product.name })}
+                  aria-label={t("shop.addNamed", { name: menu.name(product) })}
                   style={{ backgroundColor: "var(--cb-ink)" }}
                   className="absolute bottom-1.5 right-1.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.25)] transition-opacity hover:opacity-90"
                 >
@@ -76,7 +78,7 @@ export default function CrossSellStrip({
               onClick={onNavigate}
               className="mt-1.5 block cursor-pointer truncate text-[11px] text-ink hover:underline"
             >
-              {product.name}
+              {menu.name(product)}
             </Link>
             <span className="text-[11px] text-faint">{formatPrice(product.priceCents)}</span>
           </div>

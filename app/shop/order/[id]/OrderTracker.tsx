@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useT } from "../../../i18n";
+import { useLocale, useT } from "../../../i18n";
+import { useMenu } from "../../../i18n/menu";
+import { localeById } from "../../../localeScript";
+import { fulfillmentModeKey } from "../../../fulfillment";
 import { useEffect, useState } from "react";
 import {
   findOrder,
@@ -29,6 +32,7 @@ const { ink, muted, faint, border, surface, controlBorder, sky } = PALETTE;
 // it never claims the order was handed over: only the counter knows that.
 export default function OrderTracker({ id }: { id: string }) {
   const t = useT();
+  const tag = localeById(useLocale()).tag;
   const orders = useOrders();
   const order = findOrder(orders, id);
 
@@ -58,7 +62,7 @@ export default function OrderTracker({ id }: { id: string }) {
     );
   }
 
-  const progress = progressFor(order);
+  const progress = progressFor(order, tag);
   const stage = progress.stages[progress.current];
 
   return (
@@ -174,6 +178,8 @@ export default function OrderTracker({ id }: { id: string }) {
 
 function Receipt({ order }: { order: PlacedOrder }) {
   const t = useT();
+  const menu = useMenu();
+  const tag = localeById(useLocale()).tag;
   const bill = orderTotals(order);
   return (
     <div
@@ -185,11 +191,11 @@ function Receipt({ order }: { order: PlacedOrder }) {
           {order.id}
         </span>
         <span className="text-[13px]" style={{ color: faint }}>
-          {formatOrderDate(order.placedAt)}
+          {formatOrderDate(order.placedAt, tag)}
         </span>
       </div>
       <p className="mt-0.5 text-[13px]" style={{ color: muted }}>
-        {order.fulfillmentMode} · {order.fulfillmentWhere}
+        {t(fulfillmentModeKey(order.fulfillmentMode))} · {order.fulfillmentWhere}
       </p>
 
       <div className="mt-4 flex flex-col gap-3">
@@ -197,16 +203,16 @@ function Receipt({ order }: { order: PlacedOrder }) {
           <div key={`${item.slug}-${index}`} className="flex items-center gap-3">
             <ProductImage
               swatch={getProduct(item.slug)?.swatch ?? "var(--cb-faint)"}
-              name={item.name}
+              name={menu.recorded(item).name}
               className="h-10 w-10 shrink-0 rounded-lg"
             />
             <div className="min-w-0 flex-1">
               <p className="m-0 text-[14px]" style={{ color: ink }}>
-                {item.quantity}× {item.name}
+                {item.quantity}× {menu.recorded(item).name}
               </p>
-              {item.optionsLabel ? (
+              {menu.recorded(item).options ? (
                 <p className="m-0 text-[12px]" style={{ color: muted }}>
-                  {item.optionsLabel}
+                  {menu.recorded(item).options}
                 </p>
               ) : null}
             </div>
@@ -222,20 +228,18 @@ function Receipt({ order }: { order: PlacedOrder }) {
           tax and whatever tip was left, so the same order showed one number on
           the confirmation and a smaller one here. */}
       <div className="mt-4 border-t pt-3" style={{ borderColor: border }}>
-        <Line label="Subtotal" amount={formatPrice(bill.subtotalCents)} />
-        <Line label="Tax" amount={formatPrice(bill.taxCents)} />
+        <Line label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
+        <Line label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
         {bill.deliveryCents > 0 ? (
-          <Line label="Delivery" amount={formatPrice(bill.deliveryCents)} />
+          <Line label={t("checkout.delivery")} amount={formatPrice(bill.deliveryCents)} />
         ) : null}
-        {bill.tipCents > 0 ? <Line label="Tip" amount={formatPrice(bill.tipCents)} /> : null}
+        {bill.tipCents > 0 ? <Line label={t("checkout.tip")} amount={formatPrice(bill.tipCents)} /> : null}
         <div className="mt-1.5 border-t pt-2" style={{ borderColor: border }}>
-          <Line label="Total" amount={formatPrice(bill.totalCents)} strong />
+          <Line label={t("common.total")} amount={formatPrice(bill.totalCents)} strong />
         </div>
       </div>
       <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
-        {bill.deliveryCents > 0
-          ? "Pay the courier when it arrives."
-          : "Pay at the window when you collect."}
+        {bill.deliveryCents > 0 ? t("order.payCourier") : t("order.payAtWindow")}
       </p>
 
       {/* Uber's own tracking page. Linked rather than embedded, and rather

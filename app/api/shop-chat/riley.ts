@@ -1,3 +1,5 @@
+import { localeById } from "../../localeScript";
+import { TABLES as MENU_TABLES } from "../../i18n/menuTables";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -222,6 +224,47 @@ somebody tells you an allergy is severe, and point them at a person before
 they order.
 
 If an item isn't on the list above, you don't know what's in it. Say so.`;
+}
+
+// The language to answer in, as a second system block.
+//
+// Kept out of buildSystemPrompt() on purpose. That one is cached — it's the
+// menu, the guide and the shop's hours, and it's most of the tokens on every
+// request. Anything that varies per request has to come *after* the cache
+// breakpoint or it invalidates the whole prefix, so the one sentence that
+// changes with the visitor lives here on its own.
+//
+// English gets nothing at all, which is the shape that keeps the common case
+// free: no second block, no extra tokens, and the model's default.
+export function languageInstruction(locale: string): string | null {
+  const chosen = localeById(locale);
+  const table = MENU_TABLES[chosen.id];
+  if (chosen.id === "en" || !table) return null;
+
+  // The menu above is English, and it stays English — it's the cached half of
+  // the prompt and the tools match against its slugs. So the translated names
+  // come through as a glossary instead, which is also the shape that keeps
+  // Riley from inventing her own translation of "Baby Got BEC".
+  const glossary = PRODUCTS.map((product) => {
+    const translated = table[`name.${product.slug}`];
+    return translated ? `- ${product.name} → ${translated}` : null;
+  })
+    .filter(Boolean)
+    .join("\n");
+
+  return `# Language
+
+Answer in ${chosen.english} (${chosen.native}). The visitor has set the app to
+that language and everything on their screen is in it, so a reply in English
+reads as a fault.
+
+${SHOP_EMAIL}, the address, and any order number are not words. Write them
+exactly as they appear.
+
+These are the names the app is showing them. Use these, not your own
+translation, and not the English:
+
+${glossary}`;
 }
 
 // Anything Riley writes back is text. no tools, no structured output. The

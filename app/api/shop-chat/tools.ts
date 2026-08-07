@@ -288,9 +288,12 @@ type ToolResult = {
 function cardFor(product: Product): ProductCard {
   // A group with no default has to be answered before the item can go in a
   // basket — see OptionGroup.defaultChoiceId.
+  // Group *ids*, not labels: the card is rendered in whatever language the
+  // visitor chose, and the id is the only part of a group that survives the
+  // trip. See ProductCard.needs.
   const needs = (product.options ?? [])
     .filter((group) => !group.defaultChoiceId)
-    .map((group) => group.label);
+    .map((group) => group.id);
   return {
     slug: product.slug,
     name: product.name,

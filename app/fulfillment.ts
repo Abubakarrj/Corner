@@ -114,6 +114,21 @@ export function peekFulfillment(): Fulfillment | null {
 // The mode comes back as a string key, not a word, for the same reason the
 // order stages do: this module knows the shape of a destination and has no
 // business knowing what language to name it in.
+// The string key that names a fulfillment mode.
+//
+// Takes a loose string rather than the union because it also has to read back
+// what a *stored order* recorded, and that record is whatever the app wrote on
+// the day: "Pickup" from before any of this was translated, and "finder.pickup"
+// from the window where the key itself was mistakenly stored. Both still have
+// to name a mode years later, so both are accepted; anything unrecognised is
+// pickup, which is the mode the shop defaults to.
+export function fulfillmentModeKey(mode: string): StringKey {
+  const bare = mode.toLowerCase().replace(/^finder\./, "");
+  if (bare === "delivery") return "finder.delivery";
+  if (bare === "catering") return "finder.catering";
+  return "finder.pickup";
+}
+
 export function describeFulfillment(fulfillment: Fulfillment): {
   mode: StringKey;
   where: string;

@@ -1,6 +1,7 @@
 "use client";
 
 import { setThemePreference } from "../theme";
+import { useT } from "../i18n";
 import { useResolvedTheme } from "../theme";
 
 // The appearance switch: one pill, sun on one side, moon on the other.
@@ -34,6 +35,7 @@ export default function ThemeToggle({
   className?: string;
   shell?: "surface" | "page";
 }) {
+  const t = useT();
   const theme = useResolvedTheme();
   const dark = theme === "dark";
 
@@ -42,7 +44,7 @@ export default function ThemeToggle({
       type="button"
       role="switch"
       aria-checked={dark}
-      aria-label="Dark mode"
+      aria-label={t("settings.darkMode")}
       onClick={() => setThemePreference(dark ? "light" : "dark")}
       className={`cb-press relative inline-flex h-7 w-[46px] shrink-0 cursor-pointer items-center rounded-full border transition-colors ${
         shell === "page" ? "border-line-grey" : "border-line-soft"

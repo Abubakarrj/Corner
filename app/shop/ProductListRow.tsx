@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
+import { useMenu } from "../i18n/menu";
 import { formatPrice, type Product } from "./products";
 import ProductImage from "./ProductImage";
 import { useCart } from "./CartContext";
@@ -14,6 +15,7 @@ import { DISPLAY_FONT } from "./shopControls";
 // shopControls.ts) so switching views doesn't change the page's type.
 export default function ProductListRow({ product }: { product: Product }) {
   const t = useT();
+  const menu = useMenu();
   const { addItem } = useCart();
   // A row is a single line of controls, and two dropdowns don't fit in one
   // without shoving the price off the end. An item that needs choices sends
@@ -29,7 +31,7 @@ export default function ProductListRow({ product }: { product: Product }) {
       >
         <ProductImage
           swatch={product.swatch}
-          name={product.name}
+          name={menu.name(product)}
           className="h-14 w-14 transition-transform duration-500 ease-out group-hover:scale-[1.04] sm:h-16 sm:w-16"
         />
       </Link>
@@ -41,7 +43,7 @@ export default function ProductListRow({ product }: { product: Product }) {
             className="cursor-pointer text-[15px] leading-[1.3] text-ink transition-opacity hover:opacity-70"
             style={{ fontFamily: DISPLAY_FONT }}
           >
-            {product.name}
+            {menu.name(product)}
           </Link>
           {product.tag ? (
             <span className="rounded-full bg-sun px-2 py-[2px] text-[9px] font-medium uppercase tracking-[0.06em] text-sun-ink">
@@ -50,10 +52,10 @@ export default function ProductListRow({ product }: { product: Product }) {
           ) : null}
         </div>
         <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-hint">
-          {product.category}
+          {menu.category(product.category)}
         </p>
         <p className="mt-1.5 hidden text-[12px] leading-[1.5] text-faint sm:line-clamp-1 sm:block">
-          {product.description}
+          {menu.description(product)}
         </p>
       </div>
 

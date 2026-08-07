@@ -243,7 +243,7 @@ export default function LocationFinder() {
   // "no shops here yet" next to a map of Pasadena leaves somebody guessing
   // whether we mean Pasadena or the whole company. An empty map after "Search
   // area" is the fourth, and the old wording is right for it.
-  const noun = mode === "catering" ? "catering" : "shops";
+  const noun = t(mode === "catering" ? "finder.nounCatering" : "finder.nounShops");
   const missed =
     searched && nearby.length > 0 && nearby[0].miles > SEARCH_RADIUS_MILES ? nearby[0] : null;
   // Whether the visitor has actually asked this screen anything yet.
@@ -259,11 +259,15 @@ export default function LocationFinder() {
       ? t("finder.startAddress")
       : t("finder.startSearch")
     : missed
-      ? `No ${noun} in ${shortPlace(searched!.label)}. The nearest is ${missed.location.name}, ` +
-        `${missed.miles.toFixed(missed.miles < 10 ? 1 : 0)} miles away.`
+      ? t("finder.noneHere", {
+          noun,
+          place: shortPlace(searched!.label),
+          name: missed.location.name,
+          miles: missed.miles.toFixed(missed.miles < 10 ? 1 : 0),
+        })
       : mode === "catering"
-        ? "No catering here yet."
-        : "No shops here yet.";
+        ? t("finder.noCateringYet")
+        : t("finder.noShopsYet");
 
   return (
     // dvh, and the map takes the leftover height — so the header stays put,
@@ -297,7 +301,7 @@ export default function LocationFinder() {
             it. Nothing looked broken; there was simply no way to close the
             screen. */}
         <div className="flex items-center gap-1.5 px-3 pt-[21px] min-[390px]:gap-2 min-[390px]:px-4">
-          <IconButtonLink href="/" label="Back">
+          <IconButtonLink href="/" label={t("common.back")}>
             <BackIcon />
           </IconButtonLink>
 
@@ -329,7 +333,7 @@ export default function LocationFinder() {
               arrow beside it, so nothing becomes unreachable — a narrow
               screen just gets one way out instead of two. */}
           <span className="hidden min-[390px]:block">
-            <IconButtonLink href="/" label="Close">
+            <IconButtonLink href="/" label={t("common.close")}>
               <CloseIcon />
             </IconButtonLink>
           </span>
@@ -400,7 +404,7 @@ export default function LocationFinder() {
           <button
             type="button"
             onClick={() => setToastDismissed(true)}
-            aria-label="Dismiss"
+            aria-label={t("common.dismiss")}
             className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--cb-faint)] transition-opacity hover:opacity-60"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>

@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const body = payload as {
@@ -56,10 +56,10 @@ export async function POST(request: Request) {
   }
 
   if (body?.action !== "resolve") {
-    return Response.json({ error: "Unknown action." }, { status: 400 });
+    return Response.json({ error: "api.unknownAction" }, { status: 400 });
   }
   if (query.length === 0 && placeId.length === 0) {
-    return Response.json({ error: "Enter an address." }, { status: 400 });
+    return Response.json({ error: "api.enterAddress" }, { status: 400 });
   }
 
   // The id first, the words as the fallback. Autocomplete already settled

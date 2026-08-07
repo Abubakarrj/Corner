@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import {
-  describeOrderItems,
   formatOrderDate,
   orderTotals,
   progressFor,
   signOut,
+  summarizeOrderItems,
   summarizeUsuals,
   useAccount,
   useOrders,
@@ -20,7 +20,9 @@ import { useCart } from "../CartContext";
 import { Button, ButtonLink } from "../../ui/Button";
 import ThemeToggle from "../../ui/ThemeToggle";
 import LanguagePicker from "../../ui/LanguagePicker";
-import { useT } from "../../i18n";
+import { useLocale, useT, type StringKey } from "../../i18n";
+import { useMenu } from "../../i18n/menu";
+import { localeById } from "../../localeScript";
 import { formatPrice, getProduct } from "../products";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
@@ -55,11 +57,15 @@ function StatusChip({ status }: { status: OrderStatus }) {
 // "Good morning" until noon, "Good afternoon" until 5, "Good evening" after.
 // Read from the visitor's own clock, not the shop's: a greeting is about the
 // time where they are, unlike the opening hours, which are about the shop.
-function greeting(now: Date = new Date()): string {
+//
+// Two keys per slot rather than a greeting with a name glued on the end,
+// because where the name goes is a property of the language: English puts it
+// last after a comma, Japanese and Korean put it first with an honorific, and
+// Chinese puts it first with its own comma.
+function greetingKey(named: boolean, now: Date = new Date()): StringKey {
   const hour = now.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+  const slot = hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : "Evening";
+  return `account.greet${slot}${named ? "Named" : ""}` as StringKey;
 }
 
 function SectionHeading({
@@ -92,6 +98,8 @@ export default function AccountPage() {
   const orders = useOrders();
   const { addItem } = useCart();
   const t = useT();
+  const menu = useMenu();
+  const tag = localeById(useLocale()).tag;
 
   const usuals = useMemo(() => summarizeUsuals(orders), [orders]);
   // The reference's "{t("account.recentActivity")}" is a short status feed above the
@@ -140,8 +148,12 @@ export default function AccountPage() {
             className="text-[24px] font-medium leading-tight tracking-[-0.01em]"
             style={{ color: ink, fontFamily: DISPLAY_FONT }}
           >
-            {greeting()}
-            {account.name ? `, ${account.name.split(" ")[0]}` : ""}
+            {(() => {
+              const first = account.name.split(" ")[0];
+              return first
+                ? t(greetingKey(true), { name: first })
+                : t(greetingKey(false));
+            })()}
           </h1>
           <p className="mt-0.5 truncate text-[13px]" style={{ color: muted }}>
             {account.email}
@@ -203,22 +215,22 @@ export default function AccountPage() {
                     >
                       <ProductImage
                         swatch={product?.swatch ?? "var(--cb-faint)"}
-                        name={usual.name}
+                        name={menu.recorded(usual).name}
                         className="aspect-square w-full rounded-xl"
                       />
                       <p
                         className="mt-2.5 line-clamp-1 text-[14px]"
                         style={{ color: ink, fontFamily: DISPLAY_FONT }}
                       >
-                        {usual.name}
+                        {menu.recorded(usual).name}
                       </p>
-                      {usual.optionsLabel ? (
+                      {menu.recorded(usual).options ? (
                         <p className="mt-0.5 line-clamp-1 text-[12px]" style={{ color: muted }}>
-                          {usual.optionsLabel}
+                          {menu.recorded(usual).options}
                         </p>
                       ) : null}
                       <p className="mt-0.5 text-[12px]" style={{ color: faint }}>
-                        Ordered {usual.timesOrdered}× before
+                        {t("account.orderedBefore", { count: usual.timesOrdered })}
                       </p>
                       <Button
                         variant="secondary"
@@ -261,7 +273,7 @@ export default function AccountPage() {
                     )}
                   </span>
                   <span className="shrink-0 text-[13px]" style={{ color: muted }}>
-                    {formatOrderDate(order.placedAt)}
+                    {formatOrderDate(order.placedAt, tag)}
                   </span>
                 </div>
               ))}
@@ -307,9 +319,13 @@ export default function AccountPage() {
 
 function OrderCard({ order }: { order: PlacedOrder }) {
   const t = useT();
+  const menu = useMenu();
+  const tag = localeById(useLocale()).tag;
   const { addItem } = useCart();
-  const first = order.items[0];
+  const summary = summarizeOrderItems(order);
+  const first = summary?.first;
   const product = first ? getProduct(first.slug) : undefined;
+  const firstName = first ? menu.recorded(first).name : order.id;
   // An order still in flight offers tracking; a settled one offers a reorder.
   // Showing both on every row makes neither read as the thing to do.
   const progress = progressFor(order);
@@ -322,7 +338,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
     >
       <ProductImage
         swatch={product?.swatch ?? "var(--cb-faint)"}
-        name={first?.name ?? order.id}
+        name={firstName}
         className="h-16 w-16 shrink-0 rounded-xl"
       />
 
@@ -335,10 +351,14 @@ function OrderCard({ order }: { order: PlacedOrder }) {
         </div>
 
         <p className="mt-1 line-clamp-1 text-[14px]" style={{ color: ink }}>
-          {describeOrderItems(order)}
+          {summary
+            ? summary.more > 0
+              ? t("account.plusMore", { name: firstName, count: summary.more })
+              : firstName
+            : t("account.noOrders")}
         </p>
         <p className="mt-0.5 text-[12px]" style={{ color: faint }}>
-          {order.fulfillmentWhere} · {formatOrderDate(order.placedAt)}
+          {order.fulfillmentWhere} · {formatOrderDate(order.placedAt, tag)}
         </p>
 
         <div className="mt-2 flex items-end justify-between gap-3">
@@ -365,7 +385,7 @@ function OrderCard({ order }: { order: PlacedOrder }) {
                 requestOpenBasket();
               }}
             >
-              Reorder
+              {t("account.reorder")}
             </Button>
           )}
         </div>

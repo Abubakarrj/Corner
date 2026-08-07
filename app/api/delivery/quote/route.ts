@@ -23,18 +23,18 @@ export async function POST(request: Request) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Expected a JSON body." }, { status: 400 });
+    return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
   const address = (payload as { address?: unknown })?.address;
   if (typeof address !== "string" || address.trim().length === 0) {
-    return Response.json({ error: "Missing delivery address." }, { status: 400 });
+    return Response.json({ error: "api.missingAddress" }, { status: 400 });
   }
 
   const place = await geocode(address.trim(), DELIVERY_ORIGIN.position);
   if (!place) {
     return Response.json(
-      { error: "We couldn't find that address." },
+      { error: "api.addressNotFound" },
       { status: 404 },
     );
   }
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
   if (!isUberConfigured()) {
     return Response.json(
-      { error: "Delivery is unavailable right now." },
+      { error: "api.deliveryDown" },
       { status: 503 },
     );
   }

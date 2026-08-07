@@ -89,7 +89,9 @@ export default function ShopCatalog({
         </div>
 
         <p className="text-[11px] text-faint">
-          {products.length} item{products.length === 1 ? "" : "s"}
+          {products.length === 1
+            ? t("checkout.itemCountOne")
+            : t("checkout.itemCount", { count: products.length })}
         </p>
       </div>
 

@@ -72,6 +72,10 @@ export type PlacedOrder = {
   deliveryCents?: number;
   tipCents?: number;
   totalCents?: number;
+  // "pickup" | "delivery" | "catering", as it was when the order went in.
+  // A mode, not a label: this is read back to decide what the tracker shows,
+  // and it has to mean the same thing in every language and in every version
+  // of the app that ever wrote it.
   fulfillmentMode: string;
   fulfillmentWhere: string;
   // Uber's own tracking page for the courier, when there is one. Kept because
@@ -387,19 +391,27 @@ export function summarizeUsuals(history: PlacedOrder[], limit = 4): Usual[] {
     .slice(0, limit);
 }
 
-// "Mon, Jul 20", as in the reference.
-export function formatOrderDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleDateString("en-US", {
+// "Mon, Jul 20", as in the reference — in whichever language is on. The tag
+// comes from the caller because this module has no hooks and no locale of its
+// own; screens pass localeById(useLocale()).tag.
+export function formatOrderDate(timestamp: number, tag = "en-US"): string {
+  return new Date(timestamp).toLocaleDateString(tag, {
     weekday: "short",
     month: "short",
     day: "numeric",
   });
 }
 
-export function describeOrderItems(order: PlacedOrder): string {
+// What a row in the order history says it was. Structured rather than a
+// finished sentence, because "+ 2 more" is English word order and this module
+// has no locale — the caller has the product names in the chosen language and
+// the string table to hang the count on.
+export function summarizeOrderItems(
+  order: PlacedOrder,
+): { first: PlacedOrderItem; more: number } | null {
   const [first, ...rest] = order.items;
-  if (!first) return "Empty order";
-  return rest.length > 0 ? `${first.name} + ${rest.length} more` : first.name;
+  if (!first) return null;
+  return { first, more: rest.length };
 }
 
 // String keys, not English. This module has no hooks and no language, and it
@@ -445,8 +457,10 @@ export type OrderProgress = {
   settled: boolean;
 };
 
+// Tolerant of every shape this field has been stored in — see
+// fulfillmentModeKey() in app/fulfillment.ts, which reads the same records.
 function isDelivery(order: PlacedOrder): boolean {
-  return order.fulfillmentMode.toLowerCase() === "delivery";
+  return order.fulfillmentMode.toLowerCase().replace(/^finder\./, "") === "delivery";
 }
 
 export function stagesFor(order: PlacedOrder): OrderStage[] {
@@ -482,11 +496,17 @@ export function stagesFor(order: PlacedOrder): OrderStage[] {
   ];
 }
 
-function formatClock(timestamp: number): string {
-  return new Date(timestamp)
-    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-    .toLowerCase()
-    .replace(" ", "");
+// "8:24am". The lowercasing and the closed-up space are an English house
+// style — the shop writes times that way — and they are applied only to
+// English. Every other language gets what its own locale data says, because
+// stripping the space out of "오전 8:24" or lowercasing "上午" is not a house
+// style, it's damage.
+function formatClock(timestamp: number, tag = "en-US"): string {
+  const clock = new Date(timestamp).toLocaleTimeString(tag, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return tag.startsWith("en") ? clock.toLowerCase().replace(" ", "") : clock;
 }
 
 // The estimated stage, from the clock alone — see the warning on OrderStatus.
@@ -494,7 +514,11 @@ function formatClock(timestamp: number): string {
 // It deliberately stops one short of the last stage: "Delivered" and "Picked
 // up" are claims about the physical world that a timer cannot make. The
 // tracker parks on the ready/on-the-way stage and says the shop will confirm.
-export function progressFor(order: PlacedOrder, now: number = Date.now()): OrderProgress {
+export function progressFor(
+  order: PlacedOrder,
+  tag = "en-US",
+  now: number = Date.now(),
+): OrderProgress {
   const stages = stagesFor(order);
   const delivery = isDelivery(order);
   const totalMinutes = PREP_MINUTES + (delivery ? DELIVERY_MINUTES : 0);
@@ -512,7 +536,7 @@ export function progressFor(order: PlacedOrder, now: number = Date.now()): Order
       ? null
       : {
           key: delivery ? "order.arrivingAround" : "order.readyAround",
-          time: formatClock(order.placedAt + totalMinutes * 60000),
+          time: formatClock(order.placedAt + totalMinutes * 60000, tag),
         },
     settled,
   };
@@ -526,6 +550,6 @@ export function findOrder(history: PlacedOrder[], id: string): PlacedOrder | und
 // bar should offer to track. Anything past its estimate has nothing left to
 // say, so it drops off rather than sitting there stale.
 export function activeOrder(history: PlacedOrder[], now: number = Date.now()): PlacedOrder | null {
-  const recent = history.find((order) => !progressFor(order, now).settled);
+  const recent = history.find((order) => !progressFor(order, "en-US", now).settled);
   return recent ?? null;
 }

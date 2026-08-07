@@ -149,6 +149,11 @@ export const ALLERGEN_LABEL: Record<Allergen, string> = {
 };
 
 // Said wherever allergens are. One sentence, one place.
+//
+// This is the copy Riley is briefed with. The same sentence for the product
+// page lives in the string tables as "product.allergenNote", because that one
+// has to be readable in seven languages and this one is part of a prompt.
+// If you change either, change both.
 export const ALLERGEN_NOTE =
   "Made on one counter with shared boards and a shared toaster, so we can't call anything allergen-free.";
 
@@ -700,14 +705,15 @@ export function searchProducts(query: string, limit = 6): Product[] {
     .map((hit) => hit.product);
 }
 
+// Labels are string keys, not words — the dropdown translates them at render.
 export const SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
-  { value: "name-asc", label: "Name: A to Z" },
-  { value: "name-desc", label: "Name: Z to A" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "newest", label: "Newest" },
-  { value: "bestsellers", label: "Best Sellers" },
+  { value: "featured", label: "shop.sortOptFeatured" },
+  { value: "name-asc", label: "shop.sortOptNameAsc" },
+  { value: "name-desc", label: "shop.sortOptNameDesc" },
+  { value: "price-asc", label: "shop.sortOptPriceAsc" },
+  { value: "price-desc", label: "shop.sortOptPriceDesc" },
+  { value: "newest", label: "shop.sortOptNewest" },
+  { value: "bestsellers", label: "shop.sortOptBestsellers" },
 ] as const;
 
 export type SortValue = (typeof SORT_OPTIONS)[number]["value"];

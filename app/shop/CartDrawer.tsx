@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
+import { useMenu } from "../i18n/menu";
 import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
 import GiftProgressBar from "./GiftProgressBar";
@@ -60,13 +61,14 @@ export default function CartDrawer({
   onClose: () => void;
 }) {
   const t = useT();
+  const menu = useMenu();
   const { lines, setQuantity, removeItem, setLineOptions, subtotalCents, itemCount } =
     useCart();
 
   const rows = useCartRows();
 
   return (
-    <Drawer open={open} onClose={onClose} side="right" label="Basket" width="wide">
+    <Drawer open={open} onClose={onClose} side="right" label={t("shop.basket")} width="wide">
       {/* shrink-0 on every band except the list. The panel is a fixed-height
           column now (Drawer stopped scrolling as a second, outer scroller),
           so without this the header, the gift bar, the cross-sell rail and
@@ -125,7 +127,7 @@ export default function CartDrawer({
                 >
                   <ProductImage
                     swatch={product.swatch}
-                    name={product.name}
+                    name={menu.name(product)}
                     className="h-20 w-20 rounded-lg"
                   />
                 </Link>
@@ -137,7 +139,7 @@ export default function CartDrawer({
                       onClick={onClose}
                       className="cursor-pointer text-[13px] font-medium text-ink hover:underline"
                     >
-                      {product.name}
+                      {menu.name(product)}
                     </Link>
                     <span className="whitespace-nowrap text-[13px] text-ink">
                       {formatPrice(unitCents * line.quantity)}
@@ -147,11 +149,11 @@ export default function CartDrawer({
                       — this is where a wrong bagel gets caught. */}
                   {chosen.length > 0 ? (
                     <span className="mt-0.5 text-[12px] text-muted">
-                      {chosen.join(" · ")}
+                      {menu.options(product, line.options).join(" · ")}
                     </span>
                   ) : null}
                   <span className="mt-0.5 text-[12px] text-quiet">
-                    {formatPrice(unitCents)} each
+                    {t("product.eachPrice", { price: formatPrice(unitCents) })}
                   </span>
                   {/* A line that arrived without its choices — from a
                       basket saved before this item had any. Answering here
@@ -174,7 +176,7 @@ export default function CartDrawer({
                     <div className="flex items-center rounded-full border border-line-soft">
                       <button
                         type="button"
-                        aria-label={`Decrease quantity of ${product.name}`}
+                        aria-label={t("cart.decreaseOf", { name: menu.name(product) })}
                         onClick={() => setQuantity(key, line.quantity - 1)}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
@@ -185,7 +187,7 @@ export default function CartDrawer({
                       </span>
                       <button
                         type="button"
-                        aria-label={`Increase quantity of ${product.name}`}
+                        aria-label={t("cart.increaseOf", { name: menu.name(product) })}
                         onClick={() => setQuantity(key, line.quantity + 1)}
                         disabled={line.quantity >= MAX_PER_LINE}
                         className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"

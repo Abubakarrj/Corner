@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { translate, useT } from "../i18n";
+import { translate, useLocale, useServerText, useT } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { useCart } from "./CartContext";
@@ -134,6 +134,9 @@ type Entry = {
 // the quick replies deliberately don't imply otherwise.
 export default function ChatWidget() {
   const t = useT();
+  const locale = useLocale();
+  // /api/shop-chat answers with string keys, not sentences — see serverText().
+  const st = useServerText();
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState("");
@@ -192,6 +195,8 @@ export default function ChatWidget() {
             text: entry.text,
           })),
           context: fulfillment ? describeContext(fulfillment) : undefined,
+          // So Riley answers in the language the rest of the screen is in.
+          locale,
         }),
       });
       const body = (await response.json().catch(() => null)) as
@@ -199,7 +204,7 @@ export default function ChatWidget() {
         | null;
 
       if (!response.ok || (!body?.reply && !body?.products?.length && !body?.info?.length)) {
-        throw new Error(body?.error ?? "Riley couldn't answer just now.");
+        throw new Error(body?.error ?? "api.rileyDown");
       }
 
       const attachments: ChatAttachments = {
@@ -237,7 +242,9 @@ export default function ChatWidget() {
     } catch (askError) {
       // The failed turn is left out of the thread and the composer refilled
       // with what they typed, so retrying is one tap rather than retyping.
-      setError(askError instanceof Error ? askError.message : "Something went wrong.");
+      setError(
+        askError instanceof Error ? askError.message : "checkout.somethingWentWrong",
+      );
       setDraft(text);
       setEntries((prior) => prior.filter((entry) => entry.id !== id));
     } finally {
@@ -433,7 +440,7 @@ export default function ChatWidget() {
 
           {error ? (
             <p role="alert" className="m-0 px-1 text-[11px] leading-[1.4]" style={{ color: ERROR_RED }}>
-              {error}
+              {st(error)}
             </p>
           ) : null}
         </div>

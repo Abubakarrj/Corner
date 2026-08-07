@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useT } from "../i18n";
 
 // The shell every modal in the app shares.
 //
@@ -37,6 +38,7 @@ export default function Modal({
   children: React.ReactNode;
   z?: number;
 }) {
+  const t = useT();
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export default function Modal({
       {/* A dim, not a blur — see the note above. */}
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t("common.close")}
         onClick={onClose}
         className="absolute inset-0 h-full w-full cursor-default bg-black/40"
       />
@@ -141,7 +143,7 @@ export default function Modal({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t("common.close")}
           className="cb-press absolute right-3 top-3 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-muted hover:bg-raise hover:text-ink"
         >
           <svg width="17" height="17" viewBox="0 0 18 18" fill="none" aria-hidden>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMenu } from "../i18n/menu";
 import { formatPrice, type Product, type SelectedOptions } from "./products";
 
 // The choices an item can't be made without — which bagel, which spread —
@@ -27,6 +28,7 @@ export default function OptionPicker({
   size?: "compact" | "full";
   idPrefix: string;
 }) {
+  const menu = useMenu();
   const groups = product.options ?? [];
   if (groups.length === 0) return null;
 
@@ -50,7 +52,7 @@ export default function OptionPicker({
                   : "mb-1.5 block text-[11px] uppercase tracking-[0.08em] text-muted"
               }
             >
-              {group.label}
+              {menu.group(group)}
             </label>
             <select
               id={id}
@@ -60,7 +62,7 @@ export default function OptionPicker({
               }
               // Named for screen readers even when the visible label is
               // hidden on the compact tiles.
-              aria-label={compact ? group.label : undefined}
+              aria-label={compact ? menu.group(group) : undefined}
               className={`w-full cursor-pointer appearance-none border bg-surface text-ink outline-none transition-colors focus:border-ink ${field} ${
                 value ? "border-line-soft" : "border-ink/45"
               }`}
@@ -77,7 +79,7 @@ export default function OptionPicker({
             >
               {group.defaultChoiceId ? null : (
                 <option value="" disabled>
-                  {`Choose ${group.label.toLowerCase()}`}
+                  {menu.placeholder(group)}
                 </option>
               )}
               {group.choices.map((choice) => (
@@ -86,8 +88,8 @@ export default function OptionPicker({
                       A gift card's amounts are the price itself, so "$50
                       +$25.00" would read as a fee on top of the card. */}
                   {choice.priceCents > 0 && !group.alwaysShow
-                    ? `${choice.label} +${formatPrice(choice.priceCents)}`
-                    : choice.label}
+                    ? `${menu.choice(group, choice)} +${formatPrice(choice.priceCents)}`
+                    : menu.choice(group, choice)}
                 </option>
               ))}
             </select>

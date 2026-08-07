@@ -291,7 +291,7 @@ export default function TabBar({ active }: { active: TabId }) {
         // longer label wrapping makes the bar taller instead of clipping.
         minHeight: "calc(var(--cb-tab-bar-h) + env(safe-area-inset-bottom))",
       }}
-      aria-label="Primary"
+      aria-label={t("nav.primary")}
     >
       {/* max-w-2xl, centred. These shells are a phone app column; stretched
           to a 1440px desktop the five tabs sat a hand's width apart and read

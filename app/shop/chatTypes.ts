@@ -16,9 +16,13 @@ export type ProductCard = {
   priceCents: number;
   swatch: string;
   soldOut: boolean;
-  // The choices this item can't be made without. Present so a card can say
-  // "Choose bagel" and open the item's page, rather than offering an Add
-  // button that would have to guess.
+  // The ids of the option groups this item can't be made without. Present so
+  // a card can say "Choose bagel" and open the item's page, rather than
+  // offering an Add button that would have to guess.
+  //
+  // Ids rather than labels because the card is drawn in the visitor's chosen
+  // language and the server has none: the widget looks the group up by id and
+  // asks the menu tables what to call it.
   needs: string[];
 };
 
