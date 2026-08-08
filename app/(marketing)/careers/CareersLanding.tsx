@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useT, type StringKey } from "../../i18n";
 import { LOCATIONS } from "../locations/locations";
 import { POSITIONS, type PositionId } from "./application";
+import { TEAM_PHOTOS } from "./teamPhotos";
 
 const { cream } = PALETTE;
 
@@ -92,6 +94,8 @@ export default function CareersLanding() {
           {t("careers.lede")}
         </p>
 
+        <TeamPhotos />
+
         <h2 className="m-0 mb-3 mt-11 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
           {t("careers.aboutHeading")}
         </h2>
@@ -169,6 +173,59 @@ export default function CareersLanding() {
           </p>
         </footer>
       </div>
+    </div>
+  );
+}
+
+// The photographs, or nothing at all.
+//
+// No heading over them and no caption under them: a picture of the shop on a
+// page headed "Work at Corner Bagel" needs no label saying it is a picture of
+// the shop.
+//
+// Two columns, one shape, and the last one spans both when the count is odd.
+// That single rule is tidy at every count — one photo is a full-width band,
+// two sit side by side, three are a pair over a band, four are a block — and
+// it never leaves the hole that a mixed portrait-and-landscape grid does,
+// because a row whose items are different heights is a row with a gap under
+// the short one. The price is that a portrait photo gets cropped, which is a
+// better trade than a page with a bite out of it.
+function TeamPhotos() {
+  const photos = TEAM_PHOTOS;
+  if (photos.length === 0) return null;
+
+  return (
+    <div className="mt-9 grid grid-cols-2 gap-2.5">
+      {photos.map((photo, index) => {
+        const band = index === photos.length - 1 && photos.length % 2 === 1;
+        return (
+          <div
+            key={photo.src}
+            // A fixed aspect and object-cover, so a photo at the wrong ratio is
+            // cropped rather than allowed to shove the page around. Everything
+            // below the strip stays where it was.
+            className={`relative overflow-hidden rounded-2xl bg-raise ${
+              band ? "col-span-2 aspect-[16/9]" : "aspect-[4/3]"
+            }`}
+          >
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              fill
+              className="object-cover"
+              // The strip is at the top of the page, so these are what somebody
+              // is waiting on. Inside a 34rem column a half-width tile is about
+              // 260px on a phone; the hint stops the browser fetching a 1200px
+              // file for a 260px hole.
+              sizes={
+                band
+                  ? "(max-width: 34rem) 100vw, 34rem"
+                  : "(max-width: 34rem) 50vw, 17rem"
+              }
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
