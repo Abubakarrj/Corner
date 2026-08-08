@@ -217,26 +217,59 @@ export async function toEnglish(
 
   try {
     const anthropic = new Anthropic({ apiKey, timeout: TIMEOUT_MS });
-    const message = await anthropic.messages.create({
+    const request = {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: INSTRUCTIONS,
-      output_config: { format: { type: "json_schema", schema: SCHEMA } },
       messages: [
         {
-          role: "user",
+          role: "user" as const,
           content:
             (from ? `The applicant filled the form in ${from}.\n\n` : "") +
             JSON.stringify({ fields }),
         },
       ],
-    });
+    };
+
+    // The schema is how the answer is kept parseable, but it is not how the
+    // answer is *read* — the instructions already say to reply with the JSON
+    // object and the parsing below is our own either way. So if the account or
+    // the model won't take output_config, that is worth one retry without it
+    // rather than a silent fall back to an untranslated document for every
+    // applicant who doesn't write English.
+    //
+    // Only on a 400. A 401, a 429 or a timeout mean something else, and
+    // sending the same work twice would make each of them worse.
+    let message;
+    try {
+      message = await anthropic.messages.create({
+        ...request,
+        output_config: { format: { type: "json_schema", schema: SCHEMA } },
+      });
+    } catch (schemaError) {
+      if (!(schemaError instanceof Anthropic.APIError) || schemaError.status !== 400) {
+        throw schemaError;
+      }
+      console.warn(
+        "[apply] structured output refused, retrying without a schema:",
+        schemaError.message,
+      );
+      message = await anthropic.messages.create(request);
+    }
 
     const text = message.content
       .filter((block): block is Anthropic.TextBlock => block.type === "text")
       .map((block) => block.text)
       .join("");
-    const parsed = JSON.parse(text) as { fields?: { id?: unknown; english?: unknown }[] };
+    // Tolerates a model that wrapped the object in prose or a fenced block,
+    // which is possible on the fallback path where nothing constrains the
+    // shape. The first { to the last } is the object.
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end <= start) throw new Error("no JSON object in the reply");
+    const parsed = JSON.parse(text.slice(start, end + 1)) as {
+      fields?: { id?: unknown; english?: unknown }[];
+    };
 
     const english = new Map<string, string>();
     for (const entry of parsed.fields ?? []) {
