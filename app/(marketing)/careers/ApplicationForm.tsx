@@ -40,8 +40,8 @@ const { cream } = PALETTE;
 // So it's four steps, which is also what the checkout and the gift form do:
 //
 //   You         name, how to reach you, where you are
-//   The work    what you'd like to do, when you can do it, two eligibility
-//               questions
+//   The work    which job (unless a card already said), when you can work,
+//               two eligibility questions
 //   Background  school, jobs, references — the whole step is skippable and
 //               says so at the top
 //   Finish      the written answers and the signature
@@ -80,7 +80,7 @@ const STEPS: { id: StepId; label: StringKey; owns: StringKey[] }[] = [
     id: "work",
     label: "careers.stepWork",
     owns: [
-      "careers.errPositions",
+      "careers.errRole",
       "careers.errDays",
       "careers.errTypes",
       "careers.errAuthorized",
@@ -106,12 +106,10 @@ const DAY_SHORT: Record<DayId, StringKey> = {
     to change, so the identity comparisons that decide whether to write a draft
     keep working.
 
-    A second card replaces the job rather than collecting both. Somebody who
-    pressed Counter, filled half the form in, went back and pressed Kitchen
-    means they want Kitchen — and if they want both, "Also happy to do" is on
-    the very next screen, one tap away. Collecting instead would quietly put a
-    job somebody misclicked into a document about them, which is the worse of
-    the two mistakes to make. Their answers are untouched either way. */
+    A second card replaces the job, which is the only thing it can do now that
+    an application is for one job. Somebody who pressed Counter, filled half
+    the form in, went back and pressed Kitchen is applying for Kitchen. Every
+    answer they had typed is untouched. */
 function fromLink(draft: Draft, role: PositionId | null, location: string | null): Draft {
   const setRole = role !== null && draft.application.role !== role;
   const setWhere = location !== null && draft.application.location !== location;
@@ -235,7 +233,7 @@ export default function ApplicationForm({
     setApplication({ ...application, [key]: value });
   }
 
-  function toggle(key: "positions" | "days" | "employmentTypes", id: string) {
+  function toggle(key: "days" | "employmentTypes", id: string) {
     const list = application[key] as string[];
     setApplication({
       ...application,
@@ -351,66 +349,67 @@ export default function ApplicationForm({
   const last = step === STEPS.length - 1;
 
 
-  // ——— Step two, ordered by what the answers depend on ———
+  // ——— Step two ———
   //
-  // With a job already chosen, "Also happy to do" is not a question about
-  // which job — that was settled by the card and is printed at the top of the
-  // page. It is a question about the week, and its own note says as much:
-  // ticking another job "makes you easier to fit into a week". Leading the
-  // step with it put an optional aside above every required question, and made
-  // a step called "The work" open by appearing to re-ask the one thing already
-  // answered.
+  // The job first, then the week, then the two eligibility questions. One
+  // shape for everybody, whether a card answered the job or not.
   //
-  // So availability leads and the extras follow the hours, which is where that
-  // sentence actually lands: you have just said Saturdays and part time, and
-  // the next thing asked is what else you would take a shift on.
-  //
-  // Arriving with no job, the list is the real question and leads, because
-  // there it is the only place the job is ever named.
-  const jobsSection = (first: boolean) => (
+  // It is shown even when a card already answered it, and that is deliberate
+  // twice over. A field that hides itself once answered cannot show you the
+  // answer, so the version that only appeared while unanswered made the cards
+  // vanish under the finger that tapped one. And an answer you can see but
+  // not reach is an answer you have to leave the form to change — "Different
+  // job?" meant going back to the openings list and finding your place again.
+  // The masthead is the heading, saying what this form is for; this is the
+  // field, holding the same answer where it can be changed.
+  const jobSection = (first: boolean) => (
     <>
-      {/* Two different questions wearing the same control.
-          Arriving from a card, the job is settled and shown at the top
-          of the page, so the only thing left worth asking is whether
-          they would take any of the others — which a small shop very
-          much wants to know, and which is why this list didn't just
-          get deleted. Arriving with no job, it is the original
-          question and the only place it gets asked. */}
-      <Legend first={first}>{job ? t("careers.alsoHappy") : t("careers.secRole")}</Legend>
+      <Legend first={first}>{t("careers.secRole")}</Legend>
       <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
-        {job ? t("careers.alsoHappyNote") : t("careers.positionsNote")}
+        {t("careers.positionsNote")}
       </p>
-      {/* Cards, not bare pills. A pill saying "Kitchen and prep" tells
-          somebody the name of a job they may never have done; a line
-          underneath tells them what the morning is actually like, which
-          is what they're deciding about. */}
+      {/* Radios, not toggles, and real ones rather than buttons wearing the
+          part. One job is the whole point, and a native radio group is what
+          says so to a screen reader and what gives arrow-key movement, the
+          roving tab stop and "only one" for nothing. The input is hidden and
+          the label is the card, so the whole card is the hit target.
+
+          Cards rather than bare pills, because a pill saying "Kitchen and
+          prep" tells somebody the name of a job they may never have done; the
+          line underneath tells them what the morning is actually like, which
+          is the thing they are choosing between. */}
       <div className="flex flex-col gap-2">
-        {POSITIONS.filter((position) => position.id !== job).map(({ id, label }) => {
-          const active = application.positions.includes(id);
+        {POSITIONS.map(({ id, label }) => {
+          const active = application.role === id;
           return (
-            <button
+            <label
               key={id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => toggle("positions", id)}
-              className={`cb-press flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-start transition-colors ${
+              className={`cb-press flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-start transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ink/30 ${
                 active
                   ? "border-ink bg-raise"
                   : "border-line-soft bg-surface hover:border-line-mute"
               }`}
             >
-              <Tick on={active} />
+              <input
+                type="radio"
+                name="cb-role"
+                value={id}
+                checked={active}
+                onChange={() => set("role", id)}
+                className="sr-only"
+              />
+              <Dot on={active} />
               <span className="min-w-0 flex-1">
                 <span className="block text-[14px] leading-tight text-ink">{t(label)}</span>
                 <span className="mt-1 block text-[12px] leading-[1.45] text-muted">
                   {t(POSITION_NOTE[id])}
                 </span>
               </span>
-            </button>
+            </label>
           );
         })}
       </div>
-      <Problem>{problem("careers.errPositions")}</Problem>
+      <Problem>{problem("careers.errRole")}</Problem>
     </>
   );
 
@@ -571,13 +570,14 @@ export default function ApplicationForm({
             >
               {t(POSITION_LABEL[job])}
             </h1>
-            <p className="m-0 mt-3 text-[15px] leading-[1.55] text-muted">
-              {where ? <span className="text-ink">{where}</span> : null}
-              {where ? " · " : null}
-              <Link href="/careers" className="underline hover:text-ink">
-                {t("careers.differentJob")}
-              </Link>
-            </p>
+            {/* Just the shop. There used to be a "Different job?" link here,
+                back to the openings list — which is now the long way round to
+                something the job field does in place, without losing your
+                spot in the form. Back, at the top of the page, still goes to
+                the list for anybody who wants to see it. */}
+            {where ? (
+              <p className="m-0 mt-3 text-[15px] leading-[1.55] text-ink">{where}</p>
+            ) : null}
           </>
         ) : (
           <>
@@ -734,8 +734,8 @@ export default function ApplicationForm({
           {step === 1 ? (
             <>
               <StepHead title={t("careers.stepWork")} />
-              {job ? whenSection(true) : jobsSection(true)}
-              {job ? jobsSection(false) : whenSection(false)}
+              {jobSection(true)}
+              {whenSection(false)}
 
               <Legend>{t("careers.secChecks")}</Legend>
               <div className="flex flex-col gap-2.5">
@@ -1055,25 +1055,18 @@ function Problem({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Tick({ on }: { on: boolean }) {
+/** The mark on a job card. Round rather than a tick, because the shape is the
+    first thing that says how many you may pick — a square with a check in it
+    promises a list you can keep adding to, and there is exactly one job. */
+function Dot({ on }: { on: boolean }) {
   return (
     <span
       aria-hidden
-      className={`mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
-        on ? "border-ink bg-ink text-on-ink" : "border-line-mute bg-surface"
+      className={`mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border transition-colors ${
+        on ? "border-ink" : "border-line-mute bg-surface"
       }`}
     >
-      {on ? (
-        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M3 8.4 6.3 11.7 13 5"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
+      {on ? <span className="h-[9px] w-[9px] rounded-full bg-ink" /> : null}
     </span>
   );
 }

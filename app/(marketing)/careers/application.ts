@@ -105,30 +105,29 @@ export type Application = {
   city: string;
   state: string;
 
-  // ——— The two halves of pressing a card ———
+  // ——— One job ———
   //
-  // A card on /careers says two things at once: this job, at this shop. Both
-  // are recorded here, and both for the same reason — they are answers the
-  // person already gave by pressing, so the form must not ask again and the
-  // document must not lose them.
+  // An application is for a job. Singular, and required.
   //
-  // `role` used to live only in the URL, and that was the bug. Lose the URL —
-  // a reload, a tab reopened tomorrow, a draft picked back up — and the form
-  // forgot which job it was for and went back to asking. Worse, the job you
-  // came in for arrived at the shop flattened into the list below it, so the
-  // hiring desk could not tell which card had been pressed either. A fact the
-  // whole flow is built on cannot live somewhere that a refresh erases.
+  // This was briefly a list, on the theory that a small shop would want to
+  // know what else somebody would take. It wouldn't, and the question failed
+  // the same test as everything cut at the top of this file: nothing is
+  // decided by the answer. Nobody reads an application for Manager, decides
+  // no, and moves the person to a counter opening — a hiring manager reads
+  // applications for the job they are hiring. It was not even neutral to
+  // collect: an application to manage that also ticks "counter" reads as less
+  // serious about managing, so the extra answer mostly cost the applicant
+  // something. Somebody who genuinely wants two jobs applies twice, and gets
+  // read properly for each.
   //
-  // Empty when they came in through "Not sure which?", which is the truth:
-  // they didn't pick a job, so we don't claim they did.
+  // A card on /careers sets this, so the form doesn't ask; arriving without
+  // one, the form asks, because it is the one thing an application cannot be
+  // missing. Either way the answer lives here rather than in the URL, so it
+  // survives a reload, a tab reopened tomorrow, or a draft picked up on
+  // Thursday.
   role: PositionId | "";
-  /** Anything else they'd also take, which is a different question from the
-      one above and worth keeping separate. Somebody applying to manage who
-      would also work the counter has said something useful; somebody whose
-      application lists "counter, manager" in no particular order has not. */
-  positions: PositionId[];
-  // The shop, from the same press. Never required — a person who used "Not
-  // sure which?" named no shop, and it is context rather than an answer.
+  // The shop, from the same card press. Never required — somebody who came in
+  // without a card named no shop, and it is context rather than an answer.
   location: string;
   days: DayId[];
   employmentTypes: EmploymentTypeId[];
@@ -162,7 +161,7 @@ export type Application = {
 export function emptyApplication(): Application {
   return {
     firstName: "", lastName: "", email: "", phone: "", city: "", state: "",
-    role: "", positions: [], location: "", days: [], employmentTypes: [], earliestStart: "",
+    role: "", location: "", days: [], employmentTypes: [], earliestStart: "",
     authorizedToWork: null, isAdult: null, servSafe: null,
     education: [], employment: [], references: [],
     goals: "", hardestDecision: "", toSucceed: "", heardFrom: "",
@@ -204,14 +203,7 @@ export function applicationErrors(application: Application): StringKey[] {
   // likely to skip it — somebody applying from out of state — is the one whose
   // answer carries the information.
   need(application.state.trim().length > 0, "careers.errState");
-  // Either half answers it. Arriving from a card has already named a job, so
-  // demanding a tick as well would be the form asking something it was just
-  // told; arriving through "Not sure which?" has named none, so a tick is the
-  // only answer there is.
-  need(
-    application.role !== "" || application.positions.length > 0,
-    "careers.errPositions",
-  );
+  need(application.role !== "", "careers.errRole");
   need(application.days.length > 0, "careers.errDays");
   need(application.employmentTypes.length > 0, "careers.errTypes");
   need(application.authorizedToWork !== null, "careers.errAuthorized");
@@ -223,6 +215,36 @@ export function applicationErrors(application: Application): StringKey[] {
 
 export function isComplete(application: Application): boolean {
   return applicationErrors(application).length === 0;
+}
+
+/** The job, from either shape.
+ *
+ *  `role` is the field. `positions` was a list, briefly, and this reads the
+ *  first valid entry out of one when there is no role — a transitional path
+ *  with two callers that both matter for about a week after the deploy.
+ *
+ *  A form left open across a deploy posts the old shape from the old bundle.
+ *  Rejecting it would mean an error the person cannot act on, because their
+ *  page has no job field on it — and route.ts is explicit that an application
+ *  quietly failing costs somebody the job. A draft written before the deploy
+ *  is the same story with a smaller stake.
+ *
+ *  Taking the first is a guess when the old list held more than one, and it is
+ *  a guess made in the open: the form shows the job it picked, selected, under
+ *  a heading asking which job, where changing it is one tap. The alternative
+ *  is throwing the application away.
+ *
+ *  Delete once no page or draft that old can still exist. Drafts expire after
+ *  seven days; see draft.ts. */
+function legacyRole(body: Record<string, unknown>): PositionId | "" {
+  const known = (value: unknown): value is PositionId =>
+    POSITIONS.some((position) => position.id === value);
+  if (known(body.role)) return body.role;
+  if (Array.isArray(body.positions)) {
+    const first = body.positions.find(known);
+    if (first !== undefined) return first;
+  }
+  return "";
 }
 
 /** Everything trimmed and capped, so neither the PDF nor the email is at the
@@ -256,10 +278,7 @@ export function normalizeApplication(raw: unknown): Application {
     // Checked against the list rather than trusted, like every other id here:
     // it arrives from a query string, and anything not a job we offer is not
     // a job we offer.
-    role: POSITIONS.some((position) => position.id === body.role)
-      ? (body.role as PositionId)
-      : "",
-    positions: ids(body.positions, POSITIONS.map((p) => p.id)),
+    role: legacyRole(body),
     location: str(body.location, 80),
     days: ids(body.days, DAYS.map((d) => d.id)),
     employmentTypes: ids(body.employmentTypes, EMPLOYMENT_TYPES.map((t) => t.id)),

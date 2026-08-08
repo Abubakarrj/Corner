@@ -303,21 +303,9 @@ export async function renderApplicationPdf(
   );
 
   sheet.heading(t("careers.secRole"));
-  // The job they pressed a card for, then anything else they'd take — two
-  // rows, because they answer two different questions. Flattened into one
-  // list, "counter, manager" gives the hiring desk no way to tell what the
-  // application is actually for, which is the thing it most needs to know.
-  //
-  // No card, no job: "Not sure which?" leaves only the list, and that is the
-  // whole answer there rather than a missing one.
-  if (application.role !== "") {
-    sheet.row(t("careers.applyingFor"), joinLabels([application.role], POSITIONS));
-    if (application.positions.length > 0) {
-      sheet.row(t("careers.alsoHappy"), joinLabels(application.positions, POSITIONS));
-    }
-  } else {
-    sheet.value(joinLabels(application.positions, POSITIONS));
-  }
+  // One job. It is required, so this is never blank on an application that
+  // reached here — validation refuses one without it on both sides.
+  sheet.value(joinLabels([application.role], POSITIONS));
   // The shop they pressed, when they came in through a card. Blank for
   // somebody who used "Not sure which?", and blank is the truth there.
   if (application.location.trim() !== "") {
