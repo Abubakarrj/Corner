@@ -571,6 +571,7 @@ export const it: Table = {
   "careers.lede": "Bottega piccola, mattine presto, pane buono.",
   "careers.aboutHeading": "Sul negozio",
   "careers.apply": "Candidati",
+  "careers.new": "Nuovo",
   "careers.applyAnyway": "Non sai quale? Inizia la candidatura e scegli dopo.",
   "careers.optional": "Facoltativo",
   "careers.yes": "Sì",

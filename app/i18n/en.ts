@@ -531,6 +531,7 @@ export const en = {
   "careers.lede": "Small shop, early mornings, good bread.",
   "careers.aboutHeading": "About the shop",
   "careers.apply": "Apply",
+  "careers.new": "New",
   "careers.applyAnyway": "Not sure which? Start an application and choose later.",
 
   // The four steps. Short, because they sit on a rail on a phone.

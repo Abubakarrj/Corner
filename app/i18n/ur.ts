@@ -519,6 +519,7 @@ export const ur: Table = {
   "careers.lede": "چھوٹی دکان، صبح سویرے، اچھی روٹی۔",
   "careers.aboutHeading": "دکان کے بارے میں",
   "careers.apply": "درخواست دیں",
+  "careers.new": "نیا",
   "careers.applyAnyway": "کون سا، یقین نہیں؟ درخواست شروع کریں اور بعد میں منتخب کریں۔",
   "careers.optional": "اختیاری",
   "careers.yes": "ہاں",

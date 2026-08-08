@@ -516,6 +516,7 @@ export const my: Table = {
   "careers.lede": "ဆိုင်ငယ်၊ မနက်စောစော၊ ပေါင်မုန့်ကောင်း။",
   "careers.aboutHeading": "ဆိုင်အကြောင်း",
   "careers.apply": "လျှောက်ရန်",
+  "careers.new": "အသစ်",
   "careers.applyAnyway": "ဘယ်ဟာလဲ မသေချာဘူးလား။ အရင်စလိုက်ပြီး နောက်မှ ရွေးလို့ရပါတယ်။",
   "careers.optional": "ဖြည့်လိုက ဖြည့်ပါ",
   "careers.yes": "ဟုတ်ကဲ့",

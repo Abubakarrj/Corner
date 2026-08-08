@@ -571,6 +571,7 @@ export const fr: Table = {
   "careers.lede": "Petite boutique, matins tôt, bon pain.",
   "careers.aboutHeading": "À propos de la boutique",
   "careers.apply": "Postuler",
+  "careers.new": "Nouveau",
   "careers.applyAnyway": "Vous hésitez ? Commencez une candidature et choisissez plus tard.",
   "careers.optional": "Facultatif",
   "careers.yes": "Oui",

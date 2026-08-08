@@ -514,6 +514,7 @@ export const zh: Table = {
   "careers.lede": "小店，早班，好面包。",
   "careers.aboutHeading": "关于这家店",
   "careers.apply": "申请",
+  "careers.new": "新",
   "careers.applyAnyway": "不确定选哪个？先开始填，之后再选。",
   "careers.optional": "选填",
   "careers.yes": "是",

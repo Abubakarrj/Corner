@@ -516,6 +516,7 @@ export const ko: Table = {
   "careers.lede": "작은 가게, 이른 아침, 좋은 빵.",
   "careers.aboutHeading": "가게 소개",
   "careers.apply": "지원하기",
+  "careers.new": "신규",
   "careers.applyAnyway": "어느 쪽인지 모르겠다면, 먼저 시작하고 나중에 고르세요.",
   "careers.optional": "선택",
   "careers.yes": "예",

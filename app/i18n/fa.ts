@@ -568,6 +568,7 @@ export const fa: Table = {
   "careers.lede": "مغازه‌ای کوچک، صبح‌های زود، نان خوب.",
   "careers.aboutHeading": "دربارهٔ مغازه",
   "careers.apply": "درخواست بدهید",
+  "careers.new": "جدید",
   "careers.applyAnyway": "مطمئن نیستید کدام؟ درخواست را شروع کنید و بعد انتخاب کنید.",
   "careers.optional": "اختیاری",
   "careers.yes": "بله",

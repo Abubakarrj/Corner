@@ -516,6 +516,7 @@ export const ja: Table = {
   "careers.lede": "小さな店、早い朝、いいパン。",
   "careers.aboutHeading": "お店について",
   "careers.apply": "応募する",
+  "careers.new": "新着",
   "careers.applyAnyway": "どれか決めきれない方は、まず始めてあとで選べます。",
   "careers.optional": "任意",
   "careers.yes": "はい",

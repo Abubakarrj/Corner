@@ -6,6 +6,7 @@ import LanguagePicker from "../../ui/LanguagePicker";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useT, type StringKey } from "../../i18n";
 import { POSITIONS, type PositionId } from "./application";
+import type { Opening } from "./openings";
 import { TEAM_PHOTOS } from "./teamPhotos";
 
 const { cream } = PALETTE;
@@ -43,8 +44,13 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
   manager: "careers.posManagerNote",
 };
 
-export default function CareersLanding() {
+/** An opening with the "New" question already answered — see page.tsx. */
+export type ListedOpening = Opening & { isNew: boolean };
+
+export default function CareersLanding({ openings }: { openings: ListedOpening[] }) {
   const t = useT();
+  const titleOf = (role: PositionId) =>
+    POSITIONS.find((position) => position.id === role)?.label;
 
   return (
     <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
@@ -96,29 +102,42 @@ export default function CareersLanding() {
         <p className="m-0 text-[14px] leading-[1.65] text-ink">{t("about.p1")}</p>
         <p className="m-0 mt-3 text-[14px] leading-[1.65] text-ink">{t("about.p2")}</p>
 
-        {/* No heading over these. Four cards that each name a job and end in
-            "Apply" do not need a line above them saying they are the jobs —
-            the titles say it, and the label was the least informative thing
-            on the page.
+        {/* No heading over these. Cards that each name a job and end in
+            "Apply" do not need a line above them saying they are the jobs.
 
-            The whole card is the link, so its accessible name is the job title
-            and its description rather than four identical "Apply"s in a row. */}
+            The whole card is the link, so its accessible name is the job
+            title, its shop and its description rather than a row of identical
+            "Apply"s. */}
         <ul className="m-0 mt-11 flex list-none flex-col gap-2.5 p-0">
-          {POSITIONS.map(({ id, label }) => (
-            <li key={id}>
+          {openings.map((opening) => {
+            const label = titleOf(opening.role);
+            if (!label) return null;
+            return (
+            <li key={`${opening.role}-${opening.location}`}>
               <Link
-                href={`/careers/apply?role=${id}`}
+                href={`/careers/apply?role=${opening.role}`}
                 className="cb-press group flex cursor-pointer items-start gap-3 rounded-2xl border border-line-soft bg-surface p-4 transition-colors hover:border-ink"
               >
                 <span className="min-w-0 flex-1">
-                  <span
-                    className="block text-[16px] leading-tight text-ink"
-                    style={{ fontFamily: DISPLAY_FONT }}
-                  >
-                    {t(label)}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span
+                      className="text-[16px] leading-tight text-ink"
+                      style={{ fontFamily: DISPLAY_FONT }}
+                    >
+                      {t(label)}
+                    </span>
+                    {opening.isNew ? (
+                      <span className="rounded-full bg-sun-soft px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sun-ink">
+                        {t("careers.new")}
+                      </span>
+                    ) : null}
                   </span>
+                  {/* The shop, not translated: a place name is a place name in
+                      every language, and the ones that aren't would be wrong to
+                      guess at. */}
+                  <span className="mt-1 block text-[12px] text-quiet">{opening.location}</span>
                   <span className="mt-1.5 block text-[13px] leading-[1.5] text-muted">
-                    {t(POSITION_NOTE[id])}
+                    {t(POSITION_NOTE[opening.role])}
                   </span>
                   <span className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink">
                     {t("careers.apply")}
@@ -142,7 +161,8 @@ export default function CareersLanding() {
                 </span>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         {/* Picking a card pre-selects that job and nothing more — the form

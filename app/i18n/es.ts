@@ -521,6 +521,7 @@ export const es: Table = {
   "careers.lede": "Tienda pequeña, mañanas tempranas, buen pan.",
   "careers.aboutHeading": "Sobre la tienda",
   "careers.apply": "Solicitar",
+  "careers.new": "Nuevo",
   "careers.applyAnyway": "¿No sabes cuál? Empieza la solicitud y elige después.",
   "careers.optional": "Opcional",
   "careers.yes": "Sí",
