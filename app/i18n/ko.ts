@@ -442,6 +442,7 @@ export const ko: Table = {
   "mix.addOne": "{choice} 하나 추가",
   "mix.removeOne": "{choice} 하나 빼기",
   "mix.mixed": "혼합",
+  "mix.chooseFlavors": "종류 고르기",
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON 본문이 필요합니다.",

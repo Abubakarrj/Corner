@@ -442,6 +442,7 @@ export const ja: Table = {
   "mix.addOne": "{choice}を1つ追加",
   "mix.removeOne": "{choice}を1つ削除",
   "mix.mixed": "ミックス",
+  "mix.chooseFlavors": "種類を選ぶ",
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON 本文が必要です。",

@@ -18,7 +18,14 @@ import { DISPLAY_FONT } from "../../shopControls";
 //
 // It takes the whole Product rather than a slug so the server's lookup isn't
 // done twice, once on each side of the boundary.
-export default function ProductView({ product }: { product: Product }) {
+export default function ProductView({
+  product,
+  initialOptions,
+}: {
+  product: Product;
+  /** Options already chosen on the tile that sent us here — see page.tsx. */
+  initialOptions?: string;
+}) {
   const t = useT();
   const list = useList();
   const menu = useMenu();
@@ -74,7 +81,7 @@ export default function ProductView({ product }: { product: Product }) {
           </p>
 
           <div className="mt-6">
-            <AddToCartForm slug={product.slug} />
+            <AddToCartForm slug={product.slug} initialOptions={initialOptions} />
           </div>
 
           {/* Ingredients, not a safety claim — see the note on Product.allergens.

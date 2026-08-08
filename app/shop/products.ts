@@ -612,6 +612,40 @@ export function choicesFor(product: Product, diet: Diet): Record<string, string[
   return out;
 }
 
+// The chosen options, carried in a URL and read back.
+//
+// This is how a catalog tile hands a half-answered item to its own page. Pick
+// "Dozen Bagels" on a tile and the tile can't ask which flavours — there is no
+// room on it for twelve — so it sends you to the product page instead. Landing
+// there on "Single Bagel" and having to say "a dozen" a second time would make
+// the hand-off worse than the dead end it replaced, so the answer travels.
+//
+// Same `group:choice` pairs lineKey builds, for the same reason: it is already
+// the shape this app writes an option set in, and one format is easier to keep
+// true than two. Nothing here needs escaping — a group id and a choice id
+// never contain a comma or a colon, and a mix value ("plain*3+everything*3")
+// contains neither. URLSearchParams handles the `+`.
+export function encodeOptions(selected: SelectedOptions): string {
+  return Object.entries(selected)
+    .filter(([, choice]) => choice.length > 0)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([group, choice]) => `${group}:${choice}`)
+    .join(",");
+}
+
+// Reading it back is a parse of untrusted text — it came out of a URL, which
+// anybody can type. normalizeOptions is what makes that safe: unknown groups
+// are dropped, unknown choices fall back to the group's default, and a mix
+// that doesn't add up comes back incomplete rather than invented.
+export function decodeOptions(product: Product, raw: string | undefined): SelectedOptions {
+  const parsed: SelectedOptions = {};
+  for (const pair of (raw ?? "").split(",")) {
+    const at = pair.indexOf(":");
+    if (at > 0) parsed[pair.slice(0, at)] = pair.slice(at + 1);
+  }
+  return normalizeOptions(product, parsed);
+}
+
 export function lineKey(slug: string, selected: SelectedOptions | undefined): string {
   const pairs = Object.entries(selected ?? {})
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))

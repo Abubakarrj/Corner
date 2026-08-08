@@ -447,6 +447,7 @@ export const es: Table = {
   "mix.addOne": "Añadir un {choice}",
   "mix.removeOne": "Quitar un {choice}",
   "mix.mixed": "Surtido",
+  "mix.chooseFlavors": "Elige los sabores",
 
   // ——— What the API routes answer with ———
   "api.badJson": "Se esperaba un cuerpo JSON.",

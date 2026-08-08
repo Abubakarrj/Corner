@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useT } from "../../../i18n";
 import { useCart } from "../../CartContext";
 import {
+  decodeOptions,
   defaultOptions,
   formatPrice,
   getProduct,
@@ -18,13 +19,24 @@ import { requestOpenBasket } from "../../openBasket";
 // The choices, the stepper, and the reference-style pill button: "ADD TO
 // BASKET" on the left, the live total (unit price × quantity, choices
 // included) on the right, in one rounded outline pill that fills on hover.
-export default function AddToCartForm({ slug }: { slug: string }) {
+export default function AddToCartForm({
+  slug,
+  initialOptions,
+}: {
+  slug: string;
+  /**
+   * What a catalog tile had already answered before linking here. The tile
+   * can ask how many but not which flavours, so it answers what it can and
+   * hands the rest over rather than making somebody say "a dozen" twice.
+   */
+  initialOptions?: string;
+}) {
   const t = useT();
   const { addItem } = useCart();
   const optionPrompt = useOptionPrompt();
   const product = getProduct(slug);
   const [selected, setSelected] = useState(() =>
-    product ? defaultOptions(product) : {},
+    product ? decodeOptions(product, initialOptions) : {},
   );
   const [quantity, setQuantity] = useState(1);
 

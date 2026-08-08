@@ -442,6 +442,7 @@ export const my: Table = {
   "mix.addOne": "{choice} တစ်ခု ထည့်ရန်",
   "mix.removeOne": "{choice} တစ်ခု ဖယ်ရန်",
   "mix.mixed": "ရောစပ်",
+  "mix.chooseFlavors": "အရသာများ ရွေးရန်",
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON body လိုအပ်ပါသည်။",

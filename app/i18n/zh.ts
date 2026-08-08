@@ -440,6 +440,7 @@ export const zh: Table = {
   "mix.addOne": "添加一个{choice}",
   "mix.removeOne": "移除一个{choice}",
   "mix.mixed": "混合",
+  "mix.chooseFlavors": "选择口味",
 
   // ——— What the API routes answer with ———
   "api.badJson": "需要 JSON 请求体。",

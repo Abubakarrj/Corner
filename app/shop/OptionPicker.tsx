@@ -30,16 +30,26 @@ export default function OptionPicker({
   onChange,
   size = "compact",
   idPrefix,
+  hiddenGroupIds,
 }: {
   product: Product;
   selected: SelectedOptions;
   onChange: (next: SelectedOptions) => void;
   size?: "compact" | "full";
   idPrefix: string;
+  // Groups this surface is not going to ask about, because it can't. The
+  // catalog tile passes the mix group once a pack is chosen — six flavour
+  // rows don't fit on a tile, and a single-flavour dropdown in their place
+  // is worse than nothing, since it quietly sells a dozen of one thing to
+  // somebody who never learns the box can be mixed. The tile links to the
+  // product page instead. See ProductCard.
+  hiddenGroupIds?: string[];
 }) {
   const t = useT();
   const menu = useMenu();
-  const groups = product.options ?? [];
+  const groups = (product.options ?? []).filter(
+    (group) => !hiddenGroupIds?.includes(group.id),
+  );
   if (groups.length === 0) return null;
 
   const compact = size === "compact";
@@ -56,12 +66,12 @@ export default function OptionPicker({
 
         // The box, when there is a box to fill and room to draw it.
         //
-        // Not on the compact size, and that is a decision about where this
-        // control belongs rather than a limitation. Compact is a catalog tile
-        // in a two-up grid and a row in the basket drawer; six flavour rows
-        // with steppers would be taller than the tile it sits in. Adding a
-        // dozen of one flavour from a tile stays one tap, which is what a
-        // tile is for, and mixing is a thing you go to the item to do.
+        // Not on the compact size, which is a catalog tile in a two-up grid
+        // and a row in the basket drawer — six flavour rows with steppers are
+        // taller than the tile they'd sit in. The tile doesn't fall back to a
+        // single-flavour dropdown either; it passes this group in
+        // hiddenGroupIds and links to the item instead. See ProductCard for
+        // why offering the fallback was worse than offering nothing.
         if (group.mix && !compact && size_ > 1) {
           return (
             <MixPicker

@@ -146,6 +146,7 @@ export const en = {
   "mix.addOne": "Add one {choice}",
   "mix.removeOne": "Remove one {choice}",
   "mix.mixed": "Mixed",
+  "mix.chooseFlavors": "Choose flavors",
 
   // ——— The basket ———
   "cart.title": "Your basket",

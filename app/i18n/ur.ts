@@ -445,6 +445,7 @@ export const ur: Table = {
   "mix.addOne": "ایک {choice} شامل کریں",
   "mix.removeOne": "ایک {choice} نکالیں",
   "mix.mixed": "مخلوط",
+  "mix.chooseFlavors": "ذائقے منتخب کریں",
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON باڈی درکار ہے۔",
