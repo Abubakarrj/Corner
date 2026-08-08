@@ -5,7 +5,6 @@ import Link from "next/link";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useT, type StringKey } from "../../i18n";
-import { LOCATIONS } from "../locations/locations";
 import { POSITIONS, type PositionId } from "./application";
 import { TEAM_PHOTOS } from "./teamPhotos";
 
@@ -46,11 +45,6 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
 
 export default function CareersLanding() {
   const t = useT();
-  // One shop today. Written as a join so a second one is a data change rather
-  // than a copy change.
-  const shops = LOCATIONS.filter((place) => place.kind === "shop")
-    .map((place) => place.name)
-    .join(", ");
 
   return (
     <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
@@ -102,17 +96,14 @@ export default function CareersLanding() {
         <p className="m-0 text-[14px] leading-[1.65] text-ink">{t("about.p1")}</p>
         <p className="m-0 mt-3 text-[14px] leading-[1.65] text-ink">{t("about.p2")}</p>
 
-        <h2 className="m-0 mb-2 mt-11 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
-          {t("careers.rolesHeading")}
-        </h2>
-        <p className="m-0 text-[13px] leading-[1.55] text-muted">{t("careers.rolesNote")}</p>
-        {shops ? (
-          <p className="m-0 mt-1 text-[12px] text-quiet">{t("careers.rolesWhere", { shops })}</p>
-        ) : null}
+        {/* No heading over these. Four cards that each name a job and end in
+            "Apply" do not need a line above them saying they are the jobs —
+            the titles say it, and the label was the least informative thing
+            on the page.
 
-        {/* The whole card is the link, so its accessible name is the job title
+            The whole card is the link, so its accessible name is the job title
             and its description rather than four identical "Apply"s in a row. */}
-        <ul className="m-0 mt-4 flex list-none flex-col gap-2.5 p-0">
+        <ul className="m-0 mt-11 flex list-none flex-col gap-2.5 p-0">
           {POSITIONS.map(({ id, label }) => (
             <li key={id}>
               <Link
