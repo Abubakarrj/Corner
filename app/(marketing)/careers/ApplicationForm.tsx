@@ -3,6 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import LanguagePicker from "../../ui/LanguagePicker";
 import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useServerText, useT, type StringKey } from "../../i18n";
@@ -278,28 +279,49 @@ export default function ApplicationForm() {
             It goes home rather than to whatever referred here, because home is
             where "Work with us" lives, so leaving and coming back is one tap
             each way. */}
-        {/* 28px of text and icon, with the rest of a 44px target added by a
-            pseudo-element rather than by padding — padding here would push the
-            masthead down for a control that should read as a quiet line above
-            it. Same trick, same reason, as BagelMark. */}
-        <button
-          type="button"
-          onClick={leave}
-          className="cb-press relative -ms-1 mb-7 inline-flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-[13px] text-muted transition-colors before:absolute before:-inset-[10px] before:content-[''] hover:text-ink"
-        >
-          {/* Mirrored under Urdu and Persian with the document, so the arrow
-              points the way back rather than the way on. */}
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden className="rtl:-scale-x-100">
-            <path
-              d="M8.5 2.5 4 7l4.5 4.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          {t("nav.home")}
-        </button>
+        {/* The way out on the start side, the language on the end side. Both
+            are 28px and sit on one row, the same shape as the strip on the
+            front door.
+
+            The picker is here rather than only on the home page because this
+            is a page somebody can arrive at directly — from a link, a QR code
+            in the window, a text from a friend — and the language they need is
+            not one they should have to go somewhere else to set. Changing it
+            re-renders in place: setLocale fires an event, it doesn't navigate,
+            so a half-filled form survives the switch. */}
+        <div className="mb-7 flex items-center justify-between gap-3">
+          {/* 28px of text and icon, with the rest of a 44px target added by a
+              pseudo-element rather than by padding — padding here would push
+              the masthead down for a control that should read as a quiet line
+              above it. Same trick, same reason, as BagelMark. */}
+          <button
+            type="button"
+            onClick={leave}
+            className="cb-press relative -ms-1 inline-flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-[13px] text-muted transition-colors before:absolute before:-inset-[10px] before:content-[''] hover:text-ink"
+          >
+            {/* Mirrored under Urdu and Persian with the document, so the arrow
+                points the way back rather than the way on. */}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden
+              className="rtl:-scale-x-100"
+            >
+              <path
+                d="M8.5 2.5 4 7l4.5 4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t("nav.home")}
+          </button>
+
+          <LanguagePicker />
+        </div>
 
         {/* ——— Masthead ——— */}
         <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
