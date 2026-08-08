@@ -101,20 +101,27 @@ const DAY_SHORT: Record<DayId, StringKey> = {
   sun: "careers.dayShortSun",
 };
 
-/** The application with whatever the link said folded in: the job selected,
-    and the shop recorded. Returns the very same object when there is nothing
-    to add, so the identity comparisons that decide whether to write a draft
-    keep working. */
+/** The application with whatever the link said folded in: the job applied for
+    and the shop it is at. Returns the very same object when there is nothing
+    to change, so the identity comparisons that decide whether to write a draft
+    keep working.
+
+    A second card replaces the job rather than collecting both. Somebody who
+    pressed Counter, filled half the form in, went back and pressed Kitchen
+    means they want Kitchen — and if they want both, "Also happy to do" is on
+    the very next screen, one tap away. Collecting instead would quietly put a
+    job somebody misclicked into a document about them, which is the worse of
+    the two mistakes to make. Their answers are untouched either way. */
 function fromLink(draft: Draft, role: PositionId | null, location: string | null): Draft {
-  const addRole = role !== null && !draft.application.positions.includes(role);
-  const addWhere = location !== null && draft.application.location !== location;
-  if (!addRole && !addWhere) return draft;
+  const setRole = role !== null && draft.application.role !== role;
+  const setWhere = location !== null && draft.application.location !== location;
+  if (!setRole && !setWhere) return draft;
   return {
     ...draft,
     application: {
       ...draft.application,
-      positions: addRole ? [...draft.application.positions, role] : draft.application.positions,
-      location: addWhere ? location : draft.application.location,
+      role: setRole ? role : draft.application.role,
+      location: setWhere ? location : draft.application.location,
     },
   };
 }
@@ -155,15 +162,24 @@ export default function ApplicationForm({
   // together, so there is never a half-adopted draft.
   const saved = useSavedDraft();
   const [edited, setEdited] = useState<Draft | null>(null);
-  // Whichever card on /careers was pressed, added to the base rather than
-  // replacing it: somebody with a half-finished application who comes back
-  // through a different card should gain that job, not lose their answers.
-  // Memoised because it is compared by identity below and feeds the effect
-  // that writes the draft.
+  // Whichever card on /careers was pressed, folded into the base. Memoised
+  // because it is compared by identity below and feeds the effect that writes
+  // the draft.
   const base = useMemo(() => fromLink(saved ?? FRESH, role, location), [saved, role, location]);
   const current = edited ?? base;
   const application = current.application;
   const step = current.step;
+  // The job being applied for, read off the application rather than the URL.
+  // That distinction is the whole point: the link only ever seeds this, so
+  // the page still knows what it is for after a reload, in a tab reopened
+  // tomorrow, or when a draft is picked back up days later. Reading the prop
+  // instead is what made the form forget and start asking again.
+  // Both halves of the card press, and both read the same way for the same
+  // reason. The shop was already stored correctly and already reached the
+  // PDF — it was only this line on screen that read the URL, so a reload
+  // quietly dropped "Koreatown" from a page whose application still had it.
+  const job = application.role === "" ? null : application.role;
+  const where = application.location.trim() === "" ? null : application.location.trim();
   // Per step, so moving forward doesn't paint the next screen red before it
   // has been touched.
   const [tried, setTried] = useState<Set<number>>(new Set());
@@ -400,7 +416,7 @@ export default function ApplicationForm({
 
             Without a job (the "Not sure which?" way in) there is nothing to
             headline, so it keeps the general one. */}
-        {role ? (
+        {job ? (
           <>
             <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
               {t("careers.applyingFor")}
@@ -409,11 +425,11 @@ export default function ApplicationForm({
               className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
-              {t(POSITION_LABEL[role])}
+              {t(POSITION_LABEL[job])}
             </h1>
             <p className="m-0 mt-3 text-[15px] leading-[1.55] text-muted">
-              {location ? <span className="text-ink">{location}</span> : null}
-              {location ? " · " : null}
+              {where ? <span className="text-ink">{where}</span> : null}
+              {where ? " · " : null}
               <Link href="/careers" className="underline hover:text-ink">
                 {t("careers.differentJob")}
               </Link>
@@ -581,16 +597,16 @@ export default function ApplicationForm({
                   much wants to know, and which is why this list didn't just
                   get deleted. Arriving with no job, it is the original
                   question and the only place it gets asked. */}
-              <Legend first>{role ? t("careers.alsoHappy") : t("careers.secRole")}</Legend>
+              <Legend first>{job ? t("careers.alsoHappy") : t("careers.secRole")}</Legend>
               <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
-                {role ? t("careers.alsoHappyNote") : t("careers.positionsNote")}
+                {job ? t("careers.alsoHappyNote") : t("careers.positionsNote")}
               </p>
               {/* Cards, not bare pills. A pill saying "Kitchen and prep" tells
                   somebody the name of a job they may never have done; a line
                   underneath tells them what the morning is actually like, which
                   is what they're deciding about. */}
               <div className="flex flex-col gap-2">
-                {POSITIONS.filter((position) => position.id !== role).map(({ id, label }) => {
+                {POSITIONS.filter((position) => position.id !== job).map(({ id, label }) => {
                   const active = application.positions.includes(id);
                   return (
                     <button

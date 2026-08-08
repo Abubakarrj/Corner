@@ -105,14 +105,30 @@ export type Application = {
   city: string;
   state: string;
 
-  positions: PositionId[];
-  // Which shop the card they pressed was for. Carried from the link, never
-  // asked — somebody who pressed "Manager, Hancock Park" has already said
-  // where, and a form that then asks is a form that wasn't listening. Empty
-  // when they came in through "Not sure which?", which is honest: they didn't
-  // pick a shop, so we don't claim they did.
+  // ——— The two halves of pressing a card ———
   //
-  // Never required, for the same reason. It is context, not an answer.
+  // A card on /careers says two things at once: this job, at this shop. Both
+  // are recorded here, and both for the same reason — they are answers the
+  // person already gave by pressing, so the form must not ask again and the
+  // document must not lose them.
+  //
+  // `role` used to live only in the URL, and that was the bug. Lose the URL —
+  // a reload, a tab reopened tomorrow, a draft picked back up — and the form
+  // forgot which job it was for and went back to asking. Worse, the job you
+  // came in for arrived at the shop flattened into the list below it, so the
+  // hiring desk could not tell which card had been pressed either. A fact the
+  // whole flow is built on cannot live somewhere that a refresh erases.
+  //
+  // Empty when they came in through "Not sure which?", which is the truth:
+  // they didn't pick a job, so we don't claim they did.
+  role: PositionId | "";
+  /** Anything else they'd also take, which is a different question from the
+      one above and worth keeping separate. Somebody applying to manage who
+      would also work the counter has said something useful; somebody whose
+      application lists "counter, manager" in no particular order has not. */
+  positions: PositionId[];
+  // The shop, from the same press. Never required — a person who used "Not
+  // sure which?" named no shop, and it is context rather than an answer.
   location: string;
   days: DayId[];
   employmentTypes: EmploymentTypeId[];
@@ -146,7 +162,7 @@ export type Application = {
 export function emptyApplication(): Application {
   return {
     firstName: "", lastName: "", email: "", phone: "", city: "", state: "",
-    positions: [], location: "", days: [], employmentTypes: [], earliestStart: "",
+    role: "", positions: [], location: "", days: [], employmentTypes: [], earliestStart: "",
     authorizedToWork: null, isAdult: null, servSafe: null,
     education: [], employment: [], references: [],
     goals: "", hardestDecision: "", toSucceed: "", heardFrom: "",
@@ -188,7 +204,14 @@ export function applicationErrors(application: Application): StringKey[] {
   // likely to skip it — somebody applying from out of state — is the one whose
   // answer carries the information.
   need(application.state.trim().length > 0, "careers.errState");
-  need(application.positions.length > 0, "careers.errPositions");
+  // Either half answers it. Arriving from a card has already named a job, so
+  // demanding a tick as well would be the form asking something it was just
+  // told; arriving through "Not sure which?" has named none, so a tick is the
+  // only answer there is.
+  need(
+    application.role !== "" || application.positions.length > 0,
+    "careers.errPositions",
+  );
   need(application.days.length > 0, "careers.errDays");
   need(application.employmentTypes.length > 0, "careers.errTypes");
   need(application.authorizedToWork !== null, "careers.errAuthorized");
@@ -230,6 +253,12 @@ export function normalizeApplication(raw: unknown): Application {
     city: str(body.city, 80),
     state: str(body.state, 40),
 
+    // Checked against the list rather than trusted, like every other id here:
+    // it arrives from a query string, and anything not a job we offer is not
+    // a job we offer.
+    role: POSITIONS.some((position) => position.id === body.role)
+      ? (body.role as PositionId)
+      : "",
     positions: ids(body.positions, POSITIONS.map((p) => p.id)),
     location: str(body.location, 80),
     days: ids(body.days, DAYS.map((d) => d.id)),

@@ -112,7 +112,15 @@ function summarize(application: Application): string {
   add(t("careers.phone"), application.phone);
   add("Where", [application.city, application.state].filter(Boolean).join(", "));
   lines.push("");
-  add(t("careers.secRole"), chosen(application.positions, POSITIONS));
+  // Two lines when a card was pressed, one when it wasn't. Same reasoning as
+  // the PDF: the job applied for and the jobs also acceptable are different
+  // answers, and merging them loses the one the shop reads first.
+  if (application.role !== "") {
+    add(t("careers.applyingFor"), chosen([application.role], POSITIONS));
+    add(t("careers.alsoHappy"), chosen(application.positions, POSITIONS));
+  } else {
+    add(t("careers.secRole"), chosen(application.positions, POSITIONS));
+  }
   add("Applied from", application.location);
   add("Days", chosen(application.days, DAYS));
   add("Hours", chosen(application.employmentTypes, EMPLOYMENT_TYPES));
@@ -202,7 +210,18 @@ async function mailToShop(
         applicantName: name,
         applicantEmail: application.email,
         applicantPhone: application.phone,
-        positions: chosen(application.positions, POSITIONS),
+        // The job applied for leads, because this is what the subject line
+        // and the inbox list are built from — "Manager" is the useful thing
+        // to see before opening, and the also-happy-to-do list follows it.
+        // Ordered rather than merged: reading `positions` off the array alone
+        // would leave this blank for somebody who pressed a card and ticked
+        // nothing else, which is the commonest application there is.
+        positions: [
+          application.role === "" ? "" : chosen([application.role], POSITIONS),
+          chosen(application.positions, POSITIONS),
+        ]
+          .filter(Boolean)
+          .join(", "),
         summary: bothLanguages(application, translation),
         // So the reader knows to trust the text over the attachment when the
         // two disagree, rather than assuming the PDF lost something.
