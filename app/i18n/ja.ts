@@ -404,6 +404,7 @@ export const ja: Table = {
   "about.p4":
     "街のお店を支えてくださりありがとうございます。すぐ角を曲がったところで、またお会いできるのを楽しみにしています。",
   "about.speakToTeam": "スタッフとお話しになりたい場合:",
+  "about.workWithUs": "一緒に働く",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -496,4 +497,109 @@ export const ja: Table = {
   "gift.artCongratsChecker": "「おめでとう」と書かれた市松模様のギフトカード",
   "gift.artBirthdayRed": "「お誕生日おめでとう」と書かれた赤いギフトカード",
   "gift.artGinghamOlive": "オリーブ色のギンガムチェックのギフトカード",
+
+  "careers.title": "Corner Bagel で働く",
+  "careers.lede": "小さな店、早い朝、いいパン。あなたのことを聞かせてください。",
+  "careers.timeNote": "5分ほどです。送信するまで何も保存されません。",
+  "careers.optional": "任意",
+  "careers.yes": "はい",
+  "careers.no": "いいえ",
+  "careers.remove": "削除",
+
+  "careers.secYou": "あなたについて",
+  "careers.secRole": "やってみたい仕事",
+  "careers.secWhen": "働ける時間",
+  "careers.secChecks": "簡単な質問",
+  "careers.secSchool": "学歴",
+  "careers.secWork": "これまでの職場",
+  "careers.secRefs": "推薦者",
+  "careers.secWords": "自分の言葉で",
+  "careers.secSend": "署名して送信",
+
+  "careers.firstName": "名",
+  "careers.lastName": "姓",
+  "careers.email": "メールアドレス",
+  "careers.phone": "携帯番号",
+  "careers.city": "市区町村",
+  "careers.state": "州",
+
+  "careers.positionsNote": "いくつでも選べます。",
+  "careers.posCounter": "カウンター・レジ",
+  "careers.posBaker": "ベイカー",
+  "careers.posKitchen": "キッチン・仕込み",
+  "careers.posShiftLead": "シフトリーダー",
+
+  "careers.daysNote": "週7日営業なので、週末も入ります。",
+  "careers.dayMon": "月曜",
+  "careers.dayTue": "火曜",
+  "careers.dayWed": "水曜",
+  "careers.dayThu": "木曜",
+  "careers.dayFri": "金曜",
+  "careers.daySat": "土曜",
+  "careers.daySun": "日曜",
+
+  "careers.typesNote": "希望する働き方。",
+  "careers.typeFull": "フルタイム",
+  "careers.typePart": "パートタイム",
+  "careers.typeSeasonal": "季節限定",
+
+  "careers.earliestStart": "いちばん早く始められる日",
+
+  "careers.authorized": "アメリカで働く資格はありますか？",
+  "careers.isAdult": "18歳以上ですか？",
+  "careers.isAdultNote":
+    "カリフォルニア州では18歳未満が働ける時間が制限されていて、これがわからないとシフトを組めないためお聞きしています。生年月日は必要ありません。",
+  "careers.servSafe": "食品衛生の資格（food handler card）はお持ちですか？",
+  "careers.servSafeNote": "必須ではありません。お持ちでなければ最初の週に取得をお手伝いします。",
+
+  "careers.school": "学校",
+  "careers.focus": "学んだこと",
+  "careers.finished": "卒業年",
+  "careers.addSchool": "学校を追加",
+
+  "careers.employer": "勤務先",
+  "careers.role": "担当していたこと",
+  "careers.from": "開始",
+  "careers.to": "終了",
+  "careers.addJob": "職歴を追加",
+  "careers.workNote": "働いたことがなければ空欄で大丈夫です。不利にはなりません。",
+
+  "careers.refName": "名前",
+  "careers.refRelationship": "どういう関係か",
+  "careers.refContact": "電話またはメール",
+  "careers.addReference": "推薦者を追加",
+  "careers.refsNote": "任意です。あなたを保証してくれる人なら誰でも構いません。",
+
+  "careers.goals": "この仕事から何を得たいですか？",
+  "careers.hardestDecision": "難しい判断をした経験を教えてください。",
+  "careers.toSucceed": "ここでうまくやるために、私たちに何を求めますか？",
+  "careers.heardFrom": "どこで私たちを知りましたか？",
+
+  "careers.signature": "フルネームを入力してください",
+  "careers.signatureNote":
+    "名前を入力すると、回答が事実であることの確認になり、記載された勤務先や推薦者への連絡に同意したことになります。身元調査の同意書ではありません。それは別途、書面でお願いします。",
+
+  "careers.submit": "応募を送信",
+  "careers.sending": "送信中…",
+  "careers.sentTitle": "応募を送信しました",
+  "careers.sentBody": "受け取りました。ご縁がありそうなら、1週間ほどで {contact} にご連絡します。",
+  "careers.sentAgain": "もう一件送る",
+
+  "careers.eeo":
+    "採用は、できることと人への接し方で判断します。人種、宗教、年齢、障害、出身国、性別、性的指向、婚姻状況、兵役の有無は尋ねませんし、考慮もしません。",
+  "careers.privacyNote": "ここで送っていただいた内容は、面接するかどうかを決めるためだけに保管します。",
+
+  "careers.errFirstName": "名を入力してください。",
+  "careers.errLastName": "姓を入力してください。",
+  "careers.errEmail": "返信できるメールアドレスを入力してください。",
+  "careers.errPhone": "連絡できる電話番号を入力してください。",
+  "careers.errCity": "お住まいの市区町村を入力してください。",
+  "careers.errPositions": "やってみたい仕事を1つ以上選んでください。",
+  "careers.errDays": "働ける曜日を1つ以上選んでください。",
+  "careers.errTypes": "希望する働き方を選んでください。",
+  "careers.errAuthorized": "アメリカで働く資格についての質問に答えてください。",
+  "careers.errAge": "18歳以上かどうかの質問に答えてください。",
+  "careers.errSignature": "署名としてフルネームを入力してください。",
+  "careers.errCheckForm": "上にまだ答えていない項目があります。",
+  "careers.errSendFailed": "送信できませんでした。少し経ってからもう一度お試しください。",
 };

@@ -433,6 +433,7 @@ export const en = {
   "about.p4":
     "Thank you for supporting a neighborhood business. We look forward to welcoming you back, right around the corner.",
   "about.speakToTeam": "To speak with a member of our team:",
+  "about.workWithUs": "Work with us",
 
   // ——— Riley ———
   "chat.name": "Riley",
@@ -520,6 +521,115 @@ export const en = {
   "gift.artCongratsChecker": "Checkerboard gift card reading congrats",
   "gift.artBirthdayRed": "Red gift card reading happy birthday",
   "gift.artGinghamOlive": "Olive gingham gift card",
+
+  // ——— Careers ———
+  // The application form. What isn't here is as deliberate as what is: see
+  // the long note at the top of (marketing)/careers/application.ts for the
+  // questions that were cut and why.
+  "careers.title": "Work at Corner Bagel",
+  "careers.lede": "Small shop, early mornings, good bread. Tell us about yourself.",
+  "careers.timeNote": "About five minutes. Nothing is kept until you send it.",
+  "careers.optional": "Optional",
+  "careers.yes": "Yes",
+  "careers.no": "No",
+  "careers.remove": "Remove",
+
+  "careers.secYou": "About you",
+  "careers.secRole": "What you'd like to do",
+  "careers.secWhen": "When you can work",
+  "careers.secChecks": "A few quick questions",
+  "careers.secSchool": "School",
+  "careers.secWork": "Where you've worked",
+  "careers.secRefs": "References",
+  "careers.secWords": "In your own words",
+  "careers.secSend": "Sign and send",
+
+  "careers.firstName": "First name",
+  "careers.lastName": "Last name",
+  "careers.email": "Email",
+  "careers.phone": "Mobile number",
+  "careers.city": "City",
+  "careers.state": "State",
+
+  "careers.positionsNote": "Pick as many as you like.",
+  "careers.posCounter": "Counter and register",
+  "careers.posBaker": "Baker",
+  "careers.posKitchen": "Kitchen and prep",
+  "careers.posShiftLead": "Shift lead",
+
+  "careers.daysNote": "We're open seven days, so weekends count.",
+  "careers.dayMon": "Monday",
+  "careers.dayTue": "Tuesday",
+  "careers.dayWed": "Wednesday",
+  "careers.dayThu": "Thursday",
+  "careers.dayFri": "Friday",
+  "careers.daySat": "Saturday",
+  "careers.daySun": "Sunday",
+
+  "careers.typesNote": "The hours you're looking for.",
+  "careers.typeFull": "Full time",
+  "careers.typePart": "Part time",
+  "careers.typeSeasonal": "Seasonal",
+
+  "careers.earliestStart": "Earliest day you could start",
+
+  "careers.authorized": "Are you authorized to work in the United States?",
+  "careers.isAdult": "Are you 18 or over?",
+  "careers.isAdultNote":
+    "We ask because California limits the hours someone under 18 can work, and a schedule can't be built without knowing. We don't need your date of birth.",
+  "careers.servSafe": "Do you have a food handler card?",
+  "careers.servSafeNote": "Not required. If you don't, we'll help you get one in your first week.",
+
+  "careers.school": "School",
+  "careers.focus": "What you studied",
+  "careers.finished": "Year finished",
+  "careers.addSchool": "Add a school",
+
+  "careers.employer": "Employer",
+  "careers.role": "What you did",
+  "careers.from": "From",
+  "careers.to": "To",
+  "careers.addJob": "Add a job",
+  "careers.workNote": "Never had a job? Leave this empty. It won't count against you.",
+
+  "careers.refName": "Name",
+  "careers.refRelationship": "How you know them",
+  "careers.refContact": "Phone or email",
+  "careers.addReference": "Add a reference",
+  "careers.refsNote": "Optional, and someone who'll vouch for you is enough.",
+
+  "careers.goals": "What are you hoping to get out of this job?",
+  "careers.hardestDecision": "Tell us about a hard call you had to make.",
+  "careers.toSucceed": "What would you need from us to do well here?",
+  "careers.heardFrom": "How did you hear about us?",
+
+  "careers.signature": "Type your full name",
+  "careers.signatureNote":
+    "Typing your name confirms your answers are true and lets us contact the employers and references you listed. It is not a background check authorization — we would ask for that separately, in writing.",
+
+  "careers.submit": "Send application",
+  "careers.sending": "Sending…",
+  "careers.sentTitle": "Application sent",
+  "careers.sentBody": "We have it. If it looks like a fit, someone will write to {contact} within about a week.",
+  "careers.sentAgain": "Send another",
+
+  "careers.eeo":
+    "We hire on what you can do and how you treat people. We don't ask about race, religion, age, disability, national origin, gender, sexual orientation, marital or veteran status, and we don't take them into account.",
+  "careers.privacyNote": "We keep what you send here to decide whether to interview you, and for nothing else.",
+
+  "careers.errFirstName": "Add your first name.",
+  "careers.errLastName": "Add your last name.",
+  "careers.errEmail": "Add an email we can reply to.",
+  "careers.errPhone": "Add a number we can reach you on.",
+  "careers.errCity": "Add the city you live in.",
+  "careers.errPositions": "Pick at least one job you'd like to do.",
+  "careers.errDays": "Pick at least one day you can work.",
+  "careers.errTypes": "Pick the hours you're looking for.",
+  "careers.errAuthorized": "Answer the question about working in the US.",
+  "careers.errAge": "Answer the question about being 18 or over.",
+  "careers.errSignature": "Type your full name to sign.",
+  "careers.errCheckForm": "Something above still needs an answer.",
+  "careers.errSendFailed": "We couldn't send that. Try again in a moment.",
 } as const;
 
 export type StringKey = keyof typeof en;

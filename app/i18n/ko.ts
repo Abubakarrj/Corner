@@ -404,6 +404,7 @@ export const ko: Table = {
   "about.p4":
     "동네 가게를 응원해 주셔서 고맙습니다. 바로 코너에서 다시 뵙기를 기다리겠습니다.",
   "about.speakToTeam": "직원과 통화를 원하시면:",
+  "about.workWithUs": "함께 일하기",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -496,4 +497,109 @@ export const ko: Table = {
   "gift.artCongratsChecker": "축하 인사가 적힌 체커보드 기프트 카드",
   "gift.artBirthdayRed": "생일 축하 인사가 적힌 빨간 기프트 카드",
   "gift.artGinghamOlive": "올리브색 깅엄 체크 기프트 카드",
+
+  "careers.title": "Corner Bagel에서 일하기",
+  "careers.lede": "작은 가게, 이른 아침, 좋은 빵. 본인 이야기를 들려주세요.",
+  "careers.timeNote": "5분 정도 걸립니다. 보내기 전까지는 아무것도 저장되지 않아요.",
+  "careers.optional": "선택",
+  "careers.yes": "예",
+  "careers.no": "아니요",
+  "careers.remove": "삭제",
+
+  "careers.secYou": "본인 정보",
+  "careers.secRole": "하고 싶은 일",
+  "careers.secWhen": "근무 가능한 때",
+  "careers.secChecks": "간단한 질문 몇 가지",
+  "careers.secSchool": "학력",
+  "careers.secWork": "일해 본 곳",
+  "careers.secRefs": "추천인",
+  "careers.secWords": "본인의 말로",
+  "careers.secSend": "서명하고 보내기",
+
+  "careers.firstName": "이름",
+  "careers.lastName": "성",
+  "careers.email": "이메일",
+  "careers.phone": "휴대전화",
+  "careers.city": "도시",
+  "careers.state": "주",
+
+  "careers.positionsNote": "원하는 만큼 고르세요.",
+  "careers.posCounter": "카운터·계산",
+  "careers.posBaker": "제빵",
+  "careers.posKitchen": "주방·준비",
+  "careers.posShiftLead": "시프트 리드",
+
+  "careers.daysNote": "일주일 내내 열기 때문에 주말도 포함됩니다.",
+  "careers.dayMon": "월요일",
+  "careers.dayTue": "화요일",
+  "careers.dayWed": "수요일",
+  "careers.dayThu": "목요일",
+  "careers.dayFri": "금요일",
+  "careers.daySat": "토요일",
+  "careers.daySun": "일요일",
+
+  "careers.typesNote": "원하는 근무 형태.",
+  "careers.typeFull": "풀타임",
+  "careers.typePart": "파트타임",
+  "careers.typeSeasonal": "시즌 근무",
+
+  "careers.earliestStart": "가장 빨리 시작할 수 있는 날",
+
+  "careers.authorized": "미국에서 일할 수 있는 자격이 있나요?",
+  "careers.isAdult": "만 18세 이상인가요?",
+  "careers.isAdultNote":
+    "캘리포니아는 18세 미만이 일할 수 있는 시간을 제한하기 때문에, 이걸 모르면 근무표를 짤 수 없어서 여쭤봅니다. 생년월일은 필요하지 않습니다.",
+  "careers.servSafe": "식품 취급 자격증(food handler card)이 있나요?",
+  "careers.servSafeNote": "필수는 아닙니다. 없으면 첫 주에 딸 수 있도록 도와드려요.",
+
+  "careers.school": "학교",
+  "careers.focus": "전공·배운 것",
+  "careers.finished": "졸업 연도",
+  "careers.addSchool": "학교 추가",
+
+  "careers.employer": "근무처",
+  "careers.role": "맡았던 일",
+  "careers.from": "시작",
+  "careers.to": "종료",
+  "careers.addJob": "경력 추가",
+  "careers.workNote": "일해 본 적이 없다면 비워 두세요. 불이익은 없습니다.",
+
+  "careers.refName": "이름",
+  "careers.refRelationship": "어떤 사이인지",
+  "careers.refContact": "전화 또는 이메일",
+  "careers.addReference": "추천인 추가",
+  "careers.refsNote": "선택 사항이고, 본인을 보증해 줄 사람이면 충분합니다.",
+
+  "careers.goals": "이 일에서 무엇을 얻고 싶나요?",
+  "careers.hardestDecision": "어려운 결정을 내려야 했던 일을 들려주세요.",
+  "careers.toSucceed": "여기서 잘하려면 저희에게 무엇이 필요할까요?",
+  "careers.heardFrom": "저희를 어떻게 알게 되셨나요?",
+
+  "careers.signature": "성명을 입력하세요",
+  "careers.signatureNote":
+    "이름을 입력하면 답변이 사실이라는 확인이 되고, 적어 주신 근무처와 추천인에게 연락하는 데 동의하는 것이 됩니다. 신원 조회 동의서는 아닙니다. 그건 따로 서면으로 요청드립니다.",
+
+  "careers.submit": "지원서 보내기",
+  "careers.sending": "보내는 중…",
+  "careers.sentTitle": "지원서를 보냈습니다",
+  "careers.sentBody": "잘 받았습니다. 맞는 자리가 있으면 일주일 안쯤에 {contact}(으)로 연락드릴게요.",
+  "careers.sentAgain": "하나 더 보내기",
+
+  "careers.eeo":
+    "저희는 할 수 있는 일과 사람을 대하는 태도로 채용합니다. 인종, 종교, 나이, 장애, 출신 국가, 성별, 성적 지향, 혼인 여부, 병역 사항은 묻지 않고 고려하지도 않습니다.",
+  "careers.privacyNote": "여기서 보내 주신 내용은 면접 여부를 정하는 데만 쓰고, 다른 데에는 쓰지 않습니다.",
+
+  "careers.errFirstName": "이름을 입력해 주세요.",
+  "careers.errLastName": "성을 입력해 주세요.",
+  "careers.errEmail": "답장할 수 있는 이메일을 입력해 주세요.",
+  "careers.errPhone": "연락 가능한 전화번호를 입력해 주세요.",
+  "careers.errCity": "사는 도시를 입력해 주세요.",
+  "careers.errPositions": "하고 싶은 일을 하나 이상 골라 주세요.",
+  "careers.errDays": "근무 가능한 요일을 하나 이상 골라 주세요.",
+  "careers.errTypes": "원하는 근무 형태를 골라 주세요.",
+  "careers.errAuthorized": "미국에서 일할 자격에 관한 질문에 답해 주세요.",
+  "careers.errAge": "만 18세 이상인지에 관한 질문에 답해 주세요.",
+  "careers.errSignature": "서명을 위해 성명을 입력해 주세요.",
+  "careers.errCheckForm": "위에 아직 답하지 않은 항목이 있습니다.",
+  "careers.errSendFailed": "보내지 못했습니다. 잠시 후 다시 시도해 주세요.",
 };

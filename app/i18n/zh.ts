@@ -402,6 +402,7 @@ export const zh: Table = {
     "无论你是上班前买份早餐、和朋友喝杯咖啡，还是给家人带回一打贝果，我们都很荣幸你愿意把一天中的一小段时间交给我们。",
   "about.p4": "感谢你支持街坊小店。期待在街角再次见到你。",
   "about.speakToTeam": "如需与我们的同事通话：",
+  "about.workWithUs": "加入我们",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -494,4 +495,109 @@ export const zh: Table = {
   "gift.artCongratsChecker": "写着恭喜的棋盘格礼品卡",
   "gift.artBirthdayRed": "写着生日快乐的红色礼品卡",
   "gift.artGinghamOlive": "橄榄绿格纹礼品卡",
+
+  "careers.title": "来 Corner Bagel 工作",
+  "careers.lede": "小店，早班，好面包。说说你自己吧。",
+  "careers.timeNote": "大约五分钟。在你点发送之前，什么都不会保存。",
+  "careers.optional": "选填",
+  "careers.yes": "是",
+  "careers.no": "否",
+  "careers.remove": "删除",
+
+  "careers.secYou": "关于你",
+  "careers.secRole": "你想做的岗位",
+  "careers.secWhen": "你能上班的时间",
+  "careers.secChecks": "几个简单的问题",
+  "careers.secSchool": "教育经历",
+  "careers.secWork": "工作过的地方",
+  "careers.secRefs": "推荐人",
+  "careers.secWords": "用你自己的话说",
+  "careers.secSend": "签名并提交",
+
+  "careers.firstName": "名",
+  "careers.lastName": "姓",
+  "careers.email": "电子邮箱",
+  "careers.phone": "手机号",
+  "careers.city": "城市",
+  "careers.state": "州",
+
+  "careers.positionsNote": "想选几个就选几个。",
+  "careers.posCounter": "前台与收银",
+  "careers.posBaker": "面包师",
+  "careers.posKitchen": "后厨与备料",
+  "careers.posShiftLead": "值班主管",
+
+  "careers.daysNote": "我们一周七天营业，所以周末也算。",
+  "careers.dayMon": "周一",
+  "careers.dayTue": "周二",
+  "careers.dayWed": "周三",
+  "careers.dayThu": "周四",
+  "careers.dayFri": "周五",
+  "careers.daySat": "周六",
+  "careers.daySun": "周日",
+
+  "careers.typesNote": "你想要的工作时长。",
+  "careers.typeFull": "全职",
+  "careers.typePart": "兼职",
+  "careers.typeSeasonal": "季节性",
+
+  "careers.earliestStart": "最早可以上班的日期",
+
+  "careers.authorized": "你有在美国工作的资格吗？",
+  "careers.isAdult": "你满 18 岁了吗？",
+  "careers.isAdultNote":
+    "我们问这个，是因为加州对未满 18 岁的人可以工作的时段有限制，不知道就没法排班。我们不需要你的出生日期。",
+  "careers.servSafe": "你有食品从业人员证（food handler card）吗？",
+  "careers.servSafeNote": "不是必需的。没有的话，第一周我们帮你去考。",
+
+  "careers.school": "学校",
+  "careers.focus": "学的是什么",
+  "careers.finished": "毕业年份",
+  "careers.addSchool": "添加一所学校",
+
+  "careers.employer": "工作单位",
+  "careers.role": "做的是什么",
+  "careers.from": "从",
+  "careers.to": "到",
+  "careers.addJob": "添加一份工作",
+  "careers.workNote": "没工作过？空着就行，不会因此扣分。",
+
+  "careers.refName": "姓名",
+  "careers.refRelationship": "你们怎么认识的",
+  "careers.refContact": "电话或邮箱",
+  "careers.addReference": "添加一位推荐人",
+  "careers.refsNote": "选填，找个愿意为你说句话的人就够了。",
+
+  "careers.goals": "你希望从这份工作里得到什么？",
+  "careers.hardestDecision": "说说你做过的一个难做的决定。",
+  "careers.toSucceed": "要在这里做得好，你需要我们提供什么？",
+  "careers.heardFrom": "你是怎么知道我们的？",
+
+  "careers.signature": "输入你的全名",
+  "careers.signatureNote":
+    "输入姓名即表示你确认以上回答属实，并允许我们联系你填写的雇主和推荐人。这不是背景调查授权书——那个我们会另外用书面形式来问。",
+
+  "careers.submit": "提交申请",
+  "careers.sending": "提交中…",
+  "careers.sentTitle": "申请已提交",
+  "careers.sentBody": "我们收到了。如果合适，大约一周内会有人写信到 {contact}。",
+  "careers.sentAgain": "再提交一份",
+
+  "careers.eeo":
+    "我们看的是你能做什么、你怎么待人。我们不会问种族、宗教、年龄、身体状况、原籍国、性别、性取向、婚姻状况或退伍军人身份，也不会把这些纳入考虑。",
+  "careers.privacyNote": "你在这里提交的内容，我们只用来决定要不要请你来面谈，不作他用。",
+
+  "careers.errFirstName": "请填写你的名。",
+  "careers.errLastName": "请填写你的姓。",
+  "careers.errEmail": "请留一个我们能回复的邮箱。",
+  "careers.errPhone": "请留一个能联系到你的电话。",
+  "careers.errCity": "请填写你住的城市。",
+  "careers.errPositions": "至少选一个你想做的岗位。",
+  "careers.errDays": "至少选一天你能上班的日子。",
+  "careers.errTypes": "请选择你想要的工作时长。",
+  "careers.errAuthorized": "请回答关于在美国工作资格的问题。",
+  "careers.errAge": "请回答是否满 18 岁的问题。",
+  "careers.errSignature": "请输入全名作为签名。",
+  "careers.errCheckForm": "上面还有没答的地方。",
+  "careers.errSendFailed": "没能提交成功，请稍后再试。",
 };

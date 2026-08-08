@@ -408,6 +408,7 @@ export const es: Table = {
   "about.p4":
     "Gracias por apoyar a un negocio de barrio. Esperamos volver a verte, justo a la vuelta de la esquina.",
   "about.speakToTeam": "Para hablar con alguien de nuestro equipo:",
+  "about.workWithUs": "Trabaja con nosotros",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -501,4 +502,109 @@ export const es: Table = {
   "gift.artCongratsChecker": "Tarjeta regalo a cuadros que dice enhorabuena",
   "gift.artBirthdayRed": "Tarjeta regalo roja que dice feliz cumpleaños",
   "gift.artGinghamOlive": "Tarjeta regalo de cuadros verde oliva",
+
+  "careers.title": "Trabaja en Corner Bagel",
+  "careers.lede": "Tienda pequeña, mañanas tempranas, buen pan. Cuéntanos sobre ti.",
+  "careers.timeNote": "Unos cinco minutos. No guardamos nada hasta que lo envíes.",
+  "careers.optional": "Opcional",
+  "careers.yes": "Sí",
+  "careers.no": "No",
+  "careers.remove": "Quitar",
+
+  "careers.secYou": "Sobre ti",
+  "careers.secRole": "Qué te gustaría hacer",
+  "careers.secWhen": "Cuándo puedes trabajar",
+  "careers.secChecks": "Un par de preguntas rápidas",
+  "careers.secSchool": "Estudios",
+  "careers.secWork": "Dónde has trabajado",
+  "careers.secRefs": "Referencias",
+  "careers.secWords": "En tus propias palabras",
+  "careers.secSend": "Firma y envía",
+
+  "careers.firstName": "Nombre",
+  "careers.lastName": "Apellidos",
+  "careers.email": "Correo electrónico",
+  "careers.phone": "Móvil",
+  "careers.city": "Ciudad",
+  "careers.state": "Estado",
+
+  "careers.positionsNote": "Elige las que quieras.",
+  "careers.posCounter": "Mostrador y caja",
+  "careers.posBaker": "Panadería",
+  "careers.posKitchen": "Cocina y preparación",
+  "careers.posShiftLead": "Encargado de turno",
+
+  "careers.daysNote": "Abrimos los siete días, así que los fines de semana cuentan.",
+  "careers.dayMon": "Lunes",
+  "careers.dayTue": "Martes",
+  "careers.dayWed": "Miércoles",
+  "careers.dayThu": "Jueves",
+  "careers.dayFri": "Viernes",
+  "careers.daySat": "Sábado",
+  "careers.daySun": "Domingo",
+
+  "careers.typesNote": "La jornada que buscas.",
+  "careers.typeFull": "Jornada completa",
+  "careers.typePart": "Media jornada",
+  "careers.typeSeasonal": "Temporada",
+
+  "careers.earliestStart": "Primer día que podrías empezar",
+
+  "careers.authorized": "¿Tienes autorización para trabajar en Estados Unidos?",
+  "careers.isAdult": "¿Tienes 18 años o más?",
+  "careers.isAdultNote":
+    "Lo preguntamos porque California limita las horas que puede trabajar alguien menor de 18 y sin saberlo no se puede armar un horario. No necesitamos tu fecha de nacimiento.",
+  "careers.servSafe": "¿Tienes el carné de manipulador de alimentos?",
+  "careers.servSafeNote": "No hace falta. Si no lo tienes, te ayudamos a sacarlo la primera semana.",
+
+  "careers.school": "Centro de estudios",
+  "careers.focus": "Qué estudiaste",
+  "careers.finished": "Año en que terminaste",
+  "careers.addSchool": "Añadir estudios",
+
+  "careers.employer": "Empresa",
+  "careers.role": "Qué hacías",
+  "careers.from": "Desde",
+  "careers.to": "Hasta",
+  "careers.addJob": "Añadir un trabajo",
+  "careers.workNote": "¿Nunca has trabajado? Déjalo en blanco. No te va a perjudicar.",
+
+  "careers.refName": "Nombre",
+  "careers.refRelationship": "De qué la conoces",
+  "careers.refContact": "Teléfono o correo",
+  "careers.addReference": "Añadir una referencia",
+  "careers.refsNote": "Opcional, y basta con alguien que responda por ti.",
+
+  "careers.goals": "¿Qué esperas sacar de este trabajo?",
+  "careers.hardestDecision": "Cuéntanos una decisión difícil que hayas tenido que tomar.",
+  "careers.toSucceed": "¿Qué necesitarías de nosotros para que te vaya bien aquí?",
+  "careers.heardFrom": "¿Cómo nos conociste?",
+
+  "careers.signature": "Escribe tu nombre completo",
+  "careers.signatureNote":
+    "Al escribir tu nombre confirmas que tus respuestas son ciertas y nos permites contactar con las empresas y referencias que has puesto. No es una autorización para consultar antecedentes: eso lo pediríamos aparte y por escrito.",
+
+  "careers.submit": "Enviar solicitud",
+  "careers.sending": "Enviando…",
+  "careers.sentTitle": "Solicitud enviada",
+  "careers.sentBody": "Ya la tenemos. Si encaja, alguien escribirá a {contact} en una semana más o menos.",
+  "careers.sentAgain": "Enviar otra",
+
+  "careers.eeo":
+    "Contratamos por lo que sabes hacer y por cómo tratas a la gente. No preguntamos por raza, religión, edad, discapacidad, nacionalidad, género, orientación sexual, estado civil ni condición de veterano, y no lo tenemos en cuenta.",
+  "careers.privacyNote": "Guardamos lo que envías aquí para decidir si te llamamos a una entrevista, y para nada más.",
+
+  "careers.errFirstName": "Escribe tu nombre.",
+  "careers.errLastName": "Escribe tus apellidos.",
+  "careers.errEmail": "Escribe un correo al que podamos responder.",
+  "careers.errPhone": "Escribe un número donde podamos localizarte.",
+  "careers.errCity": "Escribe la ciudad donde vives.",
+  "careers.errPositions": "Elige al menos un puesto que te gustaría.",
+  "careers.errDays": "Elige al menos un día que puedas trabajar.",
+  "careers.errTypes": "Elige la jornada que buscas.",
+  "careers.errAuthorized": "Responde a la pregunta sobre trabajar en Estados Unidos.",
+  "careers.errAge": "Responde a la pregunta sobre tener 18 años o más.",
+  "careers.errSignature": "Escribe tu nombre completo para firmar.",
+  "careers.errCheckForm": "Algo de arriba sigue sin respuesta.",
+  "careers.errSendFailed": "No hemos podido enviarlo. Inténtalo de nuevo en un momento.",
 };

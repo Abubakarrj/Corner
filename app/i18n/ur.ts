@@ -407,6 +407,7 @@ export const ur: Table = {
   "about.p4":
     "محلے کے کاروبار کا ساتھ دینے کا شکریہ۔ ہم آپ کا دوبارہ خیرمقدم کرنے کے منتظر ہیں، بالکل کونے کے پاس۔",
   "about.speakToTeam": "ہماری ٹیم کے کسی فرد سے بات کرنے کے لیے:",
+  "about.workWithUs": "ہمارے ساتھ کام کریں",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -499,4 +500,109 @@ export const ur: Table = {
   "gift.artCongratsChecker": "مبارکباد لکھا شطرنجی گفٹ کارڈ",
   "gift.artBirthdayRed": "سالگرہ مبارک لکھا سرخ گفٹ کارڈ",
   "gift.artGinghamOlive": "زیتونی چیک والا گفٹ کارڈ",
+
+  "careers.title": "کارنر بیگل میں کام کریں",
+  "careers.lede": "چھوٹی دکان، صبح سویرے، اچھی روٹی۔ ہمیں اپنے بارے میں بتائیں۔",
+  "careers.timeNote": "تقریباً پانچ منٹ۔ بھیجنے تک کچھ محفوظ نہیں ہوتا۔",
+  "careers.optional": "اختیاری",
+  "careers.yes": "ہاں",
+  "careers.no": "نہیں",
+  "careers.remove": "ہٹائیں",
+
+  "careers.secYou": "آپ کے بارے میں",
+  "careers.secRole": "آپ کیا کرنا چاہیں گے",
+  "careers.secWhen": "آپ کب کام کر سکتے ہیں",
+  "careers.secChecks": "چند مختصر سوال",
+  "careers.secSchool": "تعلیم",
+  "careers.secWork": "آپ نے کہاں کام کیا",
+  "careers.secRefs": "حوالہ جات",
+  "careers.secWords": "اپنے الفاظ میں",
+  "careers.secSend": "دستخط کر کے بھیجیں",
+
+  "careers.firstName": "پہلا نام",
+  "careers.lastName": "آخری نام",
+  "careers.email": "ای میل",
+  "careers.phone": "موبائل نمبر",
+  "careers.city": "شہر",
+  "careers.state": "ریاست",
+
+  "careers.positionsNote": "جتنے چاہیں منتخب کریں۔",
+  "careers.posCounter": "کاؤنٹر اور کیش رجسٹر",
+  "careers.posBaker": "بیکر",
+  "careers.posKitchen": "باورچی خانہ اور تیاری",
+  "careers.posShiftLead": "شفٹ انچارج",
+
+  "careers.daysNote": "ہم ساتوں دن کھلے ہیں، تو ہفتہ اتوار بھی شامل ہیں۔",
+  "careers.dayMon": "پیر",
+  "careers.dayTue": "منگل",
+  "careers.dayWed": "بدھ",
+  "careers.dayThu": "جمعرات",
+  "careers.dayFri": "جمعہ",
+  "careers.daySat": "ہفتہ",
+  "careers.daySun": "اتوار",
+
+  "careers.typesNote": "آپ کو کس طرح کے اوقات چاہئیں۔",
+  "careers.typeFull": "کل وقتی",
+  "careers.typePart": "جز وقتی",
+  "careers.typeSeasonal": "موسمی",
+
+  "careers.earliestStart": "سب سے پہلے کس دن شروع کر سکتے ہیں",
+
+  "careers.authorized": "کیا آپ کو امریکہ میں کام کرنے کی اجازت ہے؟",
+  "careers.isAdult": "کیا آپ کی عمر 18 سال یا اس سے زیادہ ہے؟",
+  "careers.isAdultNote":
+    "ہم اس لیے پوچھتے ہیں کہ کیلیفورنیا میں 18 سال سے کم عمر کے کام کے اوقات محدود ہیں، اور یہ جانے بغیر شیڈول نہیں بن سکتا۔ ہمیں آپ کی تاریخِ پیدائش کی ضرورت نہیں۔",
+  "careers.servSafe": "کیا آپ کے پاس فوڈ ہینڈلر کارڈ ہے؟",
+  "careers.servSafeNote": "ضروری نہیں۔ اگر نہیں ہے تو پہلے ہفتے میں بنوانے میں ہم مدد کریں گے۔",
+
+  "careers.school": "تعلیمی ادارہ",
+  "careers.focus": "آپ نے کیا پڑھا",
+  "careers.finished": "مکمل ہونے کا سال",
+  "careers.addSchool": "ادارہ شامل کریں",
+
+  "careers.employer": "ادارہ",
+  "careers.role": "آپ کیا کرتے تھے",
+  "careers.from": "سے",
+  "careers.to": "تک",
+  "careers.addJob": "ملازمت شامل کریں",
+  "careers.workNote": "کبھی ملازمت نہیں کی؟ خالی چھوڑ دیں۔ اس سے نقصان نہیں ہوگا۔",
+
+  "careers.refName": "نام",
+  "careers.refRelationship": "آپ انہیں کیسے جانتے ہیں",
+  "careers.refContact": "فون یا ای میل",
+  "careers.addReference": "حوالہ شامل کریں",
+  "careers.refsNote": "اختیاری، اور کوئی ایک شخص جو آپ کی ضمانت دے، کافی ہے۔",
+
+  "careers.goals": "آپ اس کام سے کیا حاصل کرنا چاہتے ہیں؟",
+  "careers.hardestDecision": "کوئی مشکل فیصلہ بتائیں جو آپ کو کرنا پڑا۔",
+  "careers.toSucceed": "یہاں اچھا کرنے کے لیے آپ کو ہم سے کیا چاہیے ہوگا؟",
+  "careers.heardFrom": "آپ نے ہمارے بارے میں کہاں سے سنا؟",
+
+  "careers.signature": "اپنا پورا نام لکھیں",
+  "careers.signatureNote":
+    "نام لکھنے کا مطلب ہے کہ آپ کے جوابات درست ہیں اور ہم آپ کے بتائے ہوئے اداروں اور حوالہ جات سے رابطہ کر سکتے ہیں۔ یہ پس منظر کی جانچ کی اجازت نہیں ہے، وہ ہم الگ سے تحریری طور پر مانگیں گے۔",
+
+  "careers.submit": "درخواست بھیجیں",
+  "careers.sending": "بھیجا جا رہا ہے…",
+  "careers.sentTitle": "درخواست بھیج دی گئی",
+  "careers.sentBody": "ہمیں مل گئی۔ اگر بات بنتی نظر آئی تو تقریباً ایک ہفتے میں کوئی {contact} پر لکھے گا۔",
+  "careers.sentAgain": "ایک اور بھیجیں",
+
+  "careers.eeo":
+    "ہم اس بنیاد پر رکھتے ہیں کہ آپ کیا کر سکتے ہیں اور لوگوں سے کیسے پیش آتے ہیں۔ ہم نسل، مذہب، عمر، معذوری، قومیت، جنس، جنسی رجحان، ازدواجی حیثیت یا فوجی خدمت کے بارے میں نہ پوچھتے ہیں نہ انہیں مدِنظر رکھتے ہیں۔",
+  "careers.privacyNote": "آپ یہاں جو بھیجتے ہیں وہ ہم صرف انٹرویو کا فیصلہ کرنے کے لیے رکھتے ہیں، اور کسی کام کے لیے نہیں۔",
+
+  "careers.errFirstName": "اپنا پہلا نام لکھیں۔",
+  "careers.errLastName": "اپنا آخری نام لکھیں۔",
+  "careers.errEmail": "ایسا ای میل لکھیں جس پر ہم جواب دے سکیں۔",
+  "careers.errPhone": "ایسا نمبر لکھیں جس پر ہم رابطہ کر سکیں۔",
+  "careers.errCity": "جس شہر میں رہتے ہیں وہ لکھیں۔",
+  "careers.errPositions": "کم از کم ایک کام منتخب کریں جو آپ کرنا چاہیں گے۔",
+  "careers.errDays": "کم از کم ایک دن منتخب کریں جب آپ کام کر سکیں۔",
+  "careers.errTypes": "آپ کو جیسے اوقات چاہئیں وہ منتخب کریں۔",
+  "careers.errAuthorized": "امریکہ میں کام کرنے والے سوال کا جواب دیں۔",
+  "careers.errAge": "18 سال یا اس سے زیادہ عمر والے سوال کا جواب دیں۔",
+  "careers.errSignature": "دستخط کے لیے اپنا پورا نام لکھیں۔",
+  "careers.errCheckForm": "اوپر کسی چیز کا جواب ابھی باقی ہے۔",
+  "careers.errSendFailed": "ہم اسے بھیج نہیں سکے۔ ایک لمحے بعد دوبارہ کوشش کریں۔",
 };

@@ -452,6 +452,7 @@ export const fa: Table = {
   "about.p4":
     "ممنون که از یک کسب‌وکار محلی حمایت می‌کنید. مشتاقانه منتظر دیدار دوبارهٔ شماییم، درست سر همین کوچه.",
   "about.speakToTeam": "برای صحبت با یکی از اعضای تیم ما:",
+  "about.workWithUs": "با ما کار کنید",
 
   // ——— Riley ———
   "chat.name": "رایلی",
@@ -548,4 +549,109 @@ export const fa: Table = {
   "gift.artCongratsChecker": "کارت هدیهٔ شطرنجی با نوشتهٔ تبریک",
   "gift.artBirthdayRed": "کارت هدیهٔ قرمز با نوشتهٔ تولدت مبارک",
   "gift.artGinghamOlive": "کارت هدیه با طرح چهارخانهٔ زیتونی",
+
+  "careers.title": "کار در کرنر بیگل",
+  "careers.lede": "مغازه‌ای کوچک، صبح‌های زود، نان خوب. از خودتان بگویید.",
+  "careers.timeNote": "حدود پنج دقیقه. تا وقتی نفرستید چیزی ذخیره نمی‌شود.",
+  "careers.optional": "اختیاری",
+  "careers.yes": "بله",
+  "careers.no": "خیر",
+  "careers.remove": "حذف",
+
+  "careers.secYou": "دربارهٔ شما",
+  "careers.secRole": "چه کاری دوست دارید",
+  "careers.secWhen": "چه زمانی می‌توانید کار کنید",
+  "careers.secChecks": "چند پرسش کوتاه",
+  "careers.secSchool": "تحصیلات",
+  "careers.secWork": "کجا کار کرده‌اید",
+  "careers.secRefs": "معرف‌ها",
+  "careers.secWords": "به زبان خودتان",
+  "careers.secSend": "امضا و ارسال",
+
+  "careers.firstName": "نام",
+  "careers.lastName": "نام خانوادگی",
+  "careers.email": "ایمیل",
+  "careers.phone": "شمارهٔ موبایل",
+  "careers.city": "شهر",
+  "careers.state": "ایالت",
+
+  "careers.positionsNote": "هر تعداد که خواستید انتخاب کنید.",
+  "careers.posCounter": "پیشخوان و صندوق",
+  "careers.posBaker": "نانوا",
+  "careers.posKitchen": "آشپزخانه و آماده‌سازی",
+  "careers.posShiftLead": "سرشیفت",
+
+  "careers.daysNote": "هفت روز هفته بازیم، پس آخر هفته هم حساب می‌شود.",
+  "careers.dayMon": "دوشنبه",
+  "careers.dayTue": "سه‌شنبه",
+  "careers.dayWed": "چهارشنبه",
+  "careers.dayThu": "پنجشنبه",
+  "careers.dayFri": "جمعه",
+  "careers.daySat": "شنبه",
+  "careers.daySun": "یکشنبه",
+
+  "careers.typesNote": "ساعت‌هایی که دنبالش هستید.",
+  "careers.typeFull": "تمام‌وقت",
+  "careers.typePart": "پاره‌وقت",
+  "careers.typeSeasonal": "فصلی",
+
+  "careers.earliestStart": "زودترین روزی که می‌توانید شروع کنید",
+
+  "careers.authorized": "آیا اجازهٔ کار در ایالات متحده را دارید؟",
+  "careers.isAdult": "آیا ۱۸ سال یا بیشتر دارید؟",
+  "careers.isAdultNote":
+    "می‌پرسیم چون کالیفرنیا ساعت کار افراد زیر ۱۸ سال را محدود کرده و بدون دانستن این، برنامهٔ شیفت درست نمی‌شود. به تاریخ تولدتان نیازی نداریم.",
+  "careers.servSafe": "کارت بهداشت مواد غذایی دارید؟",
+  "careers.servSafeNote": "اجباری نیست. اگر ندارید، هفتهٔ اول کمکتان می‌کنیم بگیرید.",
+
+  "careers.school": "مدرسه یا دانشگاه",
+  "careers.focus": "چه خواندید",
+  "careers.finished": "سال پایان",
+  "careers.addSchool": "افزودن مدرسه",
+
+  "careers.employer": "محل کار",
+  "careers.role": "چه کار می‌کردید",
+  "careers.from": "از",
+  "careers.to": "تا",
+  "careers.addJob": "افزودن سابقهٔ کار",
+  "careers.workNote": "تا حالا کار نکرده‌اید؟ خالی بگذارید. به ضررتان نیست.",
+
+  "careers.refName": "نام",
+  "careers.refRelationship": "چطور می‌شناسیدشان",
+  "careers.refContact": "تلفن یا ایمیل",
+  "careers.addReference": "افزودن معرف",
+  "careers.refsNote": "اختیاری است، و یک نفر که شما را تأیید کند کافی است.",
+
+  "careers.goals": "از این کار چه چیزی می‌خواهید؟",
+  "careers.hardestDecision": "از تصمیم سختی که مجبور شدید بگیرید بگویید.",
+  "careers.toSucceed": "برای اینکه اینجا خوب کار کنید، از ما چه می‌خواهید؟",
+  "careers.heardFrom": "از کجا با ما آشنا شدید؟",
+
+  "careers.signature": "نام کاملتان را بنویسید",
+  "careers.signatureNote":
+    "نوشتن نامتان یعنی پاسخ‌ها درست است و به ما اجازه می‌دهید با محل‌های کار و معرف‌هایی که نوشته‌اید تماس بگیریم. این اجازهٔ بررسی سوابق نیست؛ آن را جداگانه و کتبی می‌خواهیم.",
+
+  "careers.submit": "ارسال درخواست",
+  "careers.sending": "در حال ارسال…",
+  "careers.sentTitle": "درخواست ارسال شد",
+  "careers.sentBody": "دریافت شد. اگر مناسب باشد، حدود یک هفته دیگر کسی به {contact} می‌نویسد.",
+  "careers.sentAgain": "ارسال یکی دیگر",
+
+  "careers.eeo":
+    "ما بر اساس توانایی شما و رفتارتان با مردم استخدام می‌کنیم. دربارهٔ نژاد، مذهب، سن، معلولیت، ملیت، جنسیت، گرایش جنسی، وضعیت تأهل یا سابقهٔ نظامی نمی‌پرسیم و آن‌ها را در نظر نمی‌گیریم.",
+  "careers.privacyNote": "آنچه اینجا می‌فرستید فقط برای تصمیم‌گیری دربارهٔ مصاحبه نگه می‌داریم و برای هیچ کار دیگری.",
+
+  "careers.errFirstName": "نامتان را بنویسید.",
+  "careers.errLastName": "نام خانوادگی‌تان را بنویسید.",
+  "careers.errEmail": "ایمیلی بنویسید که بتوانیم جواب بدهیم.",
+  "careers.errPhone": "شماره‌ای بنویسید که بتوانیم با آن تماس بگیریم.",
+  "careers.errCity": "شهری که در آن زندگی می‌کنید را بنویسید.",
+  "careers.errPositions": "دست‌کم یک کار که دوست دارید انتخاب کنید.",
+  "careers.errDays": "دست‌کم یک روز که می‌توانید کار کنید انتخاب کنید.",
+  "careers.errTypes": "ساعت‌هایی که دنبالش هستید را انتخاب کنید.",
+  "careers.errAuthorized": "به پرسش کار در ایالات متحده پاسخ دهید.",
+  "careers.errAge": "به پرسش ۱۸ سال به بالا پاسخ دهید.",
+  "careers.errSignature": "برای امضا نام کاملتان را بنویسید.",
+  "careers.errCheckForm": "چیزی در بالا هنوز بی‌پاسخ مانده است.",
+  "careers.errSendFailed": "نتوانستیم بفرستیم. یک لحظه دیگر دوباره امتحان کنید.",
 };

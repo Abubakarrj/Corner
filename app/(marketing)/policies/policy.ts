@@ -412,6 +412,28 @@ const enPrivacy: Policy = {
         { kind: "p", text: "To exercise these rights, please contact us at {email}." },
       ],
     },
+    // Applicants are not customers, and the sections above are written about
+    // customers. Somebody who fills in the form at /careers hands over more
+    // about themselves than anybody who buys a bagel, gets nothing in return
+    // yet, and in California has the same access and deletion rights — so the
+    // document has to say what happens to it.
+    {
+      heading: "Job Applicants",
+      blocks: [
+        {
+          kind: "p",
+          text: "If you apply for a job with us, we collect what you enter on the application form: your name and contact details, the city you live in, the positions and availability you select, any school or work history and references you choose to add, and your written answers. We use it to decide whether to interview you, and for nothing else.",
+        },
+        {
+          kind: "p",
+          text: "We do not ask applicants about race, religion, age, disability, national origin, gender, sexual orientation, marital status, or veteran status, and we do not consider them. We do not run background checks through this form. If a background check ever becomes part of hiring, we will ask for your authorization separately and in writing, as federal law requires.",
+        },
+        {
+          kind: "p",
+          text: "Applications are delivered to our hiring email as a document. They are not added to any customer database and are not used for marketing. We keep them for up to one year and then delete them. Applicants have the same rights described above — access, correction, deletion, and a copy — and can exercise them by writing to {email}.",
+        },
+      ],
+    },
     {
       heading: "Children’s Privacy",
       blocks: [
