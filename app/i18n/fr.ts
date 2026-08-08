@@ -565,7 +565,6 @@ export const fr: Table = {
   "careers.jobN": "Emploi {n}",
   "careers.refN": "Référence {n}",
   "careers.lede": "Petite boutique, matins tôt, bon pain. Parlez-nous de vous.",
-  "careers.timeNote": "Environ cinq minutes. Rien n'est conservé tant que vous n'avez pas envoyé.",
   "careers.optional": "Facultatif",
   "careers.yes": "Oui",
   "careers.no": "Non",
@@ -662,8 +661,9 @@ export const fr: Table = {
   "careers.sentAgain": "En envoyer une autre",
 
   "careers.eeo":
-    "On recrute sur ce que vous savez faire et sur la façon dont vous traitez les gens. On ne demande rien sur l'origine, la religion, l'âge, le handicap, la nationalité, le genre, l'orientation sexuelle, la situation familiale ou le statut d'ancien combattant, et on n'en tient pas compte.",
-  "careers.privacyNote": "On garde ce que vous envoyez ici pour décider de vous rencontrer, et pour rien d'autre.",
+    "Corner Bagel est un lieu de travail juste et à égalité des chances. Nous recrutons les gens pour ce qu'ils savent faire, la façon dont ils se présentent et la façon dont ils traitent les autres. Chaque candidature est examinée équitablement, sans considération d'origine, de religion, d'âge, de handicap, de nationalité, de genre, d'orientation sexuelle, de situation familiale, de statut d'ancien combattant, ni d'aucun autre statut protégé par la loi.",
+  "careers.privacyNote":
+    "Votre candidature est confidentielle et sert uniquement au recrutement. Le formulaire prend environ cinq minutes et rien n'est enregistré tant que vous ne l'avez pas envoyé.",
 
   "careers.errFirstName": "Indiquez votre prénom.",
   "careers.errLastName": "Indiquez votre nom.",

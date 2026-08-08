@@ -508,7 +508,6 @@ export const zh: Table = {
   "careers.jobN": "工作 {n}",
   "careers.refN": "推荐人 {n}",
   "careers.lede": "小店，早班，好面包。说说你自己吧。",
-  "careers.timeNote": "大约五分钟。在你点发送之前，什么都不会保存。",
   "careers.optional": "选填",
   "careers.yes": "是",
   "careers.no": "否",
@@ -605,8 +604,9 @@ export const zh: Table = {
   "careers.sentAgain": "再提交一份",
 
   "careers.eeo":
-    "我们看的是你能做什么、你怎么待人。我们不会问种族、宗教、年龄、身体状况、原籍国、性别、性取向、婚姻状况或退伍军人身份，也不会把这些纳入考虑。",
-  "careers.privacyNote": "你在这里提交的内容，我们只用来决定要不要请你来面谈，不作他用。",
+    "Corner Bagel 是一个公平、机会均等的工作场所。我们看的是你能做什么、以什么状态来上班、怎么对待别人。无论种族、宗教、年龄、身体状况、原籍国、性别、性取向、婚姻状况、退伍军人身份，或法律保护的任何其他身份，每一位申请人都会得到同样公平的考虑。",
+  "careers.privacyNote":
+    "你的申请是私密的，只用于招聘。填完大约需要五分钟，在你提交之前不会保存任何内容。",
 
   "careers.errFirstName": "请填写你的名。",
   "careers.errLastName": "请填写你的姓。",

@@ -565,7 +565,6 @@ export const it: Table = {
   "careers.jobN": "Lavoro {n}",
   "careers.refN": "Referenza {n}",
   "careers.lede": "Bottega piccola, mattine presto, pane buono. Raccontaci di te.",
-  "careers.timeNote": "Cinque minuti circa. Non teniamo niente finché non invii.",
   "careers.optional": "Facoltativo",
   "careers.yes": "Sì",
   "careers.no": "No",
@@ -662,8 +661,9 @@ export const it: Table = {
   "careers.sentAgain": "Inviane un'altra",
 
   "careers.eeo":
-    "Assumiamo per quello che sai fare e per come tratti le persone. Non chiediamo di etnia, religione, età, disabilità, nazionalità, genere, orientamento sessuale, stato civile o servizio militare, e non ne teniamo conto.",
-  "careers.privacyNote": "Teniamo quello che invii qui per decidere se incontrarti, e per nient'altro.",
+    "Corner Bagel è un posto di lavoro equo e a pari opportunità. Assumiamo le persone per quello che sanno fare, per come si presentano e per come trattano gli altri. Ogni candidatura è valutata con la stessa equità, a prescindere da etnia, religione, età, disabilità, nazionalità, genere, orientamento sessuale, stato civile, servizio militare o qualsiasi altra condizione tutelata dalla legge.",
+  "careers.privacyNote":
+    "La tua candidatura è privata e viene usata solo per le assunzioni. Il modulo richiede circa cinque minuti e non viene salvato nulla finché non lo invii.",
 
   "careers.errFirstName": "Scrivi il tuo nome.",
   "careers.errLastName": "Scrivi il tuo cognome.",

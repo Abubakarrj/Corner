@@ -510,7 +510,6 @@ export const ko: Table = {
   "careers.jobN": "경력 {n}",
   "careers.refN": "추천인 {n}",
   "careers.lede": "작은 가게, 이른 아침, 좋은 빵. 본인 이야기를 들려주세요.",
-  "careers.timeNote": "5분 정도 걸립니다. 보내기 전까지는 아무것도 저장되지 않아요.",
   "careers.optional": "선택",
   "careers.yes": "예",
   "careers.no": "아니요",
@@ -607,8 +606,9 @@ export const ko: Table = {
   "careers.sentAgain": "하나 더 보내기",
 
   "careers.eeo":
-    "저희는 할 수 있는 일과 사람을 대하는 태도로 채용합니다. 인종, 종교, 나이, 장애, 출신 국가, 성별, 성적 지향, 혼인 여부, 병역 사항은 묻지 않고 고려하지도 않습니다.",
-  "careers.privacyNote": "여기서 보내 주신 내용은 면접 여부를 정하는 데만 쓰고, 다른 데에는 쓰지 않습니다.",
+    "Corner Bagel은 공정하고 평등한 기회를 보장하는 일터입니다. 저희는 할 수 있는 일, 일하는 태도, 사람을 대하는 방식을 보고 채용합니다. 인종, 종교, 나이, 장애, 출신 국가, 성별, 성적 지향, 혼인 여부, 병역 사항, 그 밖에 법으로 보호되는 어떤 사유와도 관계없이 모든 지원자를 공정하게 심사합니다.",
+  "careers.privacyNote":
+    "지원서는 비공개이며 채용 목적으로만 사용됩니다. 작성에는 5분쯤 걸리고, 제출하기 전까지는 아무것도 저장되지 않습니다.",
 
   "careers.errFirstName": "이름을 입력해 주세요.",
   "careers.errLastName": "성을 입력해 주세요.",

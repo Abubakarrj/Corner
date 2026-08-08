@@ -510,7 +510,6 @@ export const ja: Table = {
   "careers.jobN": "職歴 {n}",
   "careers.refN": "推薦者 {n}",
   "careers.lede": "小さな店、早い朝、いいパン。あなたのことを聞かせてください。",
-  "careers.timeNote": "5分ほどです。送信するまで何も保存されません。",
   "careers.optional": "任意",
   "careers.yes": "はい",
   "careers.no": "いいえ",
@@ -607,8 +606,9 @@ export const ja: Table = {
   "careers.sentAgain": "もう一件送る",
 
   "careers.eeo":
-    "採用は、できることと人への接し方で判断します。人種、宗教、年齢、障害、出身国、性別、性的指向、婚姻状況、兵役の有無は尋ねませんし、考慮もしません。",
-  "careers.privacyNote": "ここで送っていただいた内容は、面接するかどうかを決めるためだけに保管します。",
+    "Corner Bagel は公正で機会均等な職場です。何ができるか、どう仕事に向き合うか、人にどう接するかで採用します。人種、宗教、年齢、障害、出身国、性別、性的指向、婚姻状況、兵役の有無、その他法律で保護されるいかなる事由にもかかわらず、すべての方を公平に検討します。",
+  "careers.privacyNote":
+    "ご応募の内容は非公開で、採用の目的にのみ使用します。入力は5分ほどで終わり、送信するまで何も保存されません。",
 
   "careers.errFirstName": "名を入力してください。",
   "careers.errLastName": "姓を入力してください。",

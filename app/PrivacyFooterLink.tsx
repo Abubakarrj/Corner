@@ -13,10 +13,16 @@ import { hasTabBar } from "./(marketing)/TabBar";
 // Visibility on the shop subdomain is decided by the caller — app/layout.tsx
 // — server-side via the Host header. See the comment there for why.
 
+// Routes that print their own privacy link in their own footer. This one is
+// fixed to the bottom-right of the *viewport*, so on a long page it floats
+// over whatever line happens to be there — on /careers it was landing across
+// the equal-opportunity paragraph, next to a second copy of itself.
+const OWN_PRIVACY_LINK = ["/careers"];
+
 export default function PrivacyFooterLink() {
   const t = useT();
   const pathname = usePathname();
-  if (hasTabBar(pathname)) return null;
+  if (hasTabBar(pathname) || OWN_PRIVACY_LINK.includes(pathname)) return null;
 
   return (
     <div

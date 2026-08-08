@@ -701,13 +701,12 @@ export default function ApplicationForm() {
 
         <footer className="mt-14 border-t border-line pt-5">
           <p className="m-0 text-[11px] leading-[1.7] text-quiet">{t("careers.eeo")}</p>
-          <p className="m-0 mt-2 text-[11px] leading-[1.7] text-quiet">
+          <p className="m-0 mt-2.5 text-[11px] leading-[1.7] text-quiet">
             {t("careers.privacyNote")}{" "}
             <Link href="/privacy-policy" className="underline hover:text-ink">
               {t("common.privacyPolicy")}
             </Link>
           </p>
-          <p className="m-0 mt-2 text-[11px] leading-[1.7] text-quiet">{t("careers.timeNote")}</p>
         </footer>
       </div>
     </div>

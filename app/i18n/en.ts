@@ -529,7 +529,6 @@ export const en = {
   "careers.title": "Work at Corner Bagel",
   "careers.eyebrow": "We're hiring",
   "careers.lede": "Small shop, early mornings, good bread. Tell us about yourself.",
-  "careers.timeNote": "About five minutes. Nothing is kept until you send it.",
 
   // The four steps. Short, because they sit on a rail on a phone.
   "careers.stepYou": "You",
@@ -641,8 +640,9 @@ export const en = {
   "careers.sentAgain": "Send another",
 
   "careers.eeo":
-    "We hire on what you can do and how you treat people. We don't ask about race, religion, age, disability, national origin, gender, sexual orientation, marital or veteran status, and we don't take them into account.",
-  "careers.privacyNote": "We keep what you send here to decide whether to interview you, and for nothing else.",
+    "Corner Bagel is a fair and equal opportunity workplace. We hire people for what they can do, how they show up, and how they treat others. Everyone is considered fairly, regardless of race, religion, age, disability, national origin, gender, sexual orientation, marital status, veteran status, or any other status protected by law.",
+  "careers.privacyNote":
+    "Your application is private and used only for hiring purposes. The form takes about five minutes to complete, and nothing is saved until you submit it.",
 
   "careers.errFirstName": "Add your first name.",
   "careers.errLastName": "Add your last name.",
