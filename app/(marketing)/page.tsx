@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ThemeToggle from "../ui/ThemeToggle";
 import LanguagePicker from "../ui/LanguagePicker";
+import WorkWithUsChip from "../ui/WorkWithUsChip";
 
 // The "SHOP PANTRY" button and its arrow annotation used to sit under the
 // logo here, linking to /shop. Pulled until the pantry is ready to launch —
@@ -63,9 +64,14 @@ export default function Home() {
           and this belongs in whichever corner is the far one. The safe-area
           inset keeps it out of the notch on an installed app. */}
       <div
-        className="absolute end-4 z-10 flex items-center gap-2"
+        // flex-wrap + justify-end: "Work with us" is a whole phrase, and in
+        // Burmese it is a long one. Rather than truncate it into nonsense or
+        // let the strip push past the edge on a narrow phone, the row wraps
+        // and the chip takes a second line — still in the corner, still tidy.
+        className="absolute end-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap items-center justify-end gap-2"
         style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
       >
+        <WorkWithUsChip shell="page" />
         <LanguagePicker shell="page" />
         <ThemeToggle shell="page" />
       </div>

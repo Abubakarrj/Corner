@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import BagelMark from "./BagelMark";
 import { useT } from "./i18n";
 import { SHOP_EMAIL } from "./shopFacts";
@@ -106,23 +105,6 @@ export default function AboutCardBody() {
       >
         {SHOP_EMAIL}
       </a>
-
-      {/* The way in to /careers, and the only one on the site. It sits here
-          because this card is where somebody reads what the shop is and
-          decides they'd like to be part of it, and because the alternatives
-          were worse: the tab bar has five tabs and no sixth, and a hiring
-          link in the shop header would be advertising a job to somebody
-          halfway through buying breakfast.
-
-          self-center for the same reason as the email above it — a link in
-          this flex column stretches to the full 342px otherwise, which puts a
-          tap band under the bagel. */}
-      <Link
-        href="/careers"
-        className="cb-press mt-[1.2em] self-center underline whitespace-nowrap"
-      >
-        {t("about.workWithUs")}
-      </Link>
 
       {/* The bagel, on phones only.
           Above sm it's the fixed corner mark instead, which has room there and

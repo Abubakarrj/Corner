@@ -527,8 +527,20 @@ export const en = {
   // the long note at the top of (marketing)/careers/application.ts for the
   // questions that were cut and why.
   "careers.title": "Work at Corner Bagel",
+  "careers.eyebrow": "We're hiring",
   "careers.lede": "Small shop, early mornings, good bread. Tell us about yourself.",
   "careers.timeNote": "About five minutes. Nothing is kept until you send it.",
+
+  // The four steps. Short, because they sit on a rail on a phone.
+  "careers.stepYou": "You",
+  "careers.stepWork": "The work",
+  "careers.stepHistory": "Background",
+  "careers.stepFinish": "Finish",
+  "careers.stepOf": "Step {n} of {total}",
+  "careers.skipNote": "All of this is optional. Skip anything that doesn't apply — it won't count against you.",
+  "careers.schoolN": "School {n}",
+  "careers.jobN": "Job {n}",
+  "careers.refN": "Reference {n}",
   "careers.optional": "Optional",
   "careers.yes": "Yes",
   "careers.no": "No",
@@ -553,9 +565,13 @@ export const en = {
 
   "careers.positionsNote": "Pick as many as you like.",
   "careers.posCounter": "Counter and register",
+  "careers.posCounterNote": "Take orders, run the till, learn the regulars.",
   "careers.posBaker": "Baker",
+  "careers.posBakerNote": "Mixing, shaping and boiling, starting at 4am.",
   "careers.posKitchen": "Kitchen and prep",
+  "careers.posKitchenNote": "Spreads, sandwiches, keeping the line stocked.",
   "careers.posShiftLead": "Shift lead",
+  "careers.posShiftLeadNote": "Run a shift, open or close, sort out the day.",
 
   "careers.daysNote": "We're open seven days, so weekends count.",
   "careers.dayMon": "Monday",
@@ -565,6 +581,17 @@ export const en = {
   "careers.dayFri": "Friday",
   "careers.daySat": "Saturday",
   "careers.daySun": "Sunday",
+
+  // Seven days across a phone can only be two or three characters each. The
+  // full name still goes in the button's aria-label, so nothing is lost to
+  // anybody who can't see the row.
+  "careers.dayShortMon": "Mon",
+  "careers.dayShortTue": "Tue",
+  "careers.dayShortWed": "Wed",
+  "careers.dayShortThu": "Thu",
+  "careers.dayShortFri": "Fri",
+  "careers.dayShortSat": "Sat",
+  "careers.dayShortSun": "Sun",
 
   "careers.typesNote": "The hours you're looking for.",
   "careers.typeFull": "Full time",

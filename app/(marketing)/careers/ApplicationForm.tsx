@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, ButtonLink } from "../../ui/Button";
-import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
+import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useServerText, useT, type StringKey } from "../../i18n";
 import {
   ANSWER_MAX,
@@ -16,7 +16,6 @@ import {
   emptyApplication,
   type Application,
   type DayId,
-  type EmploymentTypeId,
   type PositionId,
 } from "./application";
 
@@ -24,75 +23,177 @@ const { cream } = PALETTE;
 
 // The job application.
 //
-// Same shape as the gift form on purpose — one column, sections with headings,
-// a single committing button at the foot — because this is the other place on
-// the site where somebody types a lot into a screen and needs to know where
-// they are in it.
+// The questions themselves, and the ones deliberately cut, live in
+// application.ts. This file only asks them — but *how* it asks them is most of
+// whether anybody finishes.
 //
-// The questions themselves, and the ones that were deliberately cut, live in
-// application.ts. This file only draws them.
+// ——— Four steps, not one scroll ———
 //
-// Two things it does differently from every other form here:
+// Everything below used to be a single column: nine sections, every field on
+// screen at once, roughly three thousand pixels of it on a phone. That shape
+// is honest about how much there is and terrible at getting it filled in — the
+// first thing an applicant sees is the length, and most of that length is
+// optional.
 //
-//   Almost nothing is required. Education, work history, references and the
-//   three written answers are all optional, so most of this page can be
-//   skipped by somebody applying for their first job. The `*` only appears on
-//   the handful of blocks we genuinely need.
+// So it's four steps, which is also what the checkout and the gift form do:
 //
-//   The submit button is never disabled for validation, for the same reason
-//   as the gift form: a dead button tells you nothing. Pressing it either
-//   sends or says what's missing.
+//   You         name, how to reach you, where you are
+//   The work    what you'd like to do, when you can do it, two eligibility
+//               questions
+//   Background  school, jobs, references — the whole step is skippable and
+//               says so at the top
+//   Finish      the written answers and the signature
+//
+// Each step validates on the way out, so you can't arrive at the last one with
+// something missing four screens back. Step three has nothing to validate.
+//
+// ——— Labels above fields, not inside them ———
+//
+// The first version used the placeholder as the label. It's tidy right up
+// until somebody types, at which point the label is gone and the field is a
+// box of text with nothing saying what it was for — which matters most on a
+// form people go back and check before sending. Every input has a real label
+// above it now.
+
+type StepId = "you" | "work" | "history" | "finish";
+
+// Each step owns the errors it is responsible for. applicationErrors() stays
+// the single source of truth for *what* is required — this only says which
+// screen you'd have to be on to fix it, so Continue can refuse to advance and
+// the last step can send you back to the right place.
+const STEPS: { id: StepId; label: StringKey; owns: StringKey[] }[] = [
+  {
+    id: "you",
+    label: "careers.stepYou",
+    owns: [
+      "careers.errFirstName",
+      "careers.errLastName",
+      "careers.errEmail",
+      "careers.errPhone",
+      "careers.errCity",
+    ],
+  },
+  {
+    id: "work",
+    label: "careers.stepWork",
+    owns: [
+      "careers.errPositions",
+      "careers.errDays",
+      "careers.errTypes",
+      "careers.errAuthorized",
+      "careers.errAge",
+    ],
+  },
+  { id: "history", label: "careers.stepHistory", owns: [] },
+  { id: "finish", label: "careers.stepFinish", owns: ["careers.errSignature"] },
+];
+
+const DAY_SHORT: Record<DayId, StringKey> = {
+  mon: "careers.dayShortMon",
+  tue: "careers.dayShortTue",
+  wed: "careers.dayShortWed",
+  thu: "careers.dayShortThu",
+  fri: "careers.dayShortFri",
+  sat: "careers.dayShortSat",
+  sun: "careers.dayShortSun",
+};
+
+const POSITION_NOTE: Record<PositionId, StringKey> = {
+  counter: "careers.posCounterNote",
+  baker: "careers.posBakerNote",
+  kitchen: "careers.posKitchenNote",
+  "shift-lead": "careers.posShiftLeadNote",
+};
+
 export default function ApplicationForm() {
   const t = useT();
   const st = useServerText();
 
   const [application, setApplication] = useState<Application>(() => ({
     ...emptyApplication(),
-    // One empty row of each, rather than an "add" button over nothing. A blank
+    // One empty row of each rather than an "add" button over nothing. A blank
     // row shows what the section wants; an empty section with a button shows
     // only that there's work to do.
     education: [{ school: "", focus: "", finished: "" }],
     employment: [{ employer: "", role: "", from: "", to: "" }],
     references: [{ name: "", relationship: "", contact: "" }],
   }));
-  const [tried, setTried] = useState(false);
+  const [step, setStep] = useState(0);
+  // Per step, so moving forward doesn't paint the next screen red before it
+  // has been touched.
+  const [tried, setTried] = useState<Set<number>>(new Set());
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const topRef = useRef<HTMLDivElement>(null);
 
   // Bot defences, matching /api/drop-list: a field no human can see, and a
   // floor on how fast the form can be filled in. Both are checked server-side.
   const [honeypot, setHoneypot] = useState("");
-  // Stamped on mount rather than during render — Date.now() is impure, and a
-  // re-render would otherwise reset the clock this measures against.
-  const openedAt = useRef(0);
-  useEffect(() => {
-    openedAt.current = Date.now();
-  }, []);
 
-  const problems = useMemo(
-    () => (tried ? new Set<StringKey>(applicationErrors(application)) : new Set<StringKey>()),
-    [tried, application],
+  const missing = useMemo(() => applicationErrors(application), [application]);
+  const missingHere = useMemo(
+    () => missing.filter((key) => STEPS[step].owns.includes(key)),
+    [missing, step],
   );
-  const missing = applicationErrors(application);
+  const shown = tried.has(step) ? new Set<StringKey>(missingHere) : new Set<StringKey>();
+  const problem = (key: StringKey) => (shown.has(key) ? t(key) : null);
 
   function set<K extends keyof Application>(key: K, value: Application[K]) {
     setApplication((current) => ({ ...current, [key]: value }));
   }
 
-  function toggle<T extends string>(key: "positions" | "days" | "employmentTypes", id: T) {
+  function toggle(key: "positions" | "days" | "employmentTypes", id: string) {
     setApplication((current) => {
       const list = current[key] as string[];
-      const next = list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
-      return { ...current, [key]: next };
+      return {
+        ...current,
+        [key]: list.includes(id) ? list.filter((item) => item !== id) : [...list, id],
+      };
     });
+  }
+
+  // Scrolls rather than jumping: a step change swaps the whole body, and
+  // landing halfway down the new one reads as the page having broken.
+  function goTo(next: number) {
+    setStep(next);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function advance() {
+    setTried((was) => new Set(was).add(step));
+    if (missingHere.length > 0) return;
+    if (step < STEPS.length - 1) goTo(step + 1);
+  }
+
+  /** The first step that still has something missing, or -1. */
+  function firstBrokenStep(): number {
+    return STEPS.findIndex((entry) => entry.owns.some((key) => missing.includes(key)));
   }
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
-    setTried(true);
+    setTried((was) => new Set(was).add(step));
     if (sending) return;
-    if (applicationErrors(application).length > 0) return;
+
+    // Something earlier is wrong. Go and show it rather than failing here,
+    // where the field being complained about isn't on screen.
+    const broken = firstBrokenStep();
+    if (broken !== -1) {
+      setTried((was) => new Set(was).add(broken));
+      goTo(broken);
+      return;
+    }
+
+    // How long the form was open, taken from the submit event rather than from
+    // a clock read at mount: event.timeStamp is milliseconds since the page
+    // loaded, which is the number we actually want and needs no effect to
+    // capture. If a browser doesn't give us one, assume slow — a bot that
+    // wants past this can send any number it likes, so the timer only ever
+    // catches naive scripts, and the cost of guessing wrong the other way is
+    // an application silently thrown away.
+    const stamp = event.timeStamp;
+    const elapsed = Number.isFinite(stamp) && stamp > 0 ? Math.round(stamp) : 60_000;
 
     setSending(true);
     setError(null);
@@ -103,17 +204,17 @@ export default function ApplicationForm() {
         body: JSON.stringify({
           ...application,
           // Rows nobody filled in shouldn't reach the PDF as empty lines.
-          education: application.education.filter((row) =>
-            row.school.trim() || row.focus.trim() || row.finished.trim(),
+          education: application.education.filter(
+            (row) => row.school.trim() || row.focus.trim() || row.finished.trim(),
           ),
-          employment: application.employment.filter((row) =>
-            row.employer.trim() || row.role.trim() || row.from.trim() || row.to.trim(),
+          employment: application.employment.filter(
+            (row) => row.employer.trim() || row.role.trim() || row.from.trim() || row.to.trim(),
           ),
-          references: application.references.filter((row) =>
-            row.name.trim() || row.relationship.trim() || row.contact.trim(),
+          references: application.references.filter(
+            (row) => row.name.trim() || row.relationship.trim() || row.contact.trim(),
           ),
           company: honeypot,
-          elapsed_ms: Date.now() - openedAt.current,
+          elapsed_ms: elapsed,
         }),
       });
       if (!response.ok) {
@@ -130,314 +231,485 @@ export default function ApplicationForm() {
 
   if (sent) return <Sent email={application.email.trim()} />;
 
+  const last = step === STEPS.length - 1;
+
   return (
-    <div style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
-      <form onSubmit={send} noValidate className="mx-auto max-w-lg px-5 pb-16 pt-8">
-        <h1 className="m-0 text-center text-[24px] font-medium leading-tight tracking-[-0.01em] text-ink">
+    <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
+      <div ref={topRef} className="mx-auto max-w-[34rem] px-5 pb-20 pt-10 sm:pt-14">
+        {/* ——— Masthead ——— */}
+        <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
+          {t("careers.eyebrow")}
+        </p>
+        <h1
+          className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
+          style={{ fontFamily: DISPLAY_FONT }}
+        >
           {t("careers.title")}
         </h1>
-        <p className="m-0 mx-auto mt-2 max-w-xs text-center text-[14px] leading-[1.5] text-muted">
+        <p className="m-0 mt-3 max-w-[24em] text-[15px] leading-[1.55] text-muted">
           {t("careers.lede")}
         </p>
-        <p className="m-0 mt-1 text-center text-[12px] text-quiet">{t("careers.timeNote")}</p>
 
-        {/* Invisible to a person, tempting to a form-filler. See the note in
-            app/api/drop-list/route.ts — the name is the point. */}
-        <input
-          type="text"
-          name="company"
-          tabIndex={-1}
-          autoComplete="off"
-          aria-hidden
-          value={honeypot}
-          onChange={(event) => setHoneypot(event.target.value)}
-          className="absolute left-[-9999px] h-0 w-0 opacity-0"
-        />
+        {/* ——— Where you are ———
+            A rail of four segments rather than "1 2 3 4" circles: the segment
+            widths make the remaining distance legible at a glance, which is
+            the only thing a progress indicator is for. Visited steps are
+            pressable so going back to change an answer costs one tap. */}
+        <nav aria-label={t("careers.stepOf", { n: step + 1, total: STEPS.length })} className="mt-9">
+          <div className="flex gap-1.5">
+            {STEPS.map((entry, index) => {
+              const done = index < step;
+              const here = index === step;
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  disabled={index > step}
+                  aria-current={here ? "step" : undefined}
+                  onClick={() => goTo(index)}
+                  className="cb-press group flex-1 cursor-pointer text-start disabled:cursor-default"
+                >
+                  <span
+                    className={`block h-[3px] rounded-full transition-colors ${
+                      done || here ? "bg-ink" : "bg-line-soft"
+                    }`}
+                  />
+                  <span
+                    className={`mt-2 block truncate text-[11px] leading-tight transition-colors ${
+                      here ? "text-ink" : "text-quiet"
+                    }`}
+                  >
+                    {t(entry.label)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
 
-        <Block title={t("careers.secYou")} required>
-          <div className="grid grid-cols-2 gap-2">
-            <Field
-              label={t("careers.firstName")}
-              value={application.firstName}
-              onChange={(value) => set("firstName", value)}
-              error={problems.has("careers.errFirstName") ? t("careers.errFirstName") : null}
-              autoComplete="given-name"
-            />
-            <Field
-              label={t("careers.lastName")}
-              value={application.lastName}
-              onChange={(value) => set("lastName", value)}
-              error={problems.has("careers.errLastName") ? t("careers.errLastName") : null}
-              autoComplete="family-name"
-            />
-          </div>
-          <div className="mt-2 flex flex-col gap-2">
-            <Field
-              label={t("careers.email")}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              value={application.email}
-              onChange={(value) => set("email", value)}
-              error={problems.has("careers.errEmail") ? t("careers.errEmail") : null}
-            />
-            <Field
-              label={t("careers.phone")}
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              value={application.phone}
-              onChange={(value) => set("phone", value)}
-              error={problems.has("careers.errPhone") ? t("careers.errPhone") : null}
-            />
-          </div>
-          {/* City and state, never a street address. Knowing the commute is
-              plausible is the whole reason to ask; the rest would be personal
-              data held for nothing. */}
-          <div className="mt-2 grid grid-cols-[2fr_1fr] gap-2">
-            <Field
-              label={t("careers.city")}
-              value={application.city}
-              onChange={(value) => set("city", value)}
-              error={problems.has("careers.errCity") ? t("careers.errCity") : null}
-              autoComplete="address-level2"
-            />
-            <Field
-              label={t("careers.state")}
-              value={application.state}
-              onChange={(value) => set("state", value)}
-              autoComplete="address-level1"
-            />
-          </div>
-        </Block>
-
-        <Block title={t("careers.secRole")} required note={t("careers.positionsNote")}>
-          <ChipGroup
-            options={POSITIONS}
-            chosen={application.positions}
-            onToggle={(id: PositionId) => toggle("positions", id)}
+        <form onSubmit={send} noValidate className="mt-8">
+          {/* Invisible to a person, tempting to a form-filler. See the note in
+              app/api/drop-list/route.ts — the name is the point. */}
+          <input
+            type="text"
+            name="company"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden
+            value={honeypot}
+            onChange={(event) => setHoneypot(event.target.value)}
+            className="absolute left-[-9999px] h-0 w-0 opacity-0"
           />
-          {problems.has("careers.errPositions") ? (
-            <Problem>{t("careers.errPositions")}</Problem>
+
+          {step === 0 ? (
+            <>
+              <StepHead title={t("careers.secYou")} />
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field
+                    label={t("careers.firstName")}
+                    value={application.firstName}
+                    onChange={(value) => set("firstName", value)}
+                    error={problem("careers.errFirstName")}
+                    autoComplete="given-name"
+                  />
+                  <Field
+                    label={t("careers.lastName")}
+                    value={application.lastName}
+                    onChange={(value) => set("lastName", value)}
+                    error={problem("careers.errLastName")}
+                    autoComplete="family-name"
+                  />
+                </div>
+                <Field
+                  label={t("careers.email")}
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={application.email}
+                  onChange={(value) => set("email", value)}
+                  error={problem("careers.errEmail")}
+                />
+                <Field
+                  label={t("careers.phone")}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={application.phone}
+                  onChange={(value) => set("phone", value)}
+                  error={problem("careers.errPhone")}
+                />
+                {/* City and state, never a street address. Knowing the commute is
+                    plausible is the whole reason to ask; the rest would be
+                    personal data held for nothing. */}
+                <div className="grid grid-cols-[2fr_1fr] gap-3">
+                  <Field
+                    label={t("careers.city")}
+                    value={application.city}
+                    onChange={(value) => set("city", value)}
+                    error={problem("careers.errCity")}
+                    autoComplete="address-level2"
+                  />
+                  <Field
+                    label={t("careers.state")}
+                    value={application.state}
+                    onChange={(value) => set("state", value)}
+                    autoComplete="address-level1"
+                    optional
+                  />
+                </div>
+              </div>
+            </>
           ) : null}
-        </Block>
 
-        <Block title={t("careers.secWhen")} required note={t("careers.daysNote")}>
-          <ChipGroup
-            options={DAYS}
-            chosen={application.days}
-            onToggle={(id: DayId) => toggle("days", id)}
-          />
-          {problems.has("careers.errDays") ? <Problem>{t("careers.errDays")}</Problem> : null}
+          {step === 1 ? (
+            <>
+              <StepHead title={t("careers.stepWork")} />
+              <Legend first>{t("careers.secRole")}</Legend>
+              <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
+                {t("careers.positionsNote")}
+              </p>
+              {/* Cards, not bare pills. A pill saying "Kitchen and prep" tells
+                  somebody the name of a job they may never have done; a line
+                  underneath tells them what the morning is actually like, which
+                  is what they're deciding about. */}
+              <div className="flex flex-col gap-2">
+                {POSITIONS.map(({ id, label }) => {
+                  const active = application.positions.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggle("positions", id)}
+                      className={`cb-press flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-start transition-colors ${
+                        active
+                          ? "border-ink bg-raise"
+                          : "border-line-soft bg-surface hover:border-line-mute"
+                      }`}
+                    >
+                      <Tick on={active} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14px] leading-tight text-ink">{t(label)}</span>
+                        <span className="mt-1 block text-[12px] leading-[1.45] text-muted">
+                          {t(POSITION_NOTE[id])}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <Problem>{problem("careers.errPositions")}</Problem>
 
-          <p className="m-0 mb-2 mt-4 text-[12px] text-muted">{t("careers.typesNote")}</p>
-          <ChipGroup
-            options={EMPLOYMENT_TYPES}
-            chosen={application.employmentTypes}
-            onToggle={(id: EmploymentTypeId) => toggle("employmentTypes", id)}
-          />
-          {problems.has("careers.errTypes") ? <Problem>{t("careers.errTypes")}</Problem> : null}
+              <Legend>{t("careers.secWhen")}</Legend>
+              <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
+                {t("careers.daysNote")}
+              </p>
+              {/* Seven across. As a column of seven wordy pills this was the
+                  tallest control on the page and the hardest to read as a
+                  week; as a row it's a week. */}
+              <div className="grid grid-cols-7 gap-1.5">
+                {DAYS.map(({ id, label }) => {
+                  const active = application.days.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={active}
+                      aria-label={t(label)}
+                      onClick={() => toggle("days", id)}
+                      className={`cb-press flex min-h-12 cursor-pointer items-center justify-center rounded-xl border px-1 py-1.5 text-center text-[11px] leading-[1.15] transition-colors ${
+                        active
+                          ? "border-ink bg-ink text-on-ink"
+                          : "border-line-soft bg-surface text-muted hover:border-line-mute"
+                      }`}
+                    >
+                      {/* Wraps rather than truncates, and wraps *anywhere*
+                          rather than only at spaces. A seven-across row leaves
+                          about 43px a cell, which is plenty for "Wed" and six
+                          short of တနင်္ဂနွေ, and Burmese offers no space to
+                          break at — so plain wrapping left it spilling over its
+                          neighbour. A day name cut off names no day at all; a
+                          wrapped one still does, and the cells grow to match
+                          the tallest. */}
+                      <span aria-hidden className="[overflow-wrap:anywhere]">
+                        {t(DAY_SHORT[id])}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <Problem>{problem("careers.errDays")}</Problem>
 
-          <div className="mt-4">
-            <label className="mb-1 block text-[12px] text-muted" htmlFor="earliest-start">
-              {t("careers.earliestStart")}
-            </label>
-            <input
-              id="earliest-start"
-              type="date"
-              value={application.earliestStart}
-              onChange={(event) => set("earliestStart", event.target.value)}
-              className="w-full rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none focus:border-ink"
-            />
+              <p className="m-0 mb-2.5 mt-6 text-[12px] leading-[1.5] text-muted">
+                {t("careers.typesNote")}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {EMPLOYMENT_TYPES.map(({ id, label }) => {
+                  const active = application.employmentTypes.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggle("employmentTypes", id)}
+                      className={`cb-press cursor-pointer rounded-xl border px-2 py-3 text-[12px] leading-tight transition-colors ${
+                        active
+                          ? "border-ink bg-ink text-on-ink"
+                          : "border-line-soft bg-surface text-ink hover:border-line-mute"
+                      }`}
+                    >
+                      {t(label)}
+                    </button>
+                  );
+                })}
+              </div>
+              <Problem>{problem("careers.errTypes")}</Problem>
+
+              <div className="mt-6">
+                <Field
+                  label={t("careers.earliestStart")}
+                  type="date"
+                  value={application.earliestStart}
+                  onChange={(value) => set("earliestStart", value)}
+                  optional
+                />
+              </div>
+
+              <Legend>{t("careers.secChecks")}</Legend>
+              <div className="flex flex-col gap-2.5">
+                <YesNo
+                  question={t("careers.authorized")}
+                  value={application.authorizedToWork}
+                  onChange={(value) => set("authorizedToWork", value)}
+                  error={problem("careers.errAuthorized")}
+                />
+                {/* Asked as a yes or no, never as a date of birth, and the
+                    reason is printed under it rather than left for the
+                    applicant to wonder about. See application.ts. */}
+                <YesNo
+                  question={t("careers.isAdult")}
+                  note={t("careers.isAdultNote")}
+                  value={application.isAdult}
+                  onChange={(value) => set("isAdult", value)}
+                  error={problem("careers.errAge")}
+                />
+                <YesNo
+                  question={t("careers.servSafe")}
+                  note={t("careers.servSafeNote")}
+                  value={application.servSafe}
+                  onChange={(value) => set("servSafe", value)}
+                />
+              </div>
+            </>
+          ) : null}
+
+          {step === 2 ? (
+            <>
+              <StepHead title={t("careers.stepHistory")} note={t("careers.skipNote")} />
+
+              <Legend first>{t("careers.secWork")}</Legend>
+              <Rows
+                rows={application.employment}
+                max={MAX_HISTORY}
+                addLabel={t("careers.addJob")}
+                title={(n) => t("careers.jobN", { n })}
+                blank={() => ({ employer: "", role: "", from: "", to: "" })}
+                onChange={(rows) => set("employment", rows)}
+                render={(row, update) => (
+                  <div className="flex flex-col gap-2.5">
+                    <Field
+                      label={t("careers.employer")}
+                      value={row.employer}
+                      onChange={(value) => update({ ...row, employer: value })}
+                    />
+                    <Field
+                      label={t("careers.role")}
+                      value={row.role}
+                      onChange={(value) => update({ ...row, role: value })}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field
+                        label={t("careers.from")}
+                        value={row.from}
+                        onChange={(value) => update({ ...row, from: value })}
+                      />
+                      <Field
+                        label={t("careers.to")}
+                        value={row.to}
+                        onChange={(value) => update({ ...row, to: value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              />
+
+              <Legend>{t("careers.secSchool")}</Legend>
+              <Rows
+                rows={application.education}
+                max={MAX_HISTORY}
+                addLabel={t("careers.addSchool")}
+                title={(n) => t("careers.schoolN", { n })}
+                blank={() => ({ school: "", focus: "", finished: "" })}
+                onChange={(rows) => set("education", rows)}
+                render={(row, update) => (
+                  <div className="flex flex-col gap-2.5">
+                    <Field
+                      label={t("careers.school")}
+                      value={row.school}
+                      onChange={(value) => update({ ...row, school: value })}
+                    />
+                    <div className="grid grid-cols-[2fr_1fr] gap-3">
+                      <Field
+                        label={t("careers.focus")}
+                        value={row.focus}
+                        onChange={(value) => update({ ...row, focus: value })}
+                      />
+                      <Field
+                        label={t("careers.finished")}
+                        inputMode="numeric"
+                        value={row.finished}
+                        onChange={(value) => update({ ...row, finished: value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              />
+
+              <Legend>{t("careers.secRefs")}</Legend>
+              <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
+                {t("careers.refsNote")}
+              </p>
+              <Rows
+                rows={application.references}
+                max={MAX_REFERENCES}
+                addLabel={t("careers.addReference")}
+                title={(n) => t("careers.refN", { n })}
+                blank={() => ({ name: "", relationship: "", contact: "" })}
+                onChange={(rows) => set("references", rows)}
+                render={(row, update) => (
+                  <div className="flex flex-col gap-2.5">
+                    <Field
+                      label={t("careers.refName")}
+                      value={row.name}
+                      onChange={(value) => update({ ...row, name: value })}
+                    />
+                    <Field
+                      label={t("careers.refRelationship")}
+                      value={row.relationship}
+                      onChange={(value) => update({ ...row, relationship: value })}
+                    />
+                    <Field
+                      label={t("careers.refContact")}
+                      value={row.contact}
+                      onChange={(value) => update({ ...row, contact: value })}
+                    />
+                  </div>
+                )}
+              />
+            </>
+          ) : null}
+
+          {step === 3 ? (
+            <>
+              <StepHead title={t("careers.secWords")} note={t("careers.skipNote")} />
+              <Answer
+                label={t("careers.goals")}
+                value={application.goals}
+                onChange={(value) => set("goals", value)}
+              />
+              <Answer
+                label={t("careers.hardestDecision")}
+                value={application.hardestDecision}
+                onChange={(value) => set("hardestDecision", value)}
+              />
+              <Answer
+                label={t("careers.toSucceed")}
+                value={application.toSucceed}
+                onChange={(value) => set("toSucceed", value)}
+              />
+              <div className="mt-5">
+                <Field
+                  label={t("careers.heardFrom")}
+                  value={application.heardFrom}
+                  onChange={(value) => set("heardFrom", value)}
+                  optional
+                />
+              </div>
+
+              <Legend>{t("careers.secSend")}</Legend>
+              <div className="rounded-2xl border border-line-soft bg-surface p-4">
+                <p className="m-0 text-[12px] leading-[1.6] text-muted">
+                  {t("careers.signatureNote")}
+                </p>
+                <div className="mt-3">
+                  <Field
+                    label={t("careers.signature")}
+                    value={application.signature}
+                    onChange={(value) => set("signature", value)}
+                    error={problem("careers.errSignature")}
+                    onSurface
+                  />
+                  </div>
+              </div>
+            </>
+          ) : null}
+
+          {error ? (
+            <p role="alert" className="m-0 mt-5 text-center text-[13px] text-brand-red">
+              {st(error)}
+            </p>
+          ) : null}
+
+          {/* ——— The way on ———
+              In the page's flow rather than stuck to the bottom of the screen.
+              A bar fixed to the floor would land on the cookie banner and the
+              privacy line, which are both already docked there; and with four
+              short steps the button is never more than a thumb-flick away.
+
+              Never disabled for validation. A greyed-out button with no stated
+              reason is a dead end — you can't press it to find out what's
+              wrong, so you're left guessing which field it dislikes. Pressing
+              it either moves on or says what's missing. */}
+          <div className="mt-9 flex items-center gap-3">
+            {step > 0 ? (
+              <Button type="button" variant="secondary" onClick={() => goTo(step - 1)}>
+                {t("common.back")}
+              </Button>
+            ) : null}
+            {last ? (
+              <Button type="submit" className="flex-1" disabled={sending}>
+                {sending ? t("careers.sending") : t("careers.submit")}
+              </Button>
+            ) : (
+              <Button type="button" className="flex-1" onClick={advance}>
+                {t("checkout.continue")}
+              </Button>
+            )}
           </div>
-        </Block>
 
-        <Block title={t("careers.secChecks")} required>
-          <YesNo
-            question={t("careers.authorized")}
-            value={application.authorizedToWork}
-            onChange={(value) => set("authorizedToWork", value)}
-            error={problems.has("careers.errAuthorized") ? t("careers.errAuthorized") : null}
-          />
-          {/* Asked as a yes or no, never as a date of birth, and the reason is
-              printed under it rather than left for the applicant to wonder
-              about. See application.ts. */}
-          <YesNo
-            question={t("careers.isAdult")}
-            note={t("careers.isAdultNote")}
-            value={application.isAdult}
-            onChange={(value) => set("isAdult", value)}
-            error={problems.has("careers.errAge") ? t("careers.errAge") : null}
-          />
-          <YesNo
-            question={t("careers.servSafe")}
-            note={t("careers.servSafeNote")}
-            value={application.servSafe}
-            onChange={(value) => set("servSafe", value)}
-          />
-        </Block>
-
-        <Block title={t("careers.secSchool")} optional>
-          <Rows
-            rows={application.education}
-            max={MAX_HISTORY}
-            addLabel={t("careers.addSchool")}
-            onChange={(rows) => set("education", rows)}
-            blank={() => ({ school: "", focus: "", finished: "" })}
-            render={(row, update) => (
-              <>
-                <Field
-                  label={t("careers.school")}
-                  value={row.school}
-                  onChange={(value) => update({ ...row, school: value })}
-                />
-                <div className="mt-2 grid grid-cols-[2fr_1fr] gap-2">
-                  <Field
-                    label={t("careers.focus")}
-                    value={row.focus}
-                    onChange={(value) => update({ ...row, focus: value })}
-                  />
-                  <Field
-                    label={t("careers.finished")}
-                    inputMode="numeric"
-                    value={row.finished}
-                    onChange={(value) => update({ ...row, finished: value })}
-                  />
-                </div>
-              </>
+          <p className="m-0 mt-3 text-center text-[11px] text-quiet">
+            {tried.has(step) && missingHere.length > 0 ? (
+              <span role="alert" className="text-brand-red">
+                {t(missingHere[0])}
+              </span>
+            ) : (
+              t("careers.stepOf", { n: step + 1, total: STEPS.length })
             )}
-          />
-        </Block>
-
-        <Block title={t("careers.secWork")} optional note={t("careers.workNote")}>
-          <Rows
-            rows={application.employment}
-            max={MAX_HISTORY}
-            addLabel={t("careers.addJob")}
-            onChange={(rows) => set("employment", rows)}
-            blank={() => ({ employer: "", role: "", from: "", to: "" })}
-            render={(row, update) => (
-              <>
-                <Field
-                  label={t("careers.employer")}
-                  value={row.employer}
-                  onChange={(value) => update({ ...row, employer: value })}
-                />
-                <div className="mt-2">
-                  <Field
-                    label={t("careers.role")}
-                    value={row.role}
-                    onChange={(value) => update({ ...row, role: value })}
-                  />
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <Field
-                    label={t("careers.from")}
-                    value={row.from}
-                    onChange={(value) => update({ ...row, from: value })}
-                  />
-                  <Field
-                    label={t("careers.to")}
-                    value={row.to}
-                    onChange={(value) => update({ ...row, to: value })}
-                  />
-                </div>
-              </>
-            )}
-          />
-        </Block>
-
-        <Block title={t("careers.secRefs")} optional note={t("careers.refsNote")}>
-          <Rows
-            rows={application.references}
-            max={MAX_REFERENCES}
-            addLabel={t("careers.addReference")}
-            onChange={(rows) => set("references", rows)}
-            blank={() => ({ name: "", relationship: "", contact: "" })}
-            render={(row, update) => (
-              <>
-                <Field
-                  label={t("careers.refName")}
-                  value={row.name}
-                  onChange={(value) => update({ ...row, name: value })}
-                />
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <Field
-                    label={t("careers.refRelationship")}
-                    value={row.relationship}
-                    onChange={(value) => update({ ...row, relationship: value })}
-                  />
-                  <Field
-                    label={t("careers.refContact")}
-                    value={row.contact}
-                    onChange={(value) => update({ ...row, contact: value })}
-                  />
-                </div>
-              </>
-            )}
-          />
-        </Block>
-
-        <Block title={t("careers.secWords")} optional>
-          <Answer
-            label={t("careers.goals")}
-            value={application.goals}
-            onChange={(value) => set("goals", value)}
-          />
-          <Answer
-            label={t("careers.hardestDecision")}
-            value={application.hardestDecision}
-            onChange={(value) => set("hardestDecision", value)}
-          />
-          <Answer
-            label={t("careers.toSucceed")}
-            value={application.toSucceed}
-            onChange={(value) => set("toSucceed", value)}
-          />
-          <div className="mt-3">
-            <Field
-              label={t("careers.heardFrom")}
-              value={application.heardFrom}
-              onChange={(value) => set("heardFrom", value)}
-            />
-          </div>
-        </Block>
-
-        <Block title={t("careers.secSend")} required>
-          <p className="m-0 mb-2 text-[12px] leading-[1.55] text-muted">
-            {t("careers.signatureNote")}
           </p>
-          <Field
-            label={t("careers.signature")}
-            value={application.signature}
-            onChange={(value) => set("signature", value)}
-            error={problems.has("careers.errSignature") ? t("careers.errSignature") : null}
-          />
-        </Block>
+        </form>
 
-        {error ? (
-          <p role="alert" className="m-0 mt-5 text-center text-[13px] text-brand-red">
-            {st(error)}
+        <footer className="mt-14 border-t border-line pt-5">
+          <p className="m-0 text-[11px] leading-[1.7] text-quiet">{t("careers.eeo")}</p>
+          <p className="m-0 mt-2 text-[11px] leading-[1.7] text-quiet">
+            {t("careers.privacyNote")}{" "}
+            <Link href="/privacy-policy" className="underline hover:text-ink">
+              {t("common.privacyPolicy")}
+            </Link>
           </p>
-        ) : null}
-
-        <Button type="submit" block className="mt-6" disabled={sending}>
-          {sending ? t("careers.sending") : t("careers.submit")}
-        </Button>
-        {tried && missing.length > 0 ? (
-          <p role="alert" className="m-0 mt-2 text-center text-[12px] text-brand-red">
-            {t(missing[0])}
-          </p>
-        ) : null}
-
-        <p className="m-0 mt-8 text-[11px] leading-[1.7] text-quiet">{t("careers.eeo")}</p>
-        <p className="m-0 mt-2 text-[11px] leading-[1.7] text-quiet">
-          {t("careers.privacyNote")}{" "}
-          <Link href="/privacy-policy" className="underline hover:text-ink">
-            {t("common.privacyPolicy")}
-          </Link>
-        </p>
-      </form>
+          <p className="m-0 mt-2 text-[11px] leading-[1.7] text-quiet">{t("careers.timeNote")}</p>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -446,78 +718,113 @@ function Sent({ email }: { email: string }) {
   const t = useT();
   return (
     <div
-      className="cb-rise mx-auto max-w-lg px-5 py-16 text-center"
-      style={{ fontFamily: SHOP_FONT }}
+      className="flex min-h-dvh items-center justify-center px-5"
+      style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
-      <span
-        aria-hidden
-        className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-        style={{ backgroundColor: "var(--cb-good-bg)" }}
-      >
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <path
-            d="M6 13.4l4.6 4.6L20 8.6"
-            stroke="var(--cb-ink)"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </span>
-      <p className="m-0 mt-4 text-[22px] font-medium leading-tight text-ink">
-        {t("careers.sentTitle")}
-      </p>
-      <p className="m-0 mx-auto mt-2 max-w-xs text-[14px] leading-[1.55] text-muted">
-        {t("careers.sentBody", { contact: email })}
-      </p>
-      <ButtonLink href="/" variant="secondary" className="mt-7 w-full max-w-[280px]">
-        {t("common.backToMenu")}
-      </ButtonLink>
+      <div className="cb-rise w-full max-w-sm text-center">
+        <span
+          aria-hidden
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+          style={{ backgroundColor: "var(--cb-good-bg)" }}
+        >
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+            <path
+              d="M6 13.4l4.6 4.6L20 8.6"
+              stroke="var(--cb-ink)"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+        <p
+          className="m-0 mt-5 text-[26px] font-medium leading-tight tracking-[-0.01em] text-ink"
+          style={{ fontFamily: DISPLAY_FONT }}
+        >
+          {t("careers.sentTitle")}
+        </p>
+        <p className="m-0 mx-auto mt-3 text-[14px] leading-[1.6] text-muted">
+          {t("careers.sentBody", { contact: email })}
+        </p>
+        <ButtonLink href="/" variant="secondary" className="mt-8 w-full">
+          {t("common.backToMenu")}
+        </ButtonLink>
+      </div>
     </div>
   );
 }
 
 // ——— Pieces ———
 
-function Block({
-  title,
-  required,
-  optional,
-  note,
-  children,
-}: {
-  title: string;
-  required?: boolean;
-  optional?: boolean;
-  note?: string;
-  children: React.ReactNode;
-}) {
-  const t = useT();
+function StepHead({ title, note }: { title: string; note?: string }) {
   return (
-    <section className="mt-8">
-      <h2 className="m-0 mb-1 text-[14px] font-medium text-ink">
-        {required ? <span className="text-brand-red">* </span> : null}
+    <div className="mb-5">
+      <h2
+        className="m-0 text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink"
+        style={{ fontFamily: DISPLAY_FONT }}
+      >
         {title}
-        {optional ? (
-          <span className="ms-2 text-[11px] font-normal uppercase tracking-[0.08em] text-quiet">
-            {t("careers.optional")}
-          </span>
-        ) : null}
       </h2>
-      {note ? <p className="m-0 mb-2 text-[12px] leading-[1.5] text-muted">{note}</p> : null}
-      <div className={note ? "" : "mt-2"}>{children}</div>
-    </section>
+      {note ? (
+        <p className="m-0 mt-1.5 text-[12px] leading-[1.55] text-muted">{note}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** A sub-heading inside a step. `first` drops the top margin for the one that
+    opens a step, so it doesn't push a gap under the step's own heading. */
+function Legend({ children, first }: { children: React.ReactNode; first?: boolean }) {
+  return (
+    <h3
+      className={`m-0 mb-2.5 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet ${
+        first ? "" : "mt-8"
+      }`}
+    >
+      {children}
+    </h3>
   );
 }
 
 function Problem({ children }: { children: React.ReactNode }) {
+  if (!children) return null;
   return (
-    <p role="alert" className="m-0 mt-1.5 text-[12px] text-brand-red">
+    <p role="alert" className="m-0 mt-2 text-[12px] text-brand-red">
       {children}
     </p>
   );
 }
 
+function Tick({ on }: { on: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border transition-colors ${
+        on ? "border-ink bg-ink text-on-ink" : "border-line-mute bg-surface"
+      }`}
+    >
+      {on ? (
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M3 8.4 6.3 11.7 13 5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : null}
+    </span>
+  );
+}
+
+// A labelled input.
+//
+// The label is a real <label> above the box rather than the placeholder, so it
+// survives being typed into — which is exactly when somebody re-reading the
+// form needs it. `optional` marks the few fields that aren't required, since
+// on a form where most things are needed the absence of a mark reads as
+// "required" and the marked ones are the news.
 function Field({
   label,
   value,
@@ -526,6 +833,8 @@ function Field({
   inputMode,
   autoComplete,
   error,
+  optional,
+  onSurface,
 }: {
   label: string;
   value: string;
@@ -534,26 +843,50 @@ function Field({
   inputMode?: "text" | "email" | "tel" | "numeric";
   autoComplete?: string;
   error?: string | null;
+  optional?: boolean;
+  /** On a surface-coloured card, where a surface-coloured input would vanish. */
+  onSurface?: boolean;
 }) {
+  const t = useT();
+  // useId, not a module counter: a counter shared across requests on the
+  // server hands the browser ids the client's own counter would never
+  // reproduce, and the hydration mismatch unhooks every label from its input.
+  const id = useId();
+  // No margin of its own. A Field used to space itself with `mt-4 first:mt-0`,
+  // which is right in a column and wrong in a grid: `first-child` is the first
+  // *cell*, so the left half of a two-up pair cleared its margin and the right
+  // half kept it, and every paired row sat a step lower on one side. Spacing
+  // is the parent's job now — see the flex columns in each step.
   return (
     <div>
+      <label htmlFor={id} className="mb-1.5 flex items-baseline gap-2 text-[12px] text-muted">
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+        {optional ? (
+          <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] text-quiet">
+            {t("careers.optional")}
+          </span>
+        ) : null}
+      </label>
       <input
+        id={id}
         type={type}
         inputMode={inputMode}
         autoComplete={autoComplete}
-        aria-label={label}
-        placeholder={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
-        className={`w-full rounded-xl border bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink ${
-          error ? "border-brand-red" : "border-line-soft"
-        }`}
+        className={`w-full rounded-xl border px-3.5 py-3 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
+          onSurface ? "bg-cream" : "bg-surface"
+        } ${error ? "border-brand-red" : "border-line-soft"}`}
       />
-      {error ? <Problem>{error}</Problem> : null}
+      <Problem>{error}</Problem>
     </div>
   );
 }
+
+// The counter only appears once the box is most of the way full. A running
+// "0/800" under an empty field reads as a length you're expected to reach.
+const COUNTER_FROM = ANSWER_MAX * 0.7;
 
 function Answer({
   label,
@@ -564,56 +897,25 @@ function Answer({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const id = useId();
   return (
-    <div className="mt-3 first:mt-0">
-      <label className="mb-1.5 block text-[13px] leading-[1.45] text-ink">{label}</label>
+    <div className="mt-5 first:mt-0">
+      <label htmlFor={id} className="mb-2 block text-[14px] leading-[1.45] text-ink">
+        {label}
+      </label>
       <textarea
-        rows={3}
+        id={id}
+        rows={4}
         maxLength={ANSWER_MAX}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full resize-none rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors focus:border-ink"
+        className="w-full resize-none rounded-2xl border border-line-soft bg-surface px-3.5 py-3 text-[15px] leading-[1.55] text-ink outline-none transition-colors focus:border-ink"
       />
-      <p className="m-0 mt-1 text-end text-[11px] text-quiet">
-        {value.length}/{ANSWER_MAX}
-      </p>
-    </div>
-  );
-}
-
-// Multi-select as pressable chips rather than checkboxes. Seven days and four
-// jobs as a checkbox column is a tall, slow read; as chips it's one glance.
-// aria-pressed carries the state, so it announces the same either way.
-function ChipGroup<T extends string>({
-  options,
-  chosen,
-  onToggle,
-}: {
-  options: readonly { id: T; label: StringKey }[];
-  chosen: readonly T[];
-  onToggle: (id: T) => void;
-}) {
-  const t = useT();
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map(({ id, label }) => {
-        const active = chosen.includes(id);
-        return (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onToggle(id)}
-            className={`cb-press cursor-pointer rounded-full border px-3.5 py-2 text-[13px] transition-colors ${
-              active
-                ? "border-ink bg-ink text-on-ink"
-                : "border-line-soft bg-surface text-ink hover:border-line-mute"
-            }`}
-          >
-            {t(label)}
-          </button>
-        );
-      })}
+      {value.length > COUNTER_FROM ? (
+        <p className="m-0 mt-1 text-end text-[11px] text-quiet">
+          {value.length}/{ANSWER_MAX}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -633,27 +935,27 @@ function YesNo({
 }) {
   const t = useT();
   return (
-    <div className="mt-4 first:mt-0">
-      <p className="m-0 text-[13px] leading-[1.45] text-ink">{question}</p>
-      {note ? <p className="m-0 mt-1 text-[11px] leading-[1.55] text-quiet">{note}</p> : null}
-      <div className="mt-2 flex gap-2">
+    <div className="rounded-2xl border border-line-soft bg-surface p-3.5">
+      <p className="m-0 text-[14px] leading-[1.45] text-ink">{question}</p>
+      {note ? <p className="m-0 mt-1.5 text-[11px] leading-[1.55] text-quiet">{note}</p> : null}
+      {/* A two-up segmented pair rather than two loose pills: the answers are
+          mutually exclusive and one control that holds both says so. */}
+      <div className="mt-3 grid max-w-[220px] grid-cols-2 gap-1 rounded-full border border-line-soft p-1">
         {[true, false].map((option) => (
           <button
             key={String(option)}
             type="button"
             aria-pressed={value === option}
             onClick={() => onChange(option)}
-            className={`cb-press min-w-[84px] cursor-pointer rounded-full border px-4 py-2 text-[13px] transition-colors ${
-              value === option
-                ? "border-ink bg-ink text-on-ink"
-                : "border-line-soft bg-surface text-ink hover:border-line-mute"
+            className={`cb-press cursor-pointer rounded-full py-2 text-[13px] leading-none transition-colors ${
+              value === option ? "bg-ink text-on-ink" : "text-muted hover:text-ink"
             }`}
           >
             {t(option ? "careers.yes" : "careers.no")}
           </button>
         ))}
       </div>
-      {error ? <Problem>{error}</Problem> : null}
+      <Problem>{error}</Problem>
     </div>
   );
 }
@@ -665,6 +967,7 @@ function Rows<T>({
   rows,
   max,
   addLabel,
+  title,
   blank,
   onChange,
   render,
@@ -672,32 +975,46 @@ function Rows<T>({
   rows: T[];
   max: number;
   addLabel: string;
+  title: (n: number) => string;
   blank: () => T;
   onChange: (rows: T[]) => void;
   render: (row: T, update: (next: T) => void) => React.ReactNode;
 }) {
   const t = useT();
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2.5">
       {rows.map((row, index) => (
-        <div key={index} className="rounded-xl border border-line-soft/70 p-3">
+        <div key={index} className="rounded-2xl border border-line-soft bg-surface p-3.5">
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-quiet">
+              {title(index + 1)}
+            </span>
+            {rows.length > 1 ? (
+              <button
+                type="button"
+                aria-label={t("careers.remove")}
+                onClick={() => onChange(rows.filter((_, at) => at !== index))}
+                className="cb-press -me-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-quiet transition-colors hover:bg-raise hover:text-ink"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <path
+                    d="M1.5 1.5 10.5 10.5M10.5 1.5 1.5 10.5"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            ) : null}
+          </div>
           {render(row, (next) => onChange(rows.map((item, at) => (at === index ? next : item))))}
-          {rows.length > 1 ? (
-            <button
-              type="button"
-              onClick={() => onChange(rows.filter((_, at) => at !== index))}
-              className="cb-press mt-2 cursor-pointer text-[12px] text-muted underline hover:text-ink"
-            >
-              {t("careers.remove")}
-            </button>
-          ) : null}
         </div>
       ))}
       {rows.length < max ? (
         <button
           type="button"
           onClick={() => onChange([...rows, blank()])}
-          className="cb-press cursor-pointer self-start rounded-full border border-line-soft bg-surface px-4 py-2 text-[13px] text-ink transition-colors hover:border-ink"
+          className="cb-press cursor-pointer self-start rounded-full border border-dashed border-line-mute px-4 py-2 text-[12px] text-muted transition-colors hover:border-ink hover:text-ink"
         >
           + {addLabel}
         </button>
