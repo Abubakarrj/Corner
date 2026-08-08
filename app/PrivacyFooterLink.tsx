@@ -17,7 +17,7 @@ import { hasTabBar } from "./(marketing)/TabBar";
 // fixed to the bottom-right of the *viewport*, so on a long page it floats
 // over whatever line happens to be there — on /careers it was landing across
 // the equal-opportunity paragraph, next to a second copy of itself.
-const OWN_PRIVACY_LINK = ["/careers"];
+const OWN_PRIVACY_LINK = ["/careers", "/careers/apply"];
 
 export default function PrivacyFooterLink() {
   const t = useT();

@@ -101,6 +101,20 @@ const DAY_SHORT: Record<DayId, StringKey> = {
   sun: "careers.dayShortSun",
 };
 
+/** The application with `role` selected, if it isn't already. Returns the very
+    same object when there is nothing to add, so the identity comparisons that
+    decide whether to write a draft keep working. */
+function withRole(draft: Draft, role: PositionId | null): Draft {
+  if (!role || draft.application.positions.includes(role)) return draft;
+  return {
+    ...draft,
+    application: {
+      ...draft.application,
+      positions: [...draft.application.positions, role],
+    },
+  };
+}
+
 const POSITION_NOTE: Record<PositionId, StringKey> = {
   counter: "careers.posCounterNote",
   kitchen: "careers.posKitchenNote",
@@ -108,7 +122,7 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
   manager: "careers.posManagerNote",
 };
 
-export default function ApplicationForm() {
+export default function ApplicationForm({ role }: { role: PositionId | null }) {
   const t = useT();
   const st = useServerText();
   const locale = useLocale();
@@ -124,7 +138,13 @@ export default function ApplicationForm() {
   // together, so there is never a half-adopted draft.
   const saved = useSavedDraft();
   const [edited, setEdited] = useState<Draft | null>(null);
-  const current = edited ?? saved ?? FRESH;
+  // Whichever card on /careers was pressed, added to the base rather than
+  // replacing it: somebody with a half-finished application who comes back
+  // through a different card should gain that job, not lose their answers.
+  // Memoised because it is compared by identity below and feeds the effect
+  // that writes the draft.
+  const base = useMemo(() => withRole(saved ?? FRESH, role), [saved, role]);
+  const current = edited ?? base;
   const application = current.application;
   const step = current.step;
   // Per step, so moving forward doesn't paint the next screen red before it
@@ -149,12 +169,17 @@ export default function ApplicationForm() {
   // nothing is lost to a tab closing, and rare enough to be free.
   useEffect(() => {
     if (sent) return;
+    // Nothing has been touched — the only thing filled in is the job that came
+    // from the link. Writing that would mean somebody who merely opened the
+    // page and left is told "picked up where you left off" on their way back,
+    // for answers they never gave. An existing draft keeps saving.
+    if (current === base && saved === null) return;
     if (!started(application)) return;
     const timer = setTimeout(() => {
       setSafeToLeave(saveDraft({ step, application }));
     }, 500);
     return () => clearTimeout(timer);
-  }, [application, step, sent]);
+  }, [application, step, sent, current, base, saved]);
 
   // Bot defences, matching /api/drop-list: a field no human can see, and a
   // floor on how fast the form can be filled in. Both are checked server-side.
@@ -208,7 +233,7 @@ export default function ApplicationForm() {
   // could not be written — which is the one case where the warning is real.
   function leave() {
     if (started(application) && !safeToLeave && !window.confirm(t("careers.leaveConfirm"))) return;
-    router.push("/");
+    router.push("/careers");
   }
 
   // Somebody else's half-finished application on a shared phone, or your own
@@ -216,7 +241,7 @@ export default function ApplicationForm() {
   function startOver() {
     if (!window.confirm(t("careers.startOverConfirm"))) return;
     clearDraft();
-    setEdited(FRESH);
+    setEdited(withRole(FRESH, null));
     setTried(new Set());
     setError(null);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -301,9 +326,9 @@ export default function ApplicationForm() {
             installed PWA may not show, and which somebody two steps in would
             have to press twice for reasons the page never explained.
 
-            It goes home rather than to whatever referred here, because home is
-            where "Work with us" lives, so leaving and coming back is one tap
-            each way. */}
+            It goes to /careers rather than home: that is the page that sent
+            them here, and the one with the answer to "what was this job
+            again?". */}
         {/* The way out on the start side, the language on the end side. Both
             are 28px and sit on one row, the same shape as the strip on the
             front door.
@@ -342,7 +367,7 @@ export default function ApplicationForm() {
                 strokeLinejoin="round"
               />
             </svg>
-            {t("nav.home")}
+            {t("common.back")}
           </button>
 
           <LanguagePicker />

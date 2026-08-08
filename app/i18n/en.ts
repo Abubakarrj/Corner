@@ -528,7 +528,13 @@ export const en = {
   // questions that were cut and why.
   "careers.title": "Work at Corner Bagel",
   "careers.eyebrow": "We're hiring",
-  "careers.lede": "Small shop, early mornings, good bread. Tell us about yourself.",
+  "careers.lede": "Small shop, early mornings, good bread.",
+  "careers.aboutHeading": "About the shop",
+  "careers.rolesHeading": "What we hire for",
+  "careers.rolesNote": "These are the jobs here. We're always glad to hear from someone good for one, whether or not there's a shift going spare this week.",
+  "careers.rolesWhere": "All of these are at our {shops} shop.",
+  "careers.apply": "Apply",
+  "careers.applyAnyway": "Not sure which? Start an application and choose later.",
 
   // The four steps. Short, because they sit on a rail on a phone.
   "careers.stepYou": "You",
