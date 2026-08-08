@@ -18,15 +18,31 @@ import { emptyApplication, normalizeApplication, type Application } from "./appl
 // somebody who never applied. The device keeps it until they finish or a week
 // goes by.
 //
-// ——— The week ———
+// ——— Fifteen minutes, counted from the last keystroke ———
 //
 // A draft is personal data sitting in a browser that might be a library
-// computer or a shared family tablet. It is not something to keep forever
-// because it was cheap to keep. Seven days is long enough to come back to it
-// after a weekend and short enough that a forgotten one clears itself.
+// computer or a shared family tablet, and it is not something to keep for
+// days because it was cheap to keep.
+//
+// This is an idle window, not a lifetime: `savedAt` is rewritten on every
+// save, so somebody typing steadily for an hour never loses anything, and a
+// form left sitting is gone a quarter of an hour after they stopped. That
+// covers what the draft is actually for — a dropped connection, a closed
+// tab, iOS reclaiming the page during a phone call — all of which are
+// recovered from within a minute or two, in the same sitting.
+//
+// What it deliberately stops covering: coming back this evening. Somebody who
+// walks away mid-application and returns tomorrow starts again. That is the
+// cost, and it is worth naming rather than discovering — the case where it
+// stings is looking a former employer's number up on the same phone, since a
+// backgrounded tab can be discarded and the trip back may take longer than
+// this window.
+//
+// One constant, and the privacy policy quotes it in ten languages. Move one,
+// move the other, or the policy is a false statement about our own software.
 
 const KEY = "cb-application-draft-v1";
-const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_AGE_MS = 15 * 60 * 1000;
 
 export type Draft = { step: number; application: Application };
 

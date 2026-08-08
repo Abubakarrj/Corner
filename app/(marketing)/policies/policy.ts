@@ -434,7 +434,7 @@ const enPrivacy: Policy = {
         },
         {
           kind: "p",
-          text: "While you are filling the form in, an unfinished draft is kept in your own browser so you can come back to it. It is not sent to us, it is deleted when you submit or after seven days, and “Start over” on the form removes it at once. If you write your answers in a language other than English, we translate them so we can read them, and we keep what you actually wrote alongside the translation.",
+          text: "While you are filling the form in, an unfinished draft is kept in your own browser so you can come back to it. It is not sent to us, it is deleted when you submit or if you leave it for fifteen minutes, and “Start over” on the form removes it at once. If you write your answers in a language other than English, we translate them so we can read them, and we keep what you actually wrote alongside the translation.",
         },
       ],
     },
