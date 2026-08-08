@@ -506,6 +506,7 @@ export const my: Table = {
   "careers.stepFinish": "ပြီးဆုံး",
   "careers.stepOf": "အဆင့် {n} / {total}",
   "careers.skipNote": "ဤအပိုင်းအားလုံး ဖြည့်လိုက ဖြည့်ပါ။ မသက်ဆိုင်တာတွေ ကျော်သွားလို့ရပါတယ်။ အဆိုးမဖြစ်ပါဘူး။",
+  "careers.leaveConfirm": "မပို့ဘဲ ထွက်မှာလား။ ဖြည့်ထားတဲ့ အဖြေတွေ သိမ်းမထားပါ။",
   "careers.schoolN": "ကျောင်း {n}",
   "careers.jobN": "အလုပ် {n}",
   "careers.refN": "ထောက်ခံသူ {n}",

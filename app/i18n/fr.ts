@@ -561,6 +561,7 @@ export const fr: Table = {
   "careers.stepFinish": "Terminer",
   "careers.stepOf": "Étape {n} sur {total}",
   "careers.skipNote": "Tout ceci est facultatif. Passez ce qui ne vous concerne pas, cela ne joue pas contre vous.",
+  "careers.leaveConfirm": "Quitter sans envoyer ? Vos réponses ne seront pas conservées.",
   "careers.schoolN": "Établissement {n}",
   "careers.jobN": "Emploi {n}",
   "careers.refN": "Référence {n}",

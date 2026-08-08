@@ -506,6 +506,7 @@ export const ja: Table = {
   "careers.stepFinish": "送信",
   "careers.stepOf": "ステップ {n}／{total}",
   "careers.skipNote": "ここはすべて任意です。当てはまらないものは飛ばして構いません。不利にはなりません。",
+  "careers.leaveConfirm": "送信せずに移動しますか？入力内容は保存されません。",
   "careers.schoolN": "学校 {n}",
   "careers.jobN": "職歴 {n}",
   "careers.refN": "推薦者 {n}",

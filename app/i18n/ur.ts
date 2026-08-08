@@ -509,6 +509,7 @@ export const ur: Table = {
   "careers.stepFinish": "اختتام",
   "careers.stepOf": "مرحلہ {n} از {total}",
   "careers.skipNote": "یہ سب اختیاری ہے۔ جو لاگو نہ ہو اسے چھوڑ دیں، اس سے نقصان نہیں ہوگا۔",
+  "careers.leaveConfirm": "بھیجے بغیر چلے جائیں؟ آپ کے جوابات محفوظ نہیں ہوں گے۔",
   "careers.schoolN": "ادارہ {n}",
   "careers.jobN": "ملازمت {n}",
   "careers.refN": "حوالہ {n}",

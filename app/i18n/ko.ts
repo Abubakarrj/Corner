@@ -506,6 +506,7 @@ export const ko: Table = {
   "careers.stepFinish": "마무리",
   "careers.stepOf": "{total}단계 중 {n}단계",
   "careers.skipNote": "여기는 전부 선택 사항입니다. 해당 없는 항목은 건너뛰세요. 불이익은 없습니다.",
+  "careers.leaveConfirm": "보내지 않고 나가시겠어요? 작성하신 내용은 저장되지 않습니다.",
   "careers.schoolN": "학교 {n}",
   "careers.jobN": "경력 {n}",
   "careers.refN": "추천인 {n}",

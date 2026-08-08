@@ -558,6 +558,7 @@ export const fa: Table = {
   "careers.stepFinish": "پایان",
   "careers.stepOf": "گام {n} از {total}",
   "careers.skipNote": "همهٔ این‌ها اختیاری است. هرچه به شما مربوط نیست رد کنید؛ به ضررتان نیست.",
+  "careers.leaveConfirm": "بدون ارسال بیرون می‌روید؟ پاسخ‌هایتان نگه داشته نمی‌شود.",
   "careers.schoolN": "مدرسه {n}",
   "careers.jobN": "کار {n}",
   "careers.refN": "معرف {n}",

@@ -537,6 +537,7 @@ export const en = {
   "careers.stepFinish": "Finish",
   "careers.stepOf": "Step {n} of {total}",
   "careers.skipNote": "All of this is optional. Skip anything that doesn't apply — it won't count against you.",
+  "careers.leaveConfirm": "Leave without sending? Your answers won't be kept.",
   "careers.schoolN": "School {n}",
   "careers.jobN": "Job {n}",
   "careers.refN": "Reference {n}",

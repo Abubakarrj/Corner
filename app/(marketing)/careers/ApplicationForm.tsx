@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useServerText, useT, type StringKey } from "../../i18n";
@@ -98,6 +99,28 @@ const DAY_SHORT: Record<DayId, StringKey> = {
   sun: "careers.dayShortSun",
 };
 
+/** Has anything been entered? Walks the whole application rather than
+    watching a "touched" flag, so it stays true when somebody types into a
+    field and then goes back and clears it — a form they've worked on and
+    emptied is one they can leave without being asked. */
+function started(application: Application): boolean {
+  return Object.values(application).some((value) => {
+    if (typeof value === "string") return value.trim() !== "";
+    if (typeof value === "boolean") return true;
+    if (Array.isArray(value)) {
+      return value.some((entry) =>
+        // A row of a school or a job counts only if something was typed into
+        // it, since each list starts with one blank. An id in positions, days
+        // or employmentTypes is itself the answer.
+        typeof entry === "object" && entry !== null
+          ? Object.values(entry).some((cell) => String(cell).trim() !== "")
+          : true,
+      );
+    }
+    return false;
+  });
+}
+
 const POSITION_NOTE: Record<PositionId, StringKey> = {
   counter: "careers.posCounterNote",
   baker: "careers.posBakerNote",
@@ -108,6 +131,7 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
 export default function ApplicationForm() {
   const t = useT();
   const st = useServerText();
+  const router = useRouter();
 
   const [application, setApplication] = useState<Application>(() => ({
     ...emptyApplication(),
@@ -169,6 +193,14 @@ export default function ApplicationForm() {
   /** The first step that still has something missing, or -1. */
   function firstBrokenStep(): number {
     return STEPS.findIndex((entry) => entry.owns.some((key) => missing.includes(key)));
+  }
+
+  // Leaving loses everything, because nothing is stored until it's sent — so
+  // it asks first, but only when there is something to lose. Confirming an
+  // empty form is a dialog that teaches people to dismiss dialogs.
+  function leave() {
+    if (started(application) && !window.confirm(t("careers.leaveConfirm"))) return;
+    router.push("/");
   }
 
   async function send(event: React.FormEvent) {
@@ -235,7 +267,40 @@ export default function ApplicationForm() {
 
   return (
     <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
-      <div ref={topRef} className="mx-auto max-w-[34rem] px-5 pb-20 pt-10 sm:pt-14">
+      <div ref={topRef} className="mx-auto max-w-[34rem] px-5 pb-20 pt-6 sm:pt-10">
+        {/* ——— The way out ———
+            The Back button in the action row moves between steps; it does not
+            leave, and it isn't there on the first one. Without this there was
+            no way off the page at all except the browser's own back — which an
+            installed PWA may not show, and which somebody two steps in would
+            have to press twice for reasons the page never explained.
+
+            It goes home rather than to whatever referred here, because home is
+            where "Work with us" lives, so leaving and coming back is one tap
+            each way. */}
+        {/* 28px of text and icon, with the rest of a 44px target added by a
+            pseudo-element rather than by padding — padding here would push the
+            masthead down for a control that should read as a quiet line above
+            it. Same trick, same reason, as BagelMark. */}
+        <button
+          type="button"
+          onClick={leave}
+          className="cb-press relative -ms-1 mb-7 inline-flex cursor-pointer items-center gap-1.5 rounded-full px-1 py-1 text-[13px] text-muted transition-colors before:absolute before:-inset-[10px] before:content-[''] hover:text-ink"
+        >
+          {/* Mirrored under Urdu and Persian with the document, so the arrow
+              points the way back rather than the way on. */}
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden className="rtl:-scale-x-100">
+            <path
+              d="M8.5 2.5 4 7l4.5 4.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {t("nav.home")}
+        </button>
+
         {/* ——— Masthead ——— */}
         <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
           {t("careers.eyebrow")}

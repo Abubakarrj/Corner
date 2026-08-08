@@ -561,6 +561,7 @@ export const it: Table = {
   "careers.stepFinish": "Invia",
   "careers.stepOf": "Passo {n} di {total}",
   "careers.skipNote": "Tutto questo è facoltativo. Salta quello che non ti riguarda: non ti penalizza.",
+  "careers.leaveConfirm": "Esci senza inviare? Le tue risposte non verranno conservate.",
   "careers.schoolN": "Scuola {n}",
   "careers.jobN": "Lavoro {n}",
   "careers.refN": "Referenza {n}",

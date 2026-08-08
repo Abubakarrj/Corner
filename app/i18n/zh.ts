@@ -504,6 +504,7 @@ export const zh: Table = {
   "careers.stepFinish": "完成",
   "careers.stepOf": "第 {n} 步，共 {total} 步",
   "careers.skipNote": "这一步全部选填。不适用的直接跳过，不会因此扣分。",
+  "careers.leaveConfirm": "不提交就离开吗？你填写的内容不会保存。",
   "careers.schoolN": "学校 {n}",
   "careers.jobN": "工作 {n}",
   "careers.refN": "推荐人 {n}",
