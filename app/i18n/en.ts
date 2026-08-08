@@ -330,6 +330,7 @@ export const en = {
   // ——— Gift cards ———
   "gift.tagline": "Send a little something around the corner",
   "gift.cardBadge": "Gift card",
+  "gift.buyACard": "Buy a gift card",
   "gift.wordBirthday": "HAPPY BIRTHDAY",
   "gift.wordCongrats": "CONGRATS",
   "gift.wordThankYou": "THANK YOU",

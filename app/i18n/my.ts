@@ -303,6 +303,7 @@ export const my: Table = {
 
   "gift.tagline": "လမ်းထောင့်ကနေ စိတ်ကလေးတစ်ခု ပို့လိုက်ပါ",
   "gift.cardBadge": "လက်ဆောင်ကတ်",
+  "gift.buyACard": "လက်ဆောင်ကတ် ဝယ်ရန်",
   "gift.wordBirthday": "မွေးနေ့မင်္ဂလာပါ",
   "gift.wordCongrats": "ဂုဏ်ယူပါသည်",
   "gift.wordThankYou": "ကျေးဇူးတင်ပါသည်",

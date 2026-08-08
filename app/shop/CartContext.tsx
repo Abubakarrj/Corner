@@ -88,8 +88,10 @@ function readStoredLines(): CartLine[] {
       }
       const product = getProduct(slug);
       // A slug the catalog no longer has is dropped here rather than carried
-      // as a row every screen has to filter out.
-      if (!product) continue;
+      // as a row every screen has to filter out. Same for one the basket no
+      // longer sells — a gift card saved into a cart before it moved out of
+      // the food flow would otherwise be taxed and sent to the kitchen.
+      if (!product || product.offsite) continue;
 
       const clean = normalizeOptions(
         product,
@@ -182,6 +184,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (slug: string, quantity = 1, options?: SelectedOptions) => {
       const product = getProduct(slug);
       if (!product) return;
+      // Not sold through this basket. The tile already links out and Riley is
+      // told to hand off, but this is the guard that actually holds: it also
+      // covers a stale localStorage cart from before the change and any caller
+      // that hasn't heard. See Offsite in products.ts for what putting one of
+      // these in a food order did.
+      if (product.offsite) return;
       // Here rather than on each button, because there are five of them now —
       // the tile, the product page, Riley's cards, the in-chat picker, the
       // basket's own stepper — and a confirmation that only some of them give

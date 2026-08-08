@@ -306,6 +306,7 @@ export const ur: Table = {
 
   "gift.tagline": "کونے سے ایک چھوٹا سا تحفہ بھیجیں",
   "gift.cardBadge": "گفٹ کارڈ",
+  "gift.buyACard": "گفٹ کارڈ خریدیں",
   "gift.wordBirthday": "سالگرہ مبارک",
   "gift.wordCongrats": "مبارک ہو",
   "gift.wordThankYou": "شکریہ",

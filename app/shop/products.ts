@@ -1,3 +1,4 @@
+import type { StringKey } from "../i18n/en";
 import {
   describeMix,
   fitMix,
@@ -58,6 +59,42 @@ export type OptionGroup = {
 // groupId -> choiceId. Stored on the cart line, so two of the same sandwich
 // with different bagels are two lines rather than a quantity of two.
 export type SelectedOptions = Record<string, string>;
+
+// A product the catalog shows but this basket does not sell, and where to send
+// somebody instead.
+//
+// ——— Why a gift card cannot ride in the food basket ———
+//
+// Because every part of the order pipeline assumes food: made at a place, at a
+// time, taxed, handed over. A gift card is none of those, and it was quietly
+// getting all four:
+//
+//   Tax          taxFor() applies 9.5% to the whole subtotal. A gift card sale
+//                is not a taxable transaction — tax is collected on whatever
+//                the card is later spent on. A $50 card was being charged
+//                $4.75 that should not exist.
+//   Hours        /api/shop-order refuses when the kitchen is shut, so a card
+//                could not be bought at 9pm — which is exactly when somebody
+//                remembers a birthday.
+//   Delivery     a card-only basket set to delivery quotes a courier, charges
+//                a fee to carry nothing, and gates the sale on the buyer's
+//                address being in range.
+//   Toast        the line went up as an open food item. A gift card sale is a
+//                liability, not revenue, and that error compounds every month
+//                until it surfaces at tax time.
+//
+// Each of those could have been an `if (isGiftCard)` in a different file. This
+// is the one change that makes all four impossible instead: it never enters
+// the basket, so nothing downstream has to know it exists.
+//
+// It is also independent of how gift cards eventually get sold. Whether the
+// purchase ends up on our own page or somebody else's, it is not this cart.
+export type Offsite = {
+  /** Where the tile and Riley send people instead. */
+  href: string;
+  /** The string key for the button, e.g. "gift.buyACard". */
+  label: StringKey;
+};
 
 // Six kinds, one price. Deliberately no default: an everything bagel and a
 // plain one are not interchangeable, and defaulting to plain would quietly
@@ -198,6 +235,10 @@ export const GIFT_AMOUNT_GROUP: OptionGroup = {
 export type Product = {
   slug: string;
   name: string;
+  // Set when this product is not sold through the food basket — see Offsite.
+  // The tile links out instead of adding, addItem refuses it, and Riley is
+  // told to hand off rather than put it in a bag.
+  offsite?: Offsite;
   priceCents: number;
   category: string;
   description: string;
@@ -1005,6 +1046,10 @@ export const PRODUCTS: Product[] = [
     swatch: "#C0303B",
     aliases: ["gift", "gift certificate", "giftcard", "voucher", "present"],
     options: [GIFT_AMOUNT_GROUP],
+    // Shown in the catalog so somebody browsing the menu finds it, but bought
+    // at /gift rather than added here. See Offsite for the four things that
+    // went wrong while it rode in the food basket.
+    offsite: { href: "/gift", label: "gift.buyACard" },
   },
 
 ];

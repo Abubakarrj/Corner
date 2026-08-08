@@ -699,6 +699,23 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       if (soldOut(product.slug)) {
         return { forModel: { error: `${product.name} sold out today.` } };
       }
+      // Some things in the catalog are not sold through this basket — a gift
+      // card is not food and cannot ride in a food order. She can talk about
+      // one and say where to buy it; she cannot bag it. addItem refuses these
+      // too, so an attach that slipped past here would silently do nothing,
+      // and a Riley who says "added" about nothing is the failure to avoid.
+      if (product.offsite) {
+        return {
+          forModel: {
+            added: false,
+            buyItAt: product.offsite.href,
+            message:
+              `${product.name} isn't sold through the basket — it isn't food and ` +
+              `can't go into a food order. Tell them where to buy it. Do not say ` +
+              `it was added.`,
+          },
+        };
+      }
 
       const chosen = normalizeOptions(product, asOptions(args.options));
       // A group with no default that still isn't answered can't be made. Riley

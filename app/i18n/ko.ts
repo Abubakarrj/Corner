@@ -303,6 +303,7 @@ export const ko: Table = {
 
   "gift.tagline": "코너에서 작은 마음을 보내세요",
   "gift.cardBadge": "기프트 카드",
+  "gift.buyACard": "기프트 카드 구매",
   "gift.wordBirthday": "생일 축하합니다",
   "gift.wordCongrats": "축하합니다",
   "gift.wordThankYou": "감사합니다",

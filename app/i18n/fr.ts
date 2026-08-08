@@ -343,6 +343,7 @@ export const fr: Table = {
   // ——— Gift cards ———
   "gift.tagline": "Envoyez un petit quelque chose au coin de la rue",
   "gift.cardBadge": "Carte cadeau",
+  "gift.buyACard": "Acheter une carte cadeau",
   "gift.wordBirthday": "JOYEUX ANNIVERSAIRE",
   "gift.wordCongrats": "BRAVO",
   "gift.wordThankYou": "MERCI",

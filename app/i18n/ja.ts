@@ -303,6 +303,7 @@ export const ja: Table = {
 
   "gift.tagline": "角のお店から、ちょっとした贈り物を",
   "gift.cardBadge": "ギフトカード",
+  "gift.buyACard": "ギフトカードを買う",
   "gift.wordBirthday": "お誕生日おめでとう",
   "gift.wordCongrats": "おめでとう",
   "gift.wordThankYou": "ありがとう",

@@ -303,6 +303,7 @@ export const zh: Table = {
 
   "gift.tagline": "从街角送去一点心意",
   "gift.cardBadge": "礼品卡",
+  "gift.buyACard": "购买礼品卡",
   "gift.wordBirthday": "生日快乐",
   "gift.wordCongrats": "恭喜",
   "gift.wordThankYou": "谢谢",

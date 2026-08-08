@@ -344,6 +344,7 @@ export const fa: Table = {
   // ——— Gift cards ———
   "gift.tagline": "یک چیز کوچک بفرستید، از همین سر کوچه",
   "gift.cardBadge": "کارت هدیه",
+  "gift.buyACard": "خرید کارت هدیه",
   "gift.wordBirthday": "تولدت مبارک",
   "gift.wordCongrats": "تبریک",
   "gift.wordThankYou": "متشکرم",

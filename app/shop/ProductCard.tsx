@@ -77,6 +77,12 @@ export default function ProductCard({ product }: { product: Product }) {
   // replaces — you would answer "a dozen" twice. See encodeOptions.
   const mixGroup = (product.options ?? []).find((group) => group.mix);
   const packed = Boolean(mixGroup) && packSize(product, selected) > 1;
+
+  // Some things in the catalog aren't sold through this basket at all — a gift
+  // card is not food and cannot ride in a food order. Same hand-off shape as a
+  // pack, one step earlier: no options, no price, just the way out. See
+  // Offsite in products.ts.
+  const offsite = product.offsite;
   const configureHref =
     `/shop/product/${product.slug}?options=` +
     encodeURIComponent(encodeOptions(selected));
@@ -122,7 +128,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </p>
       </div>
 
-      {gone ? null : (
+      {gone || offsite ? null : (
         <OptionPicker
           product={product}
           selected={selected}
@@ -132,7 +138,14 @@ export default function ProductCard({ product }: { product: Product }) {
         />
       )}
 
-      {packed && !gone ? (
+      {offsite && !gone ? (
+        <Link
+          href={offsite.href}
+          className={`${TILE_BUTTON} border-line-soft bg-surface text-ink hover:border-ink hover:bg-ink hover:text-on-ink`}
+        >
+          <span>{t(offsite.label)}</span>
+        </Link>
+      ) : packed && !gone ? (
         // A link, not a disabled button. The pack is a real choice that has
         // been made; what's missing is a question this tile can't ask, so the
         // control's job is to go and ask it. Same shape and weight as the add
