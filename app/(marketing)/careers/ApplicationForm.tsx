@@ -169,15 +169,16 @@ export default function ApplicationForm({
   const current = edited ?? base;
   const application = current.application;
   const step = current.step;
-  // The job being applied for, read off the application rather than the URL.
-  // That distinction is the whole point: the link only ever seeds this, so
-  // the page still knows what it is for after a reload, in a tab reopened
-  // tomorrow, or when a draft is picked back up days later. Reading the prop
-  // instead is what made the form forget and start asking again.
-  // Both halves of the card press, and both read the same way for the same
-  // reason. The shop was already stored correctly and already reached the
-  // PDF — it was only this line on screen that read the URL, so a reload
-  // quietly dropped "Koreatown" from a page whose application still had it.
+  // Both halves of the card press, read off the application rather than the
+  // URL. That distinction is the whole point: the link only ever seeds them,
+  // so the page still knows what it is for after a reload, in a tab reopened
+  // tomorrow, or when a draft is picked back up days later.
+  //
+  // The job was the one that broke visibly — read from the prop, it vanished
+  // with the query string and the form went back to asking. The shop had the
+  // same fault somewhere quieter: it was stored correctly and did reach the
+  // PDF, but the line under the headline read the prop, so a reload dropped
+  // "Koreatown" from a page whose application still had it.
   const job = application.role === "" ? null : application.role;
   const where = application.location.trim() === "" ? null : application.location.trim();
   // Per step, so moving forward doesn't paint the next screen red before it
@@ -348,6 +349,149 @@ export default function ApplicationForm({
   if (sent) return <Sent email={application.email.trim()} />;
 
   const last = step === STEPS.length - 1;
+
+
+  // ——— Step two, ordered by what the answers depend on ———
+  //
+  // With a job already chosen, "Also happy to do" is not a question about
+  // which job — that was settled by the card and is printed at the top of the
+  // page. It is a question about the week, and its own note says as much:
+  // ticking another job "makes you easier to fit into a week". Leading the
+  // step with it put an optional aside above every required question, and made
+  // a step called "The work" open by appearing to re-ask the one thing already
+  // answered.
+  //
+  // So availability leads and the extras follow the hours, which is where that
+  // sentence actually lands: you have just said Saturdays and part time, and
+  // the next thing asked is what else you would take a shift on.
+  //
+  // Arriving with no job, the list is the real question and leads, because
+  // there it is the only place the job is ever named.
+  const jobsSection = (first: boolean) => (
+    <>
+      {/* Two different questions wearing the same control.
+          Arriving from a card, the job is settled and shown at the top
+          of the page, so the only thing left worth asking is whether
+          they would take any of the others — which a small shop very
+          much wants to know, and which is why this list didn't just
+          get deleted. Arriving with no job, it is the original
+          question and the only place it gets asked. */}
+      <Legend first={first}>{job ? t("careers.alsoHappy") : t("careers.secRole")}</Legend>
+      <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
+        {job ? t("careers.alsoHappyNote") : t("careers.positionsNote")}
+      </p>
+      {/* Cards, not bare pills. A pill saying "Kitchen and prep" tells
+          somebody the name of a job they may never have done; a line
+          underneath tells them what the morning is actually like, which
+          is what they're deciding about. */}
+      <div className="flex flex-col gap-2">
+        {POSITIONS.filter((position) => position.id !== job).map(({ id, label }) => {
+          const active = application.positions.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => toggle("positions", id)}
+              className={`cb-press flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-start transition-colors ${
+                active
+                  ? "border-ink bg-raise"
+                  : "border-line-soft bg-surface hover:border-line-mute"
+              }`}
+            >
+              <Tick on={active} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] leading-tight text-ink">{t(label)}</span>
+                <span className="mt-1 block text-[12px] leading-[1.45] text-muted">
+                  {t(POSITION_NOTE[id])}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <Problem>{problem("careers.errPositions")}</Problem>
+    </>
+  );
+
+  const whenSection = (first: boolean) => (
+    <>
+      <Legend first={first}>{t("careers.secWhen")}</Legend>
+      <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
+        {t("careers.daysNote")}
+      </p>
+      {/* Seven across. As a column of seven wordy pills this was the
+          tallest control on the page and the hardest to read as a
+          week; as a row it's a week. */}
+      <div className="grid grid-cols-7 gap-1.5">
+        {DAYS.map(({ id, label }) => {
+          const active = application.days.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              aria-label={t(label)}
+              onClick={() => toggle("days", id)}
+              className={`cb-press flex min-h-12 cursor-pointer items-center justify-center rounded-xl border px-1 py-1.5 text-center text-[11px] leading-[1.15] transition-colors ${
+                active
+                  ? "border-ink bg-ink text-on-ink"
+                  : "border-line-soft bg-surface text-muted hover:border-line-mute"
+              }`}
+            >
+              {/* Wraps rather than truncates, and wraps *anywhere*
+                  rather than only at spaces. A seven-across row leaves
+                  about 43px a cell, which is plenty for "Wed" and six
+                  short of တနင်္ဂနွေ, and Burmese offers no space to
+                  break at — so plain wrapping left it spilling over its
+                  neighbour. A day name cut off names no day at all; a
+                  wrapped one still does, and the cells grow to match
+                  the tallest. */}
+              <span aria-hidden className="[overflow-wrap:anywhere]">
+                {t(DAY_SHORT[id])}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <Problem>{problem("careers.errDays")}</Problem>
+
+      <p className="m-0 mb-2.5 mt-6 text-[12px] leading-[1.5] text-muted">
+        {t("careers.typesNote")}
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        {EMPLOYMENT_TYPES.map(({ id, label }) => {
+          const active = application.employmentTypes.includes(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => toggle("employmentTypes", id)}
+              className={`cb-press cursor-pointer rounded-xl border px-2 py-3 text-[12px] leading-tight transition-colors ${
+                active
+                  ? "border-ink bg-ink text-on-ink"
+                  : "border-line-soft bg-surface text-ink hover:border-line-mute"
+              }`}
+            >
+              {t(label)}
+            </button>
+          );
+        })}
+      </div>
+      <Problem>{problem("careers.errTypes")}</Problem>
+
+      <div className="mt-6">
+        <Field
+          label={t("careers.earliestStart")}
+          type="date"
+          value={application.earliestStart}
+          onChange={(value) => set("earliestStart", value)}
+          optional
+        />
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
@@ -590,123 +734,8 @@ export default function ApplicationForm({
           {step === 1 ? (
             <>
               <StepHead title={t("careers.stepWork")} />
-              {/* Two different questions wearing the same control.
-                  Arriving from a card, the job is settled and shown at the top
-                  of the page, so the only thing left worth asking is whether
-                  they would take any of the others — which a small shop very
-                  much wants to know, and which is why this list didn't just
-                  get deleted. Arriving with no job, it is the original
-                  question and the only place it gets asked. */}
-              <Legend first>{job ? t("careers.alsoHappy") : t("careers.secRole")}</Legend>
-              <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
-                {job ? t("careers.alsoHappyNote") : t("careers.positionsNote")}
-              </p>
-              {/* Cards, not bare pills. A pill saying "Kitchen and prep" tells
-                  somebody the name of a job they may never have done; a line
-                  underneath tells them what the morning is actually like, which
-                  is what they're deciding about. */}
-              <div className="flex flex-col gap-2">
-                {POSITIONS.filter((position) => position.id !== job).map(({ id, label }) => {
-                  const active = application.positions.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggle("positions", id)}
-                      className={`cb-press flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 text-start transition-colors ${
-                        active
-                          ? "border-ink bg-raise"
-                          : "border-line-soft bg-surface hover:border-line-mute"
-                      }`}
-                    >
-                      <Tick on={active} />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[14px] leading-tight text-ink">{t(label)}</span>
-                        <span className="mt-1 block text-[12px] leading-[1.45] text-muted">
-                          {t(POSITION_NOTE[id])}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <Problem>{problem("careers.errPositions")}</Problem>
-
-              <Legend>{t("careers.secWhen")}</Legend>
-              <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
-                {t("careers.daysNote")}
-              </p>
-              {/* Seven across. As a column of seven wordy pills this was the
-                  tallest control on the page and the hardest to read as a
-                  week; as a row it's a week. */}
-              <div className="grid grid-cols-7 gap-1.5">
-                {DAYS.map(({ id, label }) => {
-                  const active = application.days.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      aria-pressed={active}
-                      aria-label={t(label)}
-                      onClick={() => toggle("days", id)}
-                      className={`cb-press flex min-h-12 cursor-pointer items-center justify-center rounded-xl border px-1 py-1.5 text-center text-[11px] leading-[1.15] transition-colors ${
-                        active
-                          ? "border-ink bg-ink text-on-ink"
-                          : "border-line-soft bg-surface text-muted hover:border-line-mute"
-                      }`}
-                    >
-                      {/* Wraps rather than truncates, and wraps *anywhere*
-                          rather than only at spaces. A seven-across row leaves
-                          about 43px a cell, which is plenty for "Wed" and six
-                          short of တနင်္ဂနွေ, and Burmese offers no space to
-                          break at — so plain wrapping left it spilling over its
-                          neighbour. A day name cut off names no day at all; a
-                          wrapped one still does, and the cells grow to match
-                          the tallest. */}
-                      <span aria-hidden className="[overflow-wrap:anywhere]">
-                        {t(DAY_SHORT[id])}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <Problem>{problem("careers.errDays")}</Problem>
-
-              <p className="m-0 mb-2.5 mt-6 text-[12px] leading-[1.5] text-muted">
-                {t("careers.typesNote")}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {EMPLOYMENT_TYPES.map(({ id, label }) => {
-                  const active = application.employmentTypes.includes(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => toggle("employmentTypes", id)}
-                      className={`cb-press cursor-pointer rounded-xl border px-2 py-3 text-[12px] leading-tight transition-colors ${
-                        active
-                          ? "border-ink bg-ink text-on-ink"
-                          : "border-line-soft bg-surface text-ink hover:border-line-mute"
-                      }`}
-                    >
-                      {t(label)}
-                    </button>
-                  );
-                })}
-              </div>
-              <Problem>{problem("careers.errTypes")}</Problem>
-
-              <div className="mt-6">
-                <Field
-                  label={t("careers.earliestStart")}
-                  type="date"
-                  value={application.earliestStart}
-                  onChange={(value) => set("earliestStart", value)}
-                  optional
-                />
-              </div>
+              {job ? whenSection(true) : jobsSection(true)}
+              {job ? jobsSection(false) : whenSection(false)}
 
               <Legend>{t("careers.secChecks")}</Legend>
               <div className="flex flex-col gap-2.5">
