@@ -433,7 +433,7 @@ export const en = {
   "about.p4":
     "Thank you for supporting a neighborhood business. We look forward to welcoming you back, right around the corner.",
   "about.speakToTeam": "To speak with a member of our team:",
-  "about.workWithUs": "Work with us",
+  "about.workWithUs": "We are hiring!",
 
   // ——— Riley ———
   "chat.name": "Riley",
@@ -569,12 +569,12 @@ export const en = {
   "careers.positionsNote": "Pick as many as you like.",
   "careers.posCounter": "Counter and register",
   "careers.posCounterNote": "Take orders, run the till, learn the regulars.",
-  "careers.posBaker": "Baker",
-  "careers.posBakerNote": "Mixing, shaping and boiling, starting at 4am.",
   "careers.posKitchen": "Kitchen and prep",
   "careers.posKitchenNote": "Spreads, sandwiches, keeping the line stocked.",
   "careers.posShiftLead": "Shift lead",
   "careers.posShiftLeadNote": "Run a shift, open or close, sort out the day.",
+  "careers.posManager": "Manager",
+  "careers.posManagerNote": "Ordering, the schedule, hiring, and how the whole shop runs.",
 
   "careers.daysNote": "We're open seven days, so weekends count.",
   "careers.dayMon": "Monday",
@@ -653,6 +653,7 @@ export const en = {
   "careers.errEmail": "Add an email we can reply to.",
   "careers.errPhone": "Add a number we can reach you on.",
   "careers.errCity": "Add the city you live in.",
+  "careers.errState": "Add your state.",
   "careers.errPositions": "Pick at least one job you'd like to do.",
   "careers.errDays": "Pick at least one day you can work.",
   "careers.errTypes": "Pick the hours you're looking for.",

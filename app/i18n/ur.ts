@@ -407,7 +407,7 @@ export const ur: Table = {
   "about.p4":
     "محلے کے کاروبار کا ساتھ دینے کا شکریہ۔ ہم آپ کا دوبارہ خیرمقدم کرنے کے منتظر ہیں، بالکل کونے کے پاس۔",
   "about.speakToTeam": "ہماری ٹیم کے کسی فرد سے بات کرنے کے لیے:",
-  "about.workWithUs": "ہمارے ساتھ کام کریں",
+  "about.workWithUs": "ہم بھرتی کر رہے ہیں!",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -542,12 +542,12 @@ export const ur: Table = {
   "careers.positionsNote": "جتنے چاہیں منتخب کریں۔",
   "careers.posCounter": "کاؤنٹر اور کیش رجسٹر",
   "careers.posCounterNote": "آرڈر لینا، کاؤنٹر چلانا، باقاعدہ گاہکوں کو جاننا۔",
-  "careers.posBaker": "بیکر",
-  "careers.posBakerNote": "گوندھنا، شکل دینا اور اُبالنا، صبح 4 بجے سے۔",
   "careers.posKitchen": "باورچی خانہ اور تیاری",
   "careers.posKitchenNote": "اسپریڈ، سینڈوچ، اور لائن کو بھرا رکھنا۔",
   "careers.posShiftLead": "شفٹ انچارج",
   "careers.posShiftLeadNote": "شفٹ چلانا، کھولنا یا بند کرنا، دن کے معاملات سنبھالنا۔",
+  "careers.posManager": "منیجر",
+  "careers.posManagerNote": "آرڈرنگ، شیڈول، بھرتی، اور پوری دکان کیسے چلتی ہے۔",
 
   "careers.daysNote": "ہم ساتوں دن کھلے ہیں، تو ہفتہ اتوار بھی شامل ہیں۔",
   "careers.dayMon": "پیر",
@@ -622,6 +622,7 @@ export const ur: Table = {
   "careers.errEmail": "ایسا ای میل لکھیں جس پر ہم جواب دے سکیں۔",
   "careers.errPhone": "ایسا نمبر لکھیں جس پر ہم رابطہ کر سکیں۔",
   "careers.errCity": "جس شہر میں رہتے ہیں وہ لکھیں۔",
+  "careers.errState": "اپنی ریاست لکھیں۔",
   "careers.errPositions": "کم از کم ایک کام منتخب کریں جو آپ کرنا چاہیں گے۔",
   "careers.errDays": "کم از کم ایک دن منتخب کریں جب آپ کام کر سکیں۔",
   "careers.errTypes": "آپ کو جیسے اوقات چاہئیں وہ منتخب کریں۔",

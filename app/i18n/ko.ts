@@ -404,7 +404,7 @@ export const ko: Table = {
   "about.p4":
     "동네 가게를 응원해 주셔서 고맙습니다. 바로 코너에서 다시 뵙기를 기다리겠습니다.",
   "about.speakToTeam": "직원과 통화를 원하시면:",
-  "about.workWithUs": "함께 일하기",
+  "about.workWithUs": "채용 중입니다!",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -539,12 +539,12 @@ export const ko: Table = {
   "careers.positionsNote": "원하는 만큼 고르세요.",
   "careers.posCounter": "카운터·계산",
   "careers.posCounterNote": "주문 받기, 계산, 단골 손님 알아 가기.",
-  "careers.posBaker": "제빵",
-  "careers.posBakerNote": "반죽, 성형, 데치기. 새벽 4시 시작.",
   "careers.posKitchen": "주방·준비",
   "careers.posKitchenNote": "스프레드, 샌드위치, 라인 채워 두기.",
   "careers.posShiftLead": "시프트 리드",
   "careers.posShiftLeadNote": "시프트 운영, 오픈이나 마감, 그날 일 정리.",
+  "careers.posManager": "매니저",
+  "careers.posManagerNote": "발주, 근무표, 채용, 그리고 가게 전체가 돌아가는 방식.",
 
   "careers.daysNote": "일주일 내내 열기 때문에 주말도 포함됩니다.",
   "careers.dayMon": "월요일",
@@ -619,6 +619,7 @@ export const ko: Table = {
   "careers.errEmail": "답장할 수 있는 이메일을 입력해 주세요.",
   "careers.errPhone": "연락 가능한 전화번호를 입력해 주세요.",
   "careers.errCity": "사는 도시를 입력해 주세요.",
+  "careers.errState": "주를 입력해 주세요.",
   "careers.errPositions": "하고 싶은 일을 하나 이상 골라 주세요.",
   "careers.errDays": "근무 가능한 요일을 하나 이상 골라 주세요.",
   "careers.errTypes": "원하는 근무 형태를 골라 주세요.",

@@ -404,7 +404,7 @@ export const ja: Table = {
   "about.p4":
     "街のお店を支えてくださりありがとうございます。すぐ角を曲がったところで、またお会いできるのを楽しみにしています。",
   "about.speakToTeam": "スタッフとお話しになりたい場合:",
-  "about.workWithUs": "一緒に働く",
+  "about.workWithUs": "スタッフ募集中！",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -539,12 +539,12 @@ export const ja: Table = {
   "careers.positionsNote": "いくつでも選べます。",
   "careers.posCounter": "カウンター・レジ",
   "careers.posCounterNote": "注文を受け、レジを打ち、常連さんを覚える。",
-  "careers.posBaker": "ベイカー",
-  "careers.posBakerNote": "生地を仕込み、成形し、茹でる。朝4時から。",
   "careers.posKitchen": "キッチン・仕込み",
   "careers.posKitchenNote": "スプレッド、サンドイッチ、仕込みを切らさない。",
   "careers.posShiftLead": "シフトリーダー",
   "careers.posShiftLeadNote": "シフトを回し、開店か閉店を担い、その日を整える。",
+  "careers.posManager": "店長",
+  "careers.posManagerNote": "発注、シフト、採用、そして店全体の回し方。",
 
   "careers.daysNote": "週7日営業なので、週末も入ります。",
   "careers.dayMon": "月曜",
@@ -619,6 +619,7 @@ export const ja: Table = {
   "careers.errEmail": "返信できるメールアドレスを入力してください。",
   "careers.errPhone": "連絡できる電話番号を入力してください。",
   "careers.errCity": "お住まいの市区町村を入力してください。",
+  "careers.errState": "州を入力してください。",
   "careers.errPositions": "やってみたい仕事を1つ以上選んでください。",
   "careers.errDays": "働ける曜日を1つ以上選んでください。",
   "careers.errTypes": "希望する働き方を選んでください。",

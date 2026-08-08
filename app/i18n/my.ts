@@ -404,7 +404,7 @@ export const my: Table = {
   "about.p4":
     "ရပ်ကွက်လုပ်ငန်းငယ်တစ်ခုကို ပံ့ပိုးပေးသည့်အတွက် ကျေးဇူးတင်ပါသည်။ လမ်းထောင့်မှာပဲ ပြန်လည် ကြိုဆိုရန် စောင့်မျှော်နေပါမည်။",
   "about.speakToTeam": "ကျွန်ုပ်တို့အဖွဲ့ဝင်တစ်ဦးနှင့် စကားပြောလိုပါက:",
-  "about.workWithUs": "ကျွန်ုပ်တို့နှင့် အလုပ်လုပ်ရန်",
+  "about.workWithUs": "ဝန်ထမ်း ခေါ်ယူနေပါသည်！",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -539,12 +539,12 @@ export const my: Table = {
   "careers.positionsNote": "လိုသလောက် ရွေးပါ။",
   "careers.posCounter": "ကောင်တာနှင့် ငွေကိုင်",
   "careers.posCounterNote": "အော်ဒါယူ၊ ငွေကိုင်၊ ပုံမှန်ဖောက်သည်တွေကို မှတ်မိအောင်လုပ်။",
-  "careers.posBaker": "မုန့်ဖုတ်သမား",
-  "careers.posBakerNote": "မုန့်နယ်၊ ပုံသွင်း၊ ပြုတ် — မနက် ၄ နာရီက စ။",
   "careers.posKitchen": "မီးဖိုချောင်နှင့် ပြင်ဆင်ရေး",
   "careers.posKitchenNote": "အနှစ်များ၊ အသားညှပ်ပေါင်မုန့်များ၊ လိုင်းကို ပြည့်နေအောင် ထိန်း။",
   "careers.posShiftLead": "အလှည့်ခေါင်းဆောင်",
   "careers.posShiftLeadNote": "အလှည့်တစ်ခုကို ဦးဆောင်၊ ဆိုင်ဖွင့် သို့မဟုတ် ပိတ်၊ တစ်နေ့တာကို စီမံ။",
+  "careers.posManager": "မန်နေဂျာ",
+  "careers.posManagerNote": "ပစ္စည်းမှာယူခြင်း၊ အလှည့်ဇယား၊ ဝန်ထမ်းခန့်ခြင်းနှင့် ဆိုင်တစ်ခုလုံး လည်ပတ်ပုံ။",
 
   "careers.daysNote": "ခုနစ်ရက်လုံး ဖွင့်တာမို့ စနေတနင်္ဂနွေလည်း ပါဝင်ပါတယ်။",
   "careers.dayMon": "တနင်္လာ",
@@ -619,6 +619,7 @@ export const my: Table = {
   "careers.errEmail": "ပြန်စာပို့နိုင်မယ့် အီးမေးလ် ဖြည့်ပါ။",
   "careers.errPhone": "ဆက်သွယ်နိုင်မယ့် ဖုန်းနံပါတ် ဖြည့်ပါ။",
   "careers.errCity": "နေထိုင်တဲ့မြို့ ဖြည့်ပါ။",
+  "careers.errState": "ပြည်နယ် ဖြည့်ပါ။",
   "careers.errPositions": "လုပ်ချင်တဲ့ အလုပ် အနည်းဆုံး တစ်ခု ရွေးပါ။",
   "careers.errDays": "အလုပ်လုပ်နိုင်တဲ့ ရက် အနည်းဆုံး တစ်ရက် ရွေးပါ။",
   "careers.errTypes": "လိုချင်တဲ့ အလုပ်ချိန် ရွေးပါ။",

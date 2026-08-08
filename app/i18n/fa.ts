@@ -452,7 +452,7 @@ export const fa: Table = {
   "about.p4":
     "ممنون که از یک کسب‌وکار محلی حمایت می‌کنید. مشتاقانه منتظر دیدار دوبارهٔ شماییم، درست سر همین کوچه.",
   "about.speakToTeam": "برای صحبت با یکی از اعضای تیم ما:",
-  "about.workWithUs": "با ما کار کنید",
+  "about.workWithUs": "در حال استخدام هستیم!",
 
   // ——— Riley ———
   "chat.name": "رایلی",
@@ -591,12 +591,12 @@ export const fa: Table = {
   "careers.positionsNote": "هر تعداد که خواستید انتخاب کنید.",
   "careers.posCounter": "پیشخوان و صندوق",
   "careers.posCounterNote": "گرفتن سفارش، کار با صندوق، آشنا شدن با مشتری‌های همیشگی.",
-  "careers.posBaker": "نانوا",
-  "careers.posBakerNote": "ورز دادن، شکل دادن و آب‌پز کردن، از ساعت ۴ صبح.",
   "careers.posKitchen": "آشپزخانه و آماده‌سازی",
   "careers.posKitchenNote": "خمیرها، ساندویچ‌ها، و پر نگه داشتن خط کار.",
   "careers.posShiftLead": "سرشیفت",
   "careers.posShiftLeadNote": "گرداندن یک شیفت، باز کردن یا بستن، سر و سامان دادن به روز.",
+  "careers.posManager": "مدیر",
+  "careers.posManagerNote": "سفارش‌دهی، برنامهٔ شیفت‌ها، استخدام، و اینکه کل مغازه چطور می‌چرخد.",
 
   "careers.daysNote": "هفت روز هفته بازیم، پس آخر هفته هم حساب می‌شود.",
   "careers.dayMon": "دوشنبه",
@@ -671,6 +671,7 @@ export const fa: Table = {
   "careers.errEmail": "ایمیلی بنویسید که بتوانیم جواب بدهیم.",
   "careers.errPhone": "شماره‌ای بنویسید که بتوانیم با آن تماس بگیریم.",
   "careers.errCity": "شهری که در آن زندگی می‌کنید را بنویسید.",
+  "careers.errState": "ایالتتان را بنویسید.",
   "careers.errPositions": "دست‌کم یک کار که دوست دارید انتخاب کنید.",
   "careers.errDays": "دست‌کم یک روز که می‌توانید کار کنید انتخاب کنید.",
   "careers.errTypes": "ساعت‌هایی که دنبالش هستید را انتخاب کنید.",

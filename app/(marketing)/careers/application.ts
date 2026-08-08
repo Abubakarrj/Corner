@@ -54,11 +54,13 @@ import type { StringKey } from "../../i18n/en";
 // no rather than a date of birth, which is the narrowest form of the question
 // that still answers it.
 
+// Ordered by how much of the shop the job is responsible for, because that is
+// the order somebody reads a list of jobs in and asks "which of these am I?".
 export const POSITIONS = [
   { id: "counter", label: "careers.posCounter" },
-  { id: "baker", label: "careers.posBaker" },
   { id: "kitchen", label: "careers.posKitchen" },
   { id: "shift-lead", label: "careers.posShiftLead" },
+  { id: "manager", label: "careers.posManager" },
 ] as const satisfies readonly { id: string; label: StringKey }[];
 
 export type PositionId = (typeof POSITIONS)[number]["id"];
@@ -172,6 +174,12 @@ export function applicationErrors(application: Application): StringKey[] {
   need(EMAIL.test(application.email.trim()), "careers.errEmail");
   need(hasTenDigits(application.phone), "careers.errPhone");
   need(application.city.trim().length > 0, "careers.errCity");
+  // Required, though the answer is "CA" for nearly everybody. It was optional
+  // and that was the wrong trade: the saving was one tap, the cost was an
+  // OPTIONAL badge on the busiest row of the first step, and the person most
+  // likely to skip it — somebody applying from out of state — is the one whose
+  // answer carries the information.
+  need(application.state.trim().length > 0, "careers.errState");
   need(application.positions.length > 0, "careers.errPositions");
   need(application.days.length > 0, "careers.errDays");
   need(application.employmentTypes.length > 0, "careers.errTypes");

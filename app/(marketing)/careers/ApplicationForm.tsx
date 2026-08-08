@@ -73,6 +73,7 @@ const STEPS: { id: StepId; label: StringKey; owns: StringKey[] }[] = [
       "careers.errEmail",
       "careers.errPhone",
       "careers.errCity",
+      "careers.errState",
     ],
   },
   {
@@ -102,9 +103,9 @@ const DAY_SHORT: Record<DayId, StringKey> = {
 
 const POSITION_NOTE: Record<PositionId, StringKey> = {
   counter: "careers.posCounterNote",
-  baker: "careers.posBakerNote",
   kitchen: "careers.posKitchenNote",
   "shift-lead": "careers.posShiftLeadNote",
+  manager: "careers.posManagerNote",
 };
 
 export default function ApplicationForm() {
@@ -488,8 +489,8 @@ export default function ApplicationForm() {
                     label={t("careers.state")}
                     value={application.state}
                     onChange={(value) => set("state", value)}
+                    error={problem("careers.errState")}
                     autoComplete="address-level1"
-                    optional
                   />
                 </div>
               </div>

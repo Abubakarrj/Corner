@@ -408,7 +408,7 @@ export const es: Table = {
   "about.p4":
     "Gracias por apoyar a un negocio de barrio. Esperamos volver a verte, justo a la vuelta de la esquina.",
   "about.speakToTeam": "Para hablar con alguien de nuestro equipo:",
-  "about.workWithUs": "Trabaja con nosotros",
+  "about.workWithUs": "¡Estamos contratando!",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -544,12 +544,12 @@ export const es: Table = {
   "careers.positionsNote": "Elige las que quieras.",
   "careers.posCounter": "Mostrador y caja",
   "careers.posCounterNote": "Tomar pedidos, llevar la caja, conocer a la clientela.",
-  "careers.posBaker": "Panadería",
-  "careers.posBakerNote": "Amasar, formar y hervir, empezando a las 4 de la mañana.",
   "careers.posKitchen": "Cocina y preparación",
   "careers.posKitchenNote": "Untables, bocadillos y mantener la línea surtida.",
   "careers.posShiftLead": "Encargado de turno",
   "careers.posShiftLeadNote": "Llevar un turno, abrir o cerrar, resolver el día.",
+  "careers.posManager": "Encargado/a",
+  "careers.posManagerNote": "Los pedidos, el horario, las contrataciones y cómo funciona toda la tienda.",
 
   "careers.daysNote": "Abrimos los siete días, así que los fines de semana cuentan.",
   "careers.dayMon": "Lunes",
@@ -624,6 +624,7 @@ export const es: Table = {
   "careers.errEmail": "Escribe un correo al que podamos responder.",
   "careers.errPhone": "Escribe un número donde podamos localizarte.",
   "careers.errCity": "Escribe la ciudad donde vives.",
+  "careers.errState": "Escribe tu estado.",
   "careers.errPositions": "Elige al menos un puesto que te gustaría.",
   "careers.errDays": "Elige al menos un día que puedas trabajar.",
   "careers.errTypes": "Elige la jornada que buscas.",
