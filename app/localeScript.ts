@@ -7,7 +7,17 @@
 export const LOCALE_STORAGE_KEY = "cb-locale-v1";
 export const LOCALE_CHANGED_EVENT = "cb-locale-changed";
 
-export type LocaleId = "en" | "es" | "ko" | "ur" | "ja" | "zh" | "my";
+export type LocaleId =
+  | "en"
+  | "es"
+  | "fr"
+  | "it"
+  | "ko"
+  | "ur"
+  | "fa"
+  | "ja"
+  | "zh"
+  | "my";
 
 export type Locale = {
   id: LocaleId;
@@ -26,11 +36,18 @@ export type Locale = {
 export const LOCALES: Locale[] = [
   { id: "en", english: "English", native: "English", tag: "en", dir: "ltr" },
   { id: "es", english: "Spanish", native: "Español", tag: "es", dir: "ltr" },
+  { id: "fr", english: "French", native: "Français", tag: "fr", dir: "ltr" },
+  { id: "it", english: "Italian", native: "Italiano", tag: "it", dir: "ltr" },
   { id: "ko", english: "Korean", native: "한국어", tag: "ko", dir: "ltr" },
-  // The one right-to-left language here, and the reason `dir` exists in this
-  // table at all. Everything else about a locale is a lookup; this one changes
-  // the geometry of every screen.
+  // The right-to-left pair, and the reason `dir` exists in this table at all.
+  // Everything else about a locale is a lookup; these two change the geometry
+  // of every screen.
+  //
+  // Urdu was on its own here for a long time, which made it easy to read a
+  // mirroring bug as "the Urdu bug". Persian is the second, and the useful
+  // thing about a second is that anything broken in both is broken in RTL.
   { id: "ur", english: "Urdu", native: "اردو", tag: "ur", dir: "rtl" },
+  { id: "fa", english: "Persian", native: "فارسی", tag: "fa", dir: "rtl" },
   { id: "ja", english: "Japanese", native: "日本語", tag: "ja", dir: "ltr" },
   { id: "zh", english: "Chinese", native: "中文", tag: "zh-Hans", dir: "ltr" },
   { id: "my", english: "Burmese", native: "မြန်မာ", tag: "my", dir: "ltr" },

@@ -10,6 +10,9 @@ import {
 } from "../localeScript";
 import { en, type StringKey, type Table } from "./en";
 import { es } from "./es";
+import { fr } from "./fr";
+import { it } from "./it";
+import { fa } from "./fa";
 import { ko } from "./ko";
 import { ur } from "./ur";
 import { ja } from "./ja";
@@ -18,7 +21,7 @@ import { my } from "./my";
 
 export type { StringKey };
 
-const TABLES: Record<LocaleId, Table> = { en, es, ko, ur, ja, zh, my };
+const TABLES: Record<LocaleId, Table> = { en, es, fr, it, ko, ur, fa, ja, zh, my };
 
 // The chosen language, and the function that looks a string up in it.
 //
