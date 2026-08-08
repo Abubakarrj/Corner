@@ -505,6 +505,9 @@ export const zh: Table = {
   "careers.stepOf": "第 {n} 步，共 {total} 步",
   "careers.skipNote": "这一步全部选填。不适用的直接跳过，不会因此扣分。",
   "careers.leaveConfirm": "不提交就离开吗？你填写的内容不会保存。",
+  "careers.draftRestored": "从你上次停下的地方继续。内容只存在这台设备上，还没有发给我们。",
+  "careers.startOver": "重新开始",
+  "careers.startOverConfirm": "清空这份申请重新开始吗？现在填写的内容会消失。",
   "careers.schoolN": "学校 {n}",
   "careers.jobN": "工作 {n}",
   "careers.refN": "推荐人 {n}",
@@ -607,7 +610,7 @@ export const zh: Table = {
   "careers.eeo":
     "Corner Bagel 是一个公平、机会均等的工作场所。我们看的是你能做什么、以什么状态来上班、怎么对待别人。无论种族、宗教、年龄、身体状况、原籍国、性别、性取向、婚姻状况、退伍军人身份，或法律保护的任何其他身份，每一位申请人都会得到同样公平的考虑。",
   "careers.privacyNote":
-    "你的申请是私密的，只用于招聘。填完大约需要五分钟，在你提交之前不会保存任何内容。",
+    "你的申请是私密的，只用于招聘。填完大约需要五分钟，在你提交之前不会有任何内容发给我们；在那之前草稿会存在这台设备上，方便你回来接着填。",
 
   "careers.errFirstName": "请填写你的名。",
   "careers.errLastName": "请填写你的姓。",

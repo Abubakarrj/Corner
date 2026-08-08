@@ -22,8 +22,14 @@ import { en, type StringKey } from "../../i18n/en";
 // The form is translated into ten languages; this document isn't. It is read
 // by whoever is hiring, printed, and put in a folder, and a stack where the
 // labels change language between sheets is a stack nobody can skim. So every
-// label comes from the English table below, and only what the applicant typed
-// is in their own words.
+// label comes from the English table below.
+//
+// The answers are English too. They arrive here already translated — see
+// translate.ts, which runs before this and keeps the applicant's own words for
+// the covering email. That is what the `note` argument announces at the top of
+// the sheet: this page is a translation, and the original is in the mail with
+// it. When translation was unavailable the answers arrive in whatever language
+// they were written in, and the note says that instead.
 //
 // ——— The font, and what it can't draw ———
 //
@@ -252,6 +258,10 @@ export type RenderedApplication = {
 export async function renderApplicationPdf(
   application: Application,
   receivedAt: Date,
+  /** Printed under the date when the answers were translated, or when they
+      should have been and weren't. A hiring manager weighing how somebody
+      writes has to know whether they are reading the applicant or a machine. */
+  note?: string,
 ): Promise<RenderedApplication> {
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
@@ -276,6 +286,7 @@ export async function renderApplicationPdf(
   sheet.text("Job application", { size: 11, color: MUTED });
   sheet.gap(4);
   sheet.text(`Received ${stamp}`, { size: 9, color: MUTED });
+  if (note) sheet.text(note, { size: 9, color: MUTED });
 
   sheet.heading(t("careers.secYou"));
   // Substituted as one string rather than two, so an undrawable name says so

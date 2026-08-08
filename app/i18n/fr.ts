@@ -562,6 +562,9 @@ export const fr: Table = {
   "careers.stepOf": "Étape {n} sur {total}",
   "careers.skipNote": "Tout ceci est facultatif. Passez ce qui ne vous concerne pas, cela ne joue pas contre vous.",
   "careers.leaveConfirm": "Quitter sans envoyer ? Vos réponses ne seront pas conservées.",
+  "careers.draftRestored": "On a repris là où vous en étiez. Conservé sur cet appareil, pas envoyé chez nous.",
+  "careers.startOver": "Recommencer",
+  "careers.startOverConfirm": "Effacer cette candidature et recommencer ? Ce qui est saisi sera perdu.",
   "careers.schoolN": "Établissement {n}",
   "careers.jobN": "Emploi {n}",
   "careers.refN": "Référence {n}",
@@ -664,7 +667,7 @@ export const fr: Table = {
   "careers.eeo":
     "Corner Bagel est un lieu de travail juste et à égalité des chances. Nous recrutons les gens pour ce qu'ils savent faire, la façon dont ils se présentent et la façon dont ils traitent les autres. Chaque candidature est examinée équitablement, sans considération d'origine, de religion, d'âge, de handicap, de nationalité, de genre, d'orientation sexuelle, de situation familiale, de statut d'ancien combattant, ni d'aucun autre statut protégé par la loi.",
   "careers.privacyNote":
-    "Votre candidature est confidentielle et sert uniquement au recrutement. Le formulaire prend environ cinq minutes et rien n'est enregistré tant que vous ne l'avez pas envoyé.",
+    "Votre candidature est confidentielle et sert uniquement au recrutement. Le formulaire prend environ cinq minutes et rien ne nous parvient tant que vous ne l'avez pas envoyé ; d'ici là, un brouillon est conservé sur cet appareil pour que vous puissiez y revenir.",
 
   "careers.errFirstName": "Indiquez votre prénom.",
   "careers.errLastName": "Indiquez votre nom.",

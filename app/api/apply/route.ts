@@ -8,11 +8,18 @@ import {
 } from "../../(marketing)/careers/application";
 import { en, type StringKey } from "../../i18n/en";
 import { renderApplicationPdf } from "./applicationPdf";
+import { toEnglish, type Translation } from "./translate";
 
 // Job applications.
 //
-// The form posts here, this renders the PDF and mails it to the shop. There is
-// no database: an application is a document somebody reads once and either
+// The form posts here, this renders the PDF and mails it to the shop.
+//
+// Between those two: the answers are put into English, because the form asks
+// in ten languages and the person reading them reads one. The applicant's own
+// words go in the email underneath. See translate.ts — it never blocks the
+// send, so a translation outage costs a readable document, not an application.
+//
+// There is no database: an application is a document somebody reads once and either
 // acts on or doesn't, and standing up a store to hold personal data we have no
 // plan to query is the wrong trade. The mailbox is the record.
 //
@@ -93,10 +100,7 @@ function yesNo(value: boolean | null): string {
   return value === null ? "—" : value ? t("careers.yes") : t("careers.no");
 }
 
-/** The whole application as plain text, in the order the form asked. This is
-    what carries answers the PDF's font can't draw — email is HTML and renders
-    every script correctly, so the two together are always complete even when
-    the attachment alone isn't. */
+/** The whole application as plain text, in the order the form asked. */
 function summarize(application: Application): string {
   const lines: string[] = [];
   const add = (label: string, value: string) => {
@@ -151,11 +155,39 @@ function summarize(application: Application): string {
   return lines.join("\n");
 }
 
+/** English first, because that is what somebody is going to read, and the
+    applicant's own words under it, because a translation is an interpretation
+    and nobody should be judged on a paraphrase with no way to check it. Email
+    is HTML and renders every script correctly, so this half is always complete
+    even when the PDF's font can't draw the original. */
+function bothLanguages(original: Application, translation: Translation): string {
+  const english = summarize(translation.english);
+  if (!translation.translated) {
+    return translation.failed
+      ? `NOT TRANSLATED — the translation service was unavailable, so this is` +
+          ` as it was written${translation.from ? `, in ${translation.from}` : ""}.\n\n${english}`
+      : english;
+  }
+  return [
+    `TRANSLATED INTO ENGLISH${translation.from ? ` FROM ${translation.from.toUpperCase()}` : ""}`,
+    english,
+    "",
+    "———",
+    "",
+    "AS THE APPLICANT WROTE IT",
+    summarize(original),
+  ].join("\n");
+}
+
 async function mailToShop(
   application: Application,
+  translation: Translation,
   pdf: { bytes: Uint8Array; filename: string; substituted: boolean },
 ): Promise<void> {
-  const name = `${application.firstName} ${application.lastName}`.trim();
+  // The name on the envelope is the English one, so a subject line and an
+  // inbox list stay legible. The original is in the body.
+  const name =
+    `${translation.english.firstName} ${translation.english.lastName}`.trim();
   const response = await fetch(LOOPS_TRANSACTIONAL_URL, {
     method: "POST",
     headers: {
@@ -170,10 +202,11 @@ async function mailToShop(
         applicantEmail: application.email,
         applicantPhone: application.phone,
         positions: chosen(application.positions, POSITIONS),
-        summary: summarize(application),
+        summary: bothLanguages(application, translation),
         // So the reader knows to trust the text over the attachment when the
         // two disagree, rather than assuming the PDF lost something.
         pdfIncomplete: pdf.substituted ? "yes" : "no",
+        translatedFrom: translation.translated ? (translation.from ?? "another language") : "",
       },
       attachments: [
         {
@@ -224,9 +257,20 @@ export async function POST(request: Request) {
     return Response.json({ error: missing[0] }, { status: 400 });
   }
 
+  const locale = typeof body.locale === "string" ? body.locale : undefined;
+  const translation = await toEnglish(application, locale);
+
+  const note = translation.translated
+    ? `Translated into English${translation.from ? ` from ${translation.from}` : ""}.` +
+      " The applicant's own words are in the covering email."
+    : translation.failed
+      ? `Not translated — the translation service was unavailable.` +
+        (translation.from ? ` The answers below are in ${translation.from}.` : "")
+      : undefined;
+
   let pdf;
   try {
-    pdf = await renderApplicationPdf(application, new Date());
+    pdf = await renderApplicationPdf(translation.english, new Date(), note);
   } catch (error) {
     console.error("[apply] PDF render failed:", error);
     return Response.json({ error: "careers.errSendFailed" }, { status: 500 });
@@ -238,13 +282,13 @@ export async function POST(request: Request) {
     // console" is the whole endpoint.
     console.warn(
       `[apply] no Loops credentials — application from ${application.email} was NOT mailed.` +
-        ` ${pdf.filename}, ${pdf.bytes.length} bytes\n${summarize(application)}`,
+        ` ${pdf.filename}, ${pdf.bytes.length} bytes\n${bothLanguages(application, translation)}`,
     );
     return Response.json({ ok: true, mailed: false }, { status: 200 });
   }
 
   try {
-    await mailToShop(application, pdf);
+    await mailToShop(application, translation, pdf);
   } catch (error) {
     console.error("[apply] mail failed:", error);
     return Response.json({ error: "careers.errSendFailed" }, { status: 502 });

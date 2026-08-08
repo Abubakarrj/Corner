@@ -432,6 +432,10 @@ const enPrivacy: Policy = {
           kind: "p",
           text: "Applications are delivered to our hiring email as a document. They are not added to any customer database and are not used for marketing. We keep them for up to one year and then delete them. Applicants have the same rights described above — access, correction, deletion, and a copy — and can exercise them by writing to {email}.",
         },
+        {
+          kind: "p",
+          text: "While you are filling the form in, an unfinished draft is kept in your own browser so you can come back to it. It is not sent to us, it is deleted when you submit or after seven days, and “Start over” on the form removes it at once. If you write your answers in a language other than English, we translate them so we can read them, and we keep what you actually wrote alongside the translation.",
+        },
       ],
     },
     {

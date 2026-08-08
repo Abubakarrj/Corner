@@ -562,6 +562,9 @@ export const it: Table = {
   "careers.stepOf": "Passo {n} di {total}",
   "careers.skipNote": "Tutto questo è facoltativo. Salta quello che non ti riguarda: non ti penalizza.",
   "careers.leaveConfirm": "Esci senza inviare? Le tue risposte non verranno conservate.",
+  "careers.draftRestored": "Ripreso da dove avevi lasciato. Resta su questo dispositivo, a noi non arriva niente.",
+  "careers.startOver": "Ricomincia",
+  "careers.startOverConfirm": "Cancellare questa candidatura e ricominciare? Quello che c'è ora andrà perso.",
   "careers.schoolN": "Scuola {n}",
   "careers.jobN": "Lavoro {n}",
   "careers.refN": "Referenza {n}",
@@ -664,7 +667,7 @@ export const it: Table = {
   "careers.eeo":
     "Corner Bagel è un posto di lavoro equo e a pari opportunità. Assumiamo le persone per quello che sanno fare, per come si presentano e per come trattano gli altri. Ogni candidatura è valutata con la stessa equità, a prescindere da etnia, religione, età, disabilità, nazionalità, genere, orientamento sessuale, stato civile, servizio militare o qualsiasi altra condizione tutelata dalla legge.",
   "careers.privacyNote":
-    "La tua candidatura è privata e viene usata solo per le assunzioni. Il modulo richiede circa cinque minuti e non viene salvato nulla finché non lo invii.",
+    "La tua candidatura è privata e viene usata solo per le assunzioni. Il modulo richiede circa cinque minuti e a noi non arriva niente finché non lo invii; fino ad allora una bozza resta su questo dispositivo così puoi riprenderla.",
 
   "careers.errFirstName": "Scrivi il tuo nome.",
   "careers.errLastName": "Scrivi il tuo cognome.",

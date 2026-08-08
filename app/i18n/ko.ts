@@ -507,6 +507,9 @@ export const ko: Table = {
   "careers.stepOf": "{total}단계 중 {n}단계",
   "careers.skipNote": "여기는 전부 선택 사항입니다. 해당 없는 항목은 건너뛰세요. 불이익은 없습니다.",
   "careers.leaveConfirm": "보내지 않고 나가시겠어요? 작성하신 내용은 저장되지 않습니다.",
+  "careers.draftRestored": "작성하시던 곳부터 이어집니다. 이 기기에만 저장되며 저희에게 전송되지 않았습니다.",
+  "careers.startOver": "새로 시작",
+  "careers.startOverConfirm": "지금 작성한 내용을 지우고 새로 시작할까요? 여기 있는 내용은 사라집니다.",
   "careers.schoolN": "학교 {n}",
   "careers.jobN": "경력 {n}",
   "careers.refN": "추천인 {n}",
@@ -609,7 +612,7 @@ export const ko: Table = {
   "careers.eeo":
     "Corner Bagel은 공정하고 평등한 기회를 보장하는 일터입니다. 저희는 할 수 있는 일, 일하는 태도, 사람을 대하는 방식을 보고 채용합니다. 인종, 종교, 나이, 장애, 출신 국가, 성별, 성적 지향, 혼인 여부, 병역 사항, 그 밖에 법으로 보호되는 어떤 사유와도 관계없이 모든 지원자를 공정하게 심사합니다.",
   "careers.privacyNote":
-    "지원서는 비공개이며 채용 목적으로만 사용됩니다. 작성에는 5분쯤 걸리고, 제출하기 전까지는 아무것도 저장되지 않습니다.",
+    "지원서는 비공개이며 채용 목적으로만 사용됩니다. 작성에는 5분쯤 걸리고, 제출하기 전까지는 저희에게 아무것도 전송되지 않습니다. 그때까지는 이 기기에 임시 저장되어 이어서 작성하실 수 있습니다.",
 
   "careers.errFirstName": "이름을 입력해 주세요.",
   "careers.errLastName": "성을 입력해 주세요.",

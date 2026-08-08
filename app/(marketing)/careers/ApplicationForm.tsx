@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { Button, ButtonLink } from "../../ui/Button";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
-import { useServerText, useT, type StringKey } from "../../i18n";
+import { useLocale, useServerText, useT, type StringKey } from "../../i18n";
 import {
   ANSWER_MAX,
   DAYS,
@@ -15,11 +15,11 @@ import {
   MAX_REFERENCES,
   POSITIONS,
   applicationErrors,
-  emptyApplication,
   type Application,
   type DayId,
   type PositionId,
 } from "./application";
+import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from "./draft";
 
 const { cream } = PALETTE;
 
@@ -100,28 +100,6 @@ const DAY_SHORT: Record<DayId, StringKey> = {
   sun: "careers.dayShortSun",
 };
 
-/** Has anything been entered? Walks the whole application rather than
-    watching a "touched" flag, so it stays true when somebody types into a
-    field and then goes back and clears it — a form they've worked on and
-    emptied is one they can leave without being asked. */
-function started(application: Application): boolean {
-  return Object.values(application).some((value) => {
-    if (typeof value === "string") return value.trim() !== "";
-    if (typeof value === "boolean") return true;
-    if (Array.isArray(value)) {
-      return value.some((entry) =>
-        // A row of a school or a job counts only if something was typed into
-        // it, since each list starts with one blank. An id in positions, days
-        // or employmentTypes is itself the answer.
-        typeof entry === "object" && entry !== null
-          ? Object.values(entry).some((cell) => String(cell).trim() !== "")
-          : true,
-      );
-    }
-    return false;
-  });
-}
-
 const POSITION_NOTE: Record<PositionId, StringKey> = {
   counter: "careers.posCounterNote",
   baker: "careers.posBakerNote",
@@ -132,25 +110,50 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
 export default function ApplicationForm() {
   const t = useT();
   const st = useServerText();
+  const locale = useLocale();
   const router = useRouter();
 
-  const [application, setApplication] = useState<Application>(() => ({
-    ...emptyApplication(),
-    // One empty row of each rather than an "add" button over nothing. A blank
-    // row shows what the section wants; an empty section with a button shows
-    // only that there's work to do.
-    education: [{ school: "", focus: "", finished: "" }],
-    employment: [{ employer: "", role: "", from: "", to: "" }],
-    references: [{ name: "", relationship: "", contact: "" }],
-  }));
-  const [step, setStep] = useState(0);
+  // Two sources, one answer. `saved` is whatever was on the device when the
+  // page opened — null on the server and on the first client render, then the
+  // real thing once hydration finishes. `edited` is null until somebody
+  // touches something, and from then on it is the truth.
+  //
+  // Keeping the application and the step in one object rather than two states
+  // is what makes that work: the moment either changes, both are taken over
+  // together, so there is never a half-adopted draft.
+  const saved = useSavedDraft();
+  const [edited, setEdited] = useState<Draft | null>(null);
+  const current = edited ?? saved ?? FRESH;
+  const application = current.application;
+  const step = current.step;
   // Per step, so moving forward doesn't paint the next screen red before it
   // has been touched.
   const [tried, setTried] = useState<Set<number>>(new Set());
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // Something appearing pre-filled with no explanation is unsettling, and on a
+  // shared device it is somebody else's answers until told otherwise. Stays up
+  // after they start editing — it is still a restored application — and goes
+  // when "start over" clears the store.
+  const restored = saved !== null;
+  // Whether the draft actually reached storage. Private mode, a full quota and
+  // storage switched off all fail silently, and the difference decides whether
+  // walking away from this page is safe or costs everything.
+  const [safeToLeave, setSafeToLeave] = useState(true);
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Debounced, because this fires on every keystroke and a write per character
+  // is a write per character. 500ms after the typing stops is soon enough that
+  // nothing is lost to a tab closing, and rare enough to be free.
+  useEffect(() => {
+    if (sent) return;
+    if (!started(application)) return;
+    const timer = setTimeout(() => {
+      setSafeToLeave(saveDraft({ step, application }));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [application, step, sent]);
 
   // Bot defences, matching /api/drop-list: a field no human can see, and a
   // floor on how fast the form can be filled in. Both are checked server-side.
@@ -164,24 +167,26 @@ export default function ApplicationForm() {
   const shown = tried.has(step) ? new Set<StringKey>(missingHere) : new Set<StringKey>();
   const problem = (key: StringKey) => (shown.has(key) ? t(key) : null);
 
+  function setApplication(next: Application) {
+    setEdited({ step, application: next });
+  }
+
   function set<K extends keyof Application>(key: K, value: Application[K]) {
-    setApplication((current) => ({ ...current, [key]: value }));
+    setApplication({ ...application, [key]: value });
   }
 
   function toggle(key: "positions" | "days" | "employmentTypes", id: string) {
-    setApplication((current) => {
-      const list = current[key] as string[];
-      return {
-        ...current,
-        [key]: list.includes(id) ? list.filter((item) => item !== id) : [...list, id],
-      };
+    const list = application[key] as string[];
+    setApplication({
+      ...application,
+      [key]: list.includes(id) ? list.filter((item) => item !== id) : [...list, id],
     });
   }
 
   // Scrolls rather than jumping: a step change swaps the whole body, and
   // landing halfway down the new one reads as the page having broken.
   function goTo(next: number) {
-    setStep(next);
+    setEdited({ step: next, application });
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -196,12 +201,24 @@ export default function ApplicationForm() {
     return STEPS.findIndex((entry) => entry.owns.some((key) => missing.includes(key)));
   }
 
-  // Leaving loses everything, because nothing is stored until it's sent — so
-  // it asks first, but only when there is something to lose. Confirming an
-  // empty form is a dialog that teaches people to dismiss dialogs.
+  // Leaving used to lose everything, so it always asked. The draft makes that
+  // untrue, and a dialog warning about a loss that won't happen is a dialog
+  // that teaches people to dismiss dialogs. It now only asks when the draft
+  // could not be written — which is the one case where the warning is real.
   function leave() {
-    if (started(application) && !window.confirm(t("careers.leaveConfirm"))) return;
+    if (started(application) && !safeToLeave && !window.confirm(t("careers.leaveConfirm"))) return;
     router.push("/");
+  }
+
+  // Somebody else's half-finished application on a shared phone, or your own
+  // that you would rather begin again.
+  function startOver() {
+    if (!window.confirm(t("careers.startOverConfirm"))) return;
+    clearDraft();
+    setEdited(FRESH);
+    setTried(new Set());
+    setError(null);
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function send(event: React.FormEvent) {
@@ -248,12 +265,19 @@ export default function ApplicationForm() {
           ),
           company: honeypot,
           elapsed_ms: elapsed,
+          // What they were reading the form in. The server uses it to decide
+          // whether the answers need translating before the shop is sent a
+          // document it can read.
+          locale,
         }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
         throw new Error(body?.error ?? "careers.errSendFailed");
       }
+      // Only once it is genuinely away. Clearing on the attempt would throw
+      // away the answers on exactly the failure the person needs them for.
+      clearDraft();
       setSent(true);
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : "careers.errSendFailed");
@@ -342,6 +366,29 @@ export default function ApplicationForm() {
             widths make the remaining distance legible at a glance, which is
             the only thing a progress indicator is for. Visited steps are
             pressable so going back to change an answer costs one tap. */}
+        {/* ——— "This was already here" ———
+            A form that opens pre-filled with no explanation is unsettling, and
+            on a shared phone the answers in it may not be yours. So it says
+            where they came from, and the way to be rid of them is in the same
+            sentence rather than somewhere you'd have to go looking. */}
+        {restored ? (
+          <div
+            role="status"
+            className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-line-soft bg-surface px-4 py-3"
+          >
+            <p className="m-0 min-w-0 flex-1 text-[12px] leading-[1.5] text-muted">
+              {t("careers.draftRestored")}
+            </p>
+            <button
+              type="button"
+              onClick={startOver}
+              className="cb-press shrink-0 cursor-pointer text-[12px] text-ink underline transition-opacity hover:opacity-70"
+            >
+              {t("careers.startOver")}
+            </button>
+          </div>
+        ) : null}
+
         <nav aria-label={t("careers.stepOf", { n: step + 1, total: STEPS.length })} className="mt-9">
           <div className="flex gap-1.5">
             {STEPS.map((entry, index) => {

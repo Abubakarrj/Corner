@@ -538,6 +538,9 @@ export const en = {
   "careers.stepOf": "Step {n} of {total}",
   "careers.skipNote": "All of this is optional. Skip anything that doesn't apply — it won't count against you.",
   "careers.leaveConfirm": "Leave without sending? Your answers won't be kept.",
+  "careers.draftRestored": "Picked up where you left off. Kept on this device, not sent to us.",
+  "careers.startOver": "Start over",
+  "careers.startOverConfirm": "Clear this application and start again? What's here now will be gone.",
   "careers.schoolN": "School {n}",
   "careers.jobN": "Job {n}",
   "careers.refN": "Reference {n}",
@@ -643,7 +646,7 @@ export const en = {
   "careers.eeo":
     "Corner Bagel is a fair and equal opportunity workplace. We hire people for what they can do, how they show up, and how they treat others. Everyone is considered fairly, regardless of race, religion, age, disability, national origin, gender, sexual orientation, marital status, veteran status, or any other status protected by law.",
   "careers.privacyNote":
-    "Your application is private and used only for hiring purposes. The form takes about five minutes to complete, and nothing is saved until you submit it.",
+    "Your application is private and used only for hiring purposes. The form takes about five minutes to complete, and nothing is sent to us until you submit it — until then a draft is kept on this device so you can come back to it.",
 
   "careers.errFirstName": "Add your first name.",
   "careers.errLastName": "Add your last name.",

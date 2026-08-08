@@ -507,6 +507,9 @@ export const ja: Table = {
   "careers.stepOf": "ステップ {n}／{total}",
   "careers.skipNote": "ここはすべて任意です。当てはまらないものは飛ばして構いません。不利にはなりません。",
   "careers.leaveConfirm": "送信せずに移動しますか？入力内容は保存されません。",
+  "careers.draftRestored": "前回の続きから再開しました。この端末に保存されているだけで、当店には届いていません。",
+  "careers.startOver": "最初から",
+  "careers.startOverConfirm": "この応募内容を消して最初からやり直しますか？いま入力されているものはなくなります。",
   "careers.schoolN": "学校 {n}",
   "careers.jobN": "職歴 {n}",
   "careers.refN": "推薦者 {n}",
@@ -609,7 +612,7 @@ export const ja: Table = {
   "careers.eeo":
     "Corner Bagel は公正で機会均等な職場です。何ができるか、どう仕事に向き合うか、人にどう接するかで採用します。人種、宗教、年齢、障害、出身国、性別、性的指向、婚姻状況、兵役の有無、その他法律で保護されるいかなる事由にもかかわらず、すべての方を公平に検討します。",
   "careers.privacyNote":
-    "ご応募の内容は非公開で、採用の目的にのみ使用します。入力は5分ほどで終わり、送信するまで何も保存されません。",
+    "ご応募の内容は非公開で、採用の目的にのみ使用します。入力は5分ほどで終わり、送信するまで当店には何も届きません。それまでは下書きがこの端末に保存され、続きから再開できます。",
 
   "careers.errFirstName": "名を入力してください。",
   "careers.errLastName": "姓を入力してください。",
