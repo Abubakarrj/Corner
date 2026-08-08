@@ -113,6 +113,7 @@ function summarize(application: Application): string {
   add("Where", [application.city, application.state].filter(Boolean).join(", "));
   lines.push("");
   add(t("careers.secRole"), chosen(application.positions, POSITIONS));
+  add("Applied from", application.location);
   add("Days", chosen(application.days, DAYS));
   add("Hours", chosen(application.employmentTypes, EMPLOYMENT_TYPES));
   add(t("careers.earliestStart"), application.earliestStart);

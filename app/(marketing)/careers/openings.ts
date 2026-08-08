@@ -30,20 +30,21 @@ import type { PositionId } from "./application";
 //
 // Leave `since` off and there is simply no badge.
 //
-// ——— Read this before adding a second shop ———
+// ——— The shop travels with the application ———
 //
-// Every card links to /careers/apply?role=<role> and nothing else, so two rows
-// with the same role at different shops lead to the same form and arrive as
-// the same application. With one shop that is fine — there is nowhere else it
-// could be for. The moment there are two, "Counter, Koreatown" and "Counter,
-// Hancock Park" become indistinguishable once sent, and the person reading
-// them cannot tell who applied to which.
+// A card links to /careers/apply?role=<role>&at=<location>, so the two rows
+// "Counter, Koreatown" and "Counter, Hancock Park" stay distinguishable after
+// they are sent. Without the second half they would arrive as the same
+// application and the person reading it could not tell which shop it was for.
 //
-// Fixing it is small and deliberately not done yet: carry the shop in the link
-// as well, take it in apply/page.tsx, check it against this list so nothing
-// arbitrary reaches the document, and print it on the PDF and in the email. It
-// is a value carried from the link, not a new question — nobody should have to
-// answer something they already answered by pressing a card.
+// This list is what makes `at` safe: apply/page.tsx checks the pair against
+// OPENINGS and drops anything that isn't on it, so nothing arbitrary from a
+// URL reaches the PDF or the email. The value is carried, never asked —
+// somebody who pressed "Manager, Hancock Park" has already said where, and a
+// form that then asks is a form that wasn't listening. It prints as "Applied
+// from" on both the document and the covering mail.
+//
+// So adding a row for a new shop is the whole job. Nothing else needs touching.
 
 export type Opening = {
   role: PositionId;

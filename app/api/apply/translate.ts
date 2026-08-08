@@ -87,7 +87,11 @@ function hasNonLatin(text: string): boolean {
 /** The fields to send, in a stable order. Dates, emails, phone numbers and
     the id-based answers are left alone: they are already language-neutral, and
     a model asked to "translate" a phone number is a model given the chance to
-    change one. */
+    change one.
+
+    `location` is left alone too, and for a different reason: it is our own
+    shop's name, carried from a link rather than typed. Koreatown rendered into
+    Korean would be a place that appears on no sign we own. */
 function collect(application: Application): Field[] {
   const fields: Field[] = [];
   const add = (id: string, text: string) => {

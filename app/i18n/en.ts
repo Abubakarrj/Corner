@@ -528,7 +528,11 @@ export const en = {
   // questions that were cut and why.
   "careers.title": "Work at Corner Bagel",
   "careers.eyebrow": "We're hiring",
-  "careers.lede": "Small shop, early mornings, good bread.",
+  "careers.applyingFor": "Applying for",
+  "careers.differentJob": "Different job?",
+  "careers.alsoHappy": "Also happy to do",
+  "careers.alsoHappyNote": "Optional. Tick anything else you'd take a shift on — it makes you easier to fit into a week.",
+  "careers.lede": "The shop everyone talks about on the corner.",
   "careers.aboutHeading": "About the shop",
   "careers.apply": "Apply",
   "careers.new": "New",

@@ -106,6 +106,14 @@ export type Application = {
   state: string;
 
   positions: PositionId[];
+  // Which shop the card they pressed was for. Carried from the link, never
+  // asked — somebody who pressed "Manager, Hancock Park" has already said
+  // where, and a form that then asks is a form that wasn't listening. Empty
+  // when they came in through "Not sure which?", which is honest: they didn't
+  // pick a shop, so we don't claim they did.
+  //
+  // Never required, for the same reason. It is context, not an answer.
+  location: string;
   days: DayId[];
   employmentTypes: EmploymentTypeId[];
   earliestStart: string;
@@ -138,7 +146,7 @@ export type Application = {
 export function emptyApplication(): Application {
   return {
     firstName: "", lastName: "", email: "", phone: "", city: "", state: "",
-    positions: [], days: [], employmentTypes: [], earliestStart: "",
+    positions: [], location: "", days: [], employmentTypes: [], earliestStart: "",
     authorizedToWork: null, isAdult: null, servSafe: null,
     education: [], employment: [], references: [],
     goals: "", hardestDecision: "", toSucceed: "", heardFrom: "",
@@ -223,6 +231,7 @@ export function normalizeApplication(raw: unknown): Application {
     state: str(body.state, 40),
 
     positions: ids(body.positions, POSITIONS.map((p) => p.id)),
+    location: str(body.location, 80),
     days: ids(body.days, DAYS.map((d) => d.id)),
     employmentTypes: ids(body.employmentTypes, EMPLOYMENT_TYPES.map((t) => t.id)),
     earliestStart: str(body.earliestStart, 40),

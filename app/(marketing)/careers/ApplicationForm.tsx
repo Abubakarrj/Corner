@@ -101,19 +101,30 @@ const DAY_SHORT: Record<DayId, StringKey> = {
   sun: "careers.dayShortSun",
 };
 
-/** The application with `role` selected, if it isn't already. Returns the very
-    same object when there is nothing to add, so the identity comparisons that
-    decide whether to write a draft keep working. */
-function withRole(draft: Draft, role: PositionId | null): Draft {
-  if (!role || draft.application.positions.includes(role)) return draft;
+/** The application with whatever the link said folded in: the job selected,
+    and the shop recorded. Returns the very same object when there is nothing
+    to add, so the identity comparisons that decide whether to write a draft
+    keep working. */
+function fromLink(draft: Draft, role: PositionId | null, location: string | null): Draft {
+  const addRole = role !== null && !draft.application.positions.includes(role);
+  const addWhere = location !== null && draft.application.location !== location;
+  if (!addRole && !addWhere) return draft;
   return {
     ...draft,
     application: {
       ...draft.application,
-      positions: [...draft.application.positions, role],
+      positions: addRole ? [...draft.application.positions, role] : draft.application.positions,
+      location: addWhere ? location : draft.application.location,
     },
   };
 }
+
+const POSITION_LABEL: Record<PositionId, StringKey> = {
+  counter: "careers.posCounter",
+  kitchen: "careers.posKitchen",
+  "shift-lead": "careers.posShiftLead",
+  manager: "careers.posManager",
+};
 
 const POSITION_NOTE: Record<PositionId, StringKey> = {
   counter: "careers.posCounterNote",
@@ -122,7 +133,13 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
   manager: "careers.posManagerNote",
 };
 
-export default function ApplicationForm({ role }: { role: PositionId | null }) {
+export default function ApplicationForm({
+  role,
+  location,
+}: {
+  role: PositionId | null;
+  location: string | null;
+}) {
   const t = useT();
   const st = useServerText();
   const locale = useLocale();
@@ -143,7 +160,7 @@ export default function ApplicationForm({ role }: { role: PositionId | null }) {
   // through a different card should gain that job, not lose their answers.
   // Memoised because it is compared by identity below and feeds the effect
   // that writes the draft.
-  const base = useMemo(() => withRole(saved ?? FRESH, role), [saved, role]);
+  const base = useMemo(() => fromLink(saved ?? FRESH, role, location), [saved, role, location]);
   const current = edited ?? base;
   const application = current.application;
   const step = current.step;
@@ -241,7 +258,7 @@ export default function ApplicationForm({ role }: { role: PositionId | null }) {
   function startOver() {
     if (!window.confirm(t("careers.startOverConfirm"))) return;
     clearDraft();
-    setEdited(withRole(FRESH, null));
+    setEdited(fromLink(FRESH, role, location));
     setTried(new Set());
     setError(null);
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -373,19 +390,51 @@ export default function ApplicationForm({ role }: { role: PositionId | null }) {
           <LanguagePicker />
         </div>
 
-        {/* ——— Masthead ——— */}
-        <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
-          {t("careers.eyebrow")}
-        </p>
-        <h1
-          className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
-          style={{ fontFamily: DISPLAY_FONT }}
-        >
-          {t("careers.title")}
-        </h1>
-        <p className="m-0 mt-3 max-w-[24em] text-[15px] leading-[1.55] text-muted">
-          {t("careers.lede")}
-        </p>
+        {/* ——— Masthead ———
+            When a card sent them here, the job is the headline. This page used
+            to open with the same eyebrow, the same title and the same lede as
+            /careers, which told somebody who had just pressed "Manager,
+            Hancock Park" nothing at all — not even that the press had
+            registered. The most useful sentence at the top of a form is what
+            it is a form for.
+
+            Without a job (the "Not sure which?" way in) there is nothing to
+            headline, so it keeps the general one. */}
+        {role ? (
+          <>
+            <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
+              {t("careers.applyingFor")}
+            </p>
+            <h1
+              className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
+              style={{ fontFamily: DISPLAY_FONT }}
+            >
+              {t(POSITION_LABEL[role])}
+            </h1>
+            <p className="m-0 mt-3 text-[15px] leading-[1.55] text-muted">
+              {location ? <span className="text-ink">{location}</span> : null}
+              {location ? " · " : null}
+              <Link href="/careers" className="underline hover:text-ink">
+                {t("careers.differentJob")}
+              </Link>
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
+              {t("careers.eyebrow")}
+            </p>
+            <h1
+              className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
+              style={{ fontFamily: DISPLAY_FONT }}
+            >
+              {t("careers.title")}
+            </h1>
+            <p className="m-0 mt-3 max-w-[24em] text-[15px] leading-[1.55] text-muted">
+              {t("careers.lede")}
+            </p>
+          </>
+        )}
 
         {/* ——— Where you are ———
             A rail of four segments rather than "1 2 3 4" circles: the segment
@@ -525,16 +574,23 @@ export default function ApplicationForm({ role }: { role: PositionId | null }) {
           {step === 1 ? (
             <>
               <StepHead title={t("careers.stepWork")} />
-              <Legend first>{t("careers.secRole")}</Legend>
+              {/* Two different questions wearing the same control.
+                  Arriving from a card, the job is settled and shown at the top
+                  of the page, so the only thing left worth asking is whether
+                  they would take any of the others — which a small shop very
+                  much wants to know, and which is why this list didn't just
+                  get deleted. Arriving with no job, it is the original
+                  question and the only place it gets asked. */}
+              <Legend first>{role ? t("careers.alsoHappy") : t("careers.secRole")}</Legend>
               <p className="m-0 mb-2.5 text-[12px] leading-[1.5] text-muted">
-                {t("careers.positionsNote")}
+                {role ? t("careers.alsoHappyNote") : t("careers.positionsNote")}
               </p>
               {/* Cards, not bare pills. A pill saying "Kitchen and prep" tells
                   somebody the name of a job they may never have done; a line
                   underneath tells them what the morning is actually like, which
                   is what they're deciding about. */}
               <div className="flex flex-col gap-2">
-                {POSITIONS.map(({ id, label }) => {
+                {POSITIONS.filter((position) => position.id !== role).map(({ id, label }) => {
                   const active = application.positions.includes(id);
                   return (
                     <button
@@ -1016,10 +1072,21 @@ function Field({
   // *cell*, so the left half of a two-up pair cleared its margin and the right
   // half kept it, and every paired row sat a step lower on one side. Spacing
   // is the parent's job now — see the flex columns in each step.
+  // The label wraps rather than truncating, and the label *box* is what
+  // stretches to fill a grid cell — not the input. Both halves matter:
+  // "Premier jour où vous pouvez commencer" clipped to "Premier jour où
+  // pouv…" on a 320px screen names nothing, and a label is the whole
+  // explanation of what to type. But letting one label wrap inside a
+  // two-up pair would push its input a line below its neighbour's. Growing
+  // the label instead keeps both inputs on the same line, which is the
+  // thing the eye actually reads the row by.
   return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 flex items-baseline gap-2 text-[12px] text-muted">
-        <span className="min-w-0 flex-1 truncate">{label}</span>
+    <div className="flex h-full flex-col">
+      <label
+        htmlFor={id}
+        className="mb-1.5 flex flex-1 items-baseline gap-2 text-[12px] text-muted"
+      >
+        <span className="min-w-0 flex-1">{label}</span>
         {optional ? (
           <span className="shrink-0 text-[10px] uppercase tracking-[0.08em] text-quiet">
             {t("careers.optional")}

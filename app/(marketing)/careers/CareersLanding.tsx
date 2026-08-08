@@ -115,7 +115,7 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             return (
             <li key={`${opening.role}-${opening.location}`}>
               <Link
-                href={`/careers/apply?role=${opening.role}`}
+                href={`/careers/apply?role=${opening.role}&at=${encodeURIComponent(opening.location)}`}
                 className="cb-press group flex cursor-pointer items-start gap-3 rounded-2xl border border-line-soft bg-surface p-4 transition-colors hover:border-ink"
               >
                 <span className="min-w-0 flex-1">

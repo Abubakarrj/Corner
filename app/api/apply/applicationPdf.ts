@@ -304,6 +304,11 @@ export async function renderApplicationPdf(
 
   sheet.heading(t("careers.secRole"));
   sheet.value(joinLabels(application.positions, POSITIONS));
+  // The shop they pressed, when they came in through a card. Blank for
+  // somebody who used "Not sure which?", and blank is the truth there.
+  if (application.location.trim() !== "") {
+    sheet.row("Applied from", field(application.location));
+  }
 
   // "Days available" and "Hours wanted" are written here rather than pulled
   // from the string table, because the form has no label for either — it asks
