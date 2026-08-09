@@ -263,7 +263,7 @@ export const fa: Table = {
   "order.notFound": "این سفارش را پیدا نمی‌کنیم.",
   "order.keptOnDevice":
     "سفارش‌ها روی همان دستگاهی می‌مانند که از آن ثبت شده‌اند، پس سفارشی که با گوشی دیگری داده شده اینجا دیده نمی‌شود.",
-  "order.callShop": "تماس با شعبه با شمارهٔ {phone}",
+  "order.callShop": "تماس با شعبه",
   "order.somethingWrong": "مشکلی با این سفارش هست؟",
   "order.followCourier": "پیگیری پیک",
   "order.payCourier": "هنگام رسیدن، به پیک پرداخت کنید.",
@@ -594,8 +594,9 @@ export const fa: Table = {
   "careers.state": "ایالت",
 
   "careers.positionsNote": "کاری را که برایش درخواست می‌دهید انتخاب کنید.",
-  "careers.perHour": "ساعتی",
-  "careers.perYear": "سالانه",
+  "careers.perHour": "ساعتی {amount}",
+  "careers.perYear": "سالانه {amount}",
+  "careers.openRoles": "موقعیت‌های باز",
   "careers.posCounter": "پیشخوان و صندوق",
   "careers.posCounterNote": "گرفتن سفارش، کار با صندوق، آشنا شدن با مشتری‌های همیشگی.",
   "careers.posKitchen": "آشپزخانه و آماده‌سازی",

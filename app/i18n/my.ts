@@ -230,7 +230,7 @@ export const my: Table = {
   "order.notFound": "ထိုအော်ဒါကို ရှာမတွေ့ပါ။",
   "order.keptOnDevice":
     "အော်ဒါများကို မှာယူခဲ့သည့် စက်ပစ္စည်းတွင် သိမ်းထားသဖြင့် အခြားဖုန်းမှ မှာထားသည်များ ဤနေရာတွင် မပေါ်ပါ။",
-  "order.callShop": "ဆိုင်ကို {phone} သို့ ဖုန်းဆက်ပါ",
+  "order.callShop": "ဆိုင်ကို ဖုန်းဆက်ပါ",
   "order.somethingWrong": "ဤအော်ဒါတွင် ပြဿနာ ရှိပါသလား။",
   "order.followCourier": "ပို့ဆောင်သူကို ခြေရာခံရန်",
   "order.payCourier": "ပို့ဆောင်သူ ရောက်လာသည့်အခါ ငွေပေးချေပါ။",
@@ -542,8 +542,9 @@ export const my: Table = {
   "careers.state": "ပြည်နယ်",
 
   "careers.positionsNote": "လျှောက်မယ့် အလုပ်တစ်ခု ရွေးပါ။",
-  "careers.perHour": "တစ်နာရီ",
-  "careers.perYear": "တစ်နှစ်",
+  "careers.perHour": "တစ်နာရီ {amount}",
+  "careers.perYear": "တစ်နှစ် {amount}",
+  "careers.openRoles": "ခေါ်ယူနေသော အလုပ်များ",
   "careers.posCounter": "ကောင်တာနှင့် ငွေကိုင်",
   "careers.posCounterNote": "အော်ဒါယူ၊ ငွေကိုင်၊ ပုံမှန်ဖောက်သည်တွေကို မှတ်မိအောင်လုပ်။",
   "careers.posKitchen": "မီးဖိုချောင်နှင့် ပြင်ဆင်ရေး",

@@ -231,7 +231,7 @@ export const zh: Table = {
 
   "order.notFound": "找不到该订单。",
   "order.keptOnDevice": "订单保存在下单的设备上，所以在别的手机下的单不会显示在这里。",
-  "order.callShop": "致电门店 {phone}",
+  "order.callShop": "致电门店",
   "order.somethingWrong": "这份订单有问题吗？",
   "order.followCourier": "追踪配送员",
   "order.payCourier": "配送员送达时付款。",
@@ -540,8 +540,9 @@ export const zh: Table = {
   "careers.state": "州",
 
   "careers.positionsNote": "选择你要应聘的岗位。",
-  "careers.perHour": "每小时",
-  "careers.perYear": "年薪",
+  "careers.perHour": "每小时{amount}",
+  "careers.perYear": "年薪{amount}",
+  "careers.openRoles": "在招岗位",
   "careers.posCounter": "前台与收银",
   "careers.posCounterNote": "接单、收银、记住常客。",
   "careers.posKitchen": "后厨与备料",

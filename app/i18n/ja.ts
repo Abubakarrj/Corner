@@ -230,7 +230,7 @@ export const ja: Table = {
   "order.notFound": "そのご注文が見つかりません。",
   "order.keptOnDevice":
     "ご注文は注文した端末に保存されるため、別の端末からのご注文はここには表示されません。",
-  "order.callShop": "店舗に電話（{phone}）",
+  "order.callShop": "店舗に電話",
   "order.somethingWrong": "このご注文に何か問題がありますか？",
   "order.followCourier": "配達員を追跡",
   "order.payCourier": "配達員が到着したらお支払いください。",
@@ -542,8 +542,9 @@ export const ja: Table = {
   "careers.state": "州",
 
   "careers.positionsNote": "応募する仕事を1つ選んでください。",
-  "careers.perHour": "時給",
-  "careers.perYear": "年収",
+  "careers.perHour": "時給{amount}",
+  "careers.perYear": "年収{amount}",
+  "careers.openRoles": "募集中の仕事",
   "careers.posCounter": "カウンター・レジ",
   "careers.posCounterNote": "注文を受け、レジを打ち、常連さんを覚える。",
   "careers.posKitchen": "キッチン・仕込み",

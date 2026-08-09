@@ -230,7 +230,7 @@ export const ko: Table = {
   "order.notFound": "해당 주문을 찾을 수 없습니다.",
   "order.keptOnDevice":
     "주문은 주문한 기기에 저장되므로 다른 휴대폰에서 한 주문은 여기 표시되지 않습니다.",
-  "order.callShop": "매장에 전화하기 {phone}",
+  "order.callShop": "매장에 전화하기",
   "order.somethingWrong": "이 주문에 문제가 있나요?",
   "order.followCourier": "배달원 위치 보기",
   "order.payCourier": "배달원이 도착하면 결제해 주세요.",
@@ -542,8 +542,9 @@ export const ko: Table = {
   "careers.state": "주",
 
   "careers.positionsNote": "지원할 자리를 하나 고르세요.",
-  "careers.perHour": "시급",
-  "careers.perYear": "연봉",
+  "careers.perHour": "시급 {amount}",
+  "careers.perYear": "연봉 {amount}",
+  "careers.openRoles": "채용 중인 자리",
   "careers.posCounter": "카운터·계산",
   "careers.posCounterNote": "주문 받기, 계산, 단골 손님 알아 가기.",
   "careers.posKitchen": "주방·준비",

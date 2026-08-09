@@ -262,7 +262,7 @@ export const it: Table = {
   "order.notFound": "Non troviamo quell'ordine.",
   "order.keptOnDevice":
     "Gli ordini restano sul dispositivo da cui sono stati fatti, quindi uno fatto da un altro telefono non compare qui.",
-  "order.callShop": "Chiama il negozio al {phone}",
+  "order.callShop": "Chiama il negozio",
   "order.somethingWrong": "Qualcosa non va con questo ordine?",
   "order.followCourier": "Segui il corriere",
   "order.payCourier": "Paga il corriere quando arriva.",
@@ -597,8 +597,9 @@ export const it: Table = {
   "careers.state": "Stato",
 
   "careers.positionsNote": "Scegli quello per cui ti candidi.",
-  "careers.perHour": "all'ora",
-  "careers.perYear": "all'anno",
+  "careers.perHour": "{amount} all'ora",
+  "careers.perYear": "{amount} all'anno",
+  "careers.openRoles": "Posizioni aperte",
   "careers.posCounter": "Banco e cassa",
   "careers.posCounterNote": "Prendere gli ordini, stare alla cassa, conoscere i clienti abituali.",
   "careers.posKitchen": "Cucina e preparazione",

@@ -232,7 +232,7 @@ export const es: Table = {
   "order.notFound": "No encontramos ese pedido.",
   "order.keptOnDevice":
     "Los pedidos se guardan en el dispositivo desde el que se hicieron, así que uno hecho en otro teléfono no aparecerá aquí.",
-  "order.callShop": "Llama a la tienda al {phone}",
+  "order.callShop": "Llama a la tienda",
   "order.somethingWrong": "¿Algo va mal con este pedido?",
   "order.followCourier": "Seguir al repartidor",
   "order.payCourier": "Paga al repartidor cuando llegue.",
@@ -547,8 +547,9 @@ export const es: Table = {
   "careers.state": "Estado",
 
   "careers.positionsNote": "Elige el puesto al que te presentas.",
-  "careers.perHour": "por hora",
-  "careers.perYear": "al año",
+  "careers.perHour": "{amount} por hora",
+  "careers.perYear": "{amount} al año",
+  "careers.openRoles": "Puestos abiertos",
   "careers.posCounter": "Mostrador y caja",
   "careers.posCounterNote": "Tomar pedidos, llevar la caja, conocer a la clientela.",
   "careers.posKitchen": "Cocina y preparación",

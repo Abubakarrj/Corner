@@ -14,7 +14,7 @@ import {
   useOrders,
   type PlacedOrder,
 } from "../../../account";
-import { SHOP_PHONE, shopPhoneLabel } from "../../../shopFacts";
+import { SHOP_PHONE } from "../../../shopFacts";
 import { useLiveStatus } from "../../useLiveStatus";
 import { ButtonLink } from "../../../ui/Button";
 import { formatPrice, getProduct } from "../../products";
@@ -168,7 +168,13 @@ export default function OrderTracker({ id }: { id: string }) {
                 </p>
                 {active ? (
                   <p className="m-0 mt-0.5 text-[13px] leading-[1.45]" style={{ color: muted }}>
-                    {entry.detail}
+                    {/* Translated, like every other string. This rendered the
+                        key itself — a customer watching their order saw the
+                        literal text "order.placedDetail" under the first
+                        stage. The headline above uses the same field and did
+                        translate it, which is why it read correctly there and
+                        was easy to miss here. */}
+                    {t(entry.detail, entry.detailVars)}
                   </p>
                 ) : null}
               </div>
@@ -192,7 +198,10 @@ export default function OrderTracker({ id }: { id: string }) {
           className="cursor-pointer underline underline-offset-2"
           style={{ color: ink }}
         >
-          {t("order.callShop", { phone: shopPhoneLabel() })}
+          {/* The label no longer prints the number. It is still a tel: link,
+              so tapping dials it — the number just isn't set in the page as
+              text to be scraped or read over somebody's shoulder. */}
+          {t("order.callShop")}
         </a>
         .
       </p>

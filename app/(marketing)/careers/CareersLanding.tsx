@@ -53,6 +53,16 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
   const locale = useLocale();
   const titleOf = (role: PositionId) =>
     POSITIONS.find((position) => position.id === role)?.label;
+  // When every job is at the same shop, the shop is not a fact that
+  // distinguishes one row from another — it is the same word four times, and
+  // on a 390px card in Spanish it was the word that pushed the tags onto a
+  // second line. So it moves up to the heading, where it is said once.
+  //
+  // Computed, not assumed. The day a second shop opens, this goes back to
+  // being a tag on each row, which is where it belongs the moment it starts
+  // telling you something.
+  const shops = [...new Set(openings.map((opening) => opening.location))];
+  const oneShop = shops.length === 1 ? shops[0] : null;
 
   return (
     <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
@@ -96,119 +106,155 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           {t("careers.lede")}
         </p>
 
-        <TeamPhotos />
+        {/* ——— The jobs, then the pitch ———
 
-        <h2 className="m-0 mb-3 mt-11 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
-          {t("careers.aboutHeading")}
+            The other way round for a while: two paragraphs about the shop,
+            then the openings underneath. Somebody who pressed "We are
+            Hiring!" has already been pitched — what they came for is the
+            list, and it was below the fold on a phone.
+
+            Reading still comes before writing, which was the point of having
+            a page in front of the form at all. It just turns out the reading
+            somebody wants first is what the jobs are, not what the shop is
+            like. The shop is what they read second, once one of the jobs has
+            caught them. */}
+        <h2 className="m-0 mb-3 mt-11 flex flex-wrap items-baseline gap-x-2 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
+          {t("careers.openRoles")}
+          {oneShop ? (
+            <span className="font-normal normal-case tracking-normal text-quiet">
+              {oneShop}
+            </span>
+          ) : null}
         </h2>
-        <p className="m-0 text-[14px] leading-[1.65] text-ink">{t("about.p1")}</p>
-        <p className="m-0 mt-3 text-[14px] leading-[1.65] text-ink">{t("about.p2")}</p>
 
-        {/* No heading over these. Cards that each name a job and end in
-            "Apply" do not need a line above them saying they are the jobs.
-
-            The whole card is the link, so its accessible name is the job
-            title, its shop and its description rather than a row of identical
-            "Apply"s. */}
-        <ul className="m-0 mt-11 flex list-none flex-col gap-2.5 p-0">
+        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
           {openings.map((opening) => {
             const label = titleOf(opening.role);
             if (!label) return null;
+            const terms = TERMS[opening.role];
+            // ——— Facts as chips, not as a sentence ———
+            //
+            // These were joined with middots into one line, and the rows came
+            // out ragged: Kitchen carried four facts, Manager none, so no two
+            // cards agreed on where anything sat and the column would not
+            // scan. Chips give every fact the same shape, so a card with one
+            // reads as deliberate rather than as a card missing three.
+            //
+            // A fixed order — where, then what it pays, then how much of a
+            // week, then which hours — so the eye can run down the list and
+            // compare the same thing in the same place. Nothing is invented
+            // to fill a slot: what isn't known isn't shown. See pay.ts.
+            const facts: string[] = oneShop === null ? [opening.location] : [];
+            if (opening.pay) {
+              facts.push(
+                t(opening.pay.per === "hour" ? "careers.perHour" : "careers.perYear", {
+                  amount: formatPay(opening.pay, locale),
+                }),
+              );
+            }
+            for (const type of terms?.hours ?? []) {
+              facts.push(t(type === "full" ? "careers.typeFull" : "careers.typePart"));
+            }
+            // The shift windows are not chips.
+            //
+            // First cut made them chips too and the rows went ragged again in
+            // a new way: Counter carried four and wrapped onto a second line,
+            // Manager carried one, and no two cards were the same height. Two
+            // time ranges is simply more text than a tag row can hold.
+            //
+            // Which is the rule, and it is worth stating: things that are the
+            // same on every card get the same treatment, and things that vary
+            // get a treatment where varying is expected. Where, what it pays
+            // and how much of a week are tags — short, comparable, one line.
+            // Which hours is detail, and detail goes on a line of its own,
+            // where one card having it and another not is unremarkable.
+            const shifts = (terms?.shifts ?? [])
+              .map((shift) => shiftLine(shift, locale))
+              .filter((line): line is string => line !== null);
             return (
-            <li key={`${opening.role}-${opening.location}`}>
-              <Link
-                href={`/careers/apply?role=${opening.role}&at=${encodeURIComponent(opening.location)}`}
-                className="cb-press group flex cursor-pointer items-start gap-3 rounded-2xl border border-line-soft bg-surface p-4 transition-colors hover:border-ink"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span
-                      className="text-[16px] leading-tight text-ink"
-                      style={{ fontFamily: DISPLAY_FONT }}
-                    >
-                      {t(label)}
+              <li key={`${opening.role}-${opening.location}`}>
+                <Link
+                  href={`/careers/apply?role=${opening.role}&at=${encodeURIComponent(opening.location)}`}
+                  className="cb-press group flex cursor-pointer items-center gap-3 rounded-2xl border border-line-soft bg-surface p-4 transition-colors hover:border-ink"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span
+                        className="text-[16px] leading-tight text-ink"
+                        style={{ fontFamily: DISPLAY_FONT }}
+                      >
+                        {t(label)}
+                      </span>
+                      {opening.isNew ? (
+                        <span className="rounded-full bg-sun-soft px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sun-ink">
+                          {t("careers.new")}
+                        </span>
+                      ) : null}
                     </span>
-                    {opening.isNew ? (
-                      <span className="rounded-full bg-sun-soft px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sun-ink">
-                        {t("careers.new")}
+                    <span className="mt-1.5 block text-[13px] leading-[1.5] text-muted">
+                      {t(POSITION_NOTE[opening.role])}
+                    </span>
+                    <span className="mt-2.5 flex flex-wrap gap-1.5">
+                      {facts.map((fact) => (
+                        <span
+                          key={fact}
+                          className="rounded-full border border-line-soft px-2.5 py-1 text-[11px] leading-none text-muted"
+                        >
+                          {fact}
+                        </span>
+                      ))}
+                    </span>
+                    {shifts.length > 0 ? (
+                      <span className="mt-2 block text-[11px] leading-[1.5] text-quiet">
+                        {shifts.join(" · ")}
                       </span>
                     ) : null}
                   </span>
-                  {/* The shop, not translated: a place name is a place name in
-                      every language, and the ones that aren't would be wrong to
-                      guess at. */}
-                  <span className="mt-1 block text-[12px] text-quiet">{opening.location}</span>
-                  <span className="mt-1.5 block text-[13px] leading-[1.5] text-muted">
-                    {t(POSITION_NOTE[opening.role])}
-                  </span>
-                  {/* Pay and hours: the two things somebody weighs before
-                      deciding this is worth an afternoon, and until now the
-                      card answered neither.
-
-                      Every part is conditional, and separately. A job with no
-                      rate set shows no rate rather than a placeholder, a
-                      dash, or a rate we stopped believing in July — see
-                      pay.ts. Saying nothing is recoverable; saying the wrong
-                      number to somebody deciding whether they can afford the
-                      bus is not. */}
-                  {(() => {
-                    const terms = TERMS[opening.role];
-                    const bits: string[] = [];
-                    if (opening.pay) {
-                      bits.push(
-                        `${formatPay(opening.pay, locale)} ${
-                          opening.pay.per === "hour" ? t("careers.perHour") : t("careers.perYear")
-                        }`,
-                      );
-                    }
-                    for (const type of terms?.hours ?? []) {
-                      bits.push(t(type === "full" ? "careers.typeFull" : "careers.typePart"));
-                    }
-                    for (const shift of terms?.shifts ?? []) {
-                      const line = shiftLine(shift, locale);
-                      if (line) bits.push(line);
-                    }
-                    if (bits.length === 0) return null;
-                    return (
-                      <span className="mt-2 block text-[12px] leading-[1.5] text-quiet">
-                        {bits.join(" · ")}
-                      </span>
-                    );
-                  })()}
-                  <span className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink">
-                    {t("careers.apply")}
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 14 14"
-                      fill="none"
-                      aria-hidden
-                      className="transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
-                    >
-                      <path
-                        d="M5.5 2.5 10 7l-4.5 4.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                </span>
-              </Link>
-            </li>
+                  {/* A chevron rather than the word "Apply" on its own line.
+                      Four cards each ending in an identical "Apply →" is four
+                      lines saying what the whole card already does, and it is
+                      the line that made the rows tall and uneven. The card is
+                      the link; this is where a list row's arrow lives. */}
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    aria-hidden
+                    className="shrink-0 text-quiet transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
+                  >
+                    <path
+                      d="M5.5 2.5 10 7l-4.5 4.5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </Link>
+              </li>
             );
           })}
         </ul>
 
-        {/* Picking a card pre-selects that job and nothing more — the form
-            still lets you choose several. This is for somebody who would
-            rather not decide on a card. */}
+        {/* For somebody who would rather not decide on a card. The form asks
+            which job when nothing else has. */}
         <p className="m-0 mt-4 text-[13px] leading-[1.55] text-muted">
           <Link href="/careers/apply" className="underline hover:text-ink">
             {t("careers.applyAnyway")}
           </Link>
         </p>
+
+        <h2 className="m-0 mb-3 mt-14 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
+          {t("careers.aboutHeading")}
+        </h2>
+        <p className="m-0 text-[14px] leading-[1.65] text-ink">{t("about.p1")}</p>
+        <p className="m-0 mt-3 text-[14px] leading-[1.65] text-ink">{t("about.p2")}</p>
+
+        {/* Under the words now, not above them. A photograph of the shop is
+            the evidence for the paragraph, and it reads as evidence when it
+            follows the claim. */}
+        <TeamPhotos />
 
         <footer className="mt-14 border-t border-line pt-5">
           <p className="m-0 text-[11px] leading-[1.7] text-quiet">{t("careers.eeo")}</p>

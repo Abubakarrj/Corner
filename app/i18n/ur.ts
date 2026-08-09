@@ -233,7 +233,7 @@ export const ur: Table = {
   "order.notFound": "ہمیں یہ آرڈر نہیں مل رہا۔",
   "order.keptOnDevice":
     "آرڈر اسی ڈیوائس پر محفوظ ہوتے ہیں جہاں سے دیے گئے، اس لیے کسی اور فون سے دیا گیا آرڈر یہاں نظر نہیں آئے گا۔",
-  "order.callShop": "دکان کو {phone} پر کال کریں",
+  "order.callShop": "دکان کو کال کریں",
   "order.somethingWrong": "کیا اس آرڈر میں کوئی مسئلہ ہے؟",
   "order.followCourier": "کورئیر کو ٹریک کریں",
   "order.payCourier": "جب کورئیر پہنچے تو اسے ادائیگی کریں۔",
@@ -545,8 +545,9 @@ export const ur: Table = {
   "careers.state": "ریاست",
 
   "careers.positionsNote": "جس کام کے لیے درخواست دے رہے ہیں وہ منتخب کریں۔",
-  "careers.perHour": "فی گھنٹہ",
-  "careers.perYear": "سالانہ",
+  "careers.perHour": "{amount} فی گھنٹہ",
+  "careers.perYear": "{amount} سالانہ",
+  "careers.openRoles": "دستیاب آسامیاں",
   "careers.posCounter": "کاؤنٹر اور کیش رجسٹر",
   "careers.posCounterNote": "آرڈر لینا، کاؤنٹر چلانا، باقاعدہ گاہکوں کو جاننا۔",
   "careers.posKitchen": "باورچی خانہ اور تیاری",

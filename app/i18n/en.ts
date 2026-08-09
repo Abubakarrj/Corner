@@ -254,7 +254,7 @@ export const en = {
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice":
     "Orders are kept on the device they were placed from, so one placed on another phone won't show here.",
-  "order.callShop": "Call the shop on {phone}",
+  "order.callShop": "Call the shop",
   "order.somethingWrong": "Something wrong with this order?",
   "order.followCourier": "Follow the courier",
   "order.payCourier": "Pay the courier when it arrives.",
@@ -572,8 +572,9 @@ export const en = {
   "careers.state": "State",
 
   "careers.positionsNote": "Pick the one you're applying for.",
-  "careers.perHour": "an hour",
-  "careers.perYear": "a year",
+  "careers.perHour": "{amount} an hour",
+  "careers.perYear": "{amount} a year",
+  "careers.openRoles": "Open roles",
   "careers.posCounter": "Counter & Register",
   "careers.posCounterNote": "Take orders, run the till, learn the regulars.",
   "careers.posKitchen": "Kitchen & Prep",
