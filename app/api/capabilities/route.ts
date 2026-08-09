@@ -1,6 +1,5 @@
 import { isAuthConfigured } from "../../auth/auth0";
 import { SHOP_PHONE } from "../../shopFacts";
-import { isToastConfigured } from "../../toast";
 import { isUberConfigured } from "../../uberDirect";
 
 // What's actually switched on, decided at request time.
@@ -19,23 +18,40 @@ import { isUberConfigured } from "../../uberDirect";
 // address has an account.
 export const dynamic = "force-dynamic";
 
-// Whether the checkout offers a card at all.
+// ——— ⚠️ Whether the checkout offers a card at all ———
 //
-// True when there's a processor configured. Also true in development, and on
-// any deploy that sets PAYMENTS_PREVIEW=1 — which is for looking at the card
-// screen, not for taking money. Nothing here makes a charge happen: what takes
-// money is Toast, and Toast is either configured or it isn't.
+// This used to return true whenever Toast was configured, and that was wrong
+// in the way that costs a shop money.
 //
-// The exception exists because the alternative was worse in a specific way.
-// Card entry is the most designed part of the checkout and it was invisible
-// unless you had production credentials, so the only way to review it was to
-// go live with it. A preview flag is the smaller risk, and it is opt-in.
+// Toast being configured means orders reach the kitchen. It does not mean
+// anybody can pay. Read the note at the top of app/toast.ts: the order is
+// created *unpaid*, and what settles it is either the counter or a Toast
+// payment token applied to the check. No token is ever made. app/shop/
+// checkout/card.ts is equally explicit — the number never leaves the browser,
+// describeCard() returns a brand and four digits, and there is no code path
+// that sends a card anywhere.
 //
-// ⚠️ Don't set PAYMENTS_PREVIEW on a deploy real customers use. Without a
-// processor behind it, the checkout will say the card is charged when the shop
-// confirms the order, and nothing will charge it.
+// So with Toast configured, the checkout offered a card, and choosing it
+// showed "Your card is charged when the shop confirms the order" on the
+// checkout and again on the confirmation. Nothing charged it. A customer
+// selects card, is told they have paid, collects breakfast, and the shop is
+// never paid. The tender defaults to the counter, so it took a deliberate
+// tap — which narrows how many people it happened to and does nothing about
+// what happened to them.
+//
+// A card can be offered when there is something to take it with. There isn't
+// yet, so this is false in production, full stop. What turns it on is not an
+// environment variable: it is mounting Toast's hosted payment element, taking
+// back a token, and applying that token to the check. card.ts describes the
+// shape of that work at the bottom of its header.
+//
+// Still true in development and under PAYMENTS_PREVIEW, because the card
+// screen is the most designed part of the checkout and the only way to review
+// it otherwise was to go live with it.
+//
+// ⚠️ PAYMENTS_PREVIEW is for looking, never for a deploy real customers use.
+// It makes the checkout claim a charge that cannot happen.
 function paymentsEnabled(): boolean {
-  if (isToastConfigured()) return true;
   if (process.env.PAYMENTS_PREVIEW === "1") return true;
   return process.env.NODE_ENV !== "production";
 }
