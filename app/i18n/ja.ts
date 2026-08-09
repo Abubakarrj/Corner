@@ -542,6 +542,8 @@ export const ja: Table = {
   "careers.state": "州",
 
   "careers.positionsNote": "応募する仕事を1つ選んでください。",
+  "careers.perHour": "時給",
+  "careers.perYear": "年収",
   "careers.posCounter": "カウンター・レジ",
   "careers.posCounterNote": "注文を受け、レジを打ち、常連さんを覚える。",
   "careers.posKitchen": "キッチン・仕込み",

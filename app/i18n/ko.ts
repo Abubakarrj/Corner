@@ -542,6 +542,8 @@ export const ko: Table = {
   "careers.state": "주",
 
   "careers.positionsNote": "지원할 자리를 하나 고르세요.",
+  "careers.perHour": "시급",
+  "careers.perYear": "연봉",
   "careers.posCounter": "카운터·계산",
   "careers.posCounterNote": "주문 받기, 계산, 단골 손님 알아 가기.",
   "careers.posKitchen": "주방·준비",

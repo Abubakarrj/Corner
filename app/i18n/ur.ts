@@ -545,6 +545,8 @@ export const ur: Table = {
   "careers.state": "ریاست",
 
   "careers.positionsNote": "جس کام کے لیے درخواست دے رہے ہیں وہ منتخب کریں۔",
+  "careers.perHour": "فی گھنٹہ",
+  "careers.perYear": "سالانہ",
   "careers.posCounter": "کاؤنٹر اور کیش رجسٹر",
   "careers.posCounterNote": "آرڈر لینا، کاؤنٹر چلانا، باقاعدہ گاہکوں کو جاننا۔",
   "careers.posKitchen": "باورچی خانہ اور تیاری",

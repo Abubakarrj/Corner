@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
-import { useT, type StringKey } from "../../i18n";
+import { useLocale, useT, type StringKey } from "../../i18n";
 import { POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
+import { TERMS, formatPay, shiftLine, type ResolvedPay } from "./pay";
 import { TEAM_PHOTOS } from "./teamPhotos";
 
 const { cream } = PALETTE;
@@ -45,10 +46,11 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
 };
 
 /** An opening with the "New" question already answered — see page.tsx. */
-export type ListedOpening = Opening & { isNew: boolean };
+export type ListedOpening = Opening & { isNew: boolean; pay: ResolvedPay | null };
 
 export default function CareersLanding({ openings }: { openings: ListedOpening[] }) {
   const t = useT();
+  const locale = useLocale();
   const titleOf = (role: PositionId) =>
     POSITIONS.find((position) => position.id === role)?.label;
 
@@ -139,6 +141,40 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                   <span className="mt-1.5 block text-[13px] leading-[1.5] text-muted">
                     {t(POSITION_NOTE[opening.role])}
                   </span>
+                  {/* Pay and hours: the two things somebody weighs before
+                      deciding this is worth an afternoon, and until now the
+                      card answered neither.
+
+                      Every part is conditional, and separately. A job with no
+                      rate set shows no rate rather than a placeholder, a
+                      dash, or a rate we stopped believing in July — see
+                      pay.ts. Saying nothing is recoverable; saying the wrong
+                      number to somebody deciding whether they can afford the
+                      bus is not. */}
+                  {(() => {
+                    const terms = TERMS[opening.role];
+                    const bits: string[] = [];
+                    if (opening.pay) {
+                      bits.push(
+                        `${formatPay(opening.pay, locale)} ${
+                          opening.pay.per === "hour" ? t("careers.perHour") : t("careers.perYear")
+                        }`,
+                      );
+                    }
+                    for (const type of terms?.hours ?? []) {
+                      bits.push(t(type === "full" ? "careers.typeFull" : "careers.typePart"));
+                    }
+                    for (const shift of terms?.shifts ?? []) {
+                      const line = shiftLine(shift, locale);
+                      if (line) bits.push(line);
+                    }
+                    if (bits.length === 0) return null;
+                    return (
+                      <span className="mt-2 block text-[12px] leading-[1.5] text-quiet">
+                        {bits.join(" · ")}
+                      </span>
+                    );
+                  })()}
                   <span className="mt-2.5 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink">
                     {t("careers.apply")}
                     <svg

@@ -594,6 +594,8 @@ export const fa: Table = {
   "careers.state": "ایالت",
 
   "careers.positionsNote": "کاری را که برایش درخواست می‌دهید انتخاب کنید.",
+  "careers.perHour": "ساعتی",
+  "careers.perYear": "سالانه",
   "careers.posCounter": "پیشخوان و صندوق",
   "careers.posCounterNote": "گرفتن سفارش، کار با صندوق، آشنا شدن با مشتری‌های همیشگی.",
   "careers.posKitchen": "آشپزخانه و آماده‌سازی",

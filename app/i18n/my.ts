@@ -542,6 +542,8 @@ export const my: Table = {
   "careers.state": "ပြည်နယ်",
 
   "careers.positionsNote": "လျှောက်မယ့် အလုပ်တစ်ခု ရွေးပါ။",
+  "careers.perHour": "တစ်နာရီ",
+  "careers.perYear": "တစ်နှစ်",
   "careers.posCounter": "ကောင်တာနှင့် ငွေကိုင်",
   "careers.posCounterNote": "အော်ဒါယူ၊ ငွေကိုင်၊ ပုံမှန်ဖောက်သည်တွေကို မှတ်မိအောင်လုပ်။",
   "careers.posKitchen": "မီးဖိုချောင်နှင့် ပြင်ဆင်ရေး",

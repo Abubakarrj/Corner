@@ -597,6 +597,8 @@ export const fr: Table = {
   "careers.state": "État",
 
   "careers.positionsNote": "Choisissez celui auquel vous postulez.",
+  "careers.perHour": "de l'heure",
+  "careers.perYear": "par an",
   "careers.posCounter": "Comptoir et caisse",
   "careers.posCounterNote": "Prendre les commandes, tenir la caisse, connaître les habitués.",
   "careers.posKitchen": "Cuisine et préparation",

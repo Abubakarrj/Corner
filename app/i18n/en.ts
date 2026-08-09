@@ -572,6 +572,8 @@ export const en = {
   "careers.state": "State",
 
   "careers.positionsNote": "Pick the one you're applying for.",
+  "careers.perHour": "an hour",
+  "careers.perYear": "a year",
   "careers.posCounter": "Counter and register",
   "careers.posCounterNote": "Take orders, run the till, learn the regulars.",
   "careers.posKitchen": "Kitchen and prep",

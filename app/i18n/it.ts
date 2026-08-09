@@ -597,6 +597,8 @@ export const it: Table = {
   "careers.state": "Stato",
 
   "careers.positionsNote": "Scegli quello per cui ti candidi.",
+  "careers.perHour": "all'ora",
+  "careers.perYear": "all'anno",
   "careers.posCounter": "Banco e cassa",
   "careers.posCounterNote": "Prendere gli ordini, stare alla cassa, conoscere i clienti abituali.",
   "careers.posKitchen": "Cucina e preparazione",

@@ -540,6 +540,8 @@ export const zh: Table = {
   "careers.state": "州",
 
   "careers.positionsNote": "选择你要应聘的岗位。",
+  "careers.perHour": "每小时",
+  "careers.perYear": "年薪",
   "careers.posCounter": "前台与收银",
   "careers.posCounterNote": "接单、收银、记住常客。",
   "careers.posKitchen": "后厨与备料",
