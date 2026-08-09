@@ -37,12 +37,24 @@ import type { PositionId } from "./application";
 
 /** The local hourly minimum, and the day it took effect.
  *
- *  `hourly: null` means nobody has set it. That is the shipping state, and it
- *  is deliberate: an invented figure on a careers page is worse than a missing
- *  one, so this stays empty until somebody who knows the real rate fills it
- *  in, and no pay line appears for the hourly jobs until they do. */
+ *  $18.42 is the City of Los Angeles citywide rate from July 1, 2026, up 55c
+ *  from $17.87. The City rate is the one that applies here: the shop is on W
+ *  8th St in Koreatown, inside city limits, so neither the state floor nor the
+ *  unincorporated-county rate governs. There is no small-employer tier — Los
+ *  Angeles merged those schedules in 2021, so every employer is on this number.
+ *  The $25 rate in the same ordinance is for hotel and airport work and has
+ *  nothing to do with a bagel shop.
+ *
+ *  The rate is indexed to CPI-W for the LA metro and moves every July 1, which
+ *  is what the expiry below is guarding: set this in July, or the card stops
+ *  claiming a wage rather than claiming a stale one.
+ *
+ *  `hourly: null` remains meaningful — it is what to write if this ever falls
+ *  out of date and nobody has the new figure to hand. An empty pay line is
+ *  recoverable; a wrong one, read by somebody working out whether the shift
+ *  covers their bus fare, is not. */
 export const MINIMUM_WAGE: { hourly: number | null; from: string; city: string } = {
-  hourly: null,
+  hourly: 18.42,
   from: "2026-07-01",
   city: "Los Angeles",
 };
@@ -103,7 +115,27 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
     pay: { kind: "minimum" },
   },
   manager: {
-    // Salaried, against comparable shops nearby. No range set yet.
+    // Salaried, and deliberately still unset — this is the one number here
+    // that is a decision rather than a fact.
+    //
+    // The floor is not what comparable shops pay, it is the law. California
+    // requires a salaried exempt employee to earn twice the *state* minimum
+    // for full time, and the state minimum is $16.90 from January 1, 2026, so
+    // the threshold is $70,304 a year. Note "state": Los Angeles's higher
+    // local rate does not raise it.
+    //
+    // Which matters, because LA cafe-manager comps run about $57k at the 25th
+    // percentile — below the exempt floor. A salary in that band is not a
+    // cheaper manager, it is a non-exempt one owed overtime.
+    //
+    // And salary is only half the test. Exempt executive status also needs
+    // more than half the time spent actually managing. A manager who works
+    // the line through the morning rush can fail that at any salary, which is
+    // the usual way a small food business gets this wrong.
+    //
+    // So: at or above $70,304 if the job is salaried and exempt. Below that,
+    // pay hourly with overtime and say so on the card — the type already
+    // supports { kind: "range", per: "hour" }.
   },
 };
 
