@@ -357,6 +357,10 @@ export async function POST(request: Request) {
         ok: true,
         totals,
         orderGuid: sent.orderGuid,
+        // When the shop says it will be ready, from Toast rather than from
+        // our own fixed estimate. Absent when Toast didn't send one, and the
+        // client falls back exactly as before.
+        ...(sent.readyAt === undefined ? {} : { readyAt: sent.readyAt }),
         submitted: "toast",
         ...(await bookCourier()),
       },

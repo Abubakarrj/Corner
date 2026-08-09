@@ -72,6 +72,22 @@ export type PlacedOrder = {
   deliveryCents?: number;
   tipCents?: number;
   totalCents?: number;
+  // Toast's own id for this order, when it went to Toast. Kept because it is
+  // the only handle on the order that both sides share: a status feed keyed by
+  // anything else would have to be matched up by guessing.
+  //
+  // Absent on orders placed before this existed, and on any order the kitchen
+  // heard about some other way.
+  toastGuid?: string;
+  // When the shop said it would be ready, in epoch ms — Toast's
+  // estimatedFulfillmentDate, computed from the restaurant's configured quote
+  // time, its hours and its throttling. A real answer about a real morning,
+  // where PREP_MINUTES is a constant that is the same at 6am and at the
+  // Saturday rush.
+  //
+  // Optional, and read through prepMinutesFor() rather than directly, which
+  // falls back to the constant rather than showing a blank or a nonsense.
+  readyAt?: number;
   // "pickup" | "delivery" | "catering", as it was when the order went in.
   // A mode, not a label: this is read back to decide what the tracker shows,
   // and it has to mean the same thing in every language and in every version
@@ -523,6 +539,22 @@ function formatClock(timestamp: number, tag = "en-US"): string {
 // It deliberately stops one short of the last stage: "Delivered" and "Picked
 // up" are claims about the physical world that a timer cannot make. The
 // tracker parks on the ready/on-the-way stage and says the shop will confirm.
+/** How long the kitchen is going to take on this one.
+ *
+ *  Toast's estimate when there is one, our constant when there isn't. The
+ *  bounds are not paranoia: this number is what somebody is told, and it comes
+ *  from a clock we do not own being compared to a clock we do. A device with
+ *  its time set wrong, or a scheduled order that Toast has promised for
+ *  tomorrow, would otherwise produce a bar that is already full or one that
+ *  never moves. Out of range, the constant is the safer answer. */
+const MAX_SENSIBLE_PREP_MINUTES = 6 * 60;
+
+export function prepMinutesFor(order: PlacedOrder): number {
+  if (order.readyAt === undefined) return PREP_MINUTES;
+  const span = (order.readyAt - order.placedAt) / 60000;
+  return span > 0 && span <= MAX_SENSIBLE_PREP_MINUTES ? span : PREP_MINUTES;
+}
+
 export function progressFor(
   order: PlacedOrder,
   tag = "en-US",
@@ -530,10 +562,13 @@ export function progressFor(
 ): OrderProgress {
   const stages = stagesFor(order);
   const delivery = isDelivery(order);
-  const totalMinutes = PREP_MINUTES + (delivery ? DELIVERY_MINUTES : 0);
+  const prep = prepMinutesFor(order);
+  // The courier's drive is still ours to estimate — Toast's number is when the
+  // food is ready, not when it reaches a doorstep.
+  const totalMinutes = prep + (delivery ? DELIVERY_MINUTES : 0);
   const elapsed = Math.max(0, (now - order.placedAt) / 60000);
 
-  const current = elapsed < 2 ? 0 : elapsed < PREP_MINUTES ? 1 : 2;
+  const current = elapsed < 2 ? 0 : elapsed < prep ? 1 : 2;
   const fraction = Math.min(1, elapsed / totalMinutes);
   const settled = elapsed >= totalMinutes;
 

@@ -346,6 +346,13 @@ export function useCheckout(): Checkout {
         ...(typeof result?.trackingUrl === "string"
           ? { trackingUrl: result.trackingUrl }
           : {}),
+        // Toast's id for the order and Toast's own estimate of when it will
+        // be ready. The endpoint has been returning the guid all along and
+        // this is the first thing to keep it: without it there is no handle
+        // to ask about this order later, and the tracker's clock is the only
+        // thing it has to go on.
+        ...(typeof result?.orderGuid === "string" ? { toastGuid: result.orderGuid } : {}),
+        ...(typeof result?.readyAt === "number" ? { readyAt: result.readyAt } : {}),
         // The card, as a receipt describes one. Brand and four digits, on this
         // device only — `summary()` is structurally incapable of handing over
         // the number, which is the point of it.

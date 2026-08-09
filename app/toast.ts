@@ -202,7 +202,9 @@ export type ToastOrderDraft = {
 };
 
 export type ToastOrderResult =
-  | { ok: true; orderGuid: string }
+  /** `readyAt` is Toast's estimatedFulfillmentDate as epoch ms, when it sent
+      one. See the note where it is parsed. */
+  | { ok: true; orderGuid: string; readyAt?: number }
   // `reason` is for the log, not the customer. A failure here means the
   // kitchen never heard about the order, so the caller has to say so plainly
   // rather than showing a confirmation.
@@ -290,9 +292,27 @@ export async function createToastOrder(
     return { ok: false, reason: `${response.status}: ${detail.slice(0, 300)}` };
   }
 
-  const body = (await response.json().catch(() => null)) as { guid?: string } | null;
+  const body = (await response.json().catch(() => null)) as {
+    guid?: string;
+    estimatedFulfillmentDate?: string;
+  } | null;
   if (!body?.guid) return { ok: false, reason: "no-guid-in-response" };
-  return { ok: true, orderGuid: body.guid };
+  // Toast works this out from the restaurant's own quote time, its hours and
+  // its throttling — the shop's answer to "when will this be ready", not
+  // ours. We were parsing it out of the response and dropping it on the
+  // floor, and showing a fixed PREP_MINUTES instead.
+  //
+  // Optional because it is Toast's field and we do not control it, and
+  // because nothing here runs when Toast is unconfigured. Absent, everything
+  // downstream falls back to the constant it used before.
+  const estimated = body.estimatedFulfillmentDate
+    ? Date.parse(body.estimatedFulfillmentDate)
+    : NaN;
+  return {
+    ok: true,
+    orderGuid: body.guid,
+    ...(Number.isNaN(estimated) ? {} : { readyAt: estimated }),
+  };
 }
 
 export type ToastOrderState = {
