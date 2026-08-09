@@ -83,18 +83,25 @@ export default function LocationFinder() {
   // Only used as the map's key — see the note where StoreMap is rendered.
   const locale = useLocale();
   const [mode, setMode] = useState<Mode>("pickup");
-  // Delivery is offered when a courier can actually be booked, and not
-  // otherwise. Without this the tab was always there and the failure came at
-  // the end — choose Delivery, type your address, wait for a quote, and only
-  // then be told it is down. A dead end is least costly at the top.
+  // ——— Delivery says what it is doing, rather than disappearing ———
   //
-  // The whole delivery path is built; three environment variables decide
-  // whether it can run. On a deploy that has them, nothing here changes.
+  // Three attempts at this and the middle one was the worst.
+  //
+  // First the tab was always live, so the failure came at the end: choose
+  // Delivery, type your address, wait for a quote, and only then be told it
+  // is down. A dead end is least costly at the top of the corridor.
+  //
+  // Then the tab was hidden when no courier could be booked, which fixed the
+  // dead end by removing the door. That reads as a shop that has stopped
+  // delivering — and this one hasn't; it is a deployment that is missing
+  // three variables. A missing tab cannot say that. A shopkeeper looking at
+  // their own app sees a feature they built and paid for simply gone.
+  //
+  // So the tab stays and answers for itself. Tap it and the strip says
+  // delivery is unavailable and pickup is open, which is the whole truth in
+  // one line, said before anybody types an address.
   const { delivery: deliveryOn } = useCapabilities();
-  const modes = useMemo(
-    () => MODES.filter((entry) => entry.id !== "delivery" || deliveryOn),
-    [deliveryOn],
-  );
+  const deliveryOff = mode === "delivery" && !deliveryOn;
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
@@ -281,9 +288,16 @@ export default function LocationFinder() {
 
   const showToast =
     !toastDismissed &&
-    (!asked || missed !== null || (mode !== "delivery" && results.length === 0));
+    (deliveryOff ||
+      !asked ||
+      missed !== null ||
+      (mode !== "delivery" && results.length === 0));
 
-  const toastText = !asked
+  const toastText = deliveryOff
+    ? // The endpoint's own words, so the page and the API cannot drift into
+      // telling somebody two different things about the same outage.
+      t("api.deliveryDownPickupOpen")
+    : !asked
     ? mode === "delivery"
       ? t("finder.startAddress")
       : t("finder.startSearch")
@@ -336,7 +350,7 @@ export default function LocationFinder() {
 
           {/* The three modes, centred between the two circular buttons. */}
           <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 min-[390px]:gap-2">
-            {modes.map(({ id, label }) => {
+            {MODES.map(({ id, label }) => {
               const active = mode === id;
               return (
                 <button
@@ -375,6 +389,9 @@ export default function LocationFinder() {
             autoComplete="off"
             aria-label={t(PLACEHOLDER[mode])}
             placeholder={t(PLACEHOLDER[mode])}
+            // No address to take when no courier can collect it. Disabled
+            // rather than accepting one and failing on the quote.
+            disabled={deliveryOff}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
