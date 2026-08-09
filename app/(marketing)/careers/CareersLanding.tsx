@@ -15,7 +15,7 @@ const { cream } = PALETTE;
 //
 // This used to be the form itself, which asked somebody for four steps of
 // answers before telling them anything about the job or the place. The chip on
-// the front door said "We are hiring!" and the next thing on screen was "First
+// the front door said "We are Hiring!" and the next thing on screen was "First
 // name". Reading comes before writing.
 //
 // ——— The four roles are always listed ———

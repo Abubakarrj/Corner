@@ -433,7 +433,7 @@ export const en = {
   "about.p4":
     "Thank you for supporting a neighborhood business. We look forward to welcoming you back, right around the corner.",
   "about.speakToTeam": "To speak with a member of our team:",
-  "about.workWithUs": "We are hiring!",
+  "about.workWithUs": "We are Hiring!",
 
   // ——— Riley ———
   "chat.name": "Riley",
