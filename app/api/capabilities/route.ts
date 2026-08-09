@@ -1,6 +1,7 @@
 import { isAuthConfigured } from "../../auth/auth0";
 import { SHOP_PHONE } from "../../shopFacts";
 import { isToastConfigured } from "../../toast";
+import { isUberConfigured } from "../../uberDirect";
 
 // What's actually switched on, decided at request time.
 //
@@ -44,6 +45,16 @@ export function GET() {
     auth: isAuthConfigured(),
     payments: paymentsEnabled(),
     chat: Boolean(process.env.ANTHROPIC_API_KEY),
+    // Whether a courier can actually be booked. This belonged here from the
+    // start and was the one integration left out, which had a cost: the
+    // finder offered Delivery whatever the environment said, so somebody
+    // chose it, typed their address, waited for a quote, and only then got
+    // told delivery was down. The dead end was at the end.
+    //
+    // Three variables turn it on — UBER_DIRECT_CUSTOMER_ID, CLIENT_ID and
+    // CLIENT_SECRET — and nothing else does. There is no flag, and no code
+    // change: the whole delivery path is built and waiting on them.
+    delivery: isUberConfigured(),
     // The one non-boolean here, and it is not a secret: a shop's phone number
     // is on its window.
     //

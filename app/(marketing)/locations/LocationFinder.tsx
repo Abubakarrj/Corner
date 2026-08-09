@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
+import { useCapabilities } from "../../capabilities";
 import {
   BackIcon,
   CloseIcon,
@@ -82,6 +83,18 @@ export default function LocationFinder() {
   // Only used as the map's key — see the note where StoreMap is rendered.
   const locale = useLocale();
   const [mode, setMode] = useState<Mode>("pickup");
+  // Delivery is offered when a courier can actually be booked, and not
+  // otherwise. Without this the tab was always there and the failure came at
+  // the end — choose Delivery, type your address, wait for a quote, and only
+  // then be told it is down. A dead end is least costly at the top.
+  //
+  // The whole delivery path is built; three environment variables decide
+  // whether it can run. On a deploy that has them, nothing here changes.
+  const { delivery: deliveryOn } = useCapabilities();
+  const modes = useMemo(
+    () => MODES.filter((entry) => entry.id !== "delivery" || deliveryOn),
+    [deliveryOn],
+  );
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
@@ -323,7 +336,7 @@ export default function LocationFinder() {
 
           {/* The three modes, centred between the two circular buttons. */}
           <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 min-[390px]:gap-2">
-            {MODES.map(({ id, label }) => {
+            {modes.map(({ id, label }) => {
               const active = mode === id;
               return (
                 <button

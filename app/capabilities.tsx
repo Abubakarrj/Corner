@@ -14,13 +14,22 @@ export type Capabilities = {
   auth: boolean;
   payments: boolean;
   chat: boolean;
+  /** Whether a courier can be booked. False hides delivery rather than
+      offering it and failing at the quote. */
+  delivery: boolean;
   // The shop's own number, or null when none is configured. Null is the safe
   // default here for the same reason the booleans are false: better to offer
   // no Call button than one that rings a placeholder.
   phone: string | null;
 };
 
-const OFF: Capabilities = { auth: false, payments: false, chat: false, phone: null };
+const OFF: Capabilities = {
+  auth: false,
+  payments: false,
+  chat: false,
+  delivery: false,
+  phone: null,
+};
 
 const CapabilitiesContext = createContext<Capabilities>(OFF);
 
