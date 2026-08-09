@@ -353,6 +353,7 @@ export function useCheckout(): Checkout {
         // thing it has to go on.
         ...(typeof result?.orderGuid === "string" ? { toastGuid: result.orderGuid } : {}),
         ...(typeof result?.readyAt === "number" ? { readyAt: result.readyAt } : {}),
+        ...(typeof result?.deliveryId === "string" ? { deliveryId: result.deliveryId } : {}),
         // The card, as a receipt describes one. Brand and four digits, on this
         // device only — `summary()` is structurally incapable of handing over
         // the number, which is the point of it.

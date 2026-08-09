@@ -321,6 +321,10 @@ export type ToastOrderState = {
   // mapped onto our tracker's stages, because the mapping is a guess until
   // somebody has watched a real order move through it.
   status: string | null;
+  /** Where the kitchen has got to, in Toast's vocabulary — the same values the
+      guest order fulfillment webhook sends. Mapped to our own stages in
+      app/orderStatus.ts, in one place. */
+  fulfillment: string | null;
 };
 
 // What Toast currently thinks of an order. This is what real order tracking
@@ -339,8 +343,36 @@ export async function fetchToastOrder(guid: string): Promise<ToastOrderState | n
 
   const body = (await response.json()) as {
     guid?: string;
-    checks?: { paymentStatus?: string }[];
+    guestOrderStatus?: string;
+    checks?: { paymentStatus?: string; selections?: { fulfillmentStatus?: string }[] }[];
   };
   if (!body.guid) return null;
-  return { guid: body.guid, status: body.checks?.[0]?.paymentStatus ?? null };
+  return {
+    guid: body.guid,
+    status: body.checks?.[0]?.paymentStatus ?? null,
+    fulfillment: body.guestOrderStatus ?? derivedFulfillment(body),
+  };
+}
+
+/** What the kitchen has done, when the order object doesn't carry an
+ *  order-level guest status.
+ *
+ *  Toast tracks preparation per menu item: a selection is NEW, then HOLD or
+ *  SENT once it's fired, then READY when it's made. An order is only ready
+ *  when every part of it is, so this is an AND, not an OR — half a sandwich
+ *  being ready is not an order to come and collect.
+ *
+ *  Returns null rather than a guess when there is nothing to read, which
+ *  leaves the tracker on its estimate. */
+function derivedFulfillment(body: {
+  checks?: { selections?: { fulfillmentStatus?: string }[] }[];
+}): string | null {
+  const states = (body.checks ?? [])
+    .flatMap((check) => check.selections ?? [])
+    .map((selection) => selection.fulfillmentStatus?.toUpperCase())
+    .filter((state): state is string => Boolean(state));
+  if (states.length === 0) return null;
+  if (states.every((state) => state === "READY")) return "READY_FOR_PICKUP";
+  if (states.some((state) => state === "SENT")) return "IN_PREPARATION";
+  return "RECEIVED";
 }

@@ -6,6 +6,7 @@ import { useSyncExternalStore } from "react";
 import type { SelectedOptions } from "./shop/products";
 import { taxFor } from "./shop/money";
 import { PREP_MINUTES } from "./shopFacts";
+import type { LiveStatus } from "./orderStages";
 
 // Who's signed in, and what they've ordered.
 //
@@ -79,6 +80,10 @@ export type PlacedOrder = {
   // Absent on orders placed before this existed, and on any order the kitchen
   // heard about some other way.
   toastGuid?: string;
+  // Uber's id for the courier's job, on a delivery. The other half of the
+  // pair: Toast says where the food is, Uber says where the driver is, and an
+  // order in a car needs both to be tracked honestly.
+  deliveryId?: string;
   // When the shop said it would be ready, in epoch ms — Toast's
   // estimatedFulfillmentDate, computed from the restaurant's configured quote
   // time, its hours and its throttling. A real answer about a real morning,
@@ -555,10 +560,73 @@ export function prepMinutesFor(order: PlacedOrder): number {
   return span > 0 && span <= MAX_SENSIBLE_PREP_MINUTES ? span : PREP_MINUTES;
 }
 
+/** Which stage a real status puts the order in, and whether that is a claim
+ *  worth making on its own.
+ *
+ *  The stages are [placed, in the kitchen, ready|on the way, complete].
+ *
+ *  A delivery reads differently from a pickup, and the difference is not
+ *  cosmetic. "Ready" on a pickup means come and get it; the same word on a
+ *  delivery means a bag is sitting on a shelf waiting for a driver, which is
+ *  not "on the way" and must not be shown as it. So a delivery only reaches
+ *  stage two when Uber says a courier actually has the food.
+ *
+ *  `firm` marks the stages we are willing to state on their own — ready,
+ *  collected, delivered. The early ones are true but weak: a kitchen that
+ *  never fires IN_PREPARATION, because the shop has no KDS, would otherwise
+ *  hold the bar at "placed" for eight minutes and then jump. */
+function stageFromLive(
+  live: LiveStatus | undefined,
+  delivery: boolean,
+): { index: number; firm: boolean } | undefined {
+  if (!live) return undefined;
+  if (delivery) {
+    switch (live.courier) {
+      case "collected":
+      case "delivering":
+        return { index: 2, firm: true };
+      case "delivered":
+        return { index: 3, firm: true };
+      case "canceled":
+        return undefined;
+      default:
+        break;
+    }
+    // The food's own progress, before a courier has it. Ready is real, but on
+    // a delivery it is still "in the kitchen" as far as the customer's food
+    // moving towards them goes.
+    switch (live.food) {
+      case "cooking":
+      case "ready":
+        return { index: 1, firm: false };
+      case "received":
+        return { index: 0, firm: false };
+      default:
+        return undefined;
+    }
+  }
+  switch (live.food) {
+    case "received":
+      return { index: 0, firm: false };
+    case "cooking":
+      return { index: 1, firm: false };
+    case "ready":
+      return { index: 2, firm: true };
+    case "done":
+      return { index: 3, firm: true };
+    // A voided order is not a later stage, it is a different conversation.
+    // Nothing here advances it; the estimate carries on, which is wrong but
+    // wrong in the direction of saying less.
+    default:
+      return undefined;
+  }
+}
+
 export function progressFor(
   order: PlacedOrder,
   tag = "en-US",
   now: number = Date.now(),
+  live?: LiveStatus,
 ): OrderProgress {
   const stages = stagesFor(order);
   const delivery = isDelivery(order);
@@ -568,20 +636,54 @@ export function progressFor(
   const totalMinutes = prep + (delivery ? DELIVERY_MINUTES : 0);
   const elapsed = Math.max(0, (now - order.placedAt) / 60000);
 
-  const current = elapsed < 2 ? 0 : elapsed < prep ? 1 : 2;
-  const fraction = Math.min(1, elapsed / totalMinutes);
-  const settled = elapsed >= totalMinutes;
+  const guessed = elapsed < 2 ? 0 : elapsed < prep ? 1 : 2;
+
+  // ——— How a real status and a running clock are reconciled ———
+  //
+  // Neither one wins outright, and it took getting both wrong to see why.
+  //
+  // Clock wins always, and a real "still cooking" gets overwritten by an
+  // estimate that has run out — so the screen says the food is on the counter
+  // while Toast says it is not, and somebody walks over for nothing. That is
+  // the one failure that costs a person a trip.
+  //
+  // Reality wins always, and a shop with no KDS — where nothing fires until a
+  // human presses Order Ready — sits at "placed" for eight minutes and then
+  // jumps to the end. Truthful, and it looks broken.
+  //
+  // So: a firm real stage is the answer, whatever the clock thinks. Anything
+  // else lets the clock keep creeping, but caps it below "ready", because
+  // "ready" is the claim that sends somebody out of the house and we know it
+  // is not true yet.
+  const real = stageFromLive(live, delivery);
+  const READY = 2;
+  const current = real
+    ? real.firm
+      ? real.index
+      : Math.min(Math.max(guessed, real.index), READY - 1)
+    : guessed;
+
+  const done = current >= stages.length - 1;
+  const arrived = real?.firm && real.index >= READY;
+  const fraction = arrived ? 1 : Math.min(1, elapsed / totalMinutes);
+  // Past the estimate with nothing to add, or finished for real. An order the
+  // shop has actually marked ready stays on the screen until it is collected
+  // rather than ageing off it.
+  const settled = done || (elapsed >= totalMinutes && !real);
 
   return {
     stages,
     current,
     fraction,
-    eta: settled
-      ? null
-      : {
-          key: delivery ? "order.arrivingAround" : "order.readyAround",
-          time: formatClock(order.placedAt + totalMinutes * 60000, tag),
-        },
+    // No estimate once it is really ready: "ready around 8:24" under the word
+    // Ready is the page arguing with itself.
+    eta:
+      settled || arrived
+        ? null
+        : {
+            key: delivery ? "order.arrivingAround" : "order.readyAround",
+            time: formatClock(order.placedAt + totalMinutes * 60000, tag),
+          },
     settled,
   };
 }

@@ -386,6 +386,7 @@ export async function POST(request: Request) {
   // sorting out the ride" rather than throwing away a real order.
   async function bookCourier(): Promise<{
     trackingUrl?: string;
+    deliveryId?: string;
     deliveryBooked?: boolean;
   }> {
     if (!forDelivery || !deliveryQuoteId || !dropoff) return {};
@@ -419,6 +420,11 @@ export async function POST(request: Request) {
       ...(booked.delivery.trackingUrl
         ? { trackingUrl: booked.delivery.trackingUrl }
         : {}),
+      // Uber's id for the courier's job. Kept for the same reason as Toast's
+      // order guid: it is the handle the delivery half of the tracker asks
+      // about, and it was being dropped here exactly as the guid was dropped
+      // in the checkout.
+      deliveryId: booked.delivery.deliveryId,
     };
   }
 }

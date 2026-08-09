@@ -15,6 +15,7 @@ import {
   type PlacedOrder,
 } from "../../../account";
 import { SHOP_PHONE, shopPhoneLabel } from "../../../shopFacts";
+import { useLiveStatus } from "../../useLiveStatus";
 import { ButtonLink } from "../../../ui/Button";
 import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
@@ -26,10 +27,19 @@ const { ink, muted, faint, border, surface, controlBorder, sky } = PALETTE;
 // that says where the order is, a bar that fills, the stages under it, then
 // the receipt.
 //
-// ⚠️ The stage is an ESTIMATE derived from the clock — nothing reports real
-// progress yet (see the warning on OrderStatus in app/account.ts). The screen
-// says so rather than implying a kitchen display somewhere is driving it, and
-// it never claims the order was handed over: only the counter knows that.
+// The stage is real when the shop has said so, and an estimate when it hasn't.
+//
+// /api/order-status is asked every 20 seconds for as long as this screen is
+// open. It answers from Toast — moved by somebody pressing Order Ready in
+// Orders Hub — and, on a delivery, from Uber. When it knows nothing, which is
+// every order placed before this existed and every order the kitchen has not
+// touched, the clock estimate carries on exactly as it always did.
+//
+// See progressFor in app/account.ts for how the two are reconciled. The short
+// version: a real "ready" is stated whatever the clock thinks, and a real
+// "still cooking" stops the clock from claiming ready — but never holds the
+// bar back below the kitchen, because a shop without a KDS fires nothing at
+// all until the moment it is done.
 export default function OrderTracker({ id }: { id: string }) {
   const t = useT();
   const tag = localeById(useLocale()).tag;
@@ -45,6 +55,11 @@ export default function OrderTracker({ id }: { id: string }) {
     const timer = window.setInterval(() => tick((n) => n + 1), 15_000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // One poll for the whole app — see app/shop/useLiveStatus.ts. This screen
+  // used to run its own, which is how the strip above it ended up counting
+  // down while the headline already said Ready.
+  const live = useLiveStatus(order);
 
   if (!order) {
     return (
@@ -62,7 +77,10 @@ export default function OrderTracker({ id }: { id: string }) {
     );
   }
 
-  const progress = progressFor(order, tag);
+  // `undefined` for the clock, not Date.now(): progressFor defaults it, and
+  // reading the clock in a render body is the impurity the lint rule is for.
+  // The 15s tick above is what makes this recompute.
+  const progress = progressFor(order, tag, undefined, live);
   const stage = progress.stages[progress.current];
 
   return (

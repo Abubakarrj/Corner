@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useT } from "../i18n";
 import { useEffect, useState } from "react";
 import { activeOrder, progressFor, useOrders } from "../account";
+import { useLiveStatus } from "./useLiveStatus";
 import { PALETTE } from "./shopControls";
 
 const { skySoft, skyInk } = PALETTE;
@@ -27,9 +28,12 @@ export default function OrderStatusBar() {
   }, []);
 
   const order = activeOrder(orders);
+  // Before the early return: a hook cannot be called conditionally, and this
+  // one is written to take undefined for exactly that reason.
+  const live = useLiveStatus(order ?? undefined);
   if (!order) return null;
 
-  const progress = progressFor(order);
+  const progress = progressFor(order, "en-US", undefined, live);
   const stage = progress.stages[progress.current];
 
   return (

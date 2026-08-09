@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useT } from "../i18n";
 import { localeById } from "../localeScript";
 import { findOrder, progressFor, useOrders } from "../account";
+import { useLiveStatus } from "./useLiveStatus";
 
 // Where the order is, without leaving the conversation.
 //
@@ -39,6 +40,9 @@ export default function ChatTrack({
   const tag = localeById(useLocale()).tag;
   const orders = useOrders();
   const order = findOrder(orders, id);
+  // Above the early return below, because hooks cannot be conditional. Shared
+  // with the tracker and the strip, so all three say the same thing.
+  const live = useLiveStatus(order);
 
   // Re-render on a timer so the bar creeps while the panel is open, the same
   // 15s the page uses: the stages are minutes apart, and a per-second repaint
@@ -67,7 +71,7 @@ export default function ChatTrack({
     );
   }
 
-  const progress = progressFor(order, tag);
+  const progress = progressFor(order, tag, undefined, live);
   const stage = progress.stages[progress.current];
 
   return (

@@ -257,3 +257,37 @@ export async function createDelivery(input: {
     },
   };
 }
+
+export type DeliveryState = {
+  deliveryId: string;
+  /** Uber's own word for where the courier is: pending, pickup,
+      pickup_complete, dropoff, delivered, canceled, returned. Mapped to our
+      stages in app/orderStatus.ts, in one place. */
+  status: string | null;
+};
+
+/** What Uber currently says about a delivery.
+ *
+ *  A GET, unlike everything else here, so it does not go through call() —
+ *  that helper posts. Kept small on purpose: the courier's live position is
+ *  Uber's own tracking page, linked from the order, and rebuilding a map of
+ *  somebody else's driver would be a worse version of a page that exists.
+ *  This is only for the stage the tracker shows in words. */
+export async function fetchDelivery(deliveryId: string): Promise<DeliveryState | null> {
+  const config = uberConfig();
+  if (!config) return null;
+  const bearer = await token(config);
+  if (!bearer) return null;
+
+  const response = await fetch(
+    `${API}/customers/${config.customerId}/deliveries/${encodeURIComponent(deliveryId)}`,
+    { headers: { Authorization: `Bearer ${bearer}` }, cache: "no-store" },
+  );
+  if (!response.ok) return null;
+  const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body) return null;
+  return {
+    deliveryId,
+    status: typeof body.status === "string" ? body.status : null,
+  };
+}

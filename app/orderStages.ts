@@ -1,0 +1,72 @@
+// The words this app uses for where an order is, and the two translations
+// from the providers' vocabularies into them.
+//
+// Its own file, with no imports, because both sides need it: the server store
+// in orderStatus.ts writes these, and the tracker in account.ts reads them.
+// Putting them in orderStatus.ts would have pulled the Toast and Uber clients
+// — process.env, secrets, fetch — into the browser bundle through account.ts,
+// which every shop page imports.
+
+/** Where the food is. Our words, not Toast's — mapped once, here, so the rest
+    of the app never has to know Toast's vocabulary. */
+export type FoodStage = "received" | "cooking" | "ready" | "done" | "voided";
+
+/** Where the courier is, on a delivery. */
+export type CourierStage =
+  | "assigned"
+  | "collecting"
+  | "collected"
+  | "delivering"
+  | "delivered"
+  | "canceled";
+
+export type LiveStatus = {
+  food?: FoodStage;
+  courier?: CourierStage;
+  /** When the provider last told us, epoch ms. */
+  at: number;
+};
+
+/** Toast's fulfillment vocabulary, mapped once.
+ *
+ *  Unknown values deliberately return undefined rather than a guess. A status
+ *  we do not recognise means the tracker keeps running on its estimate, which
+ *  is the behaviour it had before any of this existed. */
+export function foodStageOf(toastStatus: string | null): FoodStage | undefined {
+  switch (toastStatus?.toUpperCase()) {
+    case "RECEIVED":
+      return "received";
+    case "IN_PREPARATION":
+      return "cooking";
+    case "READY_FOR_PICKUP":
+      return "ready";
+    case "CLOSED":
+      return "done";
+    case "VOIDED":
+      return "voided";
+    default:
+      return undefined;
+  }
+}
+
+/** Uber's delivery vocabulary, mapped once. */
+export function courierStageOf(uberStatus: string | null): CourierStage | undefined {
+  switch (uberStatus?.toLowerCase()) {
+    case "pending":
+      return "assigned";
+    case "pickup":
+      return "collecting";
+    case "pickup_complete":
+      return "collected";
+    case "dropoff":
+      return "delivering";
+    case "delivered":
+      return "delivered";
+    case "canceled":
+    case "cancelled":
+    case "returned":
+      return "canceled";
+    default:
+      return undefined;
+  }
+}
