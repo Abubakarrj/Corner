@@ -83,6 +83,35 @@
   /* Rules, heaviest first. */
   --cb-line: #e4dece;
   --cb-line-soft: #ddd6c2;
+
+  /* ——— Chrome that floats on the map ———
+   *
+   * Its own tokens, because every other surface in this file sits on a ground
+   * we chose and these sit on one we drew separately: the Google style array
+   * in engineGoogle.ts. The two drifted into each other. --cb-surface on the
+   * dark side was #282725, and so is the map's landscape.natural — the same
+   * value twice, so the "Search area" button was not merely low-contrast
+   * against the map, it was painted in the map's own colour. Light had the
+   * same fault at 1.03 against the white road fill.
+   *
+   * The edge is what does the work, and it has to, because a fill never can:
+   * light chrome on a light basemap and dark chrome on a dark one are both
+   * about 1.1:1 whatever shade you pick, and the map spans a range wide enough
+   * to swallow anything in it. A 1px edge answers to the fill instead, and it
+   * clears 3:1 against both the fill and every colour the map paints — the
+   * bar for the boundary of a control you have to be able to find.
+   *
+   * Measured against engineGoogle.ts's MAP_STYLE, not eyeballed. Change either
+   * one and re-run the numbers.
+   *
+   *   dark   edge vs fill 5.47   vs map, worst 3.48   label on fill 15.62
+   *   light  edge vs fill 4.58   vs map, worst 3.47   label on fill 15.99
+   *
+   * The shadow is per theme for the same reason the edge is: black at 16%
+   * over a near-black map is nothing at all. */
+  --cb-map-chrome: #fdfcf7;
+  --cb-map-chrome-edge: #78736a;
+  --cb-map-chrome-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
   --cb-line-faint: #e7e2d2;
   --cb-line-grey: #e2e2e2;
   --cb-line-mute: #cfc8b2;
@@ -198,6 +227,10 @@
   --cb-good-bg: #2f4326;
 
   --cb-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  --cb-map-chrome: #171614;
+  --cb-map-chrome-edge: #918d84;
+  --cb-map-chrome-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
 
 /* A `dark:` variant that follows the attribute, not the media query.
@@ -321,6 +354,8 @@
   --color-cream: var(--cb-cream);
   --color-panel: var(--cb-panel);
   --color-surface: var(--cb-surface);
+  --color-map-chrome: var(--cb-map-chrome);
+  --color-map-chrome-edge: var(--cb-map-chrome-edge);
   --color-raise: var(--cb-raise);
   --color-tile: var(--cb-tile);
   --color-ink: var(--cb-ink);

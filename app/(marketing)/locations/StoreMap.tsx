@@ -69,6 +69,13 @@ export type MapFocus = {
   openId?: string;
 };
 
+// The look of anything floating on the map: a fill, a 1px edge and a shadow,
+// all per theme. The edge is the part that matters — see the note in
+// globals.css. Written once because three controls that describe the same
+// object separately are three controls that end up describing it differently.
+const CHROME =
+  "border border-map-chrome-edge bg-map-chrome shadow-[var(--cb-map-chrome-shadow)]";
+
 export default function StoreMap({
   locations,
   showSearchArea,
@@ -285,7 +292,7 @@ export default function StoreMap({
               const bounds = engineRef.current?.getBounds();
               if (bounds) onSearchArea(bounds);
             }}
-            className="pointer-events-auto absolute start-4 top-4 cursor-pointer rounded-full bg-surface px-5 py-2.5 text-[14px] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+            className={`pointer-events-auto absolute start-4 top-4 cursor-pointer rounded-full px-5 py-2.5 text-[14px] text-ink transition-opacity hover:opacity-90 ${CHROME}`}
           >
             {t("finder.searchArea")}
           </button>
@@ -309,14 +316,14 @@ export default function StoreMap({
             );
           }}
           aria-label={t("finder.useMyLocation")}
-          className="pointer-events-auto absolute end-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)] transition-opacity hover:opacity-90"
+          className={`pointer-events-auto absolute end-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 ${CHROME}`}
         >
           <LocateIcon />
         </button>
 
         {/* Zoom pair, stacked and sharing one rounded shell with a divider
             between: they read as one control. */}
-        <div className="pointer-events-auto absolute end-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.16)]">
+        <div className={`pointer-events-auto absolute end-4 top-[68px] flex w-11 flex-col overflow-hidden rounded-xl ${CHROME}`}>
           <button
             type="button"
             onClick={() => {
@@ -324,7 +331,7 @@ export default function StoreMap({
               engine?.setZoom(engine.getZoom() + 1);
             }}
             aria-label={t("finder.zoomIn")}
-            className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
+            className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-raise"
           >
             +
           </button>
@@ -335,7 +342,7 @@ export default function StoreMap({
               engine?.setZoom(engine.getZoom() - 1);
             }}
             aria-label={t("finder.zoomOut")}
-            className="flex h-11 cursor-pointer items-center justify-center border-t border-line-soft text-[22px] leading-none text-ink transition-colors hover:bg-black/5"
+            className="flex h-11 cursor-pointer items-center justify-center border-t border-map-chrome-edge text-[22px] leading-none text-ink transition-colors hover:bg-raise"
           >
             −
           </button>
