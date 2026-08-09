@@ -167,18 +167,29 @@ export default function ApplicationForm({
   const current = edited ?? base;
   const application = current.application;
   const step = current.step;
-  // Both halves of the card press, read off the application rather than the
-  // URL. That distinction is the whole point: the link only ever seeds them,
-  // so the page still knows what it is for after a reload, in a tab reopened
-  // tomorrow, or when a draft is picked back up days later.
+  // Both halves of the card press: what they *arrived* with, from the card
+  // they pressed or the draft they came back to, as opposed to what the
+  // application currently says.
   //
-  // The job was the one that broke visibly — read from the prop, it vanished
-  // with the query string and the form went back to asking. The shop had the
-  // same fault somewhere quieter: it was stored correctly and did reach the
-  // PDF, but the line under the headline read the prop, so a reload dropped
-  // "Koreatown" from a page whose application still had it.
-  const job = application.role === "" ? null : application.role;
-  const where = application.location.trim() === "" ? null : application.location.trim();
+  // Read off `base` rather than the URL, which is what makes the page survive
+  // a reload, a tab reopened tomorrow, or a draft picked up on Thursday. Read
+  // off `base` rather than `application` for a second reason:
+  //
+  // The distinction is the whole of how this page avoids saying one thing
+  // twice. A form that decides on `application.role` cannot tell "you already
+  // told us this" from "you just answered it here", so it either asks a
+  // question already answered at the top of the page, or hides the field the
+  // instant somebody uses it. Reading `base` separates them: it is the draft
+  // and the link folded together, before any edit on this screen.
+  //
+  //   arrived with a job — the masthead names it, and step two never asks
+  //   arrived without    — the general masthead, and step two asks and keeps
+  //                        showing the answer
+  //
+  // Either way the job is on the screen exactly once.
+  const arrivedWith = base.application.role === "" ? null : base.application.role;
+  const where =
+    base.application.location.trim() === "" ? null : base.application.location.trim();
   // Per step, so moving forward doesn't paint the next screen red before it
   // has been touched.
   const [tried, setTried] = useState<Set<number>>(new Set());
@@ -354,14 +365,20 @@ export default function ApplicationForm({
   // The job first, then the week, then the two eligibility questions. One
   // shape for everybody, whether a card answered the job or not.
   //
-  // It is shown even when a card already answered it, and that is deliberate
-  // twice over. A field that hides itself once answered cannot show you the
-  // answer, so the version that only appeared while unanswered made the cards
-  // vanish under the finger that tapped one. And an answer you can see but
-  // not reach is an answer you have to leave the form to change — "Different
-  // job?" meant going back to the openings list and finding your place again.
-  // The masthead is the heading, saying what this form is for; this is the
-  // field, holding the same answer where it can be changed.
+  // The job section is only built when the form has to ask — see arrivedWith.
+  // An earlier cut showed it whenever a job was set, which put "Counter &
+  // Register" in the headline and again in a field a screen-length below,
+  // the second time phrased as a question already answered.
+  //
+  // It is still shown for the whole visit once it has been asked, rather than
+  // disappearing the moment somebody answers. A field that hides itself on
+  // being used takes the cards out from under the finger that tapped one, and
+  // leaves no way to change an answer you can see.
+  //
+  // Changing a job that came from a card means Back, then another card. That
+  // is one tap further than an inline control and it costs nothing: the draft
+  // keeps every answer already typed, and the second card replaces the job
+  // rather than adding to it.
   const jobSection = (first: boolean) => (
     <>
       <Legend first={first}>{t("careers.secRole")}</Legend>
@@ -559,7 +576,7 @@ export default function ApplicationForm({
 
             Without a job (the "Not sure which?" way in) there is nothing to
             headline, so it keeps the general one. */}
-        {job ? (
+        {arrivedWith ? (
           <>
             <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
               {t("careers.applyingFor")}
@@ -568,7 +585,7 @@ export default function ApplicationForm({
               className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
-              {t(POSITION_LABEL[job])}
+              {t(POSITION_LABEL[arrivedWith])}
             </h1>
             {/* Just the shop. There used to be a "Different job?" link here,
                 back to the openings list — which is now the long way round to
@@ -734,8 +751,8 @@ export default function ApplicationForm({
           {step === 1 ? (
             <>
               <StepHead title={t("careers.stepWork")} />
-              {jobSection(true)}
-              {whenSection(false)}
+              {arrivedWith ? null : jobSection(true)}
+              {whenSection(arrivedWith !== null)}
 
               <Legend>{t("careers.secChecks")}</Legend>
               <div className="flex flex-col gap-2.5">
