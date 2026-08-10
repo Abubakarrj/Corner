@@ -88,7 +88,22 @@ function clientIp(request: Request): string {
 // So the body is composed here, in app/api/apply, where it can be read and
 // changed with the code that produces it, and the file goes with it. Loops
 // still owns the drop list, which is the thing it is actually for.
+// Where applications land. The recipient's domain has nothing to do with the
+// sending domain and needs no setup of its own — Resend verifies who mail is
+// *from*, not who it is to — so this can be any mailbox anywhere.
+//
+// The fallback is a real address, which makes a misspelled variable name the
+// quietest possible failure: applications keep arriving, at a mailbox nobody
+// is watching, and the only symptom is silence at the one that is. So an
+// unset value says so in production rather than being taken as a choice.
 const CAREERS_INBOX = process.env.CAREERS_INBOX ?? "abu@thecornerbagel.com";
+if (!process.env.CAREERS_INBOX && process.env.NODE_ENV === "production") {
+  console.warn(
+    `[apply] CAREERS_INBOX is not set — applications will go to ${CAREERS_INBOX}.` +
+      " If that is not where they should go, check the variable's spelling:" +
+      " it is CAREERS_INBOX, plural and upper case.",
+  );
+}
 
 const t = (key: StringKey): string => en[key];
 
