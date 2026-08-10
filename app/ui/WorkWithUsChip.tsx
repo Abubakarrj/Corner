@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useT } from "../i18n";
 
-// "We are Hiring!" — the way in to /careers, and the only one on the site.
+// "We Are Hiring!" — the way in to /careers, and the only one on the site.
 //
 // It rides in the corner strip with the language picker and the appearance
 // switch, and for a while it was dressed exactly like them: same pill, same
