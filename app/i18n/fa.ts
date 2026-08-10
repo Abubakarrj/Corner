@@ -665,8 +665,9 @@ export const fa: Table = {
 
   "careers.submit": "ارسال درخواست",
   "careers.sending": "در حال ارسال…",
-  "careers.sentTitle": "درخواست ارسال شد",
-  "careers.sentBody": "دریافت شد. اگر مناسب باشد، حدود یک هفته دیگر کسی به {contact} می‌نویسد.",
+  "careers.sentTitle": "ممنون که درخواست دادید",
+  "careers.sentBody": "درخواست شما به دست ما رسید. اگر مناسب باشد، حدود یک هفته دیگر به {contact} پیام می‌دهیم.",
+  "careers.sentDone": "بازگشت به Corner Bagel",
   "careers.sentAgain": "ارسال یکی دیگر",
 
   "careers.eeo":

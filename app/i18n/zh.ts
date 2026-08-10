@@ -611,8 +611,9 @@ export const zh: Table = {
 
   "careers.submit": "提交申请",
   "careers.sending": "提交中…",
-  "careers.sentTitle": "申请已提交",
-  "careers.sentBody": "我们收到了。如果合适，大约一周内会有人写信到 {contact}。",
+  "careers.sentTitle": "感谢你的申请",
+  "careers.sentBody": "我们已经收到你的申请。如果合适，大约一周内会写信到 {contact}。",
+  "careers.sentDone": "返回 Corner Bagel",
   "careers.sentAgain": "再提交一份",
 
   "careers.eeo":

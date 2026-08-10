@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { Button, ButtonLink } from "../../ui/Button";
+import Confetti from "../../ui/Confetti";
 import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useServerText, useT, type StringKey } from "../../i18n";
 import {
@@ -994,11 +995,26 @@ export default function ApplicationForm({
 function Sent({ email }: { email: string }) {
   const t = useT();
   return (
+    // relative, so the confetti canvas fills the whole screen rather than the
+    // card. That is the opposite of what the purchase screen does, and for a
+    // reason worth writing down: this card is short — a tick, two lines and a
+    // button — and the burst comes from two launchers near the *bottom* of
+    // whatever box it is given, firing upward like party poppers. Given only
+    // the card, every piece left through the top edge within a few hundred
+    // milliseconds and the celebration was a dozen scraps. Given the screen,
+    // the poppers sit below the card and the confetti rises past it and falls
+    // the full height, which is the effect the component was written for.
     <div
-      className="flex min-h-dvh items-center justify-center px-5"
+      className="relative flex min-h-dvh items-center justify-center px-5"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
-      <div className="cb-rise w-full max-w-sm text-center">
+      {/* Nothing at all under prefers-reduced-motion — the component checks.
+          The tick and the wording carry the moment on their own. */}
+      <Confetti />
+
+      {/* Above the canvas in the stacking order, so a piece of confetti can't
+          land on top of the applicant's own email address. */}
+      <div className="cb-rise relative w-full max-w-sm text-center">
         <span
           aria-hidden
           className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
@@ -1023,8 +1039,12 @@ function Sent({ email }: { email: string }) {
         <p className="m-0 mx-auto mt-3 text-[14px] leading-[1.6] text-muted">
           {t("careers.sentBody", { contact: email })}
         </p>
+        {/* Not common.backToMenu. Every other use of that string links to
+            /shop, which really is the menu; this one goes to the front door,
+            and a button that names a destination it doesn't go to is worse
+            than one more line in the string table. */}
         <ButtonLink href="/" variant="secondary" className="mt-8 w-full">
-          {t("common.backToMenu")}
+          {t("careers.sentDone")}
         </ButtonLink>
       </div>
     </div>

@@ -613,8 +613,9 @@ export const ja: Table = {
 
   "careers.submit": "応募を送信",
   "careers.sending": "送信中…",
-  "careers.sentTitle": "応募を送信しました",
-  "careers.sentBody": "受け取りました。ご縁がありそうなら、1週間ほどで {contact} にご連絡します。",
+  "careers.sentTitle": "ご応募ありがとうございます",
+  "careers.sentBody": "応募内容をお預かりしました。ご縁がありそうなら、1週間ほどで {contact} にご連絡します。",
+  "careers.sentDone": "Corner Bagel に戻る",
   "careers.sentAgain": "もう一件送る",
 
   "careers.eeo":

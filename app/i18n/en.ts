@@ -647,8 +647,9 @@ export const en = {
 
   "careers.submit": "Send application",
   "careers.sending": "Sending…",
-  "careers.sentTitle": "Application sent",
-  "careers.sentBody": "We have it. If it looks like a fit, someone will write to {contact} within about a week.",
+  "careers.sentTitle": "Thanks for applying",
+  "careers.sentBody": "Your application is with us. If it looks like a fit, we'll be in touch at {contact} within about a week.",
+  "careers.sentDone": "Back to Corner Bagel",
   "careers.sentAgain": "Send another",
 
   "careers.eeo":

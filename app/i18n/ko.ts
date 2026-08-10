@@ -613,8 +613,9 @@ export const ko: Table = {
 
   "careers.submit": "지원서 보내기",
   "careers.sending": "보내는 중…",
-  "careers.sentTitle": "지원서를 보냈습니다",
-  "careers.sentBody": "잘 받았습니다. 맞는 자리가 있으면 일주일 안쯤에 {contact}(으)로 연락드릴게요.",
+  "careers.sentTitle": "지원해 주셔서 감사합니다",
+  "careers.sentBody": "지원서를 잘 받았습니다. 맞는 자리가 있으면 일주일 안쯤에 {contact}(으)로 연락드릴게요.",
+  "careers.sentDone": "Corner Bagel로 돌아가기",
   "careers.sentAgain": "하나 더 보내기",
 
   "careers.eeo":

@@ -616,8 +616,9 @@ export const ur: Table = {
 
   "careers.submit": "درخواست بھیجیں",
   "careers.sending": "بھیجا جا رہا ہے…",
-  "careers.sentTitle": "درخواست بھیج دی گئی",
-  "careers.sentBody": "ہمیں مل گئی۔ اگر بات بنتی نظر آئی تو تقریباً ایک ہفتے میں کوئی {contact} پر لکھے گا۔",
+  "careers.sentTitle": "درخواست دینے کا شکریہ",
+  "careers.sentBody": "آپ کی درخواست ہمیں مل گئی ہے۔ اگر بات بنتی نظر آئی تو تقریباً ایک ہفتے میں {contact} پر رابطہ کریں گے۔",
+  "careers.sentDone": "Corner Bagel پر واپس",
   "careers.sentAgain": "ایک اور بھیجیں",
 
   "careers.eeo":

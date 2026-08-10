@@ -613,8 +613,9 @@ export const my: Table = {
 
   "careers.submit": "လျှောက်လွှာ ပို့ရန်",
   "careers.sending": "ပို့နေသည်…",
-  "careers.sentTitle": "လျှောက်လွှာ ပို့ပြီးပါပြီ",
-  "careers.sentBody": "ရရှိပါပြီ။ အဆင်ပြေမယ်ဆိုရင် တစ်ပတ်ခန့်အတွင်း {contact} ကို စာပြန်ပါမယ်။",
+  "careers.sentTitle": "လျှောက်ထားပေးတဲ့အတွက် ကျေးဇူးတင်ပါတယ်",
+  "careers.sentBody": "လျှောက်လွှာကို လက်ခံရရှိပါပြီ။ အဆင်ပြေမယ်ဆိုရင် တစ်ပတ်ခန့်အတွင်း {contact} ကို စာပြန်ပါမယ်။",
+  "careers.sentDone": "Corner Bagel သို့ ပြန်သွားရန်",
   "careers.sentAgain": "နောက်တစ်စောင် ပို့ရန်",
 
   "careers.eeo":

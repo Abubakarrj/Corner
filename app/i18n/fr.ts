@@ -668,8 +668,9 @@ export const fr: Table = {
 
   "careers.submit": "Envoyer la candidature",
   "careers.sending": "Envoi…",
-  "careers.sentTitle": "Candidature envoyée",
-  "careers.sentBody": "On l'a bien reçue. Si ça colle, quelqu'un écrira à {contact} d'ici une semaine environ.",
+  "careers.sentTitle": "Merci d'avoir postulé",
+  "careers.sentBody": "On a bien votre candidature. Si ça colle, on vous écrit à {contact} d'ici une semaine environ.",
+  "careers.sentDone": "Retour à Corner Bagel",
   "careers.sentAgain": "En envoyer une autre",
 
   "careers.eeo":
