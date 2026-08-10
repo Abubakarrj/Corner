@@ -234,7 +234,6 @@ async function mailToShop(
   );
 
   const result = await sendEmail({
-    from: "forms",
     to: CAREERS_INBOX,
     subject: `Application — ${name} — ${chosen([application.role], POSITIONS)}`,
     html,
