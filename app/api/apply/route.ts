@@ -7,6 +7,7 @@ import {
   type Application,
 } from "../../(marketing)/careers/application";
 import { en, type StringKey } from "../../i18n/en";
+import { emailShell, escapeHtml, isEmailConfigured, sendEmail } from "../../email";
 import { renderApplicationPdf } from "./applicationPdf";
 import { toEnglish, type Translation } from "./translate";
 
@@ -74,14 +75,19 @@ function clientIp(request: Request): string {
 // somebody a newsletter; here it would throw away a job application, and we
 // have a phone number as a second way to reach them either way.
 
-const LOOPS_API_KEY = process.env.LOOPS_API_KEY;
-const LOOPS_TRANSACTIONAL_URL = "https://app.loops.so/api/v1/transactional";
-// The template lives in the Loops dashboard. It needs one {{summary}} in a
-// monospaced block — that's the verbatim text of every answer, which is how an
-// application written in Korean or Persian stays readable even though the PDF
-// can't draw it. Attachments have to be switched on for the account by Loops
-// support; without that, the API accepts the call and drops the file.
-const LOOPS_TEMPLATE_ID = process.env.LOOPS_APPLICATION_TRANSACTIONAL_ID;
+// Sent through Resend rather than Loops.
+//
+// The message body used to be a template in the Loops dashboard with a
+// {{summary}} slot, and the plan was for the PDF to ride along as an
+// attachment. It never did: Loops only sends attachments for accounts whose
+// support team has switched the feature on, and until somebody opens that
+// ticket the API accepts the call and drops the file — with a 200. An
+// application arriving with no application attached is exactly the failure
+// this endpoint is written to avoid.
+//
+// So the body is composed here, in app/api/apply, where it can be read and
+// changed with the code that produces it, and the file goes with it. Loops
+// still owns the drop list, which is the thing it is actually for.
 const CAREERS_INBOX = process.env.CAREERS_INBOX ?? "abu@thecornerbagel.com";
 
 const t = (key: StringKey): string => en[key];
@@ -189,42 +195,59 @@ async function mailToShop(
   // inbox list stay legible. The original is in the body.
   const name =
     `${translation.english.firstName} ${translation.english.lastName}`.trim();
-  const response = await fetch(LOOPS_TRANSACTIONAL_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${LOOPS_API_KEY}`,
-    },
-    body: JSON.stringify({
-      transactionalId: LOOPS_TEMPLATE_ID,
-      email: CAREERS_INBOX,
-      dataVariables: {
-        applicantName: name,
-        applicantEmail: application.email,
-        applicantPhone: application.phone,
-        // The template still calls this {{positions}}; renaming it would mean
-        // editing the Loops template in lockstep with a deploy, and the value
-        // is the job either way.
-        positions: chosen([application.role], POSITIONS),
-        summary: bothLanguages(application, translation),
-        // So the reader knows to trust the text over the attachment when the
-        // two disagree, rather than assuming the PDF lost something.
-        pdfIncomplete: pdf.substituted ? "yes" : "no",
-        translatedFrom: translation.translated ? (translation.from ?? "another language") : "",
-      },
-      attachments: [
-        {
-          filename: pdf.filename,
-          contentType: "application/pdf",
-          data: Buffer.from(pdf.bytes).toString("base64"),
-        },
-      ],
-    }),
+  const summary = bothLanguages(application, translation);
+
+  const facts: [string, string][] = [
+    ["Applying for", chosen([application.role], POSITIONS)],
+    ["Email", application.email],
+    ["Phone", application.phone],
+  ];
+  if (translation.translated) {
+    facts.push(["Written in", translation.from ?? "another language"]);
+  }
+  if (pdf.substituted) {
+    // Said at the top rather than buried, so somebody comparing the two knows
+    // which one to believe before they start reading.
+    facts.push([
+      "Note",
+      "some answers are in a script the attached PDF's font cannot draw." +
+        " They are complete below.",
+    ]);
+  }
+
+  const html = emailShell(
+    [
+      `<p style="margin:0 0 4px;font-size:19px;font-weight:600;">${escapeHtml(name)}</p>`,
+      `<p style="margin:0 0 18px;color:#6b6760;font-size:13px;">Job application</p>`,
+      ...facts.map(
+        ([label, value]) =>
+          `<p style="margin:0 0 8px;"><span style="color:#6b6760;">${escapeHtml(label)}:</span>` +
+          ` ${escapeHtml(value)}</p>`,
+      ),
+      // Monospaced and preserved, because this block is the answers verbatim —
+      // including in scripts the PDF cannot draw, which is the whole reason it
+      // is here as well as attached.
+      `<pre style="margin:18px 0 0;padding:14px;background:#f2f0ea;border-radius:8px;` +
+        `font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;` +
+        `line-height:1.55;white-space:pre-wrap;">${escapeHtml(summary)}</pre>`,
+    ].join(""),
+  );
+
+  const result = await sendEmail({
+    to: CAREERS_INBOX,
+    subject: `Application — ${name} — ${chosen([application.role], POSITIONS)}`,
+    html,
+    text: summary,
+    // Replying to the mail replies to the applicant, which is what whoever
+    // reads it is going to want to do.
+    replyTo: application.email,
+    attachments: [{ filename: pdf.filename, bytes: pdf.bytes }],
   });
 
-  if (!response.ok) {
-    const failure = await response.text().catch(() => "");
-    throw new Error(`Loops transactional failed (${response.status}): ${failure.slice(0, 300)}`);
+  if (!result.sent) {
+    throw new Error(
+      `application mail failed: ${result.reason === "failed" ? result.detail : result.reason}`,
+    );
   }
 }
 
@@ -280,12 +303,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "careers.errSendFailed" }, { status: 500 });
   }
 
-  if (!LOOPS_API_KEY || !LOOPS_TEMPLATE_ID) {
+  if (!isEmailConfigured()) {
     // Local dev without credentials. Logged loudly rather than silently
     // succeeding, because the difference between "mailed" and "printed to a
     // console" is the whole endpoint.
     console.warn(
-      `[apply] no Loops credentials — application from ${application.email} was NOT mailed.` +
+      `[apply] no RESEND_API_KEY — application from ${application.email} was NOT mailed.` +
         ` ${pdf.filename}, ${pdf.bytes.length} bytes\n${bothLanguages(application, translation)}`,
     );
     return Response.json({ ok: true, mailed: false }, { status: 200 });

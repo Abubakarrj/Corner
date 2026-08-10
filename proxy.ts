@@ -30,8 +30,12 @@ export function proxy(request: NextRequest) {
   // has to land somewhere real. There is no /shop/cookie-policy to rewrite
   // to, and duplicating a legal page under the shop tree to satisfy the
   // rewrite would mean two copies to keep in sync.
+  // /staff is exempt for the same reason as the policy pages: it is one set of
+  // screens the people who work here reach from whichever address they happen
+  // to have open, and there is no /shop/staff to rewrite to.
   if (
     pathname.startsWith("/shop") ||
+    pathname.startsWith("/staff") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
     POLICY_PATHS.includes(pathname) ||

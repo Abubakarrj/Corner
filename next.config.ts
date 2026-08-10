@@ -9,11 +9,14 @@ const nextConfig: NextConfig = {
   // would leave it behind. Without this the chat route throws on its first
   // request in a traced deployment (standalone output, Vercel) while working
   // perfectly in dev — the worst shape a bug can have.
-  // Same problem, same fix: the job application's PDF font is read off disk at
-  // runtime, so nothing in the module graph points at the .ttf.
+  // Same problem, same fix: the PDF font is read off disk at runtime, so
+  // nothing in the module graph points at the .ttf. Every route that renders a
+  // PDF needs a line here — miss one and it works in dev and throws on its
+  // first request in production.
   outputFileTracingIncludes: {
     "/api/shop-chat": ["./app/api/shop-chat/riley-guide.md"],
-    "/api/apply": ["./app/api/apply/DejaVuSans.ttf"],
+    "/api/apply": ["./app/pdf/DejaVuSans.ttf"],
+    "/api/staff/order": ["./app/pdf/DejaVuSans.ttf"],
   },
   async redirects() {
     return [
