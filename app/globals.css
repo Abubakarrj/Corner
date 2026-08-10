@@ -50,7 +50,18 @@
    * Each comes as a fill, a tint to lay under text, and an ink to set on that
    * tint — because "use the blue" without saying which blue is how a palette
    * turns into six blues. */
-  --cb-olive: #3e4a30;
+  /* Saturation, not hue, was the problem. #3e4a30 was only 21% saturated —
+     which reads as a considered olive at 11px or on a 1px stroke, and as mud
+     on a 28px solid pill, because a large area amplifies how grey a colour is.
+     #3d5a2c is the same yellow-green family, 34% saturated, and the difference
+     is entirely in the places olive is spent as a *fill*.
+
+     It stops short of a true forest green on purpose. The brand mark is a
+     vivid red at 356°, whose complement is 176°; the closer a green sits to
+     that, the more the pair reads as Christmas rather than as a palette. This
+     one is at 98°, 79° away. A pine green measured beautifully and made the
+     logo look seasonal. */
+  --cb-olive: #3d5a2c;
   --cb-sage: #b7c9a2;
 
   --cb-sky: #4f92bb;
@@ -187,7 +198,9 @@
   --cb-ink: #f2eee5;
   --cb-on-ink: #1d1c19;
 
-  --cb-olive: #93b06f;
+  /* The same move at night, and it happens to help the text too: as 11px
+     eyebrow copy this goes from 7.04:1 on the dark cream to 8.71:1. */
+  --cb-olive: #a3c47a;
   --cb-sage: #7f9663;
 
   --cb-sky: #6fb0da;

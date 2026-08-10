@@ -18,9 +18,13 @@ import { useT } from "../i18n";
 // What differs is the fill: olive, the brand's own green, with --cb-on-ink on
 // top. That token is defined per theme as "whatever reads on a solid ground",
 // which is what makes this work in both without a `dark:` variant — light
-// olive is dark, so the label is near-white at 8.81:1; dark olive is light, so
-// the label is near-black at 7.04:1. Against the page the chip itself sits at
-// 9.43:1 and 7.47:1, well past the 3:1 a UI component's boundary needs.
+// olive is dark, so the label is near-white at 7.27:1; dark olive is light, so
+// the label is near-black at 8.71:1. Against the page the chip itself sits at
+// 7.79:1 and 9.24:1, well past the 3:1 a UI component's boundary needs.
+//
+// This chip is why olive was resaturated — it is the one place the brand green
+// is spent as a large solid fill rather than a stroke or a caption, and the old
+// value only looked muddy at that size. See the note on --cb-olive.
 //
 // hover:opacity-90 rather than the neighbours' hover:text-ink: on a filled
 // control there is no text colour left to darken, and this is the same hover
