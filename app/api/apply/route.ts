@@ -305,13 +305,23 @@ export async function POST(request: Request) {
   }
 
   if (!isEmailConfigured()) {
-    // Local dev without credentials. Logged loudly rather than silently
-    // succeeding, because the difference between "mailed" and "printed to a
-    // console" is the whole endpoint.
     console.warn(
       `[apply] no RESEND_API_KEY — application from ${application.email} was NOT mailed.` +
         ` ${pdf.filename}, ${pdf.bytes.length} bytes\n${bothLanguages(application, translation)}`,
     );
+    // In development this is a success: the whole application is in the log
+    // two lines up, and telling somebody testing a form that it failed is a
+    // dead end for no reason.
+    //
+    // In production it is a failure, and it took an unanswerable "I didn't get
+    // an email" to make that obvious. A deployment missing its key would show
+    // the applicant "Application sent", show the shop nothing at all, and give
+    // neither of them any way to find out — which is the exact shape of bug
+    // the note at the top of this file says this endpoint exists to avoid. The
+    // applicant gets an error they can act on instead.
+    if (process.env.NODE_ENV === "production") {
+      return Response.json({ error: "careers.errSendFailed" }, { status: 503 });
+    }
     return Response.json({ ok: true, mailed: false }, { status: 200 });
   }
 

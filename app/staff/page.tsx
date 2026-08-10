@@ -29,9 +29,14 @@ export default async function StaffPage() {
         <div className="flex shrink-0 flex-col items-end gap-2">
           <span className="text-[13px] text-quiet">{staff.name}</span>
           {staff.role === "admin" ? (
-            <Link href="/staff/team" className="text-[13px] text-link underline">
-              Team
-            </Link>
+            <>
+              <Link href="/staff/team" className="text-[13px] text-link underline">
+                Team
+              </Link>
+              <Link href="/staff/email" className="text-[13px] text-link underline">
+                Email
+              </Link>
+            </>
           ) : null}
           <SignOut />
         </div>
