@@ -92,18 +92,18 @@ function clientIp(request: Request): string {
 // sending domain and needs no setup of its own — Resend verifies who mail is
 // *from*, not who it is to — so this can be any mailbox anywhere.
 //
-// The fallback is a real address, which makes a misspelled variable name the
-// quietest possible failure: applications keep arriving, at a mailbox nobody
-// is watching, and the only symptom is silence at the one that is. So an
-// unset value says so in production rather than being taken as a choice.
-const CAREERS_INBOX = process.env.CAREERS_INBOX ?? "abu@thecornerbagel.com";
-if (!process.env.CAREERS_INBOX && process.env.NODE_ENV === "production") {
-  console.warn(
-    `[apply] CAREERS_INBOX is not set — applications will go to ${CAREERS_INBOX}.` +
-      " If that is not where they should go, check the variable's spelling:" +
-      " it is CAREERS_INBOX, plural and upper case.",
-  );
-}
+// The default is the address applications are actually meant to reach, rather
+// than a leftover from when they went somewhere else. That matters more than
+// it looks: an environment variable is easy to misspell, and a wrong name
+// falls through to whatever is written here. When that was a stale address the
+// failure was silent in the worst way — applications kept arriving, at a
+// mailbox nobody was watching, and the only symptom was quiet at the one that
+// was. With the fallback correct, an unset variable is simply a working
+// configuration.
+//
+// The variable is still read first, so this can be pointed somewhere else
+// without a deploy. Every send logs which address it used; see the end of POST.
+const CAREERS_INBOX = process.env.CAREERS_INBOX ?? "hello@publicentity.co";
 
 const t = (key: StringKey): string => en[key];
 
