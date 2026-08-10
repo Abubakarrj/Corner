@@ -88,6 +88,7 @@ export async function POST(request: Request) {
   );
 
   const result = await sendEmail({
+    from: "team",
     to: email,
     subject: `Join the Corner Bagel team tools`,
     html,

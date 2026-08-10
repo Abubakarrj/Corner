@@ -127,6 +127,7 @@ export async function POST(request: Request) {
         renderInvoice(order, meta),
       ]);
       const result = await sendEmail({
+        from: "orders",
         to: order.supplier.rep.email,
         subject: composed.subject,
         html: composed.html,

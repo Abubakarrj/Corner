@@ -34,9 +34,46 @@ import "server-only";
 
 const RESEND_URL = "https://api.resend.com/emails";
 
-/** Who the mail is from. A verified domain in the Resend dashboard is what
- *  makes this deliverable; an unverified one bounces at their end, not ours. */
-const FROM = process.env.RESEND_FROM ?? "Corner Bagel <orders@thecornerbagel.com>";
+// ——— Who the mail is from ———
+//
+// Resend verifies *domains*, not addresses: once thecornerbagel.com is
+// verified, every address at it can send, with nothing to configure per
+// address. So splitting the streams costs nothing but a name.
+//
+// It is worth doing anyway, for the person on the receiving end rather than for
+// the mail servers. Three different things leave this app — a purchase order to
+// a supplier, a job application landing in our own inbox, an invite to somebody
+// joining the team — and they are read by three different people in three
+// different moods. An inbox rule on `from:` is the cheapest way to keep an
+// application out of the middle of a morning's ordering.
+//
+// Every one of these falls back to RESEND_FROM and then to the default below,
+// so setting none of them is a working configuration and setting one is not a
+// commitment to setting the rest.
+//
+// If deliverability ever becomes a real concern rather than a theoretical one,
+// the stronger move is a subdomain — orders@mail.thecornerbagel.com — which
+// isolates sending reputation from the domain people's actual mailboxes live
+// on. That is a DNS change and a change to these values; no code moves.
+const DEFAULT_FROM = "Corner Bagel <orders@thecornerbagel.com>";
+
+export type MailStream =
+  /** Purchase orders to suppliers. */
+  | "orders"
+  /** Job applications, to our own inbox. */
+  | "forms"
+  /** Invites, and the credential line that follows one. */
+  | "team";
+
+const STREAM_ENV: Record<MailStream, string> = {
+  orders: "RESEND_FROM_ORDERS",
+  forms: "RESEND_FROM_FORMS",
+  team: "RESEND_FROM_TEAM",
+};
+
+export function sender(stream: MailStream): string {
+  return process.env[STREAM_ENV[stream]] ?? process.env.RESEND_FROM ?? DEFAULT_FROM;
+}
 
 export type Attachment = {
   filename: string;
@@ -45,6 +82,11 @@ export type Attachment = {
 
 export type Mail = {
   to: string | string[];
+  /** Which of the shop's addresses this comes from. Required rather than
+   *  defaulted: there is no stream that is the obvious right answer for a
+   *  message somebody forgot to label, and a supplier receiving mail from the
+   *  jobs address is the kind of thing nobody notices for a month. */
+  from: MailStream;
   subject: string;
   /** Both are sent. A client that refuses HTML still gets a readable message,
    *  and a plain-text part measurably helps deliverability. */
@@ -92,7 +134,7 @@ export async function sendEmail(mail: Mail): Promise<SendResult> {
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        from: FROM,
+        from: sender(mail.from),
         to: [mail.to].flat(),
         subject: mail.subject,
         html: mail.html,

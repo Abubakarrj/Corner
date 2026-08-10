@@ -97,6 +97,7 @@ export async function POST(request: Request) {
   );
 
   const result = await sendEmail({
+    from: "team",
     to: admins,
     subject: `Add ${invite.name} to the team tools`,
     html,
