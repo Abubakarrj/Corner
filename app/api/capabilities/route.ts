@@ -56,7 +56,35 @@ function paymentsEnabled(): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
+// Which of the three Uber variables the environment actually has.
+//
+// Delivery is all-or-nothing — one missing name and the finder says delivery
+// is unavailable, with no way from the outside to tell which one. That is the
+// same shape of problem CAREERS_INBOX had: a correct-looking configuration, a
+// feature quietly off, and nothing to read.
+//
+// Logged rather than returned. The response stays booleans-only, because this
+// endpoint is public and which secrets a deployment holds is not something to
+// publish; the log is in front of whoever is doing the configuring.
+function reportUberGap(): void {
+  const missing = [
+    ["UBER_DIRECT_CUSTOMER_ID", process.env.UBER_DIRECT_CUSTOMER_ID],
+    ["UBER_DIRECT_CLIENT_ID", process.env.UBER_DIRECT_CLIENT_ID],
+    ["UBER_DIRECT_CLIENT_SECRET", process.env.UBER_DIRECT_CLIENT_SECRET],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+  console.warn(
+    `[capabilities] delivery is OFF. Missing: ${missing.join(", ")}.` +
+      " All three are required, spelled exactly as above, and Render needs a" +
+      " redeploy after they are added.",
+  );
+}
+
 export function GET() {
+  const delivery = isUberConfigured();
+  if (!delivery) reportUberGap();
+
   return Response.json({
     auth: isAuthConfigured(),
     payments: paymentsEnabled(),
@@ -70,7 +98,7 @@ export function GET() {
     // Three variables turn it on — UBER_DIRECT_CUSTOMER_ID, CLIENT_ID and
     // CLIENT_SECRET — and nothing else does. There is no flag, and no code
     // change: the whole delivery path is built and waiting on them.
-    delivery: isUberConfigured(),
+    delivery,
     // The one non-boolean here, and it is not a secret: a shop's phone number
     // is on its window.
     //
