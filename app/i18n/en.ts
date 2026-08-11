@@ -54,6 +54,8 @@ export const en = {
   "finder.startAddress": "Enter an address above to get started.",
   "finder.startSearch": "Search a store, city, state or zip to get started.",
   "finder.useMyLocation": "Use my location",
+  "finder.locateFailed": "We couldn't get your location. Search a city or ZIP instead.",
+  "finder.aroundYou": "around you",
   "finder.zoomIn": "Zoom in",
   "finder.zoomOut": "Zoom out",
   "finder.order": "Order",

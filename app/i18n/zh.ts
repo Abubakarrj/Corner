@@ -48,6 +48,8 @@ export const zh: Table = {
   "finder.startAddress": "请在上方输入地址以开始。",
   "finder.startSearch": "搜索门店、城市、州或邮编以开始。",
   "finder.useMyLocation": "使用我的位置",
+  "finder.locateFailed": "无法获取你的位置。请改用城市或邮编搜索。",
+  "finder.aroundYou": "你附近",
   "finder.zoomIn": "放大",
   "finder.zoomOut": "缩小",
   "finder.order": "下单",

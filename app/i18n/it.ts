@@ -47,6 +47,8 @@ export const it: Table = {
   "finder.startAddress": "Inserisci un indirizzo qui sopra per iniziare.",
   "finder.startSearch": "Cerca un negozio, una città, uno stato o un CAP per iniziare.",
   "finder.useMyLocation": "Usa la mia posizione",
+  "finder.locateFailed": "Non siamo riusciti a rilevare la tua posizione. Cerca una città o un CAP.",
+  "finder.aroundYou": "vicino a te",
   "finder.zoomIn": "Ingrandisci",
   "finder.zoomOut": "Riduci",
   "finder.order": "Ordina",

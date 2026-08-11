@@ -46,6 +46,8 @@ export const es: Table = {
   "finder.startAddress": "Introduce una dirección arriba para empezar.",
   "finder.startSearch": "Busca una tienda, ciudad, estado o código postal para empezar.",
   "finder.useMyLocation": "Usar mi ubicación",
+  "finder.locateFailed": "No pudimos obtener tu ubicación. Busca una ciudad o código postal.",
+  "finder.aroundYou": "cerca de ti",
   "finder.zoomIn": "Acercar",
   "finder.zoomOut": "Alejar",
   "finder.order": "Pedir",

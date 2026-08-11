@@ -46,6 +46,8 @@ export const ko: Table = {
   "finder.startAddress": "시작하려면 위에 주소를 입력하세요.",
   "finder.startSearch": "시작하려면 매장, 도시, 주 또는 우편번호를 검색하세요.",
   "finder.useMyLocation": "내 위치 사용",
+  "finder.locateFailed": "위치를 가져오지 못했습니다. 도시나 우편번호로 검색해 주세요.",
+  "finder.aroundYou": "현재 위치 근처",
   "finder.zoomIn": "확대",
   "finder.zoomOut": "축소",
   "finder.order": "주문",

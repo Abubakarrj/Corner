@@ -41,9 +41,16 @@ function scrollRailTo(rail: HTMLDivElement | null, index: number) {
   rail.scrollTo({ left: (rtl ? -1 : 1) * index * rail.clientWidth, behavior: "smooth" });
 }
 
-function LocateIcon() {
+function LocateIcon({ spinning = false }: { spinning?: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={spinning ? "animate-spin" : undefined}
+    >
       <circle cx="12" cy="12" r="3.2" fill={ink} />
       <circle cx="12" cy="12" r="7" stroke={ink} strokeWidth="1.8" />
       <path
@@ -80,6 +87,8 @@ export default function StoreMap({
   locations,
   showSearchArea,
   onSearchArea,
+  onLocate,
+  onLocateFailed,
   onChoose,
   focus,
 }: {
@@ -91,6 +100,12 @@ export default function StoreMap({
   // address is entered, so the button is the caller's decision, not ours.
   showSearchArea: boolean;
   onSearchArea: (bounds: MapBounds) => void;
+  /** A position from the browser. The finder treats it as a search — see
+   *  locateHere() there — rather than as a camera move. */
+  onLocate?: (point: [number, number]) => void;
+  /** Refused, unavailable, or timed out. All three are the same thing to
+   *  somebody looking at the screen: tell them, and say what to do instead. */
+  onLocateFailed?: () => void;
   // Committing to a location is the whole point of this screen: the menu
   // can't price or route an order without knowing where it's going.
   onChoose: (location: StoreLocation) => void;
@@ -123,6 +138,9 @@ export default function StoreMap({
   // rather than swallowed by the transition, and a second tap inside that beat
   // would choose twice.
   const [chosenId, setChosenId] = useState<string | null>(null);
+  // True while the browser is working out where we are, which on a cold GPS
+  // is seconds, not milliseconds.
+  const [locating, setLocating] = useState(false);
   // The shop whose details sheet is up, or null.
   const [detailsFor, setDetailsFor] = useState<StoreLocation | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
@@ -298,27 +316,39 @@ export default function StoreMap({
           </button>
         ) : null}
 
+        {/* "Use my location" is a search, and it reports back either way.
+            It used to pan the map and swallow every failure, which is how a
+            working button comes to feel dead: on success the camera moved and
+            nothing else did, because the pin and the rail are keyed off a
+            search this never performed; on refusal nothing happened at all. */}
         <button
           type="button"
+          disabled={locating}
           onClick={() => {
-            // Falls back silently: a denied or unavailable position just
-            // leaves the map where it is, which is better than an error
-            // dialog over a map that still works.
-            navigator.geolocation?.getCurrentPosition(
+            if (!navigator.geolocation) {
+              onLocateFailed?.();
+              return;
+            }
+            setLocating(true);
+            navigator.geolocation.getCurrentPosition(
               (position) => {
-                engineRef.current?.panTo(
-                  [position.coords.latitude, position.coords.longitude],
-                  13,
-                );
+                setLocating(false);
+                onLocate?.([position.coords.latitude, position.coords.longitude]);
               },
-              () => {},
+              () => {
+                setLocating(false);
+                onLocateFailed?.();
+              },
               { enableHighAccuracy: false, timeout: 8000 },
             );
           }}
           aria-label={t("finder.useMyLocation")}
-          className={`pointer-events-auto absolute end-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 ${CHROME}`}
+          aria-busy={locating}
+          className={`pointer-events-auto absolute end-4 top-4 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90 disabled:cursor-default ${CHROME}`}
         >
-          <LocateIcon />
+          {/* A position can take seconds to arrive on a cold GPS, and a button
+              that looks idle for that long gets pressed again. */}
+          <LocateIcon spinning={locating} />
         </button>
 
         {/* Zoom pair, stacked and sharing one rounded shell with a divider

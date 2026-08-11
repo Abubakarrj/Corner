@@ -6,6 +6,7 @@ import { useLocale, useT } from "../i18n";
 import { localeById } from "../localeScript";
 import { findOrder, progressFor, useOrders } from "../account";
 import { useLiveStatus } from "./useLiveStatus";
+import { handedToCourier } from "../orderStages";
 
 // Where the order is, without leaving the conversation.
 //
@@ -43,6 +44,11 @@ export default function ChatTrack({
   // Above the early return below, because hooks cannot be conditional. Shared
   // with the tracker and the strip, so all three say the same thing.
   const live = useLiveStatus(order);
+  // The courier link waits for the handover. Uber mints a tracking URL when
+  // the delivery is created, which is while the food is still being made;
+  // opening it then shows a courier who has nothing of ours yet. Unknown
+  // stays visible — see handedToCourier.
+  const followable = handedToCourier(live?.courier) ?? true;
 
   // Re-render on a timer so the bar creeps while the panel is open, the same
   // 15s the page uses: the stages are minutes apart, and a per-second repaint
@@ -162,7 +168,7 @@ export default function ChatTrack({
 
       {/* Uber's own view of the courier, when there is one. Linked rather than
           rebuilt: a worse map of somebody else's driver helps nobody. */}
-      {order.trackingUrl ? (
+      {order.trackingUrl && followable ? (
         <a
           href={order.trackingUrl}
           target="_blank"

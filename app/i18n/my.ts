@@ -46,6 +46,8 @@ export const my: Table = {
   "finder.startAddress": "စတင်ရန် အပေါ်တွင် လိပ်စာ ထည့်ပါ။",
   "finder.startSearch": "စတင်ရန် ဆိုင်၊ မြို့၊ ပြည်နယ် သို့မဟုတ် ဇစ်ကုဒ် ရှာပါ။",
   "finder.useMyLocation": "ကျွန်ုပ်၏ တည်နေရာကို သုံးရန်",
+  "finder.locateFailed": "သင့်တည်နေရာကို ရယူလို့မရပါ။ မြို့ (သို့) ZIP နဲ့ ရှာကြည့်ပါ။",
+  "finder.aroundYou": "သင့်အနီးတဝိုက်",
   "finder.zoomIn": "ချဲ့ရန်",
   "finder.zoomOut": "ချုံ့ရန်",
   "finder.order": "မှာယူရန်",

@@ -46,6 +46,8 @@ export const ja: Table = {
   "finder.startAddress": "上に住所を入力してください。",
   "finder.startSearch": "店舗、市、州、郵便番号を検索してください。",
   "finder.useMyLocation": "現在地を使う",
+  "finder.locateFailed": "現在地を取得できませんでした。市区町村か郵便番号で検索してください。",
+  "finder.aroundYou": "現在地の周辺",
   "finder.zoomIn": "拡大",
   "finder.zoomOut": "縮小",
   "finder.order": "注文",

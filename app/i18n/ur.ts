@@ -49,6 +49,8 @@ export const ur: Table = {
   "finder.startAddress": "شروع کرنے کے لیے اوپر پتہ درج کریں۔",
   "finder.startSearch": "شروع کرنے کے لیے اسٹور، شہر، ریاست یا زپ تلاش کریں۔",
   "finder.useMyLocation": "میری لوکیشن استعمال کریں",
+  "finder.locateFailed": "ہم آپ کی لوکیشن حاصل نہیں کر سکے۔ شہر یا زپ کوڈ سے تلاش کریں۔",
+  "finder.aroundYou": "آپ کے آس پاس",
   "finder.zoomIn": "زوم اِن",
   "finder.zoomOut": "زوم آؤٹ",
   "finder.order": "آرڈر",

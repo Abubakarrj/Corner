@@ -113,6 +113,14 @@ export default function LocationFinder() {
     null,
   );
   const [toastDismissed, setToastDismissed] = useState(false);
+  // Set when the browser refuses or fails to give us a position. The locate
+  // button used to swallow both cases, on the reasoning that a dialog over a
+  // working map is worse than silence. That reasoning holds for the dialog and
+  // fails for the silence: pressing a button and having the screen do nothing
+  // at all is the single clearest way to make a working feature feel broken.
+  // It goes in the bar along the bottom, where every other answer this screen
+  // gives already goes.
+  const [locateFailed, setLocateFailed] = useState(false);
   // The shop whose catering sheet is up, or null. Catering doesn't open the
   // menu — see CateringModal.
   const [cateringFor, setCateringFor] = useState<StoreLocation | null>(null);
@@ -266,6 +274,33 @@ export default function LocationFinder() {
     );
   }
 
+  /** "Use my location", which is a search — the same one lookAt() runs for a
+   *  typed place, from a point the browser supplies rather than one Google
+   *  geocoded.
+   *
+   *  It used to only pan the map, and that is why it read as broken: the rail
+   *  and the pin are keyed off `searched`, so panning left the map over your
+   *  street with nothing on it and the bar still asking you to search. Moving
+   *  the camera is not answering the question. */
+  function locateHere(point: [number, number]) {
+    setLocateFailed(false);
+    setSearched({ point, label: "" });
+    setBounds(null);
+    setQuery("");
+    setToastDismissed(false);
+
+    const closest = nearestLocations(
+      point,
+      mode === "catering" ? "catering" : "shop",
+      locations,
+    )[0];
+    setFocus(
+      closest
+        ? { at: closest.location.position, zoom: 16, openId: closest.location.id }
+        : { at: point, zoom: 12 },
+    );
+  }
+
   // What the bar along the bottom says, and whether it says anything.
   //
   // Four situations, and they are worth telling apart.
@@ -288,12 +323,15 @@ export default function LocationFinder() {
 
   const showToast =
     !toastDismissed &&
-    (deliveryOff ||
+    (locateFailed ||
+      deliveryOff ||
       !asked ||
       missed !== null ||
       (mode !== "delivery" && results.length === 0));
 
-  const toastText = deliveryOff
+  const toastText = locateFailed
+    ? t("finder.locateFailed")
+    : deliveryOff
     ? // The endpoint's own words, so the page and the API cannot drift into
       // telling somebody two different things about the same outage.
       t("api.deliveryDownPickupOpen")
@@ -304,7 +342,9 @@ export default function LocationFinder() {
     : missed
       ? t("finder.noneHere", {
           noun,
-          place: shortPlace(searched!.label),
+          // Empty when the point came from the browser rather than from a
+          // typed place, which has no name to quote back.
+          place: shortPlace(searched!.label) || t("finder.aroundYou"),
           name: missed.location.name,
           miles: missed.miles.toFixed(missed.miles < 10 ? 1 : 0),
         })
@@ -443,6 +483,11 @@ export default function LocationFinder() {
         locations={results}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
+        onLocate={locateHere}
+        onLocateFailed={() => {
+          setLocateFailed(true);
+          setToastDismissed(false);
+        }}
         onChoose={chooseLocation}
         focus={focus}
       />

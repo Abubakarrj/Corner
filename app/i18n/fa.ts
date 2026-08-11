@@ -55,6 +55,8 @@ export const fa: Table = {
   "finder.startAddress": "برای شروع، نشانی را در بالا وارد کنید.",
   "finder.startSearch": "برای شروع، نام شعبه، شهر، ایالت یا کد پستی را جست‌وجو کنید.",
   "finder.useMyLocation": "استفاده از موقعیت من",
+  "finder.locateFailed": "نتوانستیم موقعیت شما را بگیریم. یک شهر یا کد پستی جست‌وجو کنید.",
+  "finder.aroundYou": "اطراف شما",
   "finder.zoomIn": "بزرگ‌نمایی",
   "finder.zoomOut": "کوچک‌نمایی",
   "finder.order": "سفارش",

@@ -70,3 +70,20 @@ export function courierStageOf(uberStatus: string | null): CourierStage | undefi
       return undefined;
   }
 }
+
+/** Whether the shop has actually handed the bag to the courier.
+ *
+ *  What "follow the courier" needs to be true before it means anything. Uber
+ *  issues a tracking URL the moment a delivery is created, which is while the
+ *  bagels are still being made — open it then and you get a page about a
+ *  courier who has not been assigned, or who is somewhere else entirely
+ *  finishing another job. That is a worse answer than no link.
+ *
+ *  Undefined, rather than false, when the courier's stage is unknown. The
+ *  caller decides what to do with that, and the tracker shows the link:
+ *  hiding the only route to the courier because the webhooks are not
+ *  registered yet would take away something that works. */
+export function handedToCourier(courier: CourierStage | undefined): boolean | undefined {
+  if (courier === undefined) return undefined;
+  return courier === "collected" || courier === "delivering" || courier === "delivered";
+}

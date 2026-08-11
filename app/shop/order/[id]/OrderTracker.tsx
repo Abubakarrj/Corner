@@ -16,6 +16,7 @@ import {
 } from "../../../account";
 import { SHOP_PHONE } from "../../../shopFacts";
 import { useLiveStatus } from "../../useLiveStatus";
+import { handedToCourier } from "../../../orderStages";
 import { ButtonLink } from "../../../ui/Button";
 import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
@@ -60,6 +61,11 @@ export default function OrderTracker({ id }: { id: string }) {
   // used to run its own, which is how the strip above it ended up counting
   // down while the headline already said Ready.
   const live = useLiveStatus(order);
+  // The courier link waits for the handover. Uber mints a tracking URL when
+  // the delivery is created, which is while the food is still being made;
+  // opening it then shows a courier who has nothing of ours yet. Unknown
+  // stays visible — see handedToCourier.
+  const followable = handedToCourier(live?.courier) ?? true;
 
   if (!order) {
     return (
@@ -183,7 +189,7 @@ export default function OrderTracker({ id }: { id: string }) {
         })}
       </ol>
 
-      <Receipt order={order} />
+      <Receipt order={order} followable={followable} />
 
       {/* Call, not email. Something wrong with an order is a now problem —
           the food is being made, or it isn't, or it's at the wrong door — and
@@ -209,7 +215,16 @@ export default function OrderTracker({ id }: { id: string }) {
   );
 }
 
-function Receipt({ order }: { order: PlacedOrder }) {
+function Receipt({
+  order,
+  /** Whether the courier actually has the bag yet — see handedToCourier. The
+   *  live status is polled by the screen above, so it is passed down rather
+   *  than polled a second time here. */
+  followable,
+}: {
+  order: PlacedOrder;
+  followable: boolean;
+}) {
   const t = useT();
   const menu = useMenu();
   const tag = localeById(useLocale()).tag;
@@ -279,7 +294,7 @@ function Receipt({ order }: { order: PlacedOrder }) {
           than rebuilt: the courier is theirs, the live position is theirs,
           and a worse copy of a page that already exists is not worth
           building. Only ever present on a delivery that got a courier. */}
-      {order.trackingUrl ? (
+      {order.trackingUrl && followable ? (
         <a
           href={order.trackingUrl}
           target="_blank"
