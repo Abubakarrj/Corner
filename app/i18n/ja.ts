@@ -506,7 +506,7 @@ export const ja: Table = {
   "careers.stepHistory": "経歴",
   "careers.stepFinish": "送信",
   "careers.stepOf": "ステップ {n}／{total}",
-  "careers.skipNote": "ここはすべて任意です。当てはまらないものは飛ばして構いません。不利にはなりません。",
+  "careers.skipNote": "ここはすべて任意です。当てはまらないものは飛ばして構いません。書いていただいた内容で判断します。",
   "careers.leaveConfirm": "送信せずに移動しますか？入力内容は保存されません。",
   "careers.draftRestored": "前回の続きから再開しました。この端末に保存されているだけで、当店には届いていません。",
   "careers.startOver": "最初から",
@@ -594,8 +594,7 @@ export const ja: Table = {
   "careers.from": "開始",
   "careers.to": "終了",
   "careers.addJob": "職歴を追加",
-  "careers.workNote": "働いたことがなければ空欄で大丈夫です。不利にはなりません。",
-
+  "careers.workNote": "初めてのお仕事ですか。空欄で大丈夫です。未経験の方も採用しています。",
   "careers.refName": "名前",
   "careers.refRelationship": "どういう関係か",
   "careers.refContact": "電話またはメール",

@@ -561,7 +561,7 @@ export const fr: Table = {
   "careers.stepHistory": "Parcours",
   "careers.stepFinish": "Terminer",
   "careers.stepOf": "Étape {n} sur {total}",
-  "careers.skipNote": "Tout ceci est facultatif. Passez ce qui ne vous concerne pas, cela ne joue pas contre vous.",
+  "careers.skipNote": "Tout ceci est facultatif. Passez ce qui ne vous concerne pas, on se fie à ce que vous nous dites.",
   "careers.leaveConfirm": "Quitter sans envoyer ? Vos réponses ne seront pas conservées.",
   "careers.draftRestored": "On a repris là où vous en étiez. Conservé sur cet appareil, pas envoyé chez nous.",
   "careers.startOver": "Recommencer",
@@ -649,8 +649,7 @@ export const fr: Table = {
   "careers.from": "De",
   "careers.to": "À",
   "careers.addJob": "Ajouter un emploi",
-  "careers.workNote": "Jamais travaillé ? Laissez vide. Cela ne joue pas contre vous.",
-
+  "careers.workNote": "Premier emploi ? Laissez vide. On embauche des gens qui débutent.",
   "careers.refName": "Nom",
   "careers.refRelationship": "Comment vous la connaissez",
   "careers.refContact": "Téléphone ou e-mail",

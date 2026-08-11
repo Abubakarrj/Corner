@@ -541,7 +541,7 @@ export const en = {
   "careers.stepHistory": "Background",
   "careers.stepFinish": "Finish",
   "careers.stepOf": "Step {n} of {total}",
-  "careers.skipNote": "All of this is optional. Skip anything that doesn't apply — it won't count against you.",
+  "careers.skipNote": "All of this is optional. Skip anything that doesn't apply — we go on what you do tell us.",
   "careers.leaveConfirm": "Leave without sending? Your answers won't be kept.",
   "careers.draftRestored": "Picked up where you left off. Kept on this device, not sent to us.",
   "careers.startOver": "Start over",
@@ -628,8 +628,7 @@ export const en = {
   "careers.from": "From",
   "careers.to": "To",
   "careers.addJob": "Add a job",
-  "careers.workNote": "Never had a job? Leave this empty. It won't count against you.",
-
+  "careers.workNote": "First job? Leave this empty. We hire people starting out.",
   "careers.refName": "Name",
   "careers.refRelationship": "How you know them",
   "careers.refContact": "Phone or email",

@@ -509,7 +509,7 @@ export const ur: Table = {
   "careers.stepHistory": "پس منظر",
   "careers.stepFinish": "اختتام",
   "careers.stepOf": "مرحلہ {n} از {total}",
-  "careers.skipNote": "یہ سب اختیاری ہے۔ جو لاگو نہ ہو اسے چھوڑ دیں، اس سے نقصان نہیں ہوگا۔",
+  "careers.skipNote": "یہ سب اختیاری ہے۔ جو لاگو نہ ہو اسے چھوڑ دیں، ہم اسی پر دیکھتے ہیں جو آپ بتاتے ہیں۔",
   "careers.leaveConfirm": "بھیجے بغیر چلے جائیں؟ آپ کے جوابات محفوظ نہیں ہوں گے۔",
   "careers.draftRestored": "جہاں چھوڑا تھا وہیں سے۔ یہ اسی ڈیوائس پر محفوظ ہے، ہمیں نہیں بھیجا گیا۔",
   "careers.startOver": "نئے سرے سے شروع کریں",
@@ -597,8 +597,7 @@ export const ur: Table = {
   "careers.from": "سے",
   "careers.to": "تک",
   "careers.addJob": "ملازمت شامل کریں",
-  "careers.workNote": "کبھی ملازمت نہیں کی؟ خالی چھوڑ دیں۔ اس سے نقصان نہیں ہوگا۔",
-
+  "careers.workNote": "پہلی ملازمت ہے؟ خالی چھوڑ دیں۔ ہم نئے آنے والوں کو بھی رکھتے ہیں۔",
   "careers.refName": "نام",
   "careers.refRelationship": "آپ انہیں کیسے جانتے ہیں",
   "careers.refContact": "فون یا ای میل",

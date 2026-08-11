@@ -558,7 +558,7 @@ export const fa: Table = {
   "careers.stepHistory": "پیشینه",
   "careers.stepFinish": "پایان",
   "careers.stepOf": "گام {n} از {total}",
-  "careers.skipNote": "همهٔ این‌ها اختیاری است. هرچه به شما مربوط نیست رد کنید؛ به ضررتان نیست.",
+  "careers.skipNote": "همهٔ این‌ها اختیاری است. هرچه به شما مربوط نیست رد کنید؛ ما بر اساس چیزی که می‌نویسید قضاوت می‌کنیم.",
   "careers.leaveConfirm": "بدون ارسال بیرون می‌روید؟ پاسخ‌هایتان نگه داشته نمی‌شود.",
   "careers.draftRestored": "از همان‌جا که رها کرده بودید. روی همین دستگاه نگه داشته شده و برای ما فرستاده نشده است.",
   "careers.startOver": "از نو شروع کنید",
@@ -646,8 +646,7 @@ export const fa: Table = {
   "careers.from": "از",
   "careers.to": "تا",
   "careers.addJob": "افزودن سابقهٔ کار",
-  "careers.workNote": "تا حالا کار نکرده‌اید؟ خالی بگذارید. به ضررتان نیست.",
-
+  "careers.workNote": "اولین کارتان است؟ خالی بگذارید. ما از کسانی که تازه شروع می‌کنند هم استخدام می‌کنیم.",
   "careers.refName": "نام",
   "careers.refRelationship": "چطور می‌شناسیدشان",
   "careers.refContact": "تلفن یا ایمیل",

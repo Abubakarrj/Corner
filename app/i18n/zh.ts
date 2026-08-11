@@ -504,7 +504,7 @@ export const zh: Table = {
   "careers.stepHistory": "经历",
   "careers.stepFinish": "完成",
   "careers.stepOf": "第 {n} 步，共 {total} 步",
-  "careers.skipNote": "这一步全部选填。不适用的直接跳过，不会因此扣分。",
+  "careers.skipNote": "这一步全部选填。不适用的直接跳过，我们看你填写的部分。",
   "careers.leaveConfirm": "不提交就离开吗？你填写的内容不会保存。",
   "careers.draftRestored": "从你上次停下的地方继续。内容只存在这台设备上，还没有发给我们。",
   "careers.startOver": "重新开始",
@@ -592,8 +592,7 @@ export const zh: Table = {
   "careers.from": "从",
   "careers.to": "到",
   "careers.addJob": "添加一份工作",
-  "careers.workNote": "没工作过？空着就行，不会因此扣分。",
-
+  "careers.workNote": "第一份工作？空着就行，我们也招新手。",
   "careers.refName": "姓名",
   "careers.refRelationship": "你们怎么认识的",
   "careers.refContact": "电话或邮箱",

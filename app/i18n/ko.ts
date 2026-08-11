@@ -506,7 +506,7 @@ export const ko: Table = {
   "careers.stepHistory": "이력",
   "careers.stepFinish": "마무리",
   "careers.stepOf": "{total}단계 중 {n}단계",
-  "careers.skipNote": "여기는 전부 선택 사항입니다. 해당 없는 항목은 건너뛰세요. 불이익은 없습니다.",
+  "careers.skipNote": "여기는 전부 선택 사항입니다. 해당 없는 항목은 건너뛰세요. 적어 주신 내용으로 판단합니다.",
   "careers.leaveConfirm": "보내지 않고 나가시겠어요? 작성하신 내용은 저장되지 않습니다.",
   "careers.draftRestored": "작성하시던 곳부터 이어집니다. 이 기기에만 저장되며 저희에게 전송되지 않았습니다.",
   "careers.startOver": "새로 시작",
@@ -594,8 +594,7 @@ export const ko: Table = {
   "careers.from": "시작",
   "careers.to": "종료",
   "careers.addJob": "경력 추가",
-  "careers.workNote": "일해 본 적이 없다면 비워 두세요. 불이익은 없습니다.",
-
+  "careers.workNote": "첫 직장인가요? 비워 두세요. 경험이 없는 분도 채용합니다.",
   "careers.refName": "이름",
   "careers.refRelationship": "어떤 사이인지",
   "careers.refContact": "전화 또는 이메일",
