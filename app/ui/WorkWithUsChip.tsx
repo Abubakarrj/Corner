@@ -15,16 +15,20 @@ import { useT } from "../i18n";
 // So the geometry stays and the voice changes. Same 28px height, same radius,
 // same 10px of side padding, and a transparent border in place of the hairline
 // so the box measures identically and the three still line up as one strip.
-// What differs is the fill: olive, the brand's own green, with --cb-on-ink on
-// top. That token is defined per theme as "whatever reads on a solid ground",
-// which is what makes this work in both without a `dark:` variant — light
-// olive is dark, so the label is near-white at 7.27:1; dark olive is light, so
-// the label is near-black at 8.71:1. Against the page the chip itself sits at
-// 7.79:1 and 9.24:1, well past the 3:1 a UI component's boundary needs.
+// What differs is the fill: the mark's own red, the colour of the logo four
+// inches below it. It was olive for a while, on the reasoning that the brand
+// green was underused — but red is the colour this shop actually is, and a
+// hiring chip in it reads as part of the logo rather than as a widget that
+// happens to be green.
 //
-// This chip is why olive was resaturated — it is the one place the brand green
-// is spent as a large solid fill rather than a stroke or a caption, and the old
-// value only looked muddy at that size. See the note on --cb-olive.
+// --cb-red-fill, not --cb-red. Those are two different jobs and two different
+// values: --cb-red is text, and at night it is lifted to #f08a90 so it can be
+// read on near-black, which as a solid pill is pale pink beside a logo that
+// stays #BE1923 in both themes. The fill token is the mark's red in light and
+// the smallest lift off it that clears contrast in dark. White label either
+// way: 5.85:1 light, 4.92:1 dark, and the pill against the page 6.26:1 and
+// 3.43:1 — past the 4.5:1 an 11px label needs and the 3:1 a component's
+// boundary needs.
 //
 // hover:opacity-90 rather than the neighbours' hover:text-ink: on a filled
 // control there is no text colour left to darken, and this is the same hover
@@ -42,7 +46,7 @@ export default function WorkWithUsChip({ className = "" }: { className?: string 
       // whitespace-nowrap, no truncate: the label is the whole control, and
       // "We are Hiri…" is worse than a chip that wraps to its own line. The
       // strip it sits in wraps instead — see the marketing home page.
-      className={`cb-press inline-flex h-7 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border border-transparent bg-olive px-2.5 text-[11px] font-semibold leading-none text-on-ink transition-opacity hover:opacity-90 ${className}`}
+      className={`cb-press inline-flex h-7 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border border-transparent bg-brand-red-fill px-2.5 text-[11px] font-semibold leading-none text-on-red transition-opacity hover:opacity-90 ${className}`}
     >
       {t("about.workWithUs")}
     </Link>
