@@ -17,6 +17,7 @@ import {
 import { SHOP_PHONE } from "../../../shopFacts";
 import { useLiveStatus } from "../../useLiveStatus";
 import { handedToCourier } from "../../../orderStages";
+import PushToggle from "../../../push/PushToggle";
 import { ButtonLink } from "../../../ui/Button";
 import { formatPrice, getProduct } from "../../products";
 import ProductImage from "../../ProductImage";
@@ -188,6 +189,13 @@ export default function OrderTracker({ id }: { id: string }) {
           );
         })}
       </ol>
+
+      {/* Under the progress and above the receipt: it is about the thing
+          being waited for, and it asks at the one moment somebody wants the
+          answer it offers. */}
+      <PushToggle
+        order={{ id: order.id, toastGuid: order.toastGuid, deliveryId: order.deliveryId }}
+      />
 
       <Receipt order={order} followable={followable} />
 

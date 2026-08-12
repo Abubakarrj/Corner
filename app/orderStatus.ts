@@ -49,6 +49,7 @@
 // Swapping this for Redis later means replacing read() and write(). Nothing
 // above them needs to know.
 
+import { announce } from "./push/announce";
 import { fetchToastOrder } from "./toast";
 import { fetchDelivery } from "./uberDirect";
 import {
@@ -108,15 +109,22 @@ export async function refresh(
     const state = await fetchToastOrder(id);
     const food = foodStageOf(state?.fulfillment ?? null);
     if (!state || food === undefined) return undefined;
+    const was = read(`toast:${id}`, now)?.food;
     const status: LiveStatus = { food, at: now };
     write(`toast:${id}`, status);
+    // Only on a change. refresh() is also the polling path, so notifying on
+    // every call would buzz a phone every fifteen seconds for as long as the
+    // bagels take.
+    if (was !== food) await announce("toast", id, food);
     return status;
   }
   const state = await fetchDelivery(id);
   const courier = courierStageOf(state?.status ?? null);
   if (!state || courier === undefined) return undefined;
+  const was = read(`uber:${id}`, now)?.courier;
   const status: LiveStatus = { courier, at: now };
   write(`uber:${id}`, status);
+  if (was !== courier) await announce("uber", id, courier);
   return status;
 }
 
