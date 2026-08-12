@@ -65,16 +65,6 @@ export const en = {
   // Composed on the server from a status change, so these are read by
   // app/push/announce.ts rather than through useT(). English only for now;
   // the reason is in that file's header.
-  "push.readyTitle": "Your order is ready",
-  "push.readyBody": "It's on the counter at Corner Bagel.",
-  "push.collectedTitle": "On the way",
-  "push.collectedBody": "Your courier has your order and is heading to you.",
-  "push.deliveredTitle": "Delivered",
-  "push.deliveredBody": "Your order is at your door. Enjoy.",
-  "push.canceledTitle": "Delivery cancelled",
-  "push.canceledBody": "The courier isn't coming. Call the shop and we'll sort it out.",
-  "push.voidedTitle": "Your order was cancelled",
-  "push.voidedBody": "Call the shop and we'll sort it out.",
   "finder.aroundYou": "around you",
   "finder.zoomIn": "Zoom in",
   "finder.zoomOut": "Zoom out",

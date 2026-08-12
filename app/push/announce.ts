@@ -1,18 +1,18 @@
 import "server-only";
 
 import type { CourierStage, FoodStage } from "../orderStages";
-import { en } from "../i18n/en";
-import { notifyOrder, notifyAndClose } from "./send";
-import { subscriptionsForProvider } from "./store";
+import { isFinal, messageFor, notifiable } from "./messages";
+import { notifyDevices } from "./send";
+import { forgetOrder, subscriptionsForProvider } from "./store";
 
-// Which status changes are worth a phone buzzing, and what they say.
+// Which status changes are worth a phone buzzing.
 //
 // ——— Most of them are not ———
 //
-// The tracker has five stages and the courier has six, and notifying on all
-// eleven would mean a customer's phone going off every couple of minutes for a
-// twelve-minute order. The test each one has to pass is whether it changes
-// what the person should *do*:
+// The food has five stages and the courier six, and notifying on all eleven
+// would mean a phone going off every couple of minutes for a twelve-minute
+// order. The test each one has to pass is whether it changes what the person
+// should *do*:
 //
 //   ready         go and get it, or know it is waiting          yes
 //   collected     it left the shop, it is coming to you          yes
@@ -27,42 +27,8 @@ import { subscriptionsForProvider } from "./store";
 //   delivering    the same fact as "collected", said again       no
 //   done          the order is over; the last word was better    no
 //
-// ——— The language ———
-//
-// English, and the reason is uncomfortable but honest: the notification is
-// composed here, on the server, from a status change — not in the browser
-// where useT() lives. The device's locale is stored with the subscription, so
-// this can be per-language, and the string table is already translated ten
-// ways. What is missing is a server-side lookup that does not drag the client
-// i18n module into a webhook. That is the next piece of work on this, and it
-// is a small one; until then a customer who reads the app in Korean gets an
-// English notification, which is worth knowing about rather than discovering.
-
-type Announcement = { title: string; body: string; final: boolean };
-
-function foodNews(stage: FoodStage): Announcement | null {
-  switch (stage) {
-    case "ready":
-      return { title: en["push.readyTitle"], body: en["push.readyBody"], final: false };
-    case "voided":
-      return { title: en["push.voidedTitle"], body: en["push.voidedBody"], final: true };
-    default:
-      return null;
-  }
-}
-
-function courierNews(stage: CourierStage): Announcement | null {
-  switch (stage) {
-    case "collected":
-      return { title: en["push.collectedTitle"], body: en["push.collectedBody"], final: false };
-    case "delivered":
-      return { title: en["push.deliveredTitle"], body: en["push.deliveredBody"], final: true };
-    case "canceled":
-      return { title: en["push.canceledTitle"], body: en["push.canceledBody"], final: true };
-    default:
-      return null;
-  }
-}
+// That list is in messages.ts, which is also where the copy lives, so adding a
+// stage is one edit rather than two that can disagree.
 
 /** Tell the devices watching this provider's id, if this change is worth it.
  *
@@ -76,32 +42,38 @@ export async function announce(
   stage: FoodStage | CourierStage,
 ): Promise<void> {
   try {
-    const news =
-      kind === "toast"
-        ? foodNews(stage as FoodStage)
-        : courierNews(stage as CourierStage);
-    if (!news) return;
+    if (!notifiable(stage)) return;
 
-    // One lookup to find which of our orders this is. A device subscribes with
-    // both provider ids, so either one finds the row.
+    // The webhook knows a Toast guid or an Uber delivery id and nothing else,
+    // so this is the lookup a status change actually has to make.
     const devices = await subscriptionsForProvider(kind, providerId);
     if (devices.length === 0) return;
     const orderId = devices[0].orderId;
+    const url = `/shop/order/${encodeURIComponent(orderId)}`;
+    // One tag per order, so a later update replaces the earlier one on the
+    // lock screen instead of stacking three notifications about one bag.
+    const tag = `order-${orderId}`;
 
-    const payload = {
-      title: news.title,
-      body: news.body,
-      url: `/shop/order/${encodeURIComponent(orderId)}`,
-      // One tag per order, so a later update replaces the earlier one on the
-      // lock screen instead of stacking three notifications about one bag.
-      tag: `order-${orderId}`,
-    };
-
-    if (news.final) {
-      await notifyAndClose(orderId, payload);
-    } else {
-      await notifyOrder(orderId, payload);
+    // Grouped by language, because the message differs per device. Two people
+    // sharing an order on two phones can be reading the app in two languages,
+    // and each of them recorded theirs when they turned notifications on.
+    const byLocale = new Map<string, typeof devices>();
+    for (const device of devices) {
+      const group = byLocale.get(device.locale) ?? [];
+      group.push(device);
+      byLocale.set(device.locale, group);
     }
+
+    await Promise.all(
+      [...byLocale].map(([locale, group]) => {
+        const { title, body } = messageFor(stage, locale);
+        return notifyDevices(group, { title, body, url, tag });
+      }),
+    );
+
+    // The order is over. The rows are device identifiers with nothing left to
+    // be about, so they go.
+    if (isFinal(stage)) await forgetOrder(orderId);
   } catch (error) {
     console.error("[push] announce failed:", (error as Error).message);
   }
