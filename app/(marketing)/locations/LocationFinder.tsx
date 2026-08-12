@@ -100,8 +100,11 @@ export default function LocationFinder() {
   // So the tab stays and answers for itself. Tap it and the strip says
   // delivery is unavailable and pickup is open, which is the whole truth in
   // one line, said before anybody types an address.
-  const { delivery: deliveryOn } = useCapabilities();
-  const deliveryOff = mode === "delivery" && !deliveryOn;
+  const { delivery: deliveryOn, ready: capabilitiesReady } = useCapabilities();
+  // Only once the answer is in. Saying "delivery is unavailable right now"
+  // while still asking is telling somebody something about the shop that we do
+  // not yet know — and it is the first thing they saw every time.
+  const deliveryOff = mode === "delivery" && capabilitiesReady && !deliveryOn;
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
