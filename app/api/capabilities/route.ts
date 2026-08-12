@@ -1,5 +1,5 @@
 import { isAuthConfigured } from "../../auth/auth0";
-import { SHOP_PHONE } from "../../shopFacts";
+import { SHOP_PHONE, openPreview } from "../../shopFacts";
 import { isUberConfigured } from "../../uberDirect";
 
 // What's actually switched on, decided at request time.
@@ -108,5 +108,9 @@ export function GET() {
     // a Call button that rings +1 213 555 1234 is worse than no Call button.
     // There is a real line now, so the guard has nothing left to guard.
     phone: SHOP_PHONE,
+    // ⚠️ True only when SHOP_OPEN_PREVIEW is set, which must never be a
+    // deploy real customers use. Reported so the screens agree with the
+    // server rather than showing "closed" over an endpoint that accepts.
+    openPreview: openPreview(),
   });
 }

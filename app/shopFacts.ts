@@ -144,7 +144,30 @@ function shopClock(now: Date): { day: number; hour: number; minute: number } {
   };
 }
 
+// ——— ⚠️ Testing outside opening hours ———
+//
+// SHOP_OPEN_PREVIEW=1 makes the shop count as open whatever the clock says.
+// It exists because the hours below are the only thing standing between
+// somebody and a test order, and 7am–4pm is a narrow window to do integration
+// work in — the delivery quote, the courier booking, the Toast ticket and the
+// tracker can only be exercised end to end while the shop is open.
+//
+// ⚠️ It must never be set on a deploy real customers use. An order placed at
+// 3am reaches a kitchen with nobody in it: the customer is charged nothing and
+// told the shop is making their breakfast, the courier is booked and arrives
+// at a dark shop, and the first anybody knows is a complaint. This is the same
+// warning PAYMENTS_PREVIEW carries, for the same reason — both of them make
+// the app claim something that is not true.
+//
+// Deliberately not NEXT_PUBLIC_. The browser learns about it through
+// /api/capabilities like every other capability, so turning it on is a server
+// decision and there is one place to look.
+export function openPreview(): boolean {
+  return process.env.SHOP_OPEN_PREVIEW === "1";
+}
+
 export function isOpenNow(now: Date = new Date()): boolean {
+  if (openPreview()) return true;
   const { day, hour } = shopClock(now);
   return OPEN_DAYS.includes(day) && hour >= OPEN_HOUR && hour < CLOSE_HOUR;
 }

@@ -36,19 +36,39 @@ export type Opening = {
   acceptingOrders: boolean;
 };
 
+// ⚠️ See openPreview() in shopFacts.ts and the warning above it.
+let previewing = false;
+
 function compute(): Opening {
   const minutesLeft = minutesUntilClose();
-  const open = isOpenNow();
+  const open = previewing || isOpenNow();
   return {
     open,
     next: nextOpeningAt(),
     minutesLeft,
-    acceptingOrders: open && minutesLeft >= PREP_MINUTES,
+    // The prep-time check is skipped while previewing: five minutes before
+    // close it would otherwise refuse the order the preview exists to place.
+    acceptingOrders: open && (previewing || minutesLeft >= PREP_MINUTES),
   };
 }
 
 let snapshot: Opening = compute();
 const listeners = new Set<() => void>();
+
+// ⚠️ Set from /api/capabilities when SHOP_OPEN_PREVIEW is on — see
+// openPreview() in shopFacts.ts, and the warning above it. Held in a module
+// variable rather than threaded through the store because this file's
+// snapshot has to stay identity-stable for useSyncExternalStore.
+/** Called by the capabilities provider once the server has answered. Without
+ *  it the browser would show "closed" over an endpoint that accepts orders,
+ *  which is the confusing half of the problem rather than the dangerous one. */
+export function setOpenPreview(on: boolean): void {
+  if (previewing === on) return;
+  previewing = on;
+  snapshot = compute();
+  for (const listener of listeners) listener();
+}
+
 
 function refresh() {
   const next = compute();

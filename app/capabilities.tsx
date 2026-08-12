@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { setOpenPreview } from "./useOpening";
 
 // What the app can actually do right now, as something a component can read.
 //
@@ -31,6 +32,9 @@ export type Capabilities = {
   // default here for the same reason the booleans are false: better to offer
   // no Call button than one that rings a placeholder.
   phone: string | null;
+  /** ⚠️ The shop is being treated as open regardless of the clock, for
+      testing. See openPreview() in shopFacts.ts. */
+  openPreview: boolean;
 };
 
 const OFF: Capabilities = {
@@ -40,6 +44,7 @@ const OFF: Capabilities = {
   chat: false,
   delivery: false,
   phone: null,
+  openPreview: false,
 };
 
 const CapabilitiesContext = createContext<Capabilities>(OFF);
@@ -52,7 +57,13 @@ export function CapabilitiesProvider({ children }: { children: React.ReactNode }
     void fetch("/api/capabilities", { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
       .then((body) => {
-        if (live && body) setCapabilities({ ...(body as Capabilities), ready: true });
+        if (!live || !body) return;
+        const answer = body as Capabilities;
+        setCapabilities({ ...answer, ready: true });
+        // The opening store is read synchronously all over the shop, so it is
+        // told rather than asked. Without this the browser says "closed" while
+        // the server accepts orders.
+        setOpenPreview(answer.openPreview === true);
       })
       .catch(() => {
         // Everything stays off — see the note above on which way to be wrong —
