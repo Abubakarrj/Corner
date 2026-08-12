@@ -114,6 +114,53 @@ export function publicKey(): string | null {
   return process.env.VAPID_PUBLIC_KEY ?? null;
 }
 
+// ——— What the push services answer, and what each answer means ———
+//
+// Apple documents these for APNs and the web push services broadly agree, so
+// they are handled by code rather than lumped into one "send failed" line.
+// The distinction that matters is which ones mean *this subscription is dead*
+// — those get dropped, because retrying a gone endpoint on every future
+// status change is work that can only ever fail.
+//
+// 403 is the one worth watching for. It means the key is being rejected,
+// which on a working deployment means the VAPID pair is wrong or mismatched —
+// the exact failure keyProblem() above exists to catch before it gets this
+// far. If it ever appears in a log, the keys are the thing to look at, not
+// the customer's phone.
+function describe(status: number | undefined): { why: string; drop: boolean } {
+  switch (status) {
+    case 400:
+      return { why: "the push service rejected the request as malformed (400)", drop: false };
+    case 403:
+      return {
+        why:
+          "the push service refused our key (403) — the VAPID pair is wrong," +
+          " mismatched, or not the one these subscriptions were created with",
+        drop: false,
+      };
+    case 404:
+      return { why: "a subscription is unknown to the push service (404); dropped", drop: true };
+    case 410:
+      return { why: "a subscription has expired or been revoked (410); dropped", drop: true };
+    case 413:
+      return { why: "the notification payload was too large (413)", drop: false };
+    case 429:
+      // Backing off properly would need a queue, which this does not have.
+      // Saying so is better than a retry loop against a service asking us to
+      // slow down — and at one notification per order stage, reaching this is
+      // itself the news.
+      return {
+        why: "the push service is rate limiting us (429); this notification was dropped",
+        drop: false,
+      };
+    case 500:
+    case 503:
+      return { why: `the push service is unavailable (${status})`, drop: false };
+    default:
+      return { why: `send failed (${status ?? "no status"})`, drop: false };
+  }
+}
+
 let armed = false;
 
 function arm(): boolean {
@@ -163,14 +210,11 @@ export async function notifyDevices(
         delivered += 1;
       } catch (error) {
         const status = (error as { statusCode?: number }).statusCode;
-        // 404 and 410 are the push service saying this subscription is gone —
-        // uninstalled, permission revoked, expired. Keeping it would mean
-        // retrying a dead endpoint on every future update.
-        if (status === 404 || status === 410) {
-          await forgetSubscription(device.endpoint);
-        } else {
-          console.error(`[push] send failed (${status ?? "no status"}) for one device`);
-        }
+        const problem = describe(status);
+        if (problem.drop) await forgetSubscription(device.endpoint);
+        // Apple's own wording rather than a status number, because these are
+        // read at 6am by somebody working out why a customer heard nothing.
+        console.error(`[push] ${problem.why}`);
       }
     }),
   );
