@@ -284,16 +284,12 @@ export const fr: Table = {
     "Le coursier lit ceci. La note pour la cuisine, plus bas, va à la boutique.",
   "delivery.pricing": "Calcul…",
   "deliveryFee.title": "Comment sont calculés les frais de livraison",
-  "deliveryFee.lead":
-    "Uber Direct assure le trajet. Ils le facturent selon la distance entre votre adresse et le comptoir, et nous vous facturons ce qu'ils nous facturent.",
   "deliveryFee.yourAddress": "Votre adresse",
   "deliveryFee.milesAway": "À {miles} miles de la boutique",
   "deliveryFee.distance": "Distance",
   "deliveryFee.fee": "Frais",
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.yours": "la vôtre",
-  "deliveryFee.includesTrip":
-    "Chacun comprend les {amount} de frais de trajet californiens, qui vont au coursier au titre de la garantie de revenus de l'État pour les chauffeurs d'applications.",
   "deliveryFee.passthrough": "Corner Bagel n'ajoute rien par-dessus.",
   "deliveryFee.quotedFresh":
     "Uber chiffre votre adresse au moment de la commande, c'est donc ce que vous payez. La météo et le trafic peuvent le faire varier.",

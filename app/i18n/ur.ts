@@ -254,16 +254,12 @@ export const ur: Table = {
   "delivery.forTheDriverHint": "یہ ڈرائیور پڑھتا ہے۔ نیچے باورچی خانے والا نوٹ دکان کو جاتا ہے۔",
   "delivery.pricing": "کرایہ نکالا جا رہا ہے…",
   "deliveryFee.title": "ڈیلیوری فیس کیسے بنتی ہے",
-  "deliveryFee.lead":
-    "Uber Direct پہنچاتا ہے۔ کرایہ اس بات پر ہے کہ آپ کا پتہ دکان سے کتنا دور ہے، اور جو وہ ہم سے لیتے ہیں وہی ہم آپ سے لیتے ہیں۔",
   "deliveryFee.yourAddress": "آپ کا پتہ",
   "deliveryFee.milesAway": "دکان سے {miles} میل",
   "deliveryFee.distance": "فاصلہ",
   "deliveryFee.fee": "کرایہ",
   "deliveryFee.band": "{from}–{to} میل",
   "deliveryFee.yours": "آپ کا",
-  "deliveryFee.includesTrip":
-    "ان میں سے ہر ایک میں {amount} کیلیفورنیا ٹرپ فیس شامل ہے، جو ریاست کی ایپ ڈرائیوروں کے لیے آمدنی کی ضمانت کے تحت ڈرائیور کو جاتی ہے۔",
   "deliveryFee.passthrough": "Corner Bagel اس پر کچھ نہیں بڑھاتا۔",
   "deliveryFee.quotedFresh":
     "Uber آرڈر کے وقت آپ کے پتے کا کرایہ نکالتا ہے، سو یہی آپ ادا کریں گے۔ موسم اور ٹریفک سے بدل سکتا ہے۔",

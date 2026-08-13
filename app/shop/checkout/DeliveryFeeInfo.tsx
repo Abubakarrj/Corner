@@ -4,23 +4,31 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { useT } from "../../i18n";
 import { formatPrice } from "../products";
-import { CALIFORNIA_TRIP_CENTS, DELIVERY_BANDS, bandFor, chargedCents } from "../deliveryPricing";
+import { DELIVERY_BANDS, bandFor, chargedCents } from "../deliveryPricing";
 import UberDirectMark from "./UberDirectMark";
 
 // The (i) beside the delivery fee, and what it opens.
 //
 // ——— Why a line on a bill needs a footnote at all ———
 //
-// "Delivery $10.99" is the number people are most suspicious of on a food
+// "Delivery $12.99" is the number people are most suspicious of on a food
 // order, and they are right to be: it is the line the industry pads. On this
 // shop it is Uber's own quote passed through untouched, and there is no way to
-// tell that by looking at it. So this says it, with the rate card that
-// produced the number and the surcharge that explains why an $7.99 band shows
-// up as $10.99 on a Los Angeles bill.
+// tell that by looking at it. So this shows the rate card the number came off,
+// and says the shop adds nothing.
 //
 // The distance is the part that makes it land. A table of bands is abstract;
 // "2.4 miles from the shop" with that row lit up is somebody checking our
 // arithmetic and finding it holds.
+//
+// ——— And almost nothing else ———
+//
+// This started with a heading, a paragraph explaining distance pricing, and a
+// footnote breaking out the state trip fee. All three were cut. A sheet opened
+// from an (i) beside a delivery fee does not need a heading about delivery
+// fees; the paragraph said in prose what the table says in four rows; and the
+// trip fee is inside every number above, so splitting it out again described a
+// line the customer's bill does not have.
 //
 // The quote stays the source of truth — see app/shop/deliveryPricing.ts. If
 // the card and the fee ever disagree, the fee is right and the card is stale,
@@ -49,16 +57,17 @@ export default function DeliveryFeeInfo({
         <span aria-hidden>i</span>
       </button>
 
+      {/* The title lives on the dialog rather than in it. A sheet opened from
+          an (i) beside a delivery fee does not need a heading announcing that
+          it is about the delivery fee, and the paragraph that explained
+          distance pricing was saying in three lines what the table underneath
+          says in four rows. What is left is the mark, the money, and the two
+          sentences that are actually news. Screen readers still get the
+          title — that is what `label` is. */}
       <Modal open={open} onClose={() => setOpen(false)} label={t("deliveryFee.title")}>
         <UberDirectMark className="text-[13px] text-muted" />
-        <h2 className="m-0 mt-2 text-[19px] font-medium leading-[1.25] text-ink">
-          {t("deliveryFee.title")}
-        </h2>
-        <p className="m-0 mt-2 text-[14px] leading-[1.55] text-muted">
-          {t("deliveryFee.lead")}
-        </p>
 
-        {/* What this particular order is being charged, before the table that
+        {/* What this particular order is being charged, above the table that
             explains it. Somebody opening this has a number in mind and wants
             to find it — leading with the abstract rate card makes them hunt. */}
         {known && typeof feeCents === "number" ? (
@@ -75,7 +84,11 @@ export default function DeliveryFeeInfo({
           </div>
         ) : null}
 
-        <table className="mt-4 w-full border-collapse text-[14px]">
+        {/* The last row drops its underline. With the surcharge row gone the
+            table ends on a rule, and the paragraph below opens with one — two
+            hairlines a few pixels apart, which reads as a mistake rather than
+            as a divider. */}
+        <table className="mt-4 w-full border-collapse text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
           <thead>
             <tr>
               <th className="border-b border-line pb-1.5 text-left text-[12px] font-normal text-muted">
@@ -123,10 +136,12 @@ export default function DeliveryFeeInfo({
           </tbody>
         </table>
 
-        <p className="m-0 mt-2 text-[12px] leading-[1.5] text-muted">
-          {t("deliveryFee.includesTrip", { amount: formatPrice(CALIFORNIA_TRIP_CENTS) })}
-        </p>
-
+        {/* The trip fee is folded into every number above and is not called
+            out. It was a footnote explaining a line item that no longer
+            exists on the bill — the customer pays one delivery fee, and a
+            paragraph breaking it into a rate and a state surcharge is our
+            accounting, not their business. chargedCents() still keeps the two
+            apart in the data, where it matters. */}
         <p className="m-0 mt-4 border-t border-line pt-4 text-[13px] leading-[1.55] text-ink">
           {t("deliveryFee.passthrough")}
         </p>

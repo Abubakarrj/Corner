@@ -253,15 +253,12 @@ export const zh: Table = {
   "delivery.forTheDriverHint": "这条骑手会看。下面给厨房的备注发给门店。",
   "delivery.pricing": "计算中…",
   "deliveryFee.title": "配送费是怎么算的",
-  "deliveryFee.lead": "由 Uber Direct 配送。他们按你的地址到门店的距离定价，他们收我们多少，我们就收你多少。",
   "deliveryFee.yourAddress": "你的地址",
   "deliveryFee.milesAway": "距门店 {miles} 英里",
   "deliveryFee.distance": "距离",
   "deliveryFee.fee": "费用",
   "deliveryFee.band": "{from}–{to} 英里",
   "deliveryFee.yours": "你的",
-  "deliveryFee.includesTrip":
-    "以上每项都已包含 {amount} 的加州行程费，按该州对网约车司机的收入保障发给骑手。",
   "deliveryFee.passthrough": "Corner Bagel 不额外加价。",
   "deliveryFee.quotedFresh": "Uber 在你下单那一刻按地址报价，所以这就是你付的钱。天气和路况可能会让它变动。",
 

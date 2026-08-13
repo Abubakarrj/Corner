@@ -251,15 +251,12 @@ export const ja: Table = {
   "delivery.forTheDriverHint": "これは配達員が読みます。下のキッチンへのメモは店に届きます。",
   "delivery.pricing": "計算中…",
   "deliveryFee.title": "配達料の決まり方",
-  "deliveryFee.lead": "配達は Uber Direct です。店からご住所までの距離で料金が決まり、当店は請求された額をそのままいただきます。",
   "deliveryFee.yourAddress": "お客様のご住所",
   "deliveryFee.milesAway": "店から{miles}マイル",
   "deliveryFee.distance": "距離",
   "deliveryFee.fee": "料金",
   "deliveryFee.band": "{from}〜{to}マイル",
   "deliveryFee.yours": "該当",
-  "deliveryFee.includesTrip":
-    "いずれもカリフォルニアの走行料金 {amount} を含んでおり、州のアプリ配達員の収入保証として配達員に渡ります。",
   "deliveryFee.passthrough": "Corner Bagel は上乗せしません。",
   "deliveryFee.quotedFresh": "Uber がご注文の時点でご住所の料金を出すので、これがお支払い額です。天候や渋滞で変わることがあります。",
 

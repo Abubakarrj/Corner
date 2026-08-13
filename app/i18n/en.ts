@@ -282,16 +282,12 @@ export const en = {
   "delivery.pricing": "Pricing…",
 
   "deliveryFee.title": "How the delivery fee works",
-  "deliveryFee.lead":
-    "Uber Direct drives it. They price each trip by how far your address is from the counter, and we charge you what they charge us.",
   "deliveryFee.yourAddress": "Your address",
   "deliveryFee.milesAway": "{miles} miles from the shop",
   "deliveryFee.distance": "Distance",
   "deliveryFee.fee": "Fee",
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.yours": "yours",
-  "deliveryFee.includesTrip":
-    "Each of these includes the {amount} California trip fee, which goes to the driver under the state's earnings guarantee for app drivers.",
   "deliveryFee.passthrough": "Corner Bagel adds nothing on top of this.",
   "deliveryFee.quotedFresh":
     "Uber prices your address at the moment you order, so this is what you pay. Weather and traffic can move it.",

@@ -251,15 +251,12 @@ export const ko: Table = {
   "delivery.forTheDriverHint": "기사가 읽습니다. 아래 주방 메모는 가게로 갑니다.",
   "delivery.pricing": "계산 중…",
   "deliveryFee.title": "배달비는 이렇게 정해집니다",
-  "deliveryFee.lead": "Uber Direct가 배달합니다. 가게에서 주소까지의 거리로 요금이 정해지고, 저희는 청구받은 금액을 그대로 받습니다.",
   "deliveryFee.yourAddress": "고객님 주소",
   "deliveryFee.milesAway": "가게에서 {miles}마일",
   "deliveryFee.distance": "거리",
   "deliveryFee.fee": "요금",
   "deliveryFee.band": "{from}–{to}마일",
   "deliveryFee.yours": "해당",
-  "deliveryFee.includesTrip":
-    "각 금액에는 캘리포니아 운행 요금 {amount}이 포함되어 있으며, 주의 앱 기사 수입 보장에 따라 기사에게 지급됩니다.",
   "deliveryFee.passthrough": "Corner Bagel은 여기에 아무것도 더하지 않습니다.",
   "deliveryFee.quotedFresh":
     "Uber가 주문 시점에 주소를 기준으로 계산하므로 이 금액을 그대로 내시게 됩니다. 날씨와 교통에 따라 달라질 수 있습니다.",

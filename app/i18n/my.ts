@@ -252,16 +252,12 @@ export const my: Table = {
     "ဒါကို ပို့ဆောင်သူ ဖတ်ပါသည်။ အောက်က မီးဖိုချောင်မှတ်ချက်က ဆိုင်ကို သွားပါသည်။",
   "delivery.pricing": "တွက်ချက်နေသည်…",
   "deliveryFee.title": "ပို့ဆောင်ခ ဘယ်လိုတွက်သလဲ",
-  "deliveryFee.lead":
-    "Uber Direct က ပို့ပါသည်။ ဆိုင်နှင့် သင့်လိပ်စာ အကွာအဝေးအလိုက် ဈေးသတ်မှတ်ပြီး၊ သူတို့ ကျွန်ုပ်တို့ဆီက ယူသလောက်ကိုပဲ သင့်ဆီက ယူပါသည်။",
   "deliveryFee.yourAddress": "သင့်လိပ်စာ",
   "deliveryFee.milesAway": "ဆိုင်မှ {miles} မိုင်",
   "deliveryFee.distance": "အကွာအဝေး",
   "deliveryFee.fee": "ခ",
   "deliveryFee.band": "{from}–{to} မိုင်",
   "deliveryFee.yours": "သင့်အတွက်",
-  "deliveryFee.includesTrip":
-    "အထက်ပါ တစ်ခုချင်းစီတွင် ကယ်လီဖိုးနီးယား ခရီးစဉ်ခ {amount} ပါဝင်ပြီး၊ ပြည်နယ်၏ အက်ပ်ယာဉ်မောင်း ဝင်ငွေအာမခံအရ ပို့ဆောင်သူဆီ ရောက်ပါသည်။",
   "deliveryFee.passthrough": "Corner Bagel က အပိုမတင်ပါ။",
   "deliveryFee.quotedFresh":
     "Uber က မှာယူချိန်မှာပဲ သင့်လိပ်စာအတွက် ဈေးထုတ်ပါသည်၊ ဒါကြောင့် ဒါက သင်ပေးရမည့် ငွေပါ။ ရာသီဥတုနှင့် ယာဉ်ကြောကြောင့် ပြောင်းနိုင်ပါသည်။",

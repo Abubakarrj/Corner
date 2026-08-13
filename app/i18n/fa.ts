@@ -284,16 +284,12 @@ export const fa: Table = {
   "delivery.forTheDriverHint": "پیک این را می‌خواند. یادداشت آشپزخانه در پایین به فروشگاه می‌رسد.",
   "delivery.pricing": "در حال محاسبه…",
   "deliveryFee.title": "هزینه ارسال چطور حساب می‌شود",
-  "deliveryFee.lead":
-    "Uber Direct آن را می‌برد. قیمت هر مسیر به فاصله آدرس شما تا فروشگاه بستگی دارد و ما همان مبلغی را از شما می‌گیریم که از ما می‌گیرند.",
   "deliveryFee.yourAddress": "آدرس شما",
   "deliveryFee.milesAway": "{miles} مایل از فروشگاه",
   "deliveryFee.distance": "فاصله",
   "deliveryFee.fee": "هزینه",
   "deliveryFee.band": "{from}–{to} مایل",
   "deliveryFee.yours": "مال شما",
-  "deliveryFee.includesTrip":
-    "هرکدام شامل هزینه {amount} سفر کالیفرنیا است که طبق تضمین درآمد ایالت برای رانندگان اپلیکیشن به پیک می‌رسد.",
   "deliveryFee.passthrough": "Corner Bagel چیزی روی آن نمی‌گذارد.",
   "deliveryFee.quotedFresh":
     "Uber آدرس شما را در همان لحظه سفارش قیمت می‌دهد، پس همین مبلغ را می‌پردازید. هوا و ترافیک می‌تواند تغییرش دهد.",

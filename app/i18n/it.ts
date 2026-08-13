@@ -284,16 +284,12 @@ export const it: Table = {
     "Questo lo legge il corriere. La nota per la cucina, più sotto, va al negozio.",
   "delivery.pricing": "Calcolo…",
   "deliveryFee.title": "Come si calcola la consegna",
-  "deliveryFee.lead":
-    "La porta Uber Direct. Il prezzo dipende da quanto dista il tuo indirizzo dal banco, e ti addebitiamo quello che addebitano a noi.",
   "deliveryFee.yourAddress": "Il tuo indirizzo",
   "deliveryFee.milesAway": "A {miles} miglia dal negozio",
   "deliveryFee.distance": "Distanza",
   "deliveryFee.fee": "Costo",
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.yours": "il tuo",
-  "deliveryFee.includesTrip":
-    "Ognuna comprende la tariffa di {amount} per viaggio in California, che va al corriere per la garanzia di guadagno dello stato per gli autisti delle app.",
   "deliveryFee.passthrough": "Corner Bagel non aggiunge nulla.",
   "deliveryFee.quotedFresh":
     "Uber calcola il tuo indirizzo nel momento in cui ordini, quindi è quello che paghi. Meteo e traffico possono spostarlo.",
