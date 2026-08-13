@@ -542,9 +542,7 @@ export const it: Table = {
   "api.couldNotRead": "Non siamo riusciti a leggerlo.",
   "finder.searching": "Ricerca…",
   "finder.outsideArea": "Quell'indirizzo è fuori dalla nostra zona di consegna.",
-  "finder.milesOut":
-    "{miles} miglia di strada oltre; consegniamo entro {radius}.",
-  "finder.nearestOpen": "{name} è a {miles} miglia ed è aperto per il ritiro.",
+  "finder.nearestOpen": "{name} è aperto per il ritiro.",
   "droplist.oneSec": "Un attimo…",
   "droplist.notifyMe": "Avvisami!",
   "gift.signInKeepCard": "Accedi per tenere questa carta regalo",

@@ -261,15 +261,16 @@ export default function SearchResults({
             {t("finder.outsideArea")}
           </p>
           <p className="m-0 mt-1 text-[13px]" style={{ color: muted }}>
-            {t("finder.milesOut", {
-              miles: rangeNotice.miles.toFixed(1),
-              radius: String(rangeNotice.radiusMiles),
-            })}{" "}
-            {/* Naming the shop and its distance, rather than "pickup is still
-                open" and leaving them to find it. The nearest counter to the
-                address they just typed is the one useful thing we know at this
-                point, and it is measured against our own locations rather than
-                assumed. */}
+            {/* No mileage. It used to say "11.7 driving miles out; we deliver
+                within 8" and then name the shop's distance too — two numbers,
+                in two different units, for a question nobody asked. The
+                heading above already says the address is too far; the only
+                useful thing left is that there is still a way to get breakfast.
+
+                Dropping it also removed a real wrongness: the first figure was
+                road distance from the Routes API and the second was
+                straight-line, printed side by side as though they were
+                comparable. */}
             {nearestShop
               ? t("finder.nearestOpen", {
                   name: nearestShop.location.name,
