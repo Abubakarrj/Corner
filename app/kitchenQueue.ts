@@ -2,7 +2,16 @@ import "server-only";
 
 import { db, isDatabaseConfigured, ready } from "./db";
 
-// How much work is on the counter right now.
+// How much work is on the counter right now — the fallback answer.
+//
+// ⚠️ Toast answers this better, and /api/kitchen-load prefers it. Orders Hub
+// is the till: it sees every ticket the kitchen has whatever channel it came
+// through, it is read rather than accumulated so nothing drifts, and there is
+// no row to close or sweep. See countOpenOrders() in app/toast.ts.
+//
+// This exists for the deployment where Toast is not wired up yet, which is the
+// state this shop is in today. It counts what passed through /api/shop-order —
+// a subset of the truth, and with no counter ordering very nearly all of it.
 //
 // ——— What this number is, precisely ———
 //

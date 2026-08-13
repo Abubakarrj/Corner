@@ -1,5 +1,7 @@
 import "server-only";
 
+import { foodStageOf } from "./orderStages";
+
 // Toast — the POS the shop actually runs on.
 //
 // Three things live here: getting a token, pulling the published menu, and
@@ -375,4 +377,103 @@ function derivedFulfillment(body: {
   if (states.every((state) => state === "READY")) return "READY_FOR_PICKUP";
   if (states.some((state) => state === "SENT")) return "IN_PREPARATION";
   return "RECEIVED";
+}
+
+// ——— How much work is on the counter ———
+//
+// Orders Hub is the till, so this is the authoritative answer to "how many
+// orders are the kitchen still making". Better than the count this app keeps
+// for itself in app/kitchenQueue.ts, in three ways that all come from the same
+// fact — Toast sees the kitchen and we see only what we sent it:
+//
+//   every channel     a ticket entered at the POS, or arriving from anywhere
+//                     else, is in this number. Our own table can only ever
+//                     count what passed through /api/shop-order.
+//   current state     read, not accumulated. Our table depends on a webhook
+//                     arriving to close a row, and needs a staleness cutoff
+//                     to survive one that never does. Nothing here can drift.
+//   no bookkeeping    nothing to insert, close, or sweep.
+//
+// The reason it is not the only path is that Toast can be unconfigured, and
+// the count then has to come from somewhere or the feature goes dark.
+
+const QUEUE_WINDOW_MINUTES = 180;
+
+/** Orders the kitchen is still working on, from Orders Hub.
+ *
+ *  Null when Toast is not configured or the call fails — never 0. A zero from
+ *  a failed request renders as "no orders ahead" on the screen somebody uses
+ *  to decide whether to walk over, which is a confident lie assembled out of
+ *  an error. See app/api/kitchen-load/route.ts. */
+export async function countOpenOrders(): Promise<number | null> {
+  const config = toastConfig();
+  if (!config) return null;
+  const auth = await authHeaders(config);
+  if (!auth) return null;
+
+  // A window rather than the business date. Late in the day a business-date
+  // query returns every order since 7am to count the four that matter, and
+  // nothing in a bagel kitchen has been open for three hours.
+  const end = new Date();
+  const start = new Date(end.getTime() - QUEUE_WINDOW_MINUTES * 60_000);
+  const params = new URLSearchParams({
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+    pageSize: "100",
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(`${config.host}/orders/v2/ordersBulk?${params}`, {
+      headers: auth,
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.error("[toast] ordersBulk failed:", (error as Error).message);
+    return null;
+  }
+  if (!response.ok) {
+    console.error(`[toast] ordersBulk failed: ${response.status}`);
+    return null;
+  }
+
+  const orders = (await response.json().catch(() => null)) as
+    | {
+        voided?: boolean;
+        deleted?: boolean;
+        closedDate?: string | null;
+        guestOrderStatus?: string;
+        checks?: { selections?: { fulfillmentStatus?: string }[] }[];
+      }[]
+    | null;
+  if (!Array.isArray(orders)) return null;
+
+  return orders.filter(inTheKitchen).length;
+}
+
+/** Still being made: not voided, not closed, and not yet ready.
+ *
+ *  Reads the fulfillment through the same two steps the tracker uses —
+ *  guestOrderStatus, or derivedFulfillment when the order object does not
+ *  carry one, then foodStageOf. Sharing that path is what stops the queue and
+ *  the tracker disagreeing about what "ready" means, which would show as a
+ *  customer being told their food is ready while still being counted as
+ *  somebody else's wait.
+ *
+ *  An order whose status is unrecognised counts. foodStageOf returns undefined
+ *  there rather than guessing, and for a queue the safe reading of "we don't
+ *  know what this is" is that the kitchen still has it — overstating a wait by
+ *  one sends somebody five minutes late, understating it sends them into a
+ *  line. */
+function inTheKitchen(order: {
+  voided?: boolean;
+  deleted?: boolean;
+  closedDate?: string | null;
+  guestOrderStatus?: string;
+  checks?: { selections?: { fulfillmentStatus?: string }[] }[];
+}): boolean {
+  if (order.voided === true || order.deleted === true) return false;
+  if (order.closedDate) return false;
+  const stage = foodStageOf(order.guestOrderStatus ?? derivedFulfillment(order));
+  return stage === undefined || stage === "received" || stage === "cooking";
 }

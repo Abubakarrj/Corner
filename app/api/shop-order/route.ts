@@ -379,6 +379,12 @@ export async function POST(request: Request) {
     // On the counter now, for the busyness line the next customer sees. After
     // the kitchen has accepted it, never before — an order that Toast refused
     // is not work anybody is doing.
+    //
+    // Written even though this branch means Toast is connected, and
+    // /api/kitchen-load therefore reads the count from Orders Hub instead. One
+    // insert per order to keep the fallback table true rather than empty: a
+    // fallback that has been silently accumulating nothing is not a fallback,
+    // it is a second outage waiting behind the first.
     await joinQueue(sent.orderGuid, sent.orderGuid);
 
     return Response.json(
