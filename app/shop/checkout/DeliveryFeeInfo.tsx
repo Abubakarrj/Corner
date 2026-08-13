@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { useT } from "../../i18n";
 import { formatPrice } from "../products";
-import { DELIVERY_BANDS, bandFor, chargedCents } from "../deliveryPricing";
+import { DELIVERY_BANDS, bandForFee, chargedCents } from "../deliveryPricing";
 import UberDirectMark from "./UberDirectMark";
 
 // The (i) beside the delivery fee, and what it opens.
@@ -17,9 +17,14 @@ import UberDirectMark from "./UberDirectMark";
 // tell that by looking at it. So this shows the rate card the number came off,
 // and says the shop adds nothing.
 //
-// The distance is the part that makes it land. A table of bands is abstract;
-// "2.4 miles from the shop" with that row lit up is somebody checking our
-// arithmetic and finding it holds.
+// The lit-up row is the part that makes it land. A table of bands is
+// abstract; the band your own fee came off, with that fee above it, is
+// somebody checking our arithmetic and finding it holds.
+//
+// That row is chosen by the fee and not by a distance — the reasons are in
+// bandForFee(), and they are worth reading before anybody wires a map back
+// into this. The mileage line under the fee is the only thing here that needs
+// Google, and it is decoration: absent, this still works.
 //
 // ——— And almost nothing else ———
 //
@@ -43,8 +48,12 @@ export default function DeliveryFeeInfo({
   const t = useT();
   const [open, setOpen] = useState(false);
 
+  // The fee is what lights up a row — it is what Uber charged, and it names
+  // its own band. The distance is decoration on top, shown when Google Routes
+  // has an answer and left out when it doesn't. See bandForFee().
+  const priced = typeof feeCents === "number" && feeCents > 0;
   const known = typeof miles === "number" && Number.isFinite(miles);
-  const yourBand = known ? bandFor(miles as number) : null;
+  const yourBand = priced ? bandForFee(feeCents as number) : null;
 
   return (
     <>
@@ -70,17 +79,23 @@ export default function DeliveryFeeInfo({
         {/* What this particular order is being charged, above the table that
             explains it. Somebody opening this has a number in mind and wants
             to find it — leading with the abstract rate card makes them hunt. */}
-        {known && typeof feeCents === "number" ? (
+        {priced ? (
           <div className="mt-4 rounded-xl bg-raise px-4 py-3">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[13px] text-muted">{t("deliveryFee.yourAddress")}</span>
               <span className="text-[15px] font-medium tabular-nums text-ink">
-                {formatPrice(feeCents)}
+                {formatPrice(feeCents as number)}
               </span>
             </div>
-            <p className="m-0 mt-0.5 text-[12px] text-muted">
-              {t("deliveryFee.milesAway", { miles: (miles as number).toFixed(1) })}
-            </p>
+            {/* The distance, when Routes answered. It used to gate this whole
+                block, which meant a shop with a broken maps key showed no
+                price at all here — hiding the number somebody opened the
+                sheet to see, because a nice-to-have line was missing. */}
+            {known ? (
+              <p className="m-0 mt-0.5 text-[12px] text-muted">
+                {t("deliveryFee.milesAway", { miles: (miles as number).toFixed(1) })}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

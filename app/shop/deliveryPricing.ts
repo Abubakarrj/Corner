@@ -62,8 +62,27 @@ export function chargedCents(band: DeliveryBand): number {
   return band.baseCents + CALIFORNIA_TRIP_CENTS;
 }
 
-/** The band a distance falls in, or null past the last one. */
-export function bandFor(miles: number): DeliveryBand | null {
-  return DELIVERY_BANDS.find((band) => miles > band.fromMiles && miles <= band.toMiles)
-    ?? (miles <= 0 ? DELIVERY_BANDS[0] : null);
+/** The band a quoted fee came off, or null when it matches none of them.
+ *
+ *  ——— Why the fee identifies the band, and the distance does not ———
+ *
+ *  Every band is a different price, so a $12.99 quote is the 6–7 mile band and
+ *  can be nothing else. That makes the fee a better key than a distance, for a
+ *  reason worth stating plainly: the fee is what Uber charged, and a distance
+ *  is a second opinion about the same drive.
+ *
+ *  This used to match on road miles from Google Routes. Two problems, and the
+ *  smaller one is that Routes can be unreachable — the shop has spent a while
+ *  with a key restriction that made it answer nothing, and the explainer
+ *  quietly lost its highlight. The larger one is what happens when Routes
+ *  works and disagrees. Google routing 6.9 miles where Uber priced the 7–10
+ *  band would light up the $12.99 row on a bill that says $13.99, and the one
+ *  screen whose job is showing that the arithmetic holds would be the screen
+ *  contradicting the receipt.
+ *
+ *  So the band comes off the fee. Null when nothing matches — a surge, a zone
+ *  with different terms, a promotion — and no row lights up, which is the
+ *  honest answer: the rate card did not produce this number. */
+export function bandForFee(feeCents: number): DeliveryBand | null {
+  return DELIVERY_BANDS.find((band) => chargedCents(band) === feeCents) ?? null;
 }
