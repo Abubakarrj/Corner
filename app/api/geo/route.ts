@@ -111,12 +111,31 @@ export async function POST(request: Request) {
   // the courier quote later is the real gate on whether a delivery happens.
   const miles = drive?.miles ?? milesBetween(origin, [place.lat, place.lng]);
 
+  if (!drive) {
+    // Loud, because the fallback is invisible from the outside and it moves the
+    // boundary. A straight line reads shorter than the road, so while Routes is
+    // failing the eight-mile radius is quietly larger than eight miles: an
+    // address nine road miles out measures about seven in a straight line and
+    // is accepted. Nothing breaks — the courier quote is the real gate, and it
+    // refuses what it cannot serve — but the shop should know its radius is not
+    // the number it set. googleMaps.ts logged the reason a moment ago.
+    console.warn(
+      `[geo] no road distance for "${place.address}" — using straight-line` +
+        ` (${miles.toFixed(1)} mi). The delivery radius is wider than` +
+        ` ${DELIVERY_RADIUS_MILES} miles until Routes answers again.`,
+    );
+  }
+
   return Response.json({
     address: place.address,
     lat: place.lat,
     lng: place.lng,
     miles,
     minutes: drive?.minutes ?? null,
+    // Which ruler was used. The copy that quoted a figure called it "driving
+    // miles" whether or not anything had driven anywhere, and that is how a
+    // dead Routes call passed for a working one for weeks.
+    measuredBy: drive ? "road" : "straight-line",
     inRange: miles <= DELIVERY_RADIUS_MILES,
     radiusMiles: DELIVERY_RADIUS_MILES,
   });

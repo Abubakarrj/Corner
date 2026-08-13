@@ -241,7 +241,31 @@ export async function driveBetween(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    console.error(`[maps] routes ${response.status}: ${detail.slice(0, 200)}`);
+    // Named rather than numbered. Every caller falls back to a straight line
+    // when this returns null, which is deliberate — but it means a permanently
+    // broken Routes call looks exactly like a working one from outside, and
+    // the only evidence is this line. So it says what to go and fix.
+    //
+    // 403 is overwhelmingly the one that happens, and almost always for the
+    // same reason: this call is made from the server, and a key restricted by
+    // HTTP referrer cannot be used from a server. Referrer restrictions only
+    // apply to browser requests. A server key wants IP restrictions or none.
+    const why =
+      response.status === 403
+        ? "the key was refused. This call is server-side, so an HTTP-referrer" +
+          " restriction on the key will always fail here — a server key needs IP" +
+          " restrictions or none. Also check Routes API is enabled on the same" +
+          " project the key belongs to."
+        : response.status === 429
+          ? "quota exceeded"
+          : response.status === 400
+            ? "the request was malformed, which is our bug"
+            : "unexpected";
+    console.error(
+      `[maps] Routes API failed (${response.status}) — ${why}` +
+        ` Distances now fall back to straight-line, which reads short.` +
+        ` ${detail.slice(0, 200)}`,
+    );
     return null;
   }
 
