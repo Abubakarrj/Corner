@@ -13,6 +13,7 @@ import { Button } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
 import { Check, Disclosure, Field, Section } from "./CheckoutSections";
 import { useCheckout } from "./useCheckout";
+import DeliverySection from "./DeliverySection";
 import OrderSummary from "./OrderSummary";
 import SecureNote from "./SecureNote";
 import PurchaseComplete from "./PurchaseComplete";
@@ -236,54 +237,49 @@ export default function CheckoutPage() {
             </div>
           </Section>
 
-          <Section
-            title={isDelivery ? t("checkout.deliveryDetails") : t("checkout.pickupDetails")}
-            aside={
-              <Link
-                href="/locations"
-                className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
-              >
-                {isDelivery ? t("checkout.switchToPickup") : t("checkout.switchToDelivery")}
-              </Link>
-            }
-          >
-            <div className="rounded-xl border border-line-soft">
-              <div className="flex items-start gap-3 border-b border-line-faint p-4">
-                <ClockIcon />
-                <div className="min-w-0">
-                  <p className="m-0 text-[14px] text-ink">
-                    {/* On a delivery, the time is Uber's — it's their courier
-                        and their estimate of the drive. On a pickup it's the
-                        kitchen's prep time and nothing else. */}
-                    {t(isDelivery ? "checkout.deliveryAround" : "checkout.pickupAround", {
-                      time: readyAt(
-                        isDelivery ? (quote?.etaMinutes ?? PREP_MINUTES) : PREP_MINUTES,
-                      ),
-                    })}
-                  </p>
-                  {/* "Estimated" is doing real work here: nothing in this app
-                      can see the kitchen, so this is arithmetic on the clock,
-                      and saying otherwise would be a promise the shop didn't
-                      make. */}
-                  <p className="m-0 text-[12px] text-muted">
-                    {isDelivery && quote
-                      ? t("checkout.estimatedCourier")
-                      : t("checkout.estimatedShop")}
-                  </p>
+          {/* Delivery gets its own block rather than the pickup card with the
+              address swapped in. A courier needs the unit, the handoff and a
+              note of his own, and none of those has any meaning for somebody
+              walking to the counter — see DeliverySection.tsx. */}
+          {isDelivery ? (
+            <DeliverySection checkout={checkout} />
+          ) : (
+            <Section
+              title={t("checkout.pickupDetails")}
+              aside={
+                <Link
+                  href="/locations"
+                  className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
+                >
+                  {t("checkout.switchToDelivery")}
+                </Link>
+              }
+            >
+              <div className="rounded-xl border border-line-soft">
+                <div className="flex items-start gap-3 border-b border-line-faint p-4">
+                  <ClockIcon />
+                  <div className="min-w-0">
+                    <p className="m-0 text-[14px] text-ink">
+                      {t("checkout.pickupAround", { time: readyAt(PREP_MINUTES) })}
+                    </p>
+                    {/* "Estimated" is doing real work here: nothing in this app
+                        can see the kitchen, so this is arithmetic on the clock,
+                        and saying otherwise would be a promise the shop didn't
+                        make. */}
+                    <p className="m-0 text-[12px] text-muted">{t("checkout.estimatedShop")}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3 p-4">
-                <PinIcon />
-                <div className="min-w-0">
-                  <p className="m-0 text-[14px] text-ink">{where?.where ?? "Corner Bagel"}</p>
-                  {fulfillment && fulfillment.mode !== "delivery" ? (
-                    <p className="m-0 text-[12px] text-muted">{fulfillment.detail}</p>
-                  ) : null}
+                <div className="flex items-start gap-3 p-4">
+                  <PinIcon />
+                  <div className="min-w-0">
+                    <p className="m-0 text-[14px] text-ink">{where?.where ?? "Corner Bagel"}</p>
+                    {fulfillment && fulfillment.mode !== "delivery" ? (
+                      <p className="m-0 text-[12px] text-muted">{fulfillment.detail}</p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
 
-              {!isDelivery ? (
                 <div className="border-t border-line-faint p-4">
                   <Check
                     checked={curbside}
@@ -292,9 +288,9 @@ export default function CheckoutPage() {
                     hint={t("checkout.curbsideHint")}
                   />
                 </div>
-              ) : null}
-            </div>
-          </Section>
+              </div>
+            </Section>
+          )}
 
           {/* The note and the utensils, folded away. Most orders want neither,
               and both are things you'd go looking for rather than things that

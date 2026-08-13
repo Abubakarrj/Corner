@@ -266,6 +266,39 @@ export const fr: Table = {
 
   "checkout.fromWhere": "{mode} depuis {where}.",
 
+  "delivery.carriedBy": "Livré par",
+  "delivery.arrivingBetween": "Arrive entre {from} et {to}",
+  "delivery.awaitingEta": "En attente du coursier",
+  "delivery.etaCourier": "Estimation d'Uber Direct. Le trafic la fait bouger.",
+  "delivery.etaPending": "Uber donne le créneau d'arrivée quand il chiffre le trajet.",
+  "delivery.unit": "Appartement, bureau, étage",
+  "delivery.unitPlaceholder": "Appt 4B",
+  "delivery.handoff": "La remise",
+  "delivery.handToMe": "Me le remettre en main propre",
+  "delivery.handToMeHint": "Le coursier attend à la porte.",
+  "delivery.leaveAtDoor": "Laisser à la porte",
+  "delivery.leaveAtDoorHint": "Le coursier le pose et repart.",
+  "delivery.forTheDriver": "Pour le coursier",
+  "delivery.forTheDriverPlaceholder": "Code d'entrée, quelle porte, où le laisser.",
+  "delivery.forTheDriverHint":
+    "Le coursier lit ceci. La note pour la cuisine, plus bas, va à la boutique.",
+  "delivery.pricing": "Calcul…",
+  "deliveryFee.title": "Comment sont calculés les frais de livraison",
+  "deliveryFee.lead":
+    "Uber Direct assure le trajet. Ils le facturent selon la distance entre votre adresse et le comptoir, et nous vous facturons ce qu'ils nous facturent.",
+  "deliveryFee.yourAddress": "Votre adresse",
+  "deliveryFee.milesAway": "À {miles} miles de la boutique",
+  "deliveryFee.distance": "Distance",
+  "deliveryFee.fee": "Frais",
+  "deliveryFee.band": "{from}–{to} mi",
+  "deliveryFee.yours": "la vôtre",
+  "deliveryFee.everyTrip": "Chaque trajet en Californie",
+  "deliveryFee.everyTripWhy":
+    "Va au coursier, au titre de la garantie de revenus californienne pour les chauffeurs d'applications.",
+  "deliveryFee.passthrough": "Corner Bagel n'ajoute rien par-dessus.",
+  "deliveryFee.quotedFresh":
+    "Uber chiffre votre adresse au moment de la commande, c'est donc ce que vous payez. La météo et le trafic peuvent le faire varier.",
+
   "order.notFound": "Nous ne trouvons pas cette commande.",
   "order.keptOnDevice":
     "Les commandes restent sur l'appareil depuis lequel elles ont été passées : une commande faite sur un autre téléphone n'apparaîtra pas ici.",

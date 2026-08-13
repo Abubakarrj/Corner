@@ -267,6 +267,37 @@ export const fa: Table = {
 
   "checkout.fromWhere": "{mode} از {where}.",
 
+  "delivery.carriedBy": "ارسال با",
+  "delivery.arrivingBetween": "بین {from} تا {to} می‌رسد",
+  "delivery.awaitingEta": "در انتظار پیک",
+  "delivery.etaCourier": "تخمین Uber Direct. ترافیک جابه‌جایش می‌کند.",
+  "delivery.etaPending": "Uber بازه رسیدن را وقتی می‌دهد که هزینه مسیر را حساب کند.",
+  "delivery.unit": "واحد، طبقه",
+  "delivery.unitPlaceholder": "واحد ۴",
+  "delivery.handoff": "نحوه تحویل",
+  "delivery.handToMe": "دستی به من بده",
+  "delivery.handToMeHint": "پیک پشت در منتظر می‌ماند.",
+  "delivery.leaveAtDoor": "پشت در بگذار",
+  "delivery.leaveAtDoorHint": "پیک آن را می‌گذارد و می‌رود.",
+  "delivery.forTheDriver": "برای پیک",
+  "delivery.forTheDriverPlaceholder": "رمز درب، کدام ورودی، کجا بگذارد.",
+  "delivery.forTheDriverHint": "پیک این را می‌خواند. یادداشت آشپزخانه در پایین به فروشگاه می‌رسد.",
+  "delivery.pricing": "در حال محاسبه…",
+  "deliveryFee.title": "هزینه ارسال چطور حساب می‌شود",
+  "deliveryFee.lead":
+    "Uber Direct آن را می‌برد. قیمت هر مسیر به فاصله آدرس شما تا فروشگاه بستگی دارد و ما همان مبلغی را از شما می‌گیریم که از ما می‌گیرند.",
+  "deliveryFee.yourAddress": "آدرس شما",
+  "deliveryFee.milesAway": "{miles} مایل از فروشگاه",
+  "deliveryFee.distance": "فاصله",
+  "deliveryFee.fee": "هزینه",
+  "deliveryFee.band": "{from}–{to} مایل",
+  "deliveryFee.yours": "مال شما",
+  "deliveryFee.everyTrip": "هر سفر در کالیفرنیا",
+  "deliveryFee.everyTripWhy": "به پیک می‌رسد، طبق تضمین درآمد رانندگان اپلیکیشن در کالیفرنیا.",
+  "deliveryFee.passthrough": "Corner Bagel چیزی روی آن نمی‌گذارد.",
+  "deliveryFee.quotedFresh":
+    "Uber آدرس شما را در همان لحظه سفارش قیمت می‌دهد، پس همین مبلغ را می‌پردازید. هوا و ترافیک می‌تواند تغییرش دهد.",
+
   "order.notFound": "این سفارش را پیدا نمی‌کنیم.",
   "order.keptOnDevice":
     "سفارش‌ها روی همان دستگاهی می‌مانند که از آن ثبت شده‌اند، پس سفارشی که با گوشی دیگری داده شده اینجا دیده نمی‌شود.",

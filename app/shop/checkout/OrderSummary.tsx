@@ -5,6 +5,8 @@ import { useMenu } from "../../i18n/menu";
 import { formatPrice } from "../products";
 import ProductImage from "../ProductImage";
 import { Disclosure, Money } from "./CheckoutSections";
+import DeliveryFeeInfo from "./DeliveryFeeInfo";
+import UberDirectMark from "./UberDirectMark";
 import type { Checkout } from "./useCheckout";
 
 // The collapsible order summary, shared by the page and the chat sheet.
@@ -68,7 +70,19 @@ export default function OrderSummary({ checkout }: { checkout: Checkout }) {
         <Money label={t("common.subtotal")} amount={formatPrice(subtotalCents)} />
         <Money label={t("checkout.tax")} amount={formatPrice(totals.taxCents)} />
         {totals.deliveryCents > 0 ? (
-          <Money label={t("checkout.delivery")} amount={formatPrice(totals.deliveryCents)} />
+          // Who is driving, and a way to ask why it costs that. This is the
+          // line on a food bill people assume is padded; naming the courier
+          // and showing their rate card is how it stops reading that way.
+          <Money
+            label={t("checkout.delivery")}
+            amount={formatPrice(totals.deliveryCents)}
+            after={
+              <>
+                <UberDirectMark className="text-[11px] text-quiet" />
+                <DeliveryFeeInfo miles={checkout.quote?.miles} feeCents={totals.deliveryCents} />
+              </>
+            }
+          />
         ) : null}
         {totals.tipCents > 0 ? (
           <Money label={t("checkout.tip")} amount={formatPrice(totals.tipCents)} />

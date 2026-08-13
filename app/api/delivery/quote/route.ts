@@ -93,5 +93,17 @@ export async function POST(request: Request) {
     etaMinutes: quote.quote.etaMinutes,
     expiresAt: quote.quote.expiresAt,
     address: place.address,
+    // How far the driver goes, for the explainer behind the (i) on the
+    // delivery line. Uber prices by distance band, so showing the distance is
+    // what lets somebody check the fee rather than take it on faith.
+    //
+    // Road miles or nothing. driveBetween() returns null when Routes is
+    // unreachable, and /api/geo falls back to a straight line there — that
+    // fallback is fine for a radius check, which only has to be generous, and
+    // wrong here. A straight line is always shorter than the drive, so it
+    // would light up a cheaper band than the one the customer was charged and
+    // make our own arithmetic look padded. No number beats a misleading one:
+    // the modal drops the distance line and shows the rate card alone.
+    miles: drive ? Number(drive.miles.toFixed(1)) : null,
   });
 }

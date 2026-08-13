@@ -8,6 +8,8 @@ import { Button, ButtonLink } from "../../ui/Button";
 import Confetti from "../../ui/Confetti";
 import { DISPLAY_FONT } from "../shopControls";
 import { Money } from "./CheckoutSections";
+import DeliveryFeeInfo from "./DeliveryFeeInfo";
+import UberDirectMark from "./UberDirectMark";
 import type { Tender } from "./PaymentSection";
 
 // What both surfaces show once the endpoint has said yes.
@@ -116,7 +118,19 @@ export default function PurchaseComplete({
             <Money label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
             <Money label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
             {bill.deliveryCents > 0 ? (
-              <Money label={t("checkout.delivery")} amount={formatPrice(bill.deliveryCents)} />
+              // The receipt carries no distance — the order record keeps what
+              // was charged, not how far it went — so the explainer opens
+              // without the "your address" line and shows the rate card alone.
+              <Money
+                label={t("checkout.delivery")}
+                amount={formatPrice(bill.deliveryCents)}
+                after={
+                  <>
+                    <UberDirectMark className="text-[11px] text-quiet" />
+                    <DeliveryFeeInfo feeCents={bill.deliveryCents} />
+                  </>
+                }
+              />
             ) : null}
             {bill.tipCents > 0 ? (
               <Money label={t("checkout.tip")} amount={formatPrice(bill.tipCents)} />

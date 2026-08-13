@@ -47,6 +47,15 @@ function isValidEmail(input: unknown): input is string {
   return typeof input === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 }
 
+/** A free-text field off the request: trimmed, capped, and "" for anything
+ *  that isn't a string. The cap is here rather than at the field's own call
+ *  site because these end up in somebody else's system — Toast's ticket, an
+ *  Uber dropoff note — and both have limits of their own. */
+function readText(body: unknown, key: string, max: number): string {
+  const value = (body as Record<string, unknown> | null)?.[key];
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
 type OrderItem = {
   slug: string;
   name: string;
@@ -230,6 +239,20 @@ export async function POST(request: Request) {
   let deliveryQuoteId: string | null = null;
   let dropoff: { address: string; lat: number; lng: number } | null = null;
 
+  // ——— What the driver is told ———
+  //
+  // Separate from `note` below, which is the kitchen's. They used to be the
+  // same string sent to both, so "no onions" reached the courier and "gate
+  // code 4432" reached the baker, and the one instruction that decides whether
+  // a bag arrives had to compete for 255 characters with a food request.
+  //
+  // The unit is the important half. A geocoder resolves a building; "Apt 4B"
+  // is the part it cannot know, and until the checkout asked for it a driver
+  // in a forty-unit block had a street number and a phone call to make.
+  const deliveryDetail = readText(body, "deliveryDetail", 60);
+  const courierNote = readText(body, "courierNote", 200);
+  const leaveAtDoor = (body as { handoff?: unknown })?.handoff === "door";
+
   if (forDelivery) {
     if (!deliveryAddress) {
       return Response.json({ error: "api.missingAddress" }, { status: 400 });
@@ -403,7 +426,19 @@ export async function POST(request: Request) {
       // delivery can stall on the pavement, which is why the checkout asks
       // for a phone and why this falls back to the shop's line.
       dropoffPhone: order.phone || SHOP_PHONE,
-      dropoffNote: order.note || undefined,
+      // English, and deliberately: this is read by a courier standing on a
+      // Los Angeles pavement, not by the customer. The handoff is stated
+      // either way rather than only when it's "leave it" — a driver who is
+      // told nothing about a handoff decides for himself.
+      dropoffNote:
+        [
+          deliveryDetail ? `Unit: ${deliveryDetail}` : null,
+          leaveAtDoor ? "Leave at the door." : "Hand it to the customer.",
+          courierNote || null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+          .slice(0, 280) || undefined,
       items: items.map((item) => ({
         name: item.name,
         quantity: item.quantity,

@@ -263,6 +263,40 @@ export const en = {
 
   "checkout.fromWhere": "{mode} from {where}.",
 
+  // The delivery block on checkout, and the (i) that explains the fee.
+  "delivery.carriedBy": "Carried by",
+  "delivery.arrivingBetween": "Arriving {from}–{to}",
+  "delivery.awaitingEta": "Waiting on the courier",
+  "delivery.etaCourier": "Uber Direct's estimate. Traffic moves it.",
+  "delivery.etaPending": "Uber gives the arrival window when it prices the trip.",
+  "delivery.unit": "Apartment, suite, floor",
+  "delivery.unitPlaceholder": "Apt 4B",
+  "delivery.handoff": "Handing it over",
+  "delivery.handToMe": "Hand it to me",
+  "delivery.handToMeHint": "The driver waits at the door.",
+  "delivery.leaveAtDoor": "Leave at door",
+  "delivery.leaveAtDoorHint": "The driver sets it down and goes.",
+  "delivery.forTheDriver": "For the driver",
+  "delivery.forTheDriverPlaceholder": "Gate code, which entrance, where to leave it.",
+  "delivery.forTheDriverHint": "The driver reads this. The kitchen note below goes to the shop.",
+  "delivery.pricing": "Pricing…",
+
+  "deliveryFee.title": "How the delivery fee works",
+  "deliveryFee.lead":
+    "Uber Direct drives it. They price each trip by how far your address is from the counter, and we charge you what they charge us.",
+  "deliveryFee.yourAddress": "Your address",
+  "deliveryFee.milesAway": "{miles} miles from the shop",
+  "deliveryFee.distance": "Distance",
+  "deliveryFee.fee": "Fee",
+  "deliveryFee.band": "{from}–{to} mi",
+  "deliveryFee.yours": "yours",
+  "deliveryFee.everyTrip": "Every California trip",
+  "deliveryFee.everyTripWhy":
+    "Goes to the driver, under California's earnings guarantee for app drivers.",
+  "deliveryFee.passthrough": "Corner Bagel adds nothing on top of this.",
+  "deliveryFee.quotedFresh":
+    "Uber prices your address at the moment you order, so this is what you pay. Weather and traffic can move it.",
+
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice":
     "Orders are kept on the device they were placed from, so one placed on another phone won't show here.",

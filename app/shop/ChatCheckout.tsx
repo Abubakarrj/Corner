@@ -143,6 +143,49 @@ export default function ChatCheckout({
             />
           </div>
 
+          {/* What the courier needs, at the sheet's scale. Present rather than
+              left to the page, because the two surfaces run the same hook and
+              submit the same body: if only the page asked for the unit, an
+              order placed through Riley would reach a forty-unit block with a
+              street number and nothing else. The driver's free-text note is
+              the page's alone — this is the half that decides whether the bag
+              arrives at all. */}
+          {isDelivery ? (
+            <div className="flex flex-col gap-2.5">
+              <Field
+                label={t("delivery.unit")}
+                value={checkout.deliveryDetail}
+                onChange={checkout.setDeliveryDetail}
+                autoComplete="address-line2"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ["hand", "delivery.handToMe"],
+                    ["door", "delivery.leaveAtDoor"],
+                  ] as const
+                ).map(([value, key]) => {
+                  const on = checkout.handoff === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => checkout.setHandoff(value)}
+                      aria-pressed={on}
+                      className={`cb-press cursor-pointer rounded-xl border px-3 py-2 text-[12px] transition-colors ${
+                        on
+                          ? "border-ink bg-raise font-medium text-ink"
+                          : "border-line-soft text-ink hover:bg-raise"
+                      }`}
+                    >
+                      {t(key)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           {/* The note, the utensils and the kerbside pickup. Folded away
               because most orders want none of them, but present — Riley tells
               people to put "no onion" in the note, and a sheet without one

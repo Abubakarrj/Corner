@@ -237,6 +237,38 @@ export const ur: Table = {
 
   "checkout.fromWhere": "{where} سے {mode}۔",
 
+  "delivery.carriedBy": "پہنچانے والا",
+  "delivery.arrivingBetween": "{from} سے {to} کے درمیان پہنچے گا",
+  "delivery.awaitingEta": "قاصد کا انتظار",
+  "delivery.etaCourier": "Uber Direct کا اندازہ۔ ٹریفک سے بدل سکتا ہے۔",
+  "delivery.etaPending": "Uber جب سفر کا کرایہ نکالتا ہے تو آمد کا وقت بھی بتا دیتا ہے۔",
+  "delivery.unit": "اپارٹمنٹ، دفتر، منزل",
+  "delivery.unitPlaceholder": "اپارٹمنٹ 4B",
+  "delivery.handoff": "کیسے دیا جائے",
+  "delivery.handToMe": "میرے ہاتھ میں دیں",
+  "delivery.handToMeHint": "ڈرائیور دروازے پر انتظار کرے گا۔",
+  "delivery.leaveAtDoor": "دروازے پر رکھ دیں",
+  "delivery.leaveAtDoorHint": "ڈرائیور رکھ کر چلا جائے گا۔",
+  "delivery.forTheDriver": "ڈرائیور کے لیے",
+  "delivery.forTheDriverPlaceholder": "گیٹ کوڈ، کون سا دروازہ، کہاں رکھنا ہے۔",
+  "delivery.forTheDriverHint": "یہ ڈرائیور پڑھتا ہے۔ نیچے باورچی خانے والا نوٹ دکان کو جاتا ہے۔",
+  "delivery.pricing": "کرایہ نکالا جا رہا ہے…",
+  "deliveryFee.title": "ڈیلیوری فیس کیسے بنتی ہے",
+  "deliveryFee.lead":
+    "Uber Direct پہنچاتا ہے۔ کرایہ اس بات پر ہے کہ آپ کا پتہ دکان سے کتنا دور ہے، اور جو وہ ہم سے لیتے ہیں وہی ہم آپ سے لیتے ہیں۔",
+  "deliveryFee.yourAddress": "آپ کا پتہ",
+  "deliveryFee.milesAway": "دکان سے {miles} میل",
+  "deliveryFee.distance": "فاصلہ",
+  "deliveryFee.fee": "کرایہ",
+  "deliveryFee.band": "{from}–{to} میل",
+  "deliveryFee.yours": "آپ کا",
+  "deliveryFee.everyTrip": "کیلیفورنیا کے ہر پھیرے پر",
+  "deliveryFee.everyTripWhy":
+    "یہ ڈرائیور کو جاتا ہے، کیلیفورنیا کی ایپ ڈرائیوروں کے لیے آمدنی کی ضمانت کے تحت۔",
+  "deliveryFee.passthrough": "Corner Bagel اس پر کچھ نہیں بڑھاتا۔",
+  "deliveryFee.quotedFresh":
+    "Uber آرڈر کے وقت آپ کے پتے کا کرایہ نکالتا ہے، سو یہی آپ ادا کریں گے۔ موسم اور ٹریفک سے بدل سکتا ہے۔",
+
   "order.notFound": "ہمیں یہ آرڈر نہیں مل رہا۔",
   "order.keptOnDevice":
     "آرڈر اسی ڈیوائس پر محفوظ ہوتے ہیں جہاں سے دیے گئے، اس لیے کسی اور فون سے دیا گیا آرڈر یہاں نظر نہیں آئے گا۔",

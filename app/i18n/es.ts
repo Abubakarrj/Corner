@@ -236,6 +236,39 @@ export const es: Table = {
 
   "checkout.fromWhere": "{mode} en {where}.",
 
+  "delivery.carriedBy": "Lo lleva",
+  "delivery.arrivingBetween": "Llega entre {from} y {to}",
+  "delivery.awaitingEta": "Esperando al repartidor",
+  "delivery.etaCourier": "Estimación de Uber Direct. El tráfico la mueve.",
+  "delivery.etaPending": "Uber da la franja de llegada cuando cotiza el viaje.",
+  "delivery.unit": "Apartamento, oficina, piso",
+  "delivery.unitPlaceholder": "Apto. 4B",
+  "delivery.handoff": "La entrega",
+  "delivery.handToMe": "Entregármelo en mano",
+  "delivery.handToMeHint": "El repartidor espera en la puerta.",
+  "delivery.leaveAtDoor": "Dejar en la puerta",
+  "delivery.leaveAtDoorHint": "El repartidor lo deja y se va.",
+  "delivery.forTheDriver": "Para el repartidor",
+  "delivery.forTheDriverPlaceholder": "Código de acceso, qué entrada, dónde dejarlo.",
+  "delivery.forTheDriverHint":
+    "Esto lo lee el repartidor. La nota para la cocina, más abajo, va a la tienda.",
+  "delivery.pricing": "Calculando…",
+  "deliveryFee.title": "Cómo se calcula el envío",
+  "deliveryFee.lead":
+    "Lo lleva Uber Direct. Cobran cada viaje según lo lejos que esté tu dirección del mostrador, y te cobramos lo que nos cobran.",
+  "deliveryFee.yourAddress": "Tu dirección",
+  "deliveryFee.milesAway": "A {miles} millas de la tienda",
+  "deliveryFee.distance": "Distancia",
+  "deliveryFee.fee": "Tarifa",
+  "deliveryFee.band": "{from}–{to} mi",
+  "deliveryFee.yours": "la tuya",
+  "deliveryFee.everyTrip": "Cada viaje en California",
+  "deliveryFee.everyTripWhy":
+    "Va al repartidor, por la garantía de ingresos de California para conductores de apps.",
+  "deliveryFee.passthrough": "Corner Bagel no añade nada encima.",
+  "deliveryFee.quotedFresh":
+    "Uber calcula tu dirección en el momento de pedir, así que esto es lo que pagas. El clima y el tráfico pueden moverlo.",
+
   "order.notFound": "No encontramos ese pedido.",
   "order.keptOnDevice":
     "Los pedidos se guardan en el dispositivo desde el que se hicieron, así que uno hecho en otro teléfono no aparecerá aquí.",

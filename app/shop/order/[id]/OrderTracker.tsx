@@ -20,6 +20,8 @@ import { handedToCourier } from "../../../orderStages";
 import PushToggle from "../../../push/PushToggle";
 import { ButtonLink } from "../../../ui/Button";
 import { formatPrice, getProduct } from "../../products";
+import DeliveryFeeInfo from "../../checkout/DeliveryFeeInfo";
+import UberDirectMark from "../../checkout/UberDirectMark";
 import ProductImage from "../../ProductImage";
 import { DISPLAY_FONT, PALETTE } from "../../shopControls";
 
@@ -287,7 +289,16 @@ function Receipt({
         <Line label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
         <Line label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
         {bill.deliveryCents > 0 ? (
-          <Line label={t("checkout.delivery")} amount={formatPrice(bill.deliveryCents)} />
+          <Line
+            label={t("checkout.delivery")}
+            amount={formatPrice(bill.deliveryCents)}
+            after={
+              <>
+                <UberDirectMark className="text-[11px]" />
+                <DeliveryFeeInfo feeCents={bill.deliveryCents} />
+              </>
+            }
+          />
         ) : null}
         {bill.tipCents > 0 ? <Line label={t("checkout.tip")} amount={formatPrice(bill.tipCents)} /> : null}
         <div className="mt-1.5 border-t pt-2" style={{ borderColor: border }}>
@@ -321,18 +332,23 @@ function Line({
   label,
   amount,
   strong,
+  after,
 }: {
   label: string;
   amount: string;
   strong?: boolean;
+  after?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1">
       <span
-        className={strong ? "text-[14px] font-medium" : "text-[13px]"}
+        className={`flex min-w-0 items-center gap-1.5 ${
+          strong ? "text-[14px] font-medium" : "text-[13px]"
+        }`}
         style={{ color: strong ? ink : muted }}
       >
-        {label}
+        <span className="truncate">{label}</span>
+        {after}
       </span>
       <span
         className={strong ? "text-[15px] font-medium" : "text-[13px]"}

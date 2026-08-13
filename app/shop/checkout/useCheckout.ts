@@ -52,7 +52,15 @@ export type DeliveryQuote = {
   quoteId: string;
   feeCents: number;
   etaMinutes: number | null;
+  /** Road miles from the counter, for the fee explainer. Null when Routes
+   *  could not answer — see the note in /api/delivery/quote. */
+  miles?: number | null;
 };
+
+/** How the bag changes hands. Uber's courier is told which, in the dropoff
+ *  notes, so it is a real instruction rather than a preference we record and
+ *  forget. */
+export type Handoff = "hand" | "door";
 
 export type Checkout = {
   // ——— What's being bought ———
@@ -73,6 +81,22 @@ export type Checkout = {
   quoteError: string | null;
   /** True while the courier is still pricing a delivery. */
   quoting: boolean;
+
+  // ——— The delivery itself ———
+  //
+  // These three exist because a courier needs different things from a kitchen,
+  // and the checkout used to hand him the kitchen's note. "No onions" is not
+  // useful to a driver and "gate code 4432" is not useful to a baker, and both
+  // were going to both.
+  /** Apartment, suite or floor. The geocoder resolves a building; this is the
+   *  part of an address it cannot know and a driver cannot guess. */
+  deliveryDetail: string;
+  setDeliveryDetail: (value: string) => void;
+  handoff: Handoff;
+  setHandoff: (value: Handoff) => void;
+  /** For the driver: the gate, the door, where to leave it. */
+  courierNote: string;
+  setCourierNote: (value: string) => void;
 
   // ——— Who's buying ———
   firstName: string;
@@ -135,6 +159,12 @@ export function useCheckout(): Checkout {
   const [curbside, setCurbside] = useState(false);
   const [utensils, setUtensils] = useState(false);
   const [note, setNote] = useState("");
+  const [deliveryDetail, setDeliveryDetail] = useState("");
+  // Handed over in person by default. "Leave at door" is the choice somebody
+  // makes deliberately; defaulting to it would leave bags on doorsteps for
+  // people who never asked.
+  const [handoff, setHandoff] = useState<Handoff>("hand");
+  const [courierNote, setCourierNote] = useState("");
   const [tipCents, setTipCents] = useState(0);
   const [tender, setTender] = useState<Tender>("counter");
   const [step, setStep] = useState<CheckoutStep>("details");
@@ -291,6 +321,12 @@ export function useCheckout(): Checkout {
           curbside: curbside && !isDelivery,
           utensils,
           note,
+          // Only on a delivery, and kept apart from `note` above. The kitchen
+          // reads one and the driver reads the other; sending both to both is
+          // what this replaced.
+          ...(isDelivery
+            ? { deliveryDetail: deliveryDetail.trim(), handoff, courierNote: courierNote.trim() }
+            : {}),
           // The tip is sent, and repriced server-side like everything else.
           // A client-supplied money value is a suggestion, never a fact.
           tipCents,
@@ -387,6 +423,13 @@ export function useCheckout(): Checkout {
     quote,
     quoteError,
     quoting: isDelivery && quote === null && !quoteError,
+
+    deliveryDetail,
+    setDeliveryDetail,
+    handoff,
+    setHandoff,
+    courierNote,
+    setCourierNote,
 
     firstName,
     setFirstName,

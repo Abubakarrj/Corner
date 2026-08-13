@@ -266,6 +266,39 @@ export const it: Table = {
 
   "checkout.fromWhere": "{mode} da {where}.",
 
+  "delivery.carriedBy": "Lo porta",
+  "delivery.arrivingBetween": "Arriva tra le {from} e le {to}",
+  "delivery.awaitingEta": "In attesa del corriere",
+  "delivery.etaCourier": "Stima di Uber Direct. Il traffico la sposta.",
+  "delivery.etaPending": "Uber dà la fascia di arrivo quando quota il viaggio.",
+  "delivery.unit": "Appartamento, interno, piano",
+  "delivery.unitPlaceholder": "Int. 4B",
+  "delivery.handoff": "La consegna",
+  "delivery.handToMe": "Consegnamelo a mano",
+  "delivery.handToMeHint": "Il corriere aspetta alla porta.",
+  "delivery.leaveAtDoor": "Lascia alla porta",
+  "delivery.leaveAtDoorHint": "Il corriere lo posa e va via.",
+  "delivery.forTheDriver": "Per il corriere",
+  "delivery.forTheDriverPlaceholder": "Codice del cancello, quale ingresso, dove lasciarlo.",
+  "delivery.forTheDriverHint":
+    "Questo lo legge il corriere. La nota per la cucina, più sotto, va al negozio.",
+  "delivery.pricing": "Calcolo…",
+  "deliveryFee.title": "Come si calcola la consegna",
+  "deliveryFee.lead":
+    "La porta Uber Direct. Il prezzo dipende da quanto dista il tuo indirizzo dal banco, e ti addebitiamo quello che addebitano a noi.",
+  "deliveryFee.yourAddress": "Il tuo indirizzo",
+  "deliveryFee.milesAway": "A {miles} miglia dal negozio",
+  "deliveryFee.distance": "Distanza",
+  "deliveryFee.fee": "Costo",
+  "deliveryFee.band": "{from}–{to} mi",
+  "deliveryFee.yours": "il tuo",
+  "deliveryFee.everyTrip": "Ogni viaggio in California",
+  "deliveryFee.everyTripWhy":
+    "Va al corriere, per la garanzia di guadagno della California per gli autisti delle app.",
+  "deliveryFee.passthrough": "Corner Bagel non aggiunge nulla.",
+  "deliveryFee.quotedFresh":
+    "Uber calcola il tuo indirizzo nel momento in cui ordini, quindi è quello che paghi. Meteo e traffico possono spostarlo.",
+
   "order.notFound": "Non troviamo quell'ordine.",
   "order.keptOnDevice":
     "Gli ordini restano sul dispositivo da cui sono stati fatti, quindi uno fatto da un altro telefono non compare qui.",

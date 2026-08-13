@@ -234,6 +234,39 @@ export const my: Table = {
 
   "checkout.fromWhere": "{where} မှ {mode}။",
 
+  "delivery.carriedBy": "ပို့ဆောင်သူ",
+  "delivery.arrivingBetween": "{from}–{to} အတွင်း ရောက်ပါမည်",
+  "delivery.awaitingEta": "ပို့ဆောင်သူကို စောင့်နေသည်",
+  "delivery.etaCourier": "Uber Direct ၏ ခန့်မှန်းချက်။ ယာဉ်ကြောပေါ် မူတည်ပါသည်။",
+  "delivery.etaPending": "Uber က ခရီးစဉ်ဈေးထုတ်သည့်အခါ ရောက်ရှိချိန်ကို ပေးပါမည်။",
+  "delivery.unit": "အခန်းနံပါတ်၊ အထပ်",
+  "delivery.unitPlaceholder": "အခန်း 4B",
+  "delivery.handoff": "လက်ဆင့်ကမ်းပုံ",
+  "delivery.handToMe": "ကျွန်ုပ်လက်ထဲ ပေးပါ",
+  "delivery.handToMeHint": "ပို့ဆောင်သူက တံခါးဝမှာ စောင့်ပါမည်။",
+  "delivery.leaveAtDoor": "တံခါးဝမှာ ထားခဲ့ပါ",
+  "delivery.leaveAtDoorHint": "ပို့ဆောင်သူက ချထားပြီး ပြန်သွားပါမည်။",
+  "delivery.forTheDriver": "ပို့ဆောင်သူအတွက်",
+  "delivery.forTheDriverPlaceholder": "ဂိတ်ကုဒ်၊ ဘယ်ဝင်ပေါက်၊ ဘယ်နေရာမှာ ထားရမလဲ။",
+  "delivery.forTheDriverHint":
+    "ဒါကို ပို့ဆောင်သူ ဖတ်ပါသည်။ အောက်က မီးဖိုချောင်မှတ်ချက်က ဆိုင်ကို သွားပါသည်။",
+  "delivery.pricing": "တွက်ချက်နေသည်…",
+  "deliveryFee.title": "ပို့ဆောင်ခ ဘယ်လိုတွက်သလဲ",
+  "deliveryFee.lead":
+    "Uber Direct က ပို့ပါသည်။ ဆိုင်နှင့် သင့်လိပ်စာ အကွာအဝေးအလိုက် ဈေးသတ်မှတ်ပြီး၊ သူတို့ ကျွန်ုပ်တို့ဆီက ယူသလောက်ကိုပဲ သင့်ဆီက ယူပါသည်။",
+  "deliveryFee.yourAddress": "သင့်လိပ်စာ",
+  "deliveryFee.milesAway": "ဆိုင်မှ {miles} မိုင်",
+  "deliveryFee.distance": "အကွာအဝေး",
+  "deliveryFee.fee": "ခ",
+  "deliveryFee.band": "{from}–{to} မိုင်",
+  "deliveryFee.yours": "သင့်အတွက်",
+  "deliveryFee.everyTrip": "ကယ်လီဖိုးနီးယား ခရီးစဉ်တိုင်း",
+  "deliveryFee.everyTripWhy":
+    "ကယ်လီဖိုးနီးယားပြည်နယ်၏ အက်ပ်ယာဉ်မောင်း ဝင်ငွေအာမခံအရ ပို့ဆောင်သူဆီ ရောက်ပါသည်။",
+  "deliveryFee.passthrough": "Corner Bagel က အပိုမတင်ပါ။",
+  "deliveryFee.quotedFresh":
+    "Uber က မှာယူချိန်မှာပဲ သင့်လိပ်စာအတွက် ဈေးထုတ်ပါသည်၊ ဒါကြောင့် ဒါက သင်ပေးရမည့် ငွေပါ။ ရာသီဥတုနှင့် ယာဉ်ကြောကြောင့် ပြောင်းနိုင်ပါသည်။",
+
   "order.notFound": "ထိုအော်ဒါကို ရှာမတွေ့ပါ။",
   "order.keptOnDevice":
     "အော်ဒါများကို မှာယူခဲ့သည့် စက်ပစ္စည်းတွင် သိမ်းထားသဖြင့် အခြားဖုန်းမှ မှာထားသည်များ ဤနေရာတွင် မပေါ်ပါ။",

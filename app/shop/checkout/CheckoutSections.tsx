@@ -155,22 +155,31 @@ export function Disclosure({
   );
 }
 
-// One row of the bill. `strong` is the total.
+// One row of the bill. `strong` is the total. `after` rides beside the label —
+// the delivery line uses it to say who is driving and to hang the (i) that
+// explains the fee, which is the one row on a bill people want a footnote for.
 export function Money({
   label,
   amount,
   strong,
   tone,
+  after,
 }: {
   label: string;
   amount: string;
   strong?: boolean;
   tone?: "credit";
+  after?: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
-      <span className={strong ? "text-[15px] font-medium text-ink" : "text-[14px] text-muted"}>
-        {label}
+      <span
+        className={`flex min-w-0 items-center gap-1.5 ${
+          strong ? "text-[15px] font-medium text-ink" : "text-[14px] text-muted"
+        }`}
+      >
+        <span className="truncate">{label}</span>
+        {after}
       </span>
       <span
         className={
