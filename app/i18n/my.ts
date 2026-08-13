@@ -260,9 +260,8 @@ export const my: Table = {
   "deliveryFee.fee": "ခ",
   "deliveryFee.band": "{from}–{to} မိုင်",
   "deliveryFee.yours": "သင့်အတွက်",
-  "deliveryFee.everyTrip": "ကယ်လီဖိုးနီးယား ခရီးစဉ်တိုင်း",
-  "deliveryFee.everyTripWhy":
-    "ကယ်လီဖိုးနီးယားပြည်နယ်၏ အက်ပ်ယာဉ်မောင်း ဝင်ငွေအာမခံအရ ပို့ဆောင်သူဆီ ရောက်ပါသည်။",
+  "deliveryFee.includesTrip":
+    "အထက်ပါ တစ်ခုချင်းစီတွင် ကယ်လီဖိုးနီးယား ခရီးစဉ်ခ {amount} ပါဝင်ပြီး၊ ပြည်နယ်၏ အက်ပ်ယာဉ်မောင်း ဝင်ငွေအာမခံအရ ပို့ဆောင်သူဆီ ရောက်ပါသည်။",
   "deliveryFee.passthrough": "Corner Bagel က အပိုမတင်ပါ။",
   "deliveryFee.quotedFresh":
     "Uber က မှာယူချိန်မှာပဲ သင့်လိပ်စာအတွက် ဈေးထုတ်ပါသည်၊ ဒါကြောင့် ဒါက သင်ပေးရမည့် ငွေပါ။ ရာသီဥတုနှင့် ယာဉ်ကြောကြောင့် ပြောင်းနိုင်ပါသည်။",

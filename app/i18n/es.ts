@@ -262,9 +262,8 @@ export const es: Table = {
   "deliveryFee.fee": "Tarifa",
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.yours": "la tuya",
-  "deliveryFee.everyTrip": "Cada viaje en California",
-  "deliveryFee.everyTripWhy":
-    "Va al repartidor, por la garantía de ingresos de California para conductores de apps.",
+  "deliveryFee.includesTrip":
+    "Cada una incluye la tarifa de {amount} por viaje en California, que va al repartidor por la garantía de ingresos del estado para conductores de apps.",
   "deliveryFee.passthrough": "Corner Bagel no añade nada encima.",
   "deliveryFee.quotedFresh":
     "Uber calcula tu dirección en el momento de pedir, así que esto es lo que pagas. El clima y el tráfico pueden moverlo.",

@@ -260,8 +260,8 @@ export const zh: Table = {
   "deliveryFee.fee": "费用",
   "deliveryFee.band": "{from}–{to} 英里",
   "deliveryFee.yours": "你的",
-  "deliveryFee.everyTrip": "加州每单",
-  "deliveryFee.everyTripWhy": "按加州对网约车司机的收入保障，这部分给骑手。",
+  "deliveryFee.includesTrip":
+    "以上每项都已包含 {amount} 的加州行程费，按该州对网约车司机的收入保障发给骑手。",
   "deliveryFee.passthrough": "Corner Bagel 不额外加价。",
   "deliveryFee.quotedFresh": "Uber 在你下单那一刻按地址报价，所以这就是你付的钱。天气和路况可能会让它变动。",
 

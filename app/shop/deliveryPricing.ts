@@ -28,25 +28,39 @@ export type DeliveryBand = {
   /** Miles from the counter, exclusive of the band below it. */
   fromMiles: number;
   toMiles: number;
-  feeCents: number;
+  /** The contracted rate for the band, before the trip fee below. This is the
+   *  number on Uber's rate card and it is never what anybody pays. */
+  baseCents: number;
 };
 
 export const DELIVERY_BANDS: readonly DeliveryBand[] = [
-  { fromMiles: 0, toMiles: 5, feeCents: 799 },
-  { fromMiles: 5, toMiles: 6, feeCents: 899 },
-  { fromMiles: 6, toMiles: 7, feeCents: 999 },
-  { fromMiles: 7, toMiles: 10, feeCents: 1099 },
+  { fromMiles: 0, toMiles: 5, baseCents: 799 },
+  { fromMiles: 5, toMiles: 6, baseCents: 899 },
+  { fromMiles: 6, toMiles: 7, baseCents: 999 },
+  { fromMiles: 7, toMiles: 10, baseCents: 1099 },
 ];
 
 // California adds this to every trip, and it goes to the courier rather than
 // to Uber or to the shop — it's the state's minimum earnings guarantee for app
-// drivers. Worth naming rather than burying, because it's the difference
-// between a $7.99 rate card and an $10.99 line on the bill, and somebody
-// comparing the two deserves to know which part is which.
+// drivers.
 //
 // (New York City is $5 and Seattle is $10 under the same scheme. This shop is
 // in Los Angeles, so only California's applies.)
 export const CALIFORNIA_TRIP_CENTS = 300;
+
+/** What a band actually costs. Uber's quote comes back with the trip fee
+ *  already in it — a 6–7 mile delivery quotes at $12.99, not $9.99 — so this
+ *  is the number to put in front of a customer.
+ *
+ *  The first cut showed the rate card and the surcharge as separate lines and
+ *  left the addition to the reader. It was accurate and it was the wrong
+ *  shape: somebody checking a $12.99 line against a table found no $12.99 in
+ *  it. A price explainer whose numbers don't appear on the bill it explains is
+ *  doing the opposite of its job, so the table shows what is charged and the
+ *  breakdown moved to a footnote. */
+export function chargedCents(band: DeliveryBand): number {
+  return band.baseCents + CALIFORNIA_TRIP_CENTS;
+}
 
 /** The band a distance falls in, or null past the last one. */
 export function bandFor(miles: number): DeliveryBand | null {

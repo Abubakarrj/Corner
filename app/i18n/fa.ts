@@ -292,8 +292,8 @@ export const fa: Table = {
   "deliveryFee.fee": "هزینه",
   "deliveryFee.band": "{from}–{to} مایل",
   "deliveryFee.yours": "مال شما",
-  "deliveryFee.everyTrip": "هر سفر در کالیفرنیا",
-  "deliveryFee.everyTripWhy": "به پیک می‌رسد، طبق تضمین درآمد رانندگان اپلیکیشن در کالیفرنیا.",
+  "deliveryFee.includesTrip":
+    "هرکدام شامل هزینه {amount} سفر کالیفرنیا است که طبق تضمین درآمد ایالت برای رانندگان اپلیکیشن به پیک می‌رسد.",
   "deliveryFee.passthrough": "Corner Bagel چیزی روی آن نمی‌گذارد.",
   "deliveryFee.quotedFresh":
     "Uber آدرس شما را در همان لحظه سفارش قیمت می‌دهد، پس همین مبلغ را می‌پردازید. هوا و ترافیک می‌تواند تغییرش دهد.",

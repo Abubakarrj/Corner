@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { useT } from "../../i18n";
 import { formatPrice } from "../products";
-import { CALIFORNIA_TRIP_CENTS, DELIVERY_BANDS, bandFor } from "../deliveryPricing";
+import { CALIFORNIA_TRIP_CENTS, DELIVERY_BANDS, bandFor, chargedCents } from "../deliveryPricing";
 import UberDirectMark from "./UberDirectMark";
 
 // The (i) beside the delivery fee, and what it opens.
@@ -111,22 +111,20 @@ export default function DeliveryFeeInfo({
                       yours ? "font-medium text-ink" : "text-muted"
                     }`}
                   >
-                    {formatPrice(band.feeCents)}
+                    {/* What is charged, not what the rate card says. Uber's
+                        quote already carries the trip fee, so a table of bare
+                        band rates would have no row matching the line on the
+                        bill — see chargedCents(). */}
+                    {formatPrice(chargedCents(band))}
                   </td>
                 </tr>
               );
             })}
-            <tr>
-              <td className="py-2 text-muted">{t("deliveryFee.everyTrip")}</td>
-              <td className="py-2 text-right tabular-nums text-muted">
-                +{formatPrice(CALIFORNIA_TRIP_CENTS)}
-              </td>
-            </tr>
           </tbody>
         </table>
 
-        <p className="m-0 mt-1 text-[12px] leading-[1.5] text-muted">
-          {t("deliveryFee.everyTripWhy")}
+        <p className="m-0 mt-2 text-[12px] leading-[1.5] text-muted">
+          {t("deliveryFee.includesTrip", { amount: formatPrice(CALIFORNIA_TRIP_CENTS) })}
         </p>
 
         <p className="m-0 mt-4 border-t border-line pt-4 text-[13px] leading-[1.55] text-ink">

@@ -258,8 +258,8 @@ export const ko: Table = {
   "deliveryFee.fee": "요금",
   "deliveryFee.band": "{from}–{to}마일",
   "deliveryFee.yours": "해당",
-  "deliveryFee.everyTrip": "캘리포니아 배달 건마다",
-  "deliveryFee.everyTripWhy": "캘리포니아의 앱 기사 최저 수입 보장에 따라 기사에게 지급됩니다.",
+  "deliveryFee.includesTrip":
+    "각 금액에는 캘리포니아 운행 요금 {amount}이 포함되어 있으며, 주의 앱 기사 수입 보장에 따라 기사에게 지급됩니다.",
   "deliveryFee.passthrough": "Corner Bagel은 여기에 아무것도 더하지 않습니다.",
   "deliveryFee.quotedFresh":
     "Uber가 주문 시점에 주소를 기준으로 계산하므로 이 금액을 그대로 내시게 됩니다. 날씨와 교통에 따라 달라질 수 있습니다.",

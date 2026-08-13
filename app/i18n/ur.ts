@@ -262,9 +262,8 @@ export const ur: Table = {
   "deliveryFee.fee": "کرایہ",
   "deliveryFee.band": "{from}–{to} میل",
   "deliveryFee.yours": "آپ کا",
-  "deliveryFee.everyTrip": "کیلیفورنیا کے ہر پھیرے پر",
-  "deliveryFee.everyTripWhy":
-    "یہ ڈرائیور کو جاتا ہے، کیلیفورنیا کی ایپ ڈرائیوروں کے لیے آمدنی کی ضمانت کے تحت۔",
+  "deliveryFee.includesTrip":
+    "ان میں سے ہر ایک میں {amount} کیلیفورنیا ٹرپ فیس شامل ہے، جو ریاست کی ایپ ڈرائیوروں کے لیے آمدنی کی ضمانت کے تحت ڈرائیور کو جاتی ہے۔",
   "deliveryFee.passthrough": "Corner Bagel اس پر کچھ نہیں بڑھاتا۔",
   "deliveryFee.quotedFresh":
     "Uber آرڈر کے وقت آپ کے پتے کا کرایہ نکالتا ہے، سو یہی آپ ادا کریں گے۔ موسم اور ٹریفک سے بدل سکتا ہے۔",

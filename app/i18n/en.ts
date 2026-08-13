@@ -290,9 +290,8 @@ export const en = {
   "deliveryFee.fee": "Fee",
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.yours": "yours",
-  "deliveryFee.everyTrip": "Every California trip",
-  "deliveryFee.everyTripWhy":
-    "Goes to the driver, under California's earnings guarantee for app drivers.",
+  "deliveryFee.includesTrip":
+    "Each of these includes the {amount} California trip fee, which goes to the driver under the state's earnings guarantee for app drivers.",
   "deliveryFee.passthrough": "Corner Bagel adds nothing on top of this.",
   "deliveryFee.quotedFresh":
     "Uber prices your address at the moment you order, so this is what you pay. Weather and traffic can move it.",
