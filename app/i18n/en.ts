@@ -263,13 +263,12 @@ export const en = {
 
   "checkout.fromWhere": "{mode} from {where}.",
 
-  // How busy the counter is, under the Order button. The shop takes no counter
-  // orders, so this is the whole queue — see KitchenLoad.tsx for what that
-  // changed about the wording.
-  "kitchen.clear": "Nothing waiting. About {minutes} minutes once you order.",
-  "kitchen.aheadOne": "1 order ahead of you.",
-  "kitchen.ahead": "{count} orders ahead of you.",
-  "kitchen.onlineOnly": "Ordering is online only, so this is the whole queue.",
+  // How busy the counter is, under the Order button. Three of them, and none
+  // longer than four words — the reasons two longer versions were cut are in
+  // KitchenLoad.tsx.
+  "kitchen.clear": "No orders ahead",
+  "kitchen.aheadOne": "1 order ahead",
+  "kitchen.ahead": "{count} orders ahead",
 
   // The delivery block on checkout, and the (i) that explains the fee.
   "delivery.carriedBy": "Carried by",

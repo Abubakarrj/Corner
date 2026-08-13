@@ -234,10 +234,9 @@ export const my: Table = {
 
   "checkout.fromWhere": "{where} မှ {mode}။",
 
-  "kitchen.clear": "စောင့်နေသည့် အော်ဒါ မရှိပါ။ မှာပြီးနောက် {minutes} မိနစ်ခန့်။",
-  "kitchen.aheadOne": "သင့်ရှေ့တွင် အော်ဒါ ၁ ခု ရှိပါသည်။",
-  "kitchen.ahead": "သင့်ရှေ့တွင် အော်ဒါ {count} ခု ရှိပါသည်။",
-  "kitchen.onlineOnly": "အွန်လိုင်းမှသာ မှာယူနိုင်သဖြင့် ဒါက စောင့်ဆိုင်းမှု အားလုံးပါ။",
+  "kitchen.clear": "စောင့်ဆိုင်းမှု မရှိ",
+  "kitchen.aheadOne": "ရှေ့တွင် ၁ ခု",
+  "kitchen.ahead": "ရှေ့တွင် {count} ခု",
 
   "delivery.carriedBy": "ပို့ဆောင်သူ",
   "delivery.arrivingBetween": "{from}–{to} အတွင်း ရောက်ပါမည်",

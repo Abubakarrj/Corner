@@ -236,10 +236,9 @@ export const zh: Table = {
 
   "checkout.fromWhere": "在{where}{mode}。",
 
-  "kitchen.clear": "目前没有等待的订单。下单后约 {minutes} 分钟。",
-  "kitchen.aheadOne": "你前面有 1 单。",
-  "kitchen.ahead": "你前面有 {count} 单。",
-  "kitchen.onlineOnly": "只接受线上下单，所以这就是全部排队量。",
+  "kitchen.clear": "前面没有订单",
+  "kitchen.aheadOne": "前面 1 单",
+  "kitchen.ahead": "前面 {count} 单",
 
   "delivery.carriedBy": "配送方",
   "delivery.arrivingBetween": "{from}–{to} 送达",

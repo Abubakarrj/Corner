@@ -1,5 +1,5 @@
 import { ordersAhead } from "../../kitchenQueue";
-import { PREP_MINUTES, isOpenNow } from "../../shopFacts";
+import { isOpenNow } from "../../shopFacts";
 
 // How busy the counter is, for the line under the Order button.
 //
@@ -31,8 +31,13 @@ export async function GET() {
   const ahead = await ordersAhead();
   if (ahead === null) return Response.json({ known: false });
 
+  // The count and nothing else. A prep estimate rode along here for a while,
+  // for a line under the button that read "about 12 minutes once you order" —
+  // checkout already says what time the food is ready, and a field kept for a
+  // caption that no longer prints it is the kind of thing somebody wires back
+  // into a screen two years from now.
   return Response.json(
-    { known: true, ahead, prepMinutes: PREP_MINUTES },
+    { known: true, ahead },
     {
       // Ten seconds. Long enough that a rush of people opening the sheet does
       // not become a query per visitor, short enough that the number is about

@@ -234,10 +234,9 @@ export const ja: Table = {
 
   "checkout.fromWhere": "{where}での{mode}。",
 
-  "kitchen.clear": "待ちはありません。ご注文から約{minutes}分です。",
-  "kitchen.aheadOne": "前に注文が1件あります。",
-  "kitchen.ahead": "前に注文が{count}件あります。",
-  "kitchen.onlineOnly": "ご注文はオンラインのみなので、これが全体の待ち数です。",
+  "kitchen.clear": "待ちなし",
+  "kitchen.aheadOne": "前に1件",
+  "kitchen.ahead": "前に{count}件",
 
   "delivery.carriedBy": "配達",
   "delivery.arrivingBetween": "{from}〜{to}に到着",

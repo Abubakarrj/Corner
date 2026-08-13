@@ -266,10 +266,9 @@ export const fr: Table = {
 
   "checkout.fromWhere": "{mode} depuis {where}.",
 
-  "kitchen.clear": "Rien en attente. Environ {minutes} minutes une fois commandé.",
-  "kitchen.aheadOne": "1 commande avant la vôtre.",
-  "kitchen.ahead": "{count} commandes avant la vôtre.",
-  "kitchen.onlineOnly": "On ne commande qu'en ligne : voilà toute la file.",
+  "kitchen.clear": "Aucune commande avant vous",
+  "kitchen.aheadOne": "1 commande avant vous",
+  "kitchen.ahead": "{count} commandes avant vous",
 
   "delivery.carriedBy": "Livré par",
   "delivery.arrivingBetween": "Arrive entre {from} et {to}",

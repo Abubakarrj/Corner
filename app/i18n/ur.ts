@@ -237,10 +237,9 @@ export const ur: Table = {
 
   "checkout.fromWhere": "{where} سے {mode}۔",
 
-  "kitchen.clear": "کچھ زیرِ التوا نہیں۔ آرڈر کے بعد تقریباً {minutes} منٹ۔",
-  "kitchen.aheadOne": "آپ سے پہلے 1 آرڈر ہے۔",
-  "kitchen.ahead": "آپ سے پہلے {count} آرڈر ہیں۔",
-  "kitchen.onlineOnly": "آرڈر صرف آن لائن ہوتا ہے، سو یہی پوری قطار ہے۔",
+  "kitchen.clear": "کوئی آرڈر آگے نہیں",
+  "kitchen.aheadOne": "1 آرڈر آگے",
+  "kitchen.ahead": "{count} آرڈر آگے",
 
   "delivery.carriedBy": "پہنچانے والا",
   "delivery.arrivingBetween": "{from} سے {to} کے درمیان پہنچے گا",
