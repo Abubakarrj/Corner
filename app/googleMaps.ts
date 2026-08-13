@@ -204,16 +204,75 @@ export type Drive = {
   minutes: number;
 };
 
+export type DriveResult =
+  | { ok: true; drive: Drive }
+  | { ok: false; status: number | null; why: string; detail: string };
+
+// What went wrong, from the body rather than the status code.
+//
+// The status alone lies here, and it cost an afternoon to notice: Routes
+// answers **400** for an invalid API key, not 401 or 403. Reading only the
+// number, the old version of this reported a bad key as "the request was
+// malformed, which is our bug" and sent whoever read it looking through this
+// file for a typo that was never there. Google puts a machine-readable
+// `reason` in the payload; that is the thing worth trusting.
+function explainRoutes(status: number, detail: string): string {
+  if (detail.includes("API_KEY_INVALID")) {
+    return (
+      "the key is not a valid Google API key. Check GOOGLE_MAPS_API_KEY for a" +
+      " truncated or stale value — a key that was regenerated in the Cloud" +
+      " console stops working the moment the old one is replaced."
+    );
+  }
+  if (detail.includes("SERVICE_DISABLED") || detail.includes("has not been used in project")) {
+    return (
+      "Routes API is not enabled on the project this key belongs to. Enable it" +
+      " in the Cloud console; the error body names the project id."
+    );
+  }
+  if (detail.includes("API_KEY_HTTP_REFERRER_BLOCKED") || detail.includes("referer")) {
+    return (
+      "the key is restricted by HTTP referrer. This call is made from a server" +
+      " and carries no referrer, so that restriction can only ever reject it." +
+      " Give the server key IP restrictions or none, and keep the" +
+      " referrer-restricted key for the browser in GOOGLE_MAPS_BROWSER_KEY."
+    );
+  }
+  if (status === 403) {
+    return (
+      "the key was refused. Either it is referrer-restricted — which a" +
+      " server call can never satisfy — or it is not permitted to use Routes." +
+      " Check the key's API restrictions and that Routes API is enabled on the" +
+      " same project."
+    );
+  }
+  if (status === 429) return "quota exceeded.";
+  if (status === 400) return "the request was malformed, which is our bug.";
+  return "unexpected.";
+}
+
 // Driving distance and time between two points, via the Routes API.
 //
 // Routes wants a field mask: it returns nothing you didn't ask for, and asking
 // for less is what it bills you less for. Two fields is all this needs.
-export async function driveBetween(
+//
+// This one carries the failure back instead of swallowing it. Every ordinary
+// caller wants driveBetween() below and its `Drive | null`; this exists so
+// /api/maps-check can say what went wrong out loud, on a deployment where
+// reading the logs means opening a hosting dashboard.
+export async function routeBetween(
   origin: [number, number],
   destination: [number, number],
-): Promise<Drive | null> {
+): Promise<DriveResult> {
   const key = googleMapsKey();
-  if (!key) return null;
+  if (!key) {
+    return {
+      ok: false,
+      status: null,
+      why: "GOOGLE_MAPS_API_KEY is not set on this deployment.",
+      detail: "",
+    };
+  }
 
   const point = ([lat, lng]: [number, number]) => ({
     location: { latLng: { latitude: lat, longitude: lng } },
@@ -250,38 +309,51 @@ export async function driveBetween(
     // same reason: this call is made from the server, and a key restricted by
     // HTTP referrer cannot be used from a server. Referrer restrictions only
     // apply to browser requests. A server key wants IP restrictions or none.
-    const why =
-      response.status === 403
-        ? "the key was refused. This call is server-side, so an HTTP-referrer" +
-          " restriction on the key will always fail here — a server key needs IP" +
-          " restrictions or none. Also check Routes API is enabled on the same" +
-          " project the key belongs to."
-        : response.status === 429
-          ? "quota exceeded"
-          : response.status === 400
-            ? "the request was malformed, which is our bug"
-            : "unexpected";
+    const why = explainRoutes(response.status, detail);
     console.error(
       `[maps] Routes API failed (${response.status}) — ${why}` +
         ` Distances now fall back to straight-line, which reads short.` +
         ` ${detail.slice(0, 200)}`,
     );
-    return null;
+    return { ok: false, status: response.status, why, detail: detail.slice(0, 400) };
   }
 
   const body = (await response.json()) as {
     routes?: { distanceMeters?: number; duration?: string }[];
   };
   const route = body.routes?.[0];
-  if (!route || typeof route.distanceMeters !== "number") return null;
+  if (!route || typeof route.distanceMeters !== "number") {
+    return {
+      ok: false,
+      status: response.status,
+      why: "Routes answered without a route. No road connects these two points,"
+        + " or the request asked for something it could not satisfy.",
+      detail: "",
+    };
+  }
 
   // Routes returns duration as a protobuf duration string: "1234s".
   const seconds = Number.parseInt(route.duration ?? "", 10);
 
   return {
-    miles: route.distanceMeters / 1609.344,
-    minutes: Number.isFinite(seconds) ? Math.round(seconds / 60) : 0,
+    ok: true,
+    drive: {
+      miles: route.distanceMeters / 1609.344,
+      minutes: Number.isFinite(seconds) ? Math.round(seconds / 60) : 0,
+    },
   };
+}
+
+/** Road distance, or null when Routes could not say.
+ *
+ *  The shape every ordinary caller wants, and the reason each of them falls
+ *  back to a straight line rather than failing an order over a map service. */
+export async function driveBetween(
+  origin: [number, number],
+  destination: [number, number],
+): Promise<Drive | null> {
+  const result = await routeBetween(origin, destination);
+  return result.ok ? result.drive : null;
 }
 
 export type Suggestion = {
