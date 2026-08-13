@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Pool } from "pg";
+import { db, isDatabaseConfigured, ready } from "../db";
 
 // Where push subscriptions live.
 //
@@ -77,67 +77,15 @@ function toRecord(row: Record<string, unknown>): PushSubscriptionRecord {
   };
 }
 
-/** A database on this machine, which will not be speaking TLS. */
-function isLocal(url: string): boolean {
-  try {
-    const host = new URL(url).hostname;
-    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "";
-  } catch {
-    return false;
-  }
-}
-
-let pool: Pool | null = null;
-let ready: Promise<void> | null = null;
-
 export function isPushStoreConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return isDatabaseConfigured();
 }
 
-function db(): Pool | null {
-  const url = process.env.DATABASE_URL;
-  if (!url) return null;
-  if (!pool) {
-    pool = new Pool({
-      connectionString: url,
-      // Render's managed Postgres presents a certificate signed by their own
-      // authority. The internal connection string never leaves their network,
-      // and node-postgres refuses it outright without this.
-      //
-      // Off for a local server, which usually has no TLS at all — and matched
-      // on the actual host rather than on the substring "localhost", which is
-      // how a perfectly ordinary 127.0.0.1 development URL got "the server
-      // does not support SSL connections" and a feature that looked broken.
-      ssl: isLocal(url) ? undefined : { rejectUnauthorized: false },
-      // A web dyno does not need many. Each one is a real connection against a
-      // plan with a hard cap, and exhausting that takes down the site rather
-      // than the notification.
-      max: 4,
-      idleTimeoutMillis: 30_000,
-    });
-    // A pool that throws on an idle client's error takes the process with it.
-    pool.on("error", (error) => console.error("[push] idle client error:", error.message));
-  }
-  return pool;
-}
-
-/** Runs the schema once per process. Every call below awaits it, so there is
- *  no ordering to get right at a call site. */
-function prepared(client: Pool): Promise<void> {
-  if (!ready) {
-    ready = client.query(SCHEMA).then(
-      () => undefined,
-      (error) => {
-        // Cleared so the next request tries again rather than leaving the
-        // feature dead until a redeploy — a database that was briefly
-        // unreachable at boot is a normal thing to recover from.
-        ready = null;
-        throw error;
-      },
-    );
-  }
-  return ready;
-}
+// The pool and the once-per-process schema bookkeeping live in app/db.ts,
+// which is where they moved when the kitchen queue became the second feature
+// here that needs a database. See the note at the top of that file for why
+// there is one pool and not two.
+const prepared = () => ready("push_subscriptions", SCHEMA);
 
 /** Remember a device's subscription, against the order it is watching.
  *
@@ -148,7 +96,7 @@ export async function saveSubscription(record: PushSubscriptionRecord): Promise<
   const client = db();
   if (!client) return false;
   try {
-    await prepared(client);
+    await prepared();
     await client.query(
       `INSERT INTO push_subscriptions
          (endpoint, p256dh, auth, order_id, toast_guid, delivery_id, locale)
@@ -182,7 +130,7 @@ export async function subscriptionsFor(orderId: string): Promise<PushSubscriptio
   const client = db();
   if (!client) return [];
   try {
-    await prepared(client);
+    await prepared();
     const result = await client.query(
       `${SELECT_COLUMNS} WHERE order_id = $1`,
       [orderId],
@@ -201,7 +149,7 @@ export async function forgetSubscription(endpoint: string): Promise<void> {
   const client = db();
   if (!client) return;
   try {
-    await prepared(client);
+    await prepared();
     await client.query(`DELETE FROM push_subscriptions WHERE endpoint = $1`, [endpoint]);
   } catch (error) {
     console.error("[push] could not delete a subscription:", (error as Error).message);
@@ -218,7 +166,7 @@ export async function forgetOrder(orderId: string): Promise<void> {
   const client = db();
   if (!client) return;
   try {
-    await prepared(client);
+    await prepared();
     await client.query(`DELETE FROM push_subscriptions WHERE order_id = $1`, [orderId]);
   } catch (error) {
     console.error("[push] could not clear an order's subscriptions:", (error as Error).message);
@@ -236,7 +184,7 @@ export async function subscriptionsForProvider(
   const client = db();
   if (!client) return [];
   try {
-    await prepared(client);
+    await prepared();
     const column = kind === "toast" ? "toast_guid" : "delivery_id";
     const result = await client.query(`${SELECT_COLUMNS} WHERE ${column} = $1`, [id]);
     return result.rows.map(toRecord);

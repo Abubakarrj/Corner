@@ -25,6 +25,7 @@ import {
   structuredAddress,
 } from "../../uberDirect";
 import { deliveryOrigin } from "../../storePlaces";
+import { joinQueue } from "../../kitchenQueue";
 
 // Order intake, behind /checkout on the shop subdomain.
 //
@@ -375,6 +376,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // On the counter now, for the busyness line the next customer sees. After
+    // the kitchen has accepted it, never before — an order that Toast refused
+    // is not work anybody is doing.
+    await joinQueue(sent.orderGuid, sent.orderGuid);
+
     return Response.json(
       {
         ok: true,
@@ -390,6 +396,12 @@ export async function POST(request: Request) {
       { status: 200 },
     );
   }
+
+  // No Toast, so no guid and nothing to close this row later — it ages out on
+  // the clock instead. Still counted: the food is being made either way, and a
+  // queue that only works once Toast is connected is a queue that reads clear
+  // through the exact period the shop is running on this path.
+  await joinQueue(`local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   return Response.json(
     { ok: true, totals, submitted: "logged", ...(await bookCourier()) },

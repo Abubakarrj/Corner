@@ -234,6 +234,11 @@ export const ko: Table = {
 
   "checkout.fromWhere": "{where}에서 {mode}.",
 
+  "kitchen.clear": "대기 중인 주문이 없습니다. 주문하시면 약 {minutes}분 걸립니다.",
+  "kitchen.aheadOne": "카운터에 온라인 주문 1건이 먼저 있습니다.",
+  "kitchen.ahead": "카운터에 온라인 주문 {count}건이 먼저 있습니다.",
+  "kitchen.walkInsNote": "매장에서 직접 주문하신 분은 포함되지 않아 더 붐빌 수 있습니다.",
+
   "delivery.carriedBy": "배달 파트너",
   "delivery.arrivingBetween": "{from}–{to} 도착",
   "delivery.awaitingEta": "기사 배정을 기다리는 중",

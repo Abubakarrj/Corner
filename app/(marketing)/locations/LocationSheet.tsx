@@ -8,6 +8,7 @@ import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { PALETTE } from "../../shop/shopControls";
 import { CLOSE_HOUR, OPEN_HOUR, clockLabel } from "../../shopFacts";
+import KitchenLoad from "./KitchenLoad";
 import type { StoreLocation } from "./locations";
 
 const { ink, muted, controlBorder, olive } = PALETTE;
@@ -182,6 +183,14 @@ export default function LocationSheet({
       <Button block className="mt-6" onClick={() => onOrder(location)}>
         {t("finder.orderNow")}
       </Button>
+
+      {/* Under the button, not above it. This is the answer to "should I order
+          now or in twenty minutes", which is a question somebody asks with
+          their thumb already on the button — putting it above would push the
+          button down the sheet to make room for a line most people will read
+          once and never again. It renders nothing when the shop is shut or
+          when the count cannot be trusted. */}
+      <KitchenLoad />
     </Modal>
   );
 }

@@ -50,6 +50,7 @@
 // above them needs to know.
 
 import { announce } from "./push/announce";
+import { leaveQueue } from "./kitchenQueue";
 import { fetchToastOrder } from "./toast";
 import { fetchDelivery } from "./uberDirect";
 import {
@@ -112,6 +113,13 @@ export async function refresh(
     const was = read(`toast:${id}`, now)?.food;
     const status: LiveStatus = { food, at: now };
     write(`toast:${id}`, status);
+    // Off the counter. "ready" is somebody pressing Order Ready with the bag
+    // in front of them, which is the most trustworthy signal in this system
+    // and a better reason to stop counting an order than any clock. The queue
+    // has a staleness cutoff too, for when this never arrives.
+    if (food === "ready" || food === "done" || food === "voided") {
+      await leaveQueue(id);
+    }
     // Only on a change. refresh() is also the polling path, so notifying on
     // every call would buzz a phone every fifteen seconds for as long as the
     // bagels take.

@@ -236,6 +236,11 @@ export const es: Table = {
 
   "checkout.fromWhere": "{mode} en {where}.",
 
+  "kitchen.clear": "No hay nada esperando. Unos {minutes} minutos desde que pidas.",
+  "kitchen.aheadOne": "1 pedido online en el mostrador antes que el tuyo.",
+  "kitchen.ahead": "{count} pedidos online en el mostrador antes que el tuyo.",
+  "kitchen.walkInsNote": "No contamos a quien llega en persona, así que puede haber más.",
+
   "delivery.carriedBy": "Lo lleva",
   "delivery.arrivingBetween": "Llega entre {from} y {to}",
   "delivery.awaitingEta": "Esperando al repartidor",
