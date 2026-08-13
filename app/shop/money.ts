@@ -6,16 +6,22 @@
 // there is one rounding rule, here, and both the client's summary and the
 // server's repricing call the same functions.
 
-// Los Angeles County combined sales tax: 9.5% (6.00% state, 0.25% county,
-// 3.25% district). Prepared food is taxable in California whether it's eaten
-// in or taken away, so this applies to the whole order.
+// The combined sales tax rate at 3064 W 8th Street: 9.75%. That is California's
+// 7.25% statewide rate (6.00% state, 1.25% local) plus 2.50% of Los Angeles
+// County district taxes. Prepared food is taxable in California whether it's
+// eaten in or taken away, so this applies to the whole order.
 //
-// Held here as a constant rather than fetched, which is a simplification with
-// a real edge: tax is charged at the rate for the address the food goes to,
-// so a delivery over a district line is charged at that district's rate. Toast
+// It was 9.5% here until Measure A took effect on 1 April 2025, replacing
+// Measure H's quarter cent with a half cent. A stale rate is not a display bug:
+// the state is owed 9.75% of the sale whatever the checkout printed, so every
+// order charged at 9.5% came out of the shop's own margin at remittance time.
+//
+// Held as a constant rather than fetched, which is a simplification with a real
+// edge: tax is charged at the rate for the address the food goes to, so a
+// delivery over a district line is charged at that district's rate. Toast
 // computes this per order from the restaurant's configured tax rates — when
 // that's wired up, the number that comes back from Toast wins over this one.
-export const TAX_RATE = 0.095;
+export const TAX_RATE = 0.0975;
 
 // The tip presets, matching the ones the counter's own checkout offers.
 export const TIP_PRESETS = [0.22, 0.2, 0.15] as const;

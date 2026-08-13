@@ -69,10 +69,10 @@ export type SelectedOptions = Record<string, string>;
 // time, taxed, handed over. A gift card is none of those, and it was quietly
 // getting all four:
 //
-//   Tax          taxFor() applies 9.5% to the whole subtotal. A gift card sale
-//                is not a taxable transaction — tax is collected on whatever
-//                the card is later spent on. A $50 card was being charged
-//                $4.75 that should not exist.
+//   Tax          taxFor() applies the sales tax rate to the whole subtotal. A
+//                gift card sale is not a taxable transaction — tax is collected
+//                on whatever the card is later spent on. A $50 card was being
+//                charged $4.88 that should not exist.
 //   Hours        /api/shop-order refuses when the kitchen is shut, so a card
 //                could not be bought at 9pm — which is exactly when somebody
 //                remembers a birthday.

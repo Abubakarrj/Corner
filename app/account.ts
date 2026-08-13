@@ -116,9 +116,15 @@ export type PlacedOrder = {
 };
 
 // The bill for an order, whether or not it was stored with one. An order from
-// before the totals were snapshotted has its tax re-derived — the rate hasn't
-// changed, so that reproduces what was charged — and no tip, which is the one
-// part that genuinely can't be recovered.
+// before the totals were snapshotted has its tax re-derived at today's rate,
+// and no tip, which is the one part that genuinely can't be recovered.
+//
+// Re-derived tax is a guess, not the receipt. It matches what was charged only
+// while the rate is the one that was in force that day, and rates move — LA
+// County's went from 9.5% to 9.75% on 1 April 2025. Every order placed since
+// the totals were snapshotted carries its own taxCents, which is what makes
+// this a fallback for a handful of old rows rather than the way the bill is
+// worked out.
 export function orderTotals(order: PlacedOrder): {
   subtotalCents: number;
   taxCents: number;
