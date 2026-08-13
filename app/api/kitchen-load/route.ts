@@ -8,7 +8,11 @@ import { PREP_MINUTES, isOpenNow } from "../../shopFacts";
 //
 //   { known: false }              we cannot say. The component renders nothing.
 //   { known: true, ahead: 0 }     nothing waiting. A real, checked zero.
-//   { known: true, ahead: 6 }     six online orders on the counter.
+//   { known: true, ahead: 6 }     six orders on the counter.
+//
+// The count is the whole queue rather than a slice: the shop takes no counter
+// orders, so nothing reaches that counter without passing through here. See
+// app/kitchenQueue.ts for the two things that would change that.
 //
 // A missing database, an unreachable one, or a shut shop all give the first.
 // Rendering those as a confident "0 ahead — kitchen is clear" would be a

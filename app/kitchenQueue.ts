@@ -6,21 +6,26 @@ import { db, isDatabaseConfigured, ready } from "./db";
 //
 // ——— What this number is, precisely ———
 //
-// Orders **placed through this app** that the kitchen has not yet marked
-// ready. Not the queue. The queue includes the four people standing at the
-// counter at 8:15, and this app cannot see them.
+// Orders the kitchen has not yet marked ready. All of them: the shop takes no
+// counter orders — there is no room to queue in it — so every ticket on the
+// counter came through this app, and this count is the whole queue rather than
+// a slice of it.
 //
-// That distinction is the whole design, and every piece of copy that renders
-// this has to carry it. "3 ahead of you" when the real answer is eleven is
-// worse than saying nothing: somebody reads twelve minutes, arrives, and finds
-// a line out the door, and the next time they see a wait estimate here they
-// will not believe it. So the UI says "online orders", and it says it every
-// time, even when the number is small enough that the distinction seems
-// pedantic.
+// That is worth stating because the first version of this file assumed the
+// opposite. It counted the same rows and called them "online orders", with a
+// caveat under every rendering saying walk-ins were not included, because a
+// number that undercounts the queue is the kind of thing that sends somebody
+// to a shop with a line out the door. With no counter ordering there are no
+// walk-ins to miss, the caveat was describing a gap that does not exist, and
+// hedging against a risk you do not have is its own kind of inaccuracy.
 //
-// When Toast is connected this can become the real count — Toast knows about
-// the walk-ins because it is the till. Until then it is a floor, and it is
-// labelled as one.
+// Two things would break that, and both are worth noticing before this number
+// goes back to being a floor: a marketplace listing whose tickets reach the
+// kitchen without passing through here, and phone orders written on a pad.
+//
+// Delivery orders count. A courier order occupies the kitchen exactly as a
+// pickup order does, and the question this answers — how long until food comes
+// off the counter — does not care where the bag goes afterwards.
 //
 // ——— Absent is not zero ———
 //

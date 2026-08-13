@@ -268,9 +268,9 @@ export const fa: Table = {
   "checkout.fromWhere": "{mode} از {where}.",
 
   "kitchen.clear": "چیزی در انتظار نیست. حدود {minutes} دقیقه پس از ثبت سفارش.",
-  "kitchen.aheadOne": "۱ سفارش اینترنتی روی پیشخوان جلوتر از شماست.",
-  "kitchen.ahead": "{count} سفارش اینترنتی روی پیشخوان جلوتر از شماست.",
-  "kitchen.walkInsNote": "مشتریان حضوری شمرده نمی‌شوند، پس ممکن است شلوغ‌تر باشد.",
+  "kitchen.aheadOne": "۱ سفارش جلوتر از شماست.",
+  "kitchen.ahead": "{count} سفارش جلوتر از شماست.",
+  "kitchen.onlineOnly": "سفارش فقط اینترنتی است، پس این کل صف است.",
 
   "delivery.carriedBy": "ارسال با",
   "delivery.arrivingBetween": "بین {from} تا {to} می‌رسد",

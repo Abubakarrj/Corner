@@ -263,12 +263,13 @@ export const en = {
 
   "checkout.fromWhere": "{mode} from {where}.",
 
-  // How busy the counter is, under the Order button. "Online orders" is load
-  // bearing — see app/(marketing)/locations/KitchenLoad.tsx.
+  // How busy the counter is, under the Order button. The shop takes no counter
+  // orders, so this is the whole queue — see KitchenLoad.tsx for what that
+  // changed about the wording.
   "kitchen.clear": "Nothing waiting. About {minutes} minutes once you order.",
-  "kitchen.aheadOne": "1 online order on the counter ahead of you.",
-  "kitchen.ahead": "{count} online orders on the counter ahead of you.",
-  "kitchen.walkInsNote": "Walk-ins aren't counted, so the counter may be busier.",
+  "kitchen.aheadOne": "1 order ahead of you.",
+  "kitchen.ahead": "{count} orders ahead of you.",
+  "kitchen.onlineOnly": "Ordering is online only, so this is the whole queue.",
 
   // The delivery block on checkout, and the (i) that explains the fee.
   "delivery.carriedBy": "Carried by",

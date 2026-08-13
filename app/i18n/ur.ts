@@ -238,9 +238,9 @@ export const ur: Table = {
   "checkout.fromWhere": "{where} سے {mode}۔",
 
   "kitchen.clear": "کچھ زیرِ التوا نہیں۔ آرڈر کے بعد تقریباً {minutes} منٹ۔",
-  "kitchen.aheadOne": "کاؤنٹر پر آپ سے پہلے 1 آن لائن آرڈر ہے۔",
-  "kitchen.ahead": "کاؤنٹر پر آپ سے پہلے {count} آن لائن آرڈر ہیں۔",
-  "kitchen.walkInsNote": "دکان پر آنے والے شمار نہیں ہوتے، سو رش زیادہ ہو سکتا ہے۔",
+  "kitchen.aheadOne": "آپ سے پہلے 1 آرڈر ہے۔",
+  "kitchen.ahead": "آپ سے پہلے {count} آرڈر ہیں۔",
+  "kitchen.onlineOnly": "آرڈر صرف آن لائن ہوتا ہے، سو یہی پوری قطار ہے۔",
 
   "delivery.carriedBy": "پہنچانے والا",
   "delivery.arrivingBetween": "{from} سے {to} کے درمیان پہنچے گا",

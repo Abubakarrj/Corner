@@ -5,17 +5,23 @@ import { useT } from "../../i18n";
 
 // How busy the counter is, under the Order button.
 //
-// ——— Why it says "online orders" every single time ———
+// ——— Why it can say "orders ahead of you" flatly ———
 //
-// Because that is what it counts. This app can see the orders it sent to the
-// kitchen; it cannot see the four people standing at the counter at 8:15. A
-// line reading "3 ahead of you" when the real answer is eleven is worse than
-// no line at all — somebody reads twelve minutes, walks over, finds a queue
-// out the door, and every future estimate on this site has lost its credit.
+// Because the shop takes no counter orders. There is no room to queue in it,
+// so every ticket came through this app and this is the whole line rather than
+// a slice of it.
 //
-// The wording is therefore never trimmed to fit. When Toast is connected this
-// can count the walk-ins too, because Toast is the till; until then the number
-// is a floor and says so.
+// The first version hedged. It said "online orders" and carried a second line
+// saying walk-ins were not counted, on the reasoning that a number which
+// undercounts a queue sends people to a shop with a line out the door. Sound
+// reasoning about a shop that does not exist: there are no walk-ins here, and
+// a caveat describing a gap that isn't there costs a reader the same attention
+// as a true one while making the real number sound less trustworthy than it
+// is.
+//
+// What replaced it is the fact somebody standing outside actually needs, which
+// the old line was accidentally implying the opposite of: you cannot order at
+// the counter, so ordering here is the way in.
 //
 // ——— And why silence is a valid state ———
 //
@@ -67,7 +73,7 @@ export default function KitchenLoad() {
             count: load.ahead,
           })}
       <br />
-      <span className="text-quiet">{t("kitchen.walkInsNote")}</span>
+      <span className="text-quiet">{t("kitchen.onlineOnly")}</span>
     </p>
   );
 }
