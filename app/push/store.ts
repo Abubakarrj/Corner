@@ -1,6 +1,6 @@
 import "server-only";
 
-import { db, isDatabaseConfigured, ready } from "../db";
+import { SCHEMA, db, isDatabaseConfigured, ready } from "../db";
 
 // Where push subscriptions live.
 //
@@ -28,8 +28,8 @@ import { db, isDatabaseConfigured, ready } from "../db";
 // Created on first use rather than in a migration step. One table, one index,
 // and a deploy that has never run before should not need a second command.
 
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS push_subscriptions (
+const DDL = `
+  CREATE TABLE IF NOT EXISTS ${SCHEMA}.push_subscriptions (
     endpoint    TEXT PRIMARY KEY,
     p256dh      TEXT NOT NULL,
     auth        TEXT NOT NULL,
@@ -45,11 +45,11 @@ const SCHEMA = `
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
   );
   CREATE INDEX IF NOT EXISTS push_subscriptions_order
-    ON push_subscriptions (order_id);
+    ON ${SCHEMA}.push_subscriptions (order_id);
   CREATE INDEX IF NOT EXISTS push_subscriptions_toast
-    ON push_subscriptions (toast_guid);
+    ON ${SCHEMA}.push_subscriptions (toast_guid);
   CREATE INDEX IF NOT EXISTS push_subscriptions_uber
-    ON push_subscriptions (delivery_id);
+    ON ${SCHEMA}.push_subscriptions (delivery_id);
 `;
 
 export type PushSubscriptionRecord = {
@@ -63,7 +63,7 @@ export type PushSubscriptionRecord = {
 };
 
 const SELECT_COLUMNS = `SELECT endpoint, p256dh, auth, order_id, toast_guid, delivery_id, locale
-  FROM push_subscriptions`;
+  FROM ${SCHEMA}.push_subscriptions`;
 
 function toRecord(row: Record<string, unknown>): PushSubscriptionRecord {
   return {
@@ -85,7 +85,7 @@ export function isPushStoreConfigured(): boolean {
 // which is where they moved when the kitchen queue became the second feature
 // here that needs a database. See the note at the top of that file for why
 // there is one pool and not two.
-const prepared = () => ready("push_subscriptions", SCHEMA);
+const prepared = () => ready("push_subscriptions", DDL);
 
 /** Remember a device's subscription, against the order it is watching.
  *
@@ -98,7 +98,7 @@ export async function saveSubscription(record: PushSubscriptionRecord): Promise<
   try {
     await prepared();
     await client.query(
-      `INSERT INTO push_subscriptions
+      `INSERT INTO ${SCHEMA}.push_subscriptions
          (endpoint, p256dh, auth, order_id, toast_guid, delivery_id, locale)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (endpoint) DO UPDATE
@@ -150,7 +150,7 @@ export async function forgetSubscription(endpoint: string): Promise<void> {
   if (!client) return;
   try {
     await prepared();
-    await client.query(`DELETE FROM push_subscriptions WHERE endpoint = $1`, [endpoint]);
+    await client.query(`DELETE FROM ${SCHEMA}.push_subscriptions WHERE endpoint = $1`, [endpoint]);
   } catch (error) {
     console.error("[push] could not delete a subscription:", (error as Error).message);
   }
@@ -167,7 +167,7 @@ export async function forgetOrder(orderId: string): Promise<void> {
   if (!client) return;
   try {
     await prepared();
-    await client.query(`DELETE FROM push_subscriptions WHERE order_id = $1`, [orderId]);
+    await client.query(`DELETE FROM ${SCHEMA}.push_subscriptions WHERE order_id = $1`, [orderId]);
   } catch (error) {
     console.error("[push] could not clear an order's subscriptions:", (error as Error).message);
   }

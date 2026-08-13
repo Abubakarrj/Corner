@@ -1,6 +1,6 @@
 import "server-only";
 
-import { db, isDatabaseConfigured, ready } from "./db";
+import { SCHEMA, db, isDatabaseConfigured, ready } from "./db";
 
 // How much work is on the counter right now — the fallback answer.
 //
@@ -44,8 +44,8 @@ import { db, isDatabaseConfigured, ready } from "./db";
 // "no orders waiting" from "we cannot say", and the API returns { known:
 // false } for the second, which the component renders as nothing at all.
 
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS kitchen_queue (
+const DDL = `
+  CREATE TABLE IF NOT EXISTS ${SCHEMA}.kitchen_queue (
     id          TEXT PRIMARY KEY,
     -- Toast's guid when the order reached Toast, which is how the fulfilment
     -- webhook finds the row again to close it. Null when Toast is not
@@ -56,12 +56,12 @@ const SCHEMA = `
     ready_at    TIMESTAMPTZ
   );
   CREATE INDEX IF NOT EXISTS kitchen_queue_live
-    ON kitchen_queue (placed_at) WHERE ready_at IS NULL;
+    ON ${SCHEMA}.kitchen_queue (placed_at) WHERE ready_at IS NULL;
   CREATE INDEX IF NOT EXISTS kitchen_queue_toast
-    ON kitchen_queue (toast_guid);
+    ON ${SCHEMA}.kitchen_queue (toast_guid);
 `;
 
-const prepared = () => ready("kitchen_queue", SCHEMA);
+const prepared = () => ready("kitchen_queue", DDL);
 
 // How long an unclosed order still counts for.
 //
@@ -89,7 +89,7 @@ export async function ordersAhead(): Promise<number | null> {
     await prepared();
     const result = await client.query(
       `SELECT count(*)::int AS waiting
-         FROM kitchen_queue
+         FROM ${SCHEMA}.kitchen_queue
         WHERE ready_at IS NULL
           AND placed_at > now() - ($1 || ' minutes')::interval`,
       [String(STALE_MINUTES)],
@@ -114,7 +114,7 @@ export async function joinQueue(id: string, toastGuid?: string): Promise<void> {
   try {
     await prepared();
     await client.query(
-      `INSERT INTO kitchen_queue (id, toast_guid) VALUES ($1, $2)
+      `INSERT INTO ${SCHEMA}.kitchen_queue (id, toast_guid) VALUES ($1, $2)
          ON CONFLICT (id) DO NOTHING`,
       [id, toastGuid ?? null],
     );
@@ -133,7 +133,7 @@ export async function leaveQueue(toastGuid: string): Promise<void> {
   try {
     await prepared();
     await client.query(
-      `UPDATE kitchen_queue SET ready_at = now()
+      `UPDATE ${SCHEMA}.kitchen_queue SET ready_at = now()
         WHERE toast_guid = $1 AND ready_at IS NULL`,
       [toastGuid],
     );

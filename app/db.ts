@@ -64,6 +64,31 @@ export function db(): Pool | null {
   return pool;
 }
 
+// Everything this app creates lives in its own schema, and every statement
+// names it.
+//
+// ——— Why not just use `public` ———
+//
+// Because the database underneath may not be ours alone. Pointing DATABASE_URL
+// at a Postgres another project is already using is a reasonable thing to want
+// — a small shop does not need a second database for two tables — and in
+// `public` it is a quiet hazard. `CREATE TABLE IF NOT EXISTS push_subscriptions`
+// against a database that already has a table by that name does nothing at
+// all, reports success, and leaves every query afterwards running against
+// somebody else's columns. The failure is not a crash; it is an INSERT into
+// the wrong table.
+//
+// A schema removes the whole class of it. Names cannot collide, `\dt` stays
+// legible for whoever owns the other project, and taking this app back off a
+// shared database is one statement:
+//
+//   DROP SCHEMA corner_bagel CASCADE;
+//
+// Qualified explicitly rather than by search_path, which depends on a
+// connection parameter that some poolers refuse to pass through. A table name
+// written out in full works everywhere.
+export const SCHEMA = "corner_bagel";
+
 const prepared = new Map<string, Promise<void>>();
 
 /** Runs a feature's schema once per process, keyed by name.
@@ -80,7 +105,7 @@ export function ready(name: string, schema: string): Promise<void> {
   const existing = prepared.get(name);
   if (existing) return existing;
 
-  const run = client.query(schema).then(
+  const run = client.query(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}; ${schema}`).then(
     () => undefined,
     (error: unknown) => {
       prepared.delete(name);
