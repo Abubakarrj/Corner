@@ -108,20 +108,34 @@ export default function TipPicker({
         </button>
       </div>
 
-      {customOpen ? (
-        <div className="mt-2 flex items-center gap-2 rounded-xl border border-line-soft bg-surface px-4 py-3 focus-within:border-ink">
-          <span className="text-[15px] text-muted">$</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            aria-label={t("checkout.customTipAmount")}
-            placeholder="0.00"
-            value={custom}
-            onChange={(event) => applyCustom(event.target.value)}
-            className="w-full min-w-0 bg-transparent text-[16px] text-ink outline-none placeholder:text-quieter"
-          />
+      {/* t-acc, from 21-accordion.md — the panel half of it. There is no
+          chevron here: the trigger is the Custom button above, which is
+          already lit when the field is open, so a second indicator would be
+          two controls reporting one state.
+
+          Kept mounted so the close animates, with `inert` keeping the field
+          out of the tab order while it is collapsed. */}
+      <div className="t-acc" data-open={customOpen}>
+        <div className="t-acc-panel">
+          <div className="t-acc-panel-inner">
+            <div
+              inert={!customOpen}
+              className="mt-2 flex items-center gap-2 rounded-xl border border-line-soft bg-surface px-4 py-3 focus-within:border-ink"
+            >
+              <span className="text-[15px] text-muted">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                aria-label={t("checkout.customTipAmount")}
+                placeholder="0.00"
+                value={custom}
+                onChange={(event) => applyCustom(event.target.value)}
+                className="w-full min-w-0 bg-transparent text-[16px] text-ink outline-none placeholder:text-quieter"
+              />
+            </div>
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

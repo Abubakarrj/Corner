@@ -18,6 +18,7 @@ import { InfoPanel, ProductCards, RichText, ScreenButton } from "./chatContent";
 import { emptyAttachments, type ChatAttachments, type ProductCard } from "./chatTypes";
 import { DISPLAY_FONT } from "./shopControls";
 import { OPEN_CHAT_EVENT } from "./openChat";
+import SlidingTabs from "../ui/SlidingTabs";
 
 // One line naming where the order is going, for Riley's context. English on
 // purpose: this is not shown to anybody, it goes into her prompt, and her
@@ -577,23 +578,25 @@ export default function ChatWidget() {
             your first tap is a control you have to discover twice. It's here
             from the start, with the count on it — zero included. */}
         {shown !== "done" && shown !== "configure" && shown !== "track" ? (
-          <div className="flex gap-1 border-b border-line-faint bg-panel p-1.5">
-            {(["chat", "cart"] as const).map((id) => {
-              // "checkout" is a step of the cart, so the Cart segment stays
-              // lit through it rather than the control appearing to lose its
-              // place halfway through a form.
-              const active = id === "chat" ? shown === "chat" : shown !== "chat";
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setView(id)}
-                  className={`flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full text-[13px] font-medium transition-colors ${
-                    active ? "bg-raise text-ink" : "text-muted hover:text-ink"
-                  }`}
-                >
-                  {id === "cart" ? (
+          /* 16-tabs-sliding.md. It was two buttons where the active one
+             simply had a background: the highlight teleported, which on a
+             control this small is the difference between two states and one
+             control with a position.
+
+             "checkout" is a step of the cart, so the Cart segment stays lit
+             through it rather than the control appearing to lose its place
+             halfway through a form. */
+          <div className="border-b border-line-faint bg-panel p-1.5">
+            <SlidingTabs
+              className="flex w-full"
+              tabClassName="flex flex-1 items-center justify-center gap-1.5 text-[13px] font-medium"
+              active={shown === "chat" ? "chat" : "cart"}
+              onSelect={(id) => setView(id as "chat" | "cart")}
+              tabs={[
+                { id: "chat", label: t("chat.tabChat") },
+                {
+                  id: "cart",
+                  label: (
                     <>
                       {/* The green dot means "there's something in here", so
                           it only shows when there is. On an empty bag it would
@@ -608,12 +611,10 @@ export default function ChatWidget() {
                       <span className="tabular-nums">{itemCount}</span>
                       <span>{t("chat.tabCart")}</span>
                     </>
-                  ) : (
-                    t("chat.tabChat")
-                  )}
-                </button>
-              );
-            })}
+                  ),
+                },
+              ]}
+            />
           </div>
         ) : null}
 

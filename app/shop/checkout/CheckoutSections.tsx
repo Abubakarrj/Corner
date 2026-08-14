@@ -124,34 +124,41 @@ export function Disclosure({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div>
+    // t-acc, from 21-accordion.md. The body used to mount and unmount, so the
+    // page under it jumped by the height of the whole bill; now the grid track
+    // tweens 0fr to 1fr and nothing has to be measured.
+    <div className="t-acc" data-open={open}>
       <button
         type="button"
         onClick={() => setOpen((was) => !was)}
         aria-expanded={open}
-        className="cb-press flex w-full cursor-pointer items-center justify-between gap-3 text-left"
+        className="t-acc-head cb-press flex w-full cursor-pointer items-center justify-between gap-3 text-left"
       >
         <span className="text-[14px] text-ink">{summary}</span>
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          aria-hidden
-          className="shrink-0 transition-transform duration-200"
-          style={{ transform: open ? "rotate(180deg)" : "none" }}
-        >
-          <path
-            d="M4 6l4 4 4-4"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-muted"
-          />
-        </svg>
+        {/* The chevron flips rather than rotating 180°, which is the snippet's
+            own choice and a better one: a flip passes through a flat line at
+            the midpoint, where a rotation swings the whole glyph around and
+            reads as a spin. The path is symmetric about the viewBox centre so
+            the flip lands exactly on the "^". */}
+        <span className="t-acc-chevron shrink-0 text-muted">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+            <path
+              d="M4 6.5L8 10.5L12 6.5"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
       </button>
-      {open ? <div className="mt-3">{children}</div> : null}
+      <div className="t-acc-panel">
+        {/* Padding on the inner element, never on the track: padding on a 0fr
+            row leaves a strip of height behind and the panel never closes. */}
+        <div className="t-acc-panel-inner">
+          <div className="pt-3">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }

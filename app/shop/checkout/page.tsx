@@ -11,6 +11,8 @@ import { useCapabilities } from "../../capabilities";
 import { PREP_MINUTES } from "../../account";
 import { Button } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
+import StepSlide from "./StepSlide";
+import MergingDots from "../../ui/MergingDots";
 import { Check, Disclosure, Field, Section } from "./CheckoutSections";
 import { useCheckout } from "./useCheckout";
 import DeliverySection from "./DeliverySection";
@@ -115,7 +117,10 @@ export default function CheckoutPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-10 sm:px-6">
         <p className="text-[14px] text-muted">{t("checkout.emptyBasket")}</p>
-        <Link href="/shop" className="mt-3 inline-block cursor-pointer text-[14px] underline">
+        <Link
+          href="/shop"
+          className="mt-3 inline-block cursor-pointer text-[14px] underline"
+        >
           {t("common.browseMenu")}
         </Link>
       </div>
@@ -123,7 +128,11 @@ export default function CheckoutPage() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mx-auto max-w-lg px-4 pb-10 pt-6 sm:px-6">
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="mx-auto max-w-lg px-4 pb-10 pt-6 sm:px-6"
+    >
       {/* Refused for something that sold out while this basket was open.
           The hook has already taken those lines out; this says which. */}
       <SoldOutNotice names={soldOutNow} onClose={dismissSoldOut} />
@@ -149,7 +158,13 @@ export default function CheckoutPage() {
               ) : null}
               <span
                 aria-current={active ? "step" : undefined}
-                className={active ? "font-medium text-ink" : done ? "text-muted" : "text-quiet"}
+                className={
+                  active
+                    ? "font-medium text-ink"
+                    : done
+                      ? "text-muted"
+                      : "text-quiet"
+                }
               >
                 {t(id === "details" ? "checkout.contact" : "checkout.payment")}
               </span>
@@ -182,7 +197,9 @@ export default function CheckoutPage() {
           </p>
           <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
             {opening.open
-              ? t("checkout.noTimeBefore", { time: clockLabel(closeHour() % 24, tag) })
+              ? t("checkout.noTimeBefore", {
+                  time: clockLabel(closeHour() % 24, tag),
+                })
               : opening.next
                 ? t(
                     opening.next.when === "today"
@@ -200,70 +217,73 @@ export default function CheckoutPage() {
         </div>
       ) : null}
 
-      {step === "details" ? (
-        <>
-          <Section title={t("checkout.contact")}>
-            <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
+      {/* The two steps, on 08-page-side-by-side.md. See StepSlide. */}
+      <StepSlide
+        step={step}
+        details={
+          <>
+            <Section title={t("checkout.contact")}>
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field
+                    label={t("checkout.firstName")}
+                    autoComplete="given-name"
+                    required
+                    value={firstName}
+                    onChange={setFirstName}
+                    error={firstNameError}
+                  />
+                  <Field
+                    label={t("checkout.lastName")}
+                    autoComplete="family-name"
+                    value={lastName}
+                    onChange={setLastName}
+                  />
+                </div>
                 <Field
-                  label={t("checkout.firstName")}
-                  autoComplete="given-name"
+                  label={t("checkout.phone")}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={setPhone}
+                />
+                <Field
+                  label={t("checkout.email")}
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   required
-                  value={firstName}
-                  onChange={setFirstName}
-                  error={firstNameError}
+                  value={email}
+                  onChange={setEmail}
+                  error={emailError}
                 />
-                <Field
-                  label={t("checkout.lastName")}
-                  autoComplete="family-name"
-                  value={lastName}
-                  onChange={setLastName}
-                />
+                <p className="m-0 text-[11px] leading-[1.5] text-quiet">
+                  {t("checkout.contactNote")}
+                </p>
               </div>
-              <Field
-                label={t("checkout.phone")}
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                value={phone}
-                onChange={setPhone}
-              />
-              <Field
-                label={t("checkout.email")}
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={setEmail}
-                error={emailError}
-              />
-              <p className="m-0 text-[11px] leading-[1.5] text-quiet">
-                {t("checkout.contactNote")}
-              </p>
-            </div>
-          </Section>
+            </Section>
 
-          {/* Delivery gets its own block rather than the pickup card with the
+            {/* Delivery gets its own block rather than the pickup card with the
               address swapped in. A courier needs the unit, the handoff and a
               note of his own, and none of those has any meaning for somebody
               walking to the counter — see DeliverySection.tsx. */}
-          {isDelivery ? (
-            <DeliverySection checkout={checkout} />
-          ) : (
-            <Section
-              title={t("checkout.pickupDetails")}
-              aside={
-                <Link
-                  href="/locations"
-                  className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
-                >
-                  {t("checkout.switchToDelivery")}
-                </Link>
-              }
-            >
-              <div className="rounded-xl border border-line-soft">
-                {/* No clock while the counter is shut.
+            {isDelivery ? (
+              <DeliverySection checkout={checkout} />
+            ) : (
+              <Section
+                title={t("checkout.pickupDetails")}
+                aside={
+                  <Link
+                    href="/locations"
+                    className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
+                  >
+                    {t("checkout.switchToDelivery")}
+                  </Link>
+                }
+              >
+                <div className="rounded-xl border border-line-soft">
+                  {/* No clock while the counter is shut.
                     readyAt() is now plus twelve minutes and nothing else, so at
                     9:21pm it read "Pickup around 9:32 PM" directly under a
                     banner saying we open tomorrow at 7am. Two boxes on one
@@ -274,201 +294,278 @@ export default function CheckoutPage() {
                     twelve minutes before close are the same problem: the shop
                     is open, the order cannot be made, and a pickup time would
                     be promising otherwise. */}
-                {opening.acceptingOrders ? (
-                  <div className="flex items-start gap-3 border-b border-line-faint p-4">
-                    <ClockIcon />
-                    <div className="min-w-0">
-                      <p className="m-0 text-[14px] text-ink">
-                        {t("checkout.pickupAround", { time: readyAt(PREP_MINUTES) })}
-                      </p>
-                      {/* "Estimated" is doing real work here: nothing in this
+                  {opening.acceptingOrders ? (
+                    <div className="flex items-start gap-3 border-b border-line-faint p-4">
+                      <ClockIcon />
+                      <div className="min-w-0">
+                        <p className="m-0 text-[14px] text-ink">
+                          {t("checkout.pickupAround", {
+                            time: readyAt(PREP_MINUTES),
+                          })}
+                        </p>
+                        {/* "Estimated" is doing real work here: nothing in this
                           app can see the kitchen, so this is arithmetic on the
                           clock, and saying otherwise would be a promise the
                           shop didn't make. */}
-                      <p className="m-0 text-[12px] text-muted">{t("checkout.estimatedShop")}</p>
+                        <p className="m-0 text-[12px] text-muted">
+                          {t("checkout.estimatedShop")}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-start gap-3 p-4">
+                    <PinIcon />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[14px] text-ink">
+                        {where?.where ?? "Corner Bagel"}
+                      </p>
+                      {fulfillment && fulfillment.mode !== "delivery" ? (
+                        <p className="m-0 text-[12px] text-muted">
+                          {fulfillment.detail}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
-                ) : null}
 
-                <div className="flex items-start gap-3 p-4">
-                  <PinIcon />
-                  <div className="min-w-0">
-                    <p className="m-0 text-[14px] text-ink">{where?.where ?? "Corner Bagel"}</p>
-                    {fulfillment && fulfillment.mode !== "delivery" ? (
-                      <p className="m-0 text-[12px] text-muted">{fulfillment.detail}</p>
-                    ) : null}
+                  <div className="border-t border-line-faint p-4">
+                    <Check
+                      checked={curbside}
+                      onChange={setCurbside}
+                      label={t("checkout.curbsidePickup")}
+                      hint={t("checkout.curbsideHint")}
+                    />
                   </div>
                 </div>
+              </Section>
+            )}
 
-                <div className="border-t border-line-faint p-4">
-                  <Check
-                    checked={curbside}
-                    onChange={setCurbside}
-                    label={t("checkout.curbsidePickup")}
-                    hint={t("checkout.curbsideHint")}
-                  />
-                </div>
-              </div>
-            </Section>
-          )}
-
-          {/* The note and the utensils, folded away. Most orders want neither,
+            {/* The note and the utensils, folded away. Most orders want neither,
               and both are things you'd go looking for rather than things that
               should sit between the address and the button. */}
-          <Section title={t("checkout.anythingElse")}>
-            <Disclosure summary={t("checkout.addANote")}>
-              <div className="flex flex-col gap-4">
-                <Check
-                  checked={utensils}
-                  onChange={setUtensils}
-                  label={t("checkout.utensilsLabel")}
-                  hint={t("checkout.utensilsHint")}
-                />
-                <div>
-                  <label htmlFor="order-note" className="mb-1 block text-[12px] text-muted">
-                    {t("checkout.noteForKitchen")}
-                  </label>
-                  <textarea
-                    id="order-note"
-                    rows={2}
-                    maxLength={255}
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder={t("checkout.notePlaceholder")}
-                    className="w-full resize-none rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+            <Section title={t("checkout.anythingElse")}>
+              <Disclosure summary={t("checkout.addANote")}>
+                <div className="flex flex-col gap-4">
+                  <Check
+                    checked={utensils}
+                    onChange={setUtensils}
+                    label={t("checkout.utensilsLabel")}
+                    hint={t("checkout.utensilsHint")}
                   />
+                  <div>
+                    <label
+                      htmlFor="order-note"
+                      className="mb-1 block text-[12px] text-muted"
+                    >
+                      {t("checkout.noteForKitchen")}
+                    </label>
+                    <textarea
+                      id="order-note"
+                      rows={2}
+                      maxLength={255}
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder={t("checkout.notePlaceholder")}
+                      className="w-full resize-none rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+                    />
+                  </div>
                 </div>
-              </div>
-            </Disclosure>
-          </Section>
+              </Disclosure>
+            </Section>
 
-          {/* Said on this step, because the fix is in the basket and this is
+            {/* Said on this step, because the fix is in the basket and this is
               the last screen that can point at it. */}
-          {unavailable.length > 0 ? (
-            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
-              {t("checkout.soldOutLine", { name: menu.name(unavailable[0].product) })}{" "}
-              <Link href="/shop/cart" className="cursor-pointer underline">
-                {t("checkout.takeItOut")}
-              </Link>
-              .
-            </p>
-          ) : null}
+            {unavailable.length > 0 ? (
+              <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+                {t("checkout.soldOutLine", {
+                  name: menu.name(unavailable[0].product),
+                })}{" "}
+                <Link href="/shop/cart" className="cursor-pointer underline">
+                  {t("checkout.takeItOut")}
+                </Link>
+                .
+              </p>
+            ) : null}
 
-          {incomplete.length > 0 ? (
-            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
-              {t("checkout.needsOptionsLine", { name: menu.name(incomplete[0].product) })}{" "}
-              <Link href="/shop/cart" className="cursor-pointer underline">
-                {t("checkout.chooseInBasket")}
-              </Link>
-              .
-            </p>
-          ) : null}
+            {incomplete.length > 0 ? (
+              <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+                {t("checkout.needsOptionsLine", {
+                  name: menu.name(incomplete[0].product),
+                })}{" "}
+                <Link href="/shop/cart" className="cursor-pointer underline">
+                  {t("checkout.chooseInBasket")}
+                </Link>
+                .
+              </p>
+            ) : null}
 
-          <Button type="submit" block>
-            {t("checkout.continue")}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Section title={t("checkout.payment")}>
-            <div className="flex flex-col gap-4">
-              <PaymentSection
-                tender={tender}
-                onTender={setTender}
-                cardEnabled={payments}
-                card={checkout.card}
+            <Button type="submit" block>
+              {t("checkout.continue")}
+            </Button>
+          </>
+        }
+        payment={
+          <>
+            <Section title={t("checkout.payment")}>
+              <div className="flex flex-col gap-4">
+                <PaymentSection
+                  tender={tender}
+                  onTender={setTender}
+                  cardEnabled={payments}
+                  card={checkout.card}
+                />
+                <SecureNote />
+              </div>
+            </Section>
+
+            <Section title={t("checkout.addTip")}>
+              <TipPicker
+                subtotalCents={subtotalCents}
+                tipCents={tipCents}
+                onTip={setTipCents}
               />
-              <SecureNote />
-            </div>
-          </Section>
+            </Section>
 
-          <Section title={t("checkout.addTip")}>
-            <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
-          </Section>
-
-          {/* A courier that can't take the job is not an error the customer
+            {/* A courier that can't take the job is not an error the customer
               caused, and it has a way out that isn't "try again" — so it says
               what happened and points at pickup. */}
-          {quoteError ? (
-            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
-              {quoteError}{" "}
-              <Link href="/locations" className="cursor-pointer underline">
-                {t("checkout.switchToPickup")}
-              </Link>
-              .
-            </p>
-          ) : null}
+            {quoteError ? (
+              <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+                {quoteError}{" "}
+                <Link href="/locations" className="cursor-pointer underline">
+                  {t("checkout.switchToPickup")}
+                </Link>
+                .
+              </p>
+            ) : null}
 
-          {error ? (
-            <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
-              {error}
-            </p>
-          ) : null}
+            {error ? (
+              <p role="alert" className="m-0 mb-4 text-[13px] text-brand-red">
+                {error}
+              </p>
+            ) : null}
 
-          <Button
-            type="submit"
-            block
-            disabled={
-              status === "sending" ||
-              incomplete.length > 0 ||
-              unavailable.length > 0 ||
-              !opening.acceptingOrders ||
-              (isDelivery && quote === null)
-            }
-          >
-            {status === "sending"
-              ? t("checkout.placingOrder")
-              : !opening.acceptingOrders
-                ? t("shop.closed")
-                : isDelivery && quote === null
-                  ? quoteError
-                    ? t("checkout.deliveryUnavailable")
-                    : t("checkout.pricingDelivery")
-                  : t("checkout.placeOrderWith", {
-                      total: formatPrice(totals.totalCents),
-                    })}
-          </Button>
+            <Button
+              type="submit"
+              block
+              disabled={
+                status === "sending" ||
+                incomplete.length > 0 ||
+                unavailable.length > 0 ||
+                !opening.acceptingOrders ||
+                (isDelivery && quote === null)
+              }
+            >
+              {/* Placing an order is the one wait on this screen that is not
+                  instant — a Toast round trip, and an Uber quote behind it —
+                  and the button used to mark it by changing its own text.
+                  Text changing is a state; a control that is working is a
+                  different claim, and on a button somebody has just pressed
+                  and is now watching, the difference is whether the press
+                  landed.
 
-          {/* Says what actually happens, which depends on how the shop is set
+                  09-icon-swap.md, cross-fading the shop's own loader into the
+                  slot. Both icons stay in the DOM stacked in one grid cell, so
+                  the label does not jump sideways when one replaces the other.
+
+                  There is no tick here. The success state of this button is
+                  the confirmation screen, which replaces the whole form the
+                  moment the order is real — a tick on a button nobody sees
+                  again would be a celebration in an empty room. The tick is on
+                  Add to basket, where the screen stays put. */}
+              <span className="inline-flex items-center gap-2">
+                <span
+                  className="t-icon-swap"
+                  data-state={status === "sending" ? "b" : "a"}
+                  aria-hidden
+                >
+                  <span className="t-icon" data-icon="a" />
+                  <span className="t-icon" data-icon="b">
+                    <MergingDots label={t("checkout.placingOrder")} />
+                  </span>
+                </span>
+                {status === "sending"
+                  ? t("checkout.placingOrder")
+                  : !opening.acceptingOrders
+                    ? t("shop.closed")
+                    : isDelivery && quote === null
+                      ? quoteError
+                        ? t("checkout.deliveryUnavailable")
+                        : t("checkout.pricingDelivery")
+                      : t("checkout.placeOrderWith", {
+                          total: formatPrice(totals.totalCents),
+                        })}
+              </span>
+            </Button>
+
+            {/* Says what actually happens, which depends on how the shop is set
               up rather than on a hardcoded apology. Getting this wrong in the
               reassuring direction — telling somebody they've paid when they
               haven't — is the one failure mode worth designing against. */}
-          <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
-            {tender === "card" ? t("checkout.cardCharged") : t("checkout.payAtWindow")}
-          </p>
+            <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
+              {tender === "card"
+                ? t("checkout.cardCharged")
+                : t("checkout.payAtWindow")}
+            </p>
 
-          <button
-            type="button"
-            onClick={checkout.backToDetails}
-            className="cb-press mx-auto mt-4 block cursor-pointer text-[13px] text-muted underline transition-opacity hover:opacity-70"
-          >
-            {t("common.back")}
-          </button>
-        </>
-      )}
+            <button
+              type="button"
+              onClick={checkout.backToDetails}
+              className="cb-press mx-auto mt-4 block cursor-pointer text-[13px] text-muted underline transition-opacity hover:opacity-70"
+            >
+              {t("common.back")}
+            </button>
+          </>
+        }
+      />
     </form>
   );
 }
 
 function ClockIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="mt-0.5 shrink-0">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      aria-hidden
+      className="mt-0.5 shrink-0"
+    >
       <circle cx="9" cy="9" r="7" stroke="var(--cb-muted)" strokeWidth="1.5" />
-      <path d="M9 5v4.2l2.6 1.6" stroke="var(--cb-muted)" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M9 5v4.2l2.6 1.6"
+        stroke="var(--cb-muted)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function PinIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden className="mt-0.5 shrink-0">
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      aria-hidden
+      className="mt-0.5 shrink-0"
+    >
       <path
         d="M9 16s5.2-5 5.2-8.2A5.2 5.2 0 0 0 3.8 7.8C3.8 11 9 16 9 16Z"
         stroke="var(--cb-muted)"
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
-      <circle cx="9" cy="7.6" r="1.9" stroke="var(--cb-muted)" strokeWidth="1.5" />
+      <circle
+        cx="9"
+        cy="7.6"
+        r="1.9"
+        stroke="var(--cb-muted)"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }

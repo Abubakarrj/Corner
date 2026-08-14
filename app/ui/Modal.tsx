@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useT } from "../i18n";
+import { closeAfter } from "./transitions";
 
 // The shell every modal in the app shares.
 //
@@ -95,6 +96,14 @@ export default function Modal({
     };
   }, [open, onClose]);
 
+  // The panel's own open / close, on the transitions.dev modal snippet. See
+  // app/ui/transitions.ts for why this writes classes rather than state.
+  const everOpened = useRef(false);
+  useEffect(
+    () => closeAfter(panelRef.current, open, everOpened, "--modal-close-dur", 150),
+    [open],
+  );
+
   return (
     <div
       inert={!open}
@@ -111,18 +120,20 @@ export default function Modal({
         // inert there too.
         paddingBottom: "var(--cb-consent-h, 0px)",
         zIndex: z,
-        opacity: open ? 1 : 0,
         visibility: open ? "visible" : "hidden",
         pointerEvents: open ? "auto" : "none",
-        // Tokens, not literals — see the motion block in globals.css. The
-        // values are what this already did; naming them is what stops the
-        // next dialog picking its own 200ms.
+        // Only visibility here now. The fade used to be on this container,
+        // which meant the dim and the panel shared one opacity — fine until
+        // the panel grew a scale of its own, at which point one element was
+        // being faded by two owners. The dim fades itself below and the panel
+        // is the .t-modal snippet's business; this layer just stops existing
+        // between uses.
         //
-        // Exit is one step faster than entry, and that asymmetry is the whole
-        // trick: arriving should settle, leaving should get out of the way.
+        // The delay is what preserves the close: visibility flips at the end
+        // of the panel's exit on the way out, and immediately on the way in.
         transition: open
-          ? "opacity var(--motion-base) var(--cb-ease-enter)"
-          : "opacity var(--motion-fast) var(--cb-ease-exit), visibility 0s linear var(--motion-fast)",
+          ? "visibility 0s"
+          : "visibility 0s linear var(--modal-close-dur)",
       }}
     >
       {/* A dim, not a blur — see the note above. */}
@@ -131,6 +142,14 @@ export default function Modal({
         aria-label={t("common.close")}
         onClick={onClose}
         className="absolute inset-0 h-full w-full cursor-default bg-black/40"
+        style={{
+          opacity: open ? 1 : 0,
+          // The dim runs on the modal's own clock so the two halves of the
+          // surface arrive and leave together.
+          transition: open
+            ? "opacity var(--modal-open-dur) var(--modal-ease)"
+            : "opacity var(--modal-close-dur) var(--modal-ease)",
+        }}
       />
 
       <div
@@ -139,17 +158,19 @@ export default function Modal({
         aria-modal="true"
         aria-label={label}
         tabIndex={-1}
-        className="relative max-h-[92dvh] w-full max-w-[420px] overflow-y-auto overscroll-contain rounded-t-3xl bg-surface px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-6 outline-none sm:rounded-3xl sm:pb-7"
-        style={{
-          transform: open ? "none" : "translateY(14px)",
-          // 14px and a fade, never a scale from zero: a sheet that grows out
-          // of nothing reads as a pop-up, and at this size the eye cannot
-          // tell a scale from a slide anyway.
-          transition: open
-            ? "transform var(--motion-base) var(--cb-ease-enter)"
-            : "transform var(--motion-fast) var(--cb-ease-exit)",
-          boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.16)",
-        }}
+        // t-modal, from 06-modal.md. `.is-open` and `.is-closing` are written
+        // by the effect above, not by React — which is why this class list has
+        // to stay constant. See app/ui/transitions.ts.
+        //
+        // It replaces a 14px slide with the snippet's scale from 0.96. The
+        // note that used to sit here argued against scaling on the grounds
+        // that a sheet growing out of nothing reads as a pop-up, and that is
+        // still true — of a scale from zero. Four percent is not that: it is
+        // the same "settling into place" the slide was after, and it is the
+        // documented pattern for a centred surface rather than one this
+        // codebase invented.
+        className="t-modal relative max-h-[92dvh] w-full max-w-[420px] overflow-y-auto overscroll-contain rounded-t-3xl bg-surface px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-6 outline-none sm:rounded-3xl sm:pb-7"
+        style={{ boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.16)" }}
       >
         <button
           type="button"

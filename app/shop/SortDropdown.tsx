@@ -6,6 +6,7 @@ import { useT } from "../i18n";
 import { SORT_OPTIONS, type SortValue } from "./products";
 import type { Product } from "./products";
 import { CONTROL_PILL } from "./shopControls";
+import { closeAfter } from "../ui/transitions";
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -57,6 +58,13 @@ export default function SortDropdown({
   const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const everOpened = useRef(false);
+
+  useEffect(
+    () => closeAfter(menuRef.current, open, everOpened, "--dropdown-close-dur", 150),
+    [open],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -99,26 +107,37 @@ export default function SortDropdown({
         <ChevronIcon open={open} />
       </button>
 
-      {open ? (
-        <div
-          role="listbox"
-          className="absolute left-0 top-[calc(100%+6px)] z-30 w-48 overflow-hidden rounded-xl border border-line-faint bg-panel py-1 shadow-[0_12px_30px_rgba(0,0,0,0.1)]"
-        >
-          {SORT_OPTIONS.map((option) => (
-            <Link
-              key={option.value}
-              href={hrefFor(option.value)}
-              role="option"
-              aria-selected={option.value === activeSort}
-              onClick={() => setOpen(false)}
-              className="flex cursor-pointer items-center justify-between px-3.5 py-2 text-[12px] text-ink transition-colors hover:bg-raise"
-            >
-              {t(option.label)}
-              {option.value === activeSort ? <CheckIcon /> : null}
-            </Link>
-          ))}
-        </div>
-      ) : null}
+      {/* t-dropdown, from 05-menu-dropdown.md. Mounted at all times rather
+          than behind `open ?` — the snippet animates a closing scale, and an
+          element that unmounts on close has nothing left to animate.
+          `inert` is what keeps the hidden options out of the tab order now
+          that they are always in the DOM.
+
+          data-origin="top-left" because that is where the trigger is: the
+          menu grows out of the button rather than appearing beside it.
+          RTL flips the anchor with it, since in Persian and Urdu the control
+          sits at the other edge. */}
+      <div
+        role="listbox"
+        inert={!open}
+        data-origin="top-left"
+        ref={menuRef}
+        className="t-dropdown absolute start-0 top-[calc(100%+6px)] z-30 w-48 overflow-hidden rounded-xl border border-line-faint bg-panel py-1 shadow-[0_12px_30px_rgba(0,0,0,0.1)] rtl:[transform-origin:top_right]"
+      >
+        {SORT_OPTIONS.map((option) => (
+          <Link
+            key={option.value}
+            href={hrefFor(option.value)}
+            role="option"
+            aria-selected={option.value === activeSort}
+            onClick={() => setOpen(false)}
+            className="flex cursor-pointer items-center justify-between px-3.5 py-2 text-[12px] text-ink transition-colors hover:bg-raise"
+          >
+            {t(option.label)}
+            {option.value === activeSort ? <CheckIcon /> : null}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

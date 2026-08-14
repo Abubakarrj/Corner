@@ -70,10 +70,47 @@ export default function RewardsScreen() {
   );
 }
 
+// Whether this device has seen this browser's account hold a membership.
+//
+// It exists for one reason: the skeleton below must not lie. A card-shaped
+// placeholder shown to somebody who turns out not to be a member is a promise
+// of a balance they do not have, and the skeleton pattern is only honest when
+// the shape it holds is the shape that arrives. So the answer is remembered
+// once it is known, and the placeholder only appears for somebody it will be
+// right for.
+//
+// Not a cache of the balance, and deliberately not: the number is never read
+// from here, only the fact that there is one. A points total stored on a
+// device is a number that goes stale the moment an order is placed on another
+// one, and a stale balance is the one output this screen must never produce.
+const KNOWN_MEMBER_KEY = "cb-rewards-member-v1";
+
+function wasMember(): boolean {
+  try {
+    return window.localStorage.getItem(KNOWN_MEMBER_KEY) === "1";
+  } catch {
+    // Private browsing. No placeholder, which is the safe direction.
+    return false;
+  }
+}
+
+function rememberMember(member: boolean): void {
+  try {
+    window.localStorage.setItem(KNOWN_MEMBER_KEY, member ? "1" : "0");
+  } catch {
+    // As above.
+  }
+}
+
 function Card() {
   const t = useT();
   const [state, setState] = useState<State>({ at: "loading" });
   const [joining, setJoining] = useState(false);
+  // Read once, at mount, so the placeholder cannot change its mind halfway
+  // through a load.
+  const [expectCard] = useState(() =>
+    typeof window === "undefined" ? false : wasMember(),
+  );
 
   useEffect(() => {
     let live = true;
@@ -86,9 +123,18 @@ function Card() {
       })
       .then((body: { member: Member | null; pointsPerDollar: number } | null) => {
         if (!live) return;
-        if (!body) setState({ at: "unavailable" });
-        else if (body.member) setState({ at: "member", member: body.member, perDollar: body.pointsPerDollar });
-        else setState({ at: "join", perDollar: body.pointsPerDollar });
+        if (!body) {
+          setState({ at: "unavailable" });
+          return;
+        }
+        // Only a real answer updates the memory. A 204 or a failed fetch says
+        // nothing about membership and must not erase what is known.
+        rememberMember(Boolean(body.member));
+        if (body.member) {
+          setState({ at: "member", member: body.member, perDollar: body.pointsPerDollar });
+        } else {
+          setState({ at: "join", perDollar: body.pointsPerDollar });
+        }
       })
       .catch(() => {
         if (live) setState({ at: "unavailable" });
@@ -103,13 +149,43 @@ function Card() {
     try {
       const response = await fetch("/api/rewards", { method: "POST" });
       const body = response.ok ? await response.json() : null;
-      if (body?.member) setState({ at: "member", member: body.member, perDollar: body.pointsPerDollar });
-      else setState({ at: "unavailable" });
+      if (body?.member) {
+        rememberMember(true);
+        setState({ at: "member", member: body.member, perDollar: body.pointsPerDollar });
+      } else {
+        setState({ at: "unavailable" });
+      }
     } catch {
       setState({ at: "unavailable" });
     } finally {
       setJoining(false);
     }
+  }
+
+  // 14-skeleton-reveal.md, for a returning member only — see KNOWN_MEMBER_KEY.
+  //
+  // Both layers sit in the same slot and cross-fade with a matching
+  // cross-blur, which is the whole reason the skeleton is drawn to the card's
+  // own geometry rather than as generic bars: the placeholder and the thing it
+  // becomes occupy the same space, so nothing moves when the answer lands.
+  //
+  // Anybody the app cannot vouch for gets nothing while the answer is in
+  // flight, which is what this screen did before. A blank moment is honest
+  // about not knowing; a card-shaped placeholder for somebody who turns out
+  // never to have joined is not.
+  if (expectCard && (state.at === "loading" || state.at === "member")) {
+    return (
+      <div className={`t-skel cb-rewards-slot ${state.at === "member" ? "is-revealed" : ""}`}>
+        <div className="t-skel-skeleton is-pulsing">
+          <CardSkeleton />
+        </div>
+        <div className="t-skel-content">
+          {state.at === "member" ? (
+            <MemberCard member={state.member} perDollar={state.perDollar} />
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   if (state.at === "loading") return null;
@@ -141,6 +217,33 @@ function Card() {
       {/* Free, and worth saying once: a rewards scheme that asks for a card
           number is a different thing from one that does not. */}
       <p className="m-0 mt-3 text-center text-[12px] text-quiet">{t("rewards.freeNote")}</p>
+    </>
+  );
+}
+
+// The member card with its content taken out.
+//
+// Drawn from the card's own measurements rather than as a stack of generic
+// bars: the same 190px square, the same 40px number, the same paddings. That
+// is what makes the cross-fade read as one thing resolving instead of two
+// screens swapping — every block is already where its real counterpart will
+// be.
+//
+// The pulse is on the children, not on this wrapper. The snippet is explicit
+// about that and the reason is mechanical: the wrapper's opacity belongs to
+// the cross-fade, and an animation on it would be fighting the transition
+// that hands over to the real card.
+function CardSkeleton() {
+  return (
+    <>
+      <div className="mt-5 rounded-2xl border border-line bg-surface p-6">
+        <div className="mx-auto h-[13px] w-24 rounded-full bg-line-faint" />
+        <div className="mx-auto mt-2 h-[36px] w-28 rounded-lg bg-line-faint" />
+        <div className="mx-auto mt-6 h-[190px] w-[190px] rounded-xl bg-line-faint" />
+        <div className="mx-auto mt-5 h-[13px] w-44 rounded-full bg-line-faint" />
+      </div>
+      <div className="mx-auto mt-5 h-[13px] w-64 rounded-full bg-line-faint" />
+      <div className="mx-auto mt-2 h-[13px] w-52 rounded-full bg-line-faint" />
     </>
   );
 }

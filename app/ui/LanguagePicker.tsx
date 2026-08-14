@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { setLocale, useLocale, useT } from "../i18n";
 import { LOCALES, localeById } from "../localeScript";
+import { closeAfter } from "./transitions";
 
 // The language picker: a chip showing the current language, and a menu.
 //
@@ -27,7 +28,15 @@ export default function LanguagePicker({
   const t = useT();
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
+  const everOpened = useRef(false);
   const current = localeById(locale);
+
+  // t-dropdown's open / close, from 05-menu-dropdown.md.
+  useEffect(
+    () => closeAfter(menuRef.current, open, everOpened, "--dropdown-close-dur", 150),
+    [open],
+  );
 
   // Close on an outside press or Escape. A menu that can only be dismissed by
   // choosing something is a menu that traps you into changing the language to
@@ -66,15 +75,23 @@ export default function LanguagePicker({
         <span className="truncate">{current.native}</span>
       </button>
 
-      {open ? (
-        <ul
-          role="listbox"
-          aria-label={t("settings.language")}
-          // Anchored to the end of the chip rather than the right of it, so on
-          // an Urdu page, where the whole document is mirrored, it opens
-          // inward instead of off the edge of the screen.
-          className={`absolute end-0 top-[calc(100%+6px)] z-50 m-0 max-h-[60vh] min-w-[168px] list-none overflow-y-auto rounded-2xl border p-1 shadow-[0_10px_34px_rgba(0,0,0,0.18)] ${ring}`}
-        >
+      {/* t-dropdown, from 05-menu-dropdown.md. Always mounted — a menu that
+          unmounts on close cannot animate one — with `inert` keeping the
+          hidden languages out of the tab order. */}
+      <ul
+        ref={menuRef}
+        role="listbox"
+        inert={!open}
+        // top-right, matching `end-0`: the menu grows out of the corner of
+        // the chip it belongs to. Under RTL `end` is the left edge, so the
+        // origin moves with it.
+        data-origin="top-right"
+        aria-label={t("settings.language")}
+        // Anchored to the end of the chip rather than the right of it, so on
+        // an Urdu page, where the whole document is mirrored, it opens
+        // inward instead of off the edge of the screen.
+        className={`t-dropdown absolute end-0 top-[calc(100%+6px)] z-50 m-0 max-h-[60vh] min-w-[168px] list-none overflow-y-auto rounded-2xl border p-1 shadow-[0_10px_34px_rgba(0,0,0,0.18)] rtl:[transform-origin:top_left] ${ring}`}
+      >
           {LOCALES.map((entry) => {
             const active = entry.id === locale;
             return (
@@ -108,8 +125,7 @@ export default function LanguagePicker({
               </li>
             );
           })}
-        </ul>
-      ) : null}
+      </ul>
     </div>
   );
 }

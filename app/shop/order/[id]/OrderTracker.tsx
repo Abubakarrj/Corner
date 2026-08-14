@@ -24,6 +24,7 @@ import DeliveryFeeInfo from "../../checkout/DeliveryFeeInfo";
 import UberDirectMark from "../../checkout/UberDirectMark";
 import ProductImage from "../../ProductImage";
 import { DISPLAY_FONT, PALETTE } from "../../shopControls";
+import TextSwap from "../../../ui/TextSwap";
 
 const { ink, muted, faint, border, surface, controlBorder, sky } = PALETTE;
 
@@ -103,14 +104,19 @@ export default function OrderTracker({ id }: { id: string }) {
         ← {t("common.backToMenu")}
       </Link>
 
+      {/* The stage, and the sentence under it, on 04-text-states-swap.md.
+          Both change while somebody is looking at this page — a webhook lands,
+          or the estimate rolls over — and they used to change between one
+          frame and the next, which on a screen you are watching for news reads
+          as a page that reloaded rather than an order that moved. */}
       <h1
         className="mt-5 text-[26px] font-medium leading-[1.15] tracking-[-0.02em]"
         style={{ color: ink, fontFamily: DISPLAY_FONT }}
       >
-        {t(stage.label)}
+        <TextSwap value={t(stage.label)} />
       </h1>
       <p className="mt-1.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
-        {t(stage.detail, stage.detailVars)}
+        <TextSwap value={t(stage.detail, stage.detailVars)} />
       </p>
 
       {/* The bar. Its width is the estimate's progress, not a measurement —

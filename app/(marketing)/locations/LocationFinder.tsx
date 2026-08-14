@@ -6,11 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
 import { useCapabilities } from "../../capabilities";
-import {
-  BackIcon,
-  CloseIcon,
-  IconButtonLink,
-} from "../../ui/IconButton";
+import { BackIcon, CloseIcon, IconButtonLink } from "../../ui/IconButton";
 import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
@@ -31,9 +27,15 @@ import useStoreLocations from "./useStoreLocations";
 // The first two parts are the town and the state, which is what a sentence
 // wants; the country is noise in a banner about a bagel shop.
 function shortPlace(address: string): string {
-  const parts = address.split(",").map((part) => part.trim()).filter(Boolean);
+  const parts = address
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
   if (parts.length <= 1) return address;
-  return parts.slice(0, 2).join(", ").replace(/\s+\d{5}(-\d{4})?$/, "");
+  return parts
+    .slice(0, 2)
+    .join(", ")
+    .replace(/\s+\d{5}(-\d{4})?$/, "");
 }
 
 // Dressed in the shop's produce palette rather than the reference's own
@@ -54,7 +56,9 @@ import type { MapFocus } from "./StoreMap";
 
 const StoreMap = dynamic(() => import("./StoreMap"), {
   ssr: false,
-  loading: () => <div className="min-h-0 flex-1" style={{ background: "var(--cb-raise)" }} />,
+  loading: () => (
+    <div className="min-h-0 flex-1" style={{ background: "var(--cb-raise)" }} />
+  ),
 });
 
 type Mode = "pickup" | "delivery" | "catering";
@@ -113,9 +117,10 @@ export default function LocationFinder() {
   // The place that was searched for, once it has coordinates. This is what
   // turns "Beverly Hills" from a word we can't match into a point we can
   // measure from, so the shops shown are the shops actually near it.
-  const [searched, setSearched] = useState<{ point: [number, number]; label: string } | null>(
-    null,
-  );
+  const [searched, setSearched] = useState<{
+    point: [number, number];
+    label: string;
+  } | null>(null);
   const [toastDismissed, setToastDismissed] = useState(false);
   // Set when the browser refuses or fails to give us a position. The locate
   // button used to swallow both cases, on the reasoning that a dialog over a
@@ -173,7 +178,9 @@ export default function LocationFinder() {
     if (bounds) {
       return locations.filter(
         (location) =>
-          (mode === "catering" ? location.catering === true : location.kind === "shop") &&
+          (mode === "catering"
+            ? location.catering === true
+            : location.kind === "shop") &&
           withinBounds(bounds, location.position),
       );
     }
@@ -185,7 +192,9 @@ export default function LocationFinder() {
     // The banner is what says it isn't nearby; taking the shop away as well
     // would leave somebody who searched a town we don't serve with no way to
     // reach the counter that could still make their order.
-    return (near.length > 0 ? near : nearby.slice(0, 1)).map((hit) => hit.location);
+    return (near.length > 0 ? near : nearby.slice(0, 1)).map(
+      (hit) => hit.location,
+    );
   }, [mode, bounds, searched, nearby, locations]);
 
   // `matching` is the Shops tab in the results: our own locations whose name
@@ -193,7 +202,11 @@ export default function LocationFinder() {
   // only place one belongs.
   const matching: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
-    return searchLocations(query, mode === "pickup" ? "shop" : "catering", locations);
+    return searchLocations(
+      query,
+      mode === "pickup" ? "shop" : "catering",
+      locations,
+    );
   }, [mode, query, locations]);
 
   // Choosing a shop: record where the order is going, then open the menu.
@@ -283,7 +296,11 @@ export default function LocationFinder() {
     )[0];
     setFocus(
       closest
-        ? { at: closest.location.position, zoom: 16, openId: closest.location.id }
+        ? {
+            at: closest.location.position,
+            zoom: 16,
+            openId: closest.location.id,
+          }
         : { at: point, zoom: 12 },
     );
   }
@@ -361,7 +378,11 @@ export default function LocationFinder() {
     )[0];
     setFocus(
       closest
-        ? { at: closest.location.position, zoom: 16, openId: closest.location.id }
+        ? {
+            at: closest.location.position,
+            zoom: 16,
+            openId: closest.location.id,
+          }
         : { at: point, zoom: 12 },
     );
   }
@@ -379,12 +400,18 @@ export default function LocationFinder() {
   // "no shops here yet" next to a map of Pasadena leaves somebody guessing
   // whether we mean Pasadena or the whole company. An empty map after "Search
   // area" is the fourth, and the old wording is right for it.
-  const noun = t(mode === "catering" ? "finder.nounCatering" : "finder.nounShops");
+  const noun = t(
+    mode === "catering" ? "finder.nounCatering" : "finder.nounShops",
+  );
   const missed =
-    searched && nearby.length > 0 && nearby[0].miles > SEARCH_RADIUS_MILES ? nearby[0] : null;
+    searched && nearby.length > 0 && nearby[0].miles > SEARCH_RADIUS_MILES
+      ? nearby[0]
+      : null;
   // Whether the visitor has actually asked this screen anything yet.
   const asked =
-    mode === "delivery" ? query.trim().length > 0 : searched !== null || bounds !== null;
+    mode === "delivery"
+      ? query.trim().length > 0
+      : searched !== null || bounds !== null;
 
   const showToast =
     !toastDismissed &&
@@ -401,25 +428,25 @@ export default function LocationFinder() {
         ? t("finder.locateCoarse")
         : t("finder.locateFailed")
     : deliveryOff
-    ? // The endpoint's own words, so the page and the API cannot drift into
-      // telling somebody two different things about the same outage.
-      t("api.deliveryDownPickupOpen")
-    : !asked
-    ? mode === "delivery"
-      ? t("finder.startAddress")
-      : t("finder.startSearch")
-    : missed
-      ? t("finder.noneHere", {
-          noun,
-          // Empty when the point came from the browser rather than from a
-          // typed place, which has no name to quote back.
-          place: shortPlace(searched!.label) || t("finder.aroundYou"),
-          name: missed.location.name,
-          miles: missed.miles.toFixed(missed.miles < 10 ? 1 : 0),
-        })
-      : mode === "catering"
-        ? t("finder.noCateringYet")
-        : t("finder.noShopsYet");
+      ? // The endpoint's own words, so the page and the API cannot drift into
+        // telling somebody two different things about the same outage.
+        t("api.deliveryDownPickupOpen")
+      : !asked
+        ? mode === "delivery"
+          ? t("finder.startAddress")
+          : t("finder.startSearch")
+        : missed
+          ? t("finder.noneHere", {
+              noun,
+              // Empty when the point came from the browser rather than from a
+              // typed place, which has no name to quote back.
+              place: shortPlace(searched!.label) || t("finder.aroundYou"),
+              name: missed.location.name,
+              miles: missed.miles.toFixed(missed.miles < 10 ? 1 : 0),
+            })
+          : mode === "catering"
+            ? t("finder.noCateringYet")
+            : t("finder.noShopsYet");
 
   return (
     // dvh, and the map takes the leftover height — so the header stays put,
@@ -621,28 +648,67 @@ export default function LocationFinder() {
 
       {/* The toast sits between the map and the nav rather than over the map,
           as in the reference — it pushes the map up instead of covering it. */}
-      {showToast ? (
-        <div
-          className="flex shrink-0 items-center justify-between gap-3 border-t px-5 py-4"
-          style={{ backgroundColor: "var(--cb-raise)", borderColor: border }}
-        >
-          <p className="m-0 text-[14px] text-ink">{toastText}</p>
-          <button
-            type="button"
-            onClick={() => setToastDismissed(true)}
-            aria-label={t("common.dismiss")}
-            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--cb-faint)] transition-opacity hover:opacity-60"
+      {/* Two patterns, doing two different jobs.
+
+          The row is in the layout rather than floating over the map — that was
+          a deliberate call and it stands, because a toast that covers the map
+          covers the thing it is talking about. But a row in the layout has a
+          height, and appearing and vanishing meant the map jumping 57px twice.
+
+          So: the accordion (21-accordion.md) owns the space, growing the track
+          from 0fr to 1fr, and the toast (22-toast.md) owns the surface inside
+          it, rising with a fade and a cross-blur. Both are doing exactly what
+          they are documented for; neither one alone covers a transient message
+          that also occupies room.
+
+          Mounted at all times, because both patterns animate a close and an
+          element that unmounts has nothing left to animate. `inert` keeps the
+          dismiss button out of reach while it is invisible. */}
+      <div className="t-acc shrink-0" data-open={showToast}>
+        <div className="t-acc-panel">
+          <div
+            className="t-acc-panel-inner border-t"
+            style={{ backgroundColor: "var(--cb-raise)", borderColor: border }}
           >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
-              <path d="M3 3l6 6M9 3l-6 6" stroke="var(--cb-ink)" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          </button>
+            <div
+              inert={!showToast}
+              className={`t-toast flex items-center justify-between gap-3 px-5 py-4 ${
+                showToast ? "is-open" : ""
+              }`}
+            >
+              <p className="m-0 text-[14px] text-ink">{toastText}</p>
+              <button
+                type="button"
+                onClick={() => setToastDismissed(true)}
+                aria-label={t("common.dismiss")}
+                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--cb-faint)] transition-opacity hover:opacity-60"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M3 3l6 6M9 3l-6 6"
+                    stroke="var(--cb-ink)"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
-      ) : null}
+      </div>
 
       {/* The finder is the front door for Home, and the first step for Menu.
           Which one lit it is the only difference. */}
-      <CateringModal location={cateringFor} onClose={() => setCateringFor(null)} />
+      <CateringModal
+        location={cateringFor}
+        onClose={() => setCateringFor(null)}
+      />
 
       <TabBar active={activeTab} />
     </div>

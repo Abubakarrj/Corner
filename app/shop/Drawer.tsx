@@ -168,7 +168,11 @@ export default function Drawer({
         // the closing animation: it flips at the end of the slide out, and
         // immediately on the way in.
         visibility: open ? "visible" : "hidden",
-        transition: open ? "visibility 0s" : "visibility 0s linear 300ms",
+        // Held for the panel's own close clock rather than a literal 300ms —
+        // one number, in globals.css, moving both halves together.
+        transition: open
+          ? "visibility 0s"
+          : "visibility 0s linear var(--panel-close-dur)",
       }}
     >
       {/* A plain dim, not a blur. backdrop-filter over the whole viewport is
@@ -179,9 +183,10 @@ export default function Drawer({
       <div
         onClick={onClose}
         aria-hidden
-        className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
+        data-open={open}
+        // The dim rides the panel's clocks so both halves of the surface
+        // arrive and leave together. See .cb-drawer-dim in globals.css.
+        className="cb-drawer-dim absolute inset-0 bg-black/30"
       />
       <aside
         ref={panelRef}
@@ -205,7 +210,20 @@ export default function Drawer({
         // scrolled instead, dragging the header and the checkout button off
         // with it and leaving rows sliced in half at the fold. The top drawer
         // is genuinely one scrolling sheet, so it keeps its scroller.
-        className={`absolute flex touch-pan-y flex-col overscroll-contain bg-panel pt-[env(safe-area-inset-top)] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        //
+        // cb-drawer-panel carries the motion — see globals.css. It is
+        // 07-panel-reveal.md's clocks and ease rather than the .t-panel-slide
+        // class itself, and the difference is worth stating: that snippet
+        // parks its panel at a Y offset, fades it and cross-blurs, which is
+        // the right shape for a section opening inside a card and the wrong
+        // one for a rail arriving from the edge of the screen. This panel
+        // travels its own width on X and must not fade, because a
+        // half-transparent drawer shows the page through it. What the pattern
+        // contributes is the timing: 400ms in, 350ms out on --panel-ease,
+        // against the symmetric 300/300 this had. Arriving takes its time;
+        // leaving gets out of the way.
+        data-open={open}
+        className={`cb-drawer-panel absolute flex touch-pan-y flex-col overscroll-contain bg-panel pt-[env(safe-area-inset-top)] ${
           side === "top" ? "overflow-y-auto" : "overflow-hidden"
         } ${panelShapeClass} ${panelShadowClass} ${panelTransformClass}`}
         // Always on, not just while open.
