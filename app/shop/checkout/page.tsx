@@ -256,19 +256,32 @@ export default function CheckoutPage() {
               }
             >
               <div className="rounded-xl border border-line-soft">
-                <div className="flex items-start gap-3 border-b border-line-faint p-4">
-                  <ClockIcon />
-                  <div className="min-w-0">
-                    <p className="m-0 text-[14px] text-ink">
-                      {t("checkout.pickupAround", { time: readyAt(PREP_MINUTES) })}
-                    </p>
-                    {/* "Estimated" is doing real work here: nothing in this app
-                        can see the kitchen, so this is arithmetic on the clock,
-                        and saying otherwise would be a promise the shop didn't
-                        make. */}
-                    <p className="m-0 text-[12px] text-muted">{t("checkout.estimatedShop")}</p>
+                {/* No clock while the counter is shut.
+                    readyAt() is now plus twelve minutes and nothing else, so at
+                    9:21pm it read "Pickup around 9:32 PM" directly under a
+                    banner saying we open tomorrow at 7am. Two boxes on one
+                    screen disagreeing about whether the shop is open, and the
+                    wrong one is the specific one — a time is far easier to
+                    believe than a sentence.
+                    Gated on acceptingOrders rather than open, because the last
+                    twelve minutes before close are the same problem: the shop
+                    is open, the order cannot be made, and a pickup time would
+                    be promising otherwise. */}
+                {opening.acceptingOrders ? (
+                  <div className="flex items-start gap-3 border-b border-line-faint p-4">
+                    <ClockIcon />
+                    <div className="min-w-0">
+                      <p className="m-0 text-[14px] text-ink">
+                        {t("checkout.pickupAround", { time: readyAt(PREP_MINUTES) })}
+                      </p>
+                      {/* "Estimated" is doing real work here: nothing in this
+                          app can see the kitchen, so this is arithmetic on the
+                          clock, and saying otherwise would be a promise the
+                          shop didn't make. */}
+                      <p className="m-0 text-[12px] text-muted">{t("checkout.estimatedShop")}</p>
+                    </div>
                   </div>
-                </div>
+                ) : null}
 
                 <div className="flex items-start gap-3 p-4">
                   <PinIcon />

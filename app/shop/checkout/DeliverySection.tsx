@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useId } from "react";
 import { useT } from "../../i18n";
+import { useOpening } from "../../useOpening";
 import { formatPrice } from "../products";
 import { Section } from "./CheckoutSections";
 import DeliveryFeeInfo from "./DeliveryFeeInfo";
@@ -45,6 +46,7 @@ function at(minutes: number): string {
 
 export default function DeliverySection({ checkout }: { checkout: Checkout }) {
   const t = useT();
+  const opening = useOpening();
   const {
     where,
     quote,
@@ -82,27 +84,34 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
           <UberDirectMark className="text-[13px] text-ink" />
         </div>
 
-        <div className="flex items-start gap-3 border-b border-line-faint p-4">
-          <ClockIcon />
-          <div className="min-w-0">
-            {/* No quote, no time. The obvious filler here is the kitchen's
-                prep minutes, and it would be a lie of exactly the wrong kind:
-                12 minutes is how long the food takes, not how long the drive
-                takes, and printing it as an arrival sends somebody to the
-                window at the wrong moment. */}
-            <p className="m-0 text-[14px] text-ink">
-              {eta === null
-                ? t("delivery.awaitingEta")
-                : t("delivery.arrivingBetween", {
-                    from: at(eta),
-                    to: at(eta + WINDOW_MINUTES),
-                  })}
-            </p>
-            <p className="m-0 text-[12px] text-muted">
-              {eta === null ? t("delivery.etaPending") : t("delivery.etaCourier")}
-            </p>
+        {/* No clock while the counter is shut. Uber will happily quote a
+            courier at 9pm — its own network is open — and the window that
+            comes back is a real answer to the wrong question: nobody is going
+            to make the food. An arrival time under a banner reading "we open
+            tomorrow at 7am" is the same contradiction the pickup card had. */}
+        {opening.acceptingOrders ? (
+          <div className="flex items-start gap-3 border-b border-line-faint p-4">
+            <ClockIcon />
+            <div className="min-w-0">
+              {/* No quote, no time. The obvious filler here is the kitchen's
+                  prep minutes, and it would be a lie of exactly the wrong
+                  kind: 12 minutes is how long the food takes, not how long the
+                  drive takes, and printing it as an arrival sends somebody to
+                  the window at the wrong moment. */}
+              <p className="m-0 text-[14px] text-ink">
+                {eta === null
+                  ? t("delivery.awaitingEta")
+                  : t("delivery.arrivingBetween", {
+                      from: at(eta),
+                      to: at(eta + WINDOW_MINUTES),
+                    })}
+              </p>
+              <p className="m-0 text-[12px] text-muted">
+                {eta === null ? t("delivery.etaPending") : t("delivery.etaCourier")}
+              </p>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="flex items-start gap-3 p-4">
           <PinIcon />
