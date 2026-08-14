@@ -751,4 +751,31 @@ export const ja: Table = {
   "careers.errSignature": "署名としてフルネームを入力してください。",
   "careers.errCheckForm": "上にまだ答えていない項目があります。",
   "careers.errSendFailed": "送信できませんでした。少し経ってからもう一度お試しください。",
+
+  // ——— Riley's info panels, and the new API answers ———
+  //
+  // The panels under a reply are assembled on the server, which has no
+  // locale, so they arrive as keys. See Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "お会計",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "配達料とチップは別です。",
+  "chat.hoursOpenNow": "営業中",
+  "chat.hoursStatus": "状況",
+  "chat.hoursReadyIn": "できあがり",
+  "chat.hoursOrdering": "注文",
+  "chat.aboutMinutes": "約{minutes}分",
+  "chat.notRightNow": "今はできません",
+  "chat.deliveryOutOfRange": "配達エリア外",
+  "chat.deliveryYes": "配達できます",
+  "chat.deliveryAddressLabel": "住所",
+  "chat.deliveryDistance": "距離",
+  "chat.drivingMiles": "車で{miles}マイル",
+  "chat.deliveryWithin": "配達範囲",
+  "chat.milesPlain": "{miles}マイル",
+  "chat.deliveryFeeLabel": "配達料",
+  "chat.deliveryEta": "お届けまで",
+  "chat.deliveryQuoteNote": "この住所での見積もりです。お支払い前に再計算します。",
+  "api.rileyTooFast": "メッセージが多すぎます。少し時間をおいてください。",
+  "api.soldOutNoStore": "まだ保存先がありません。",
+  "api.couldNotSave": "保存できませんでした。少し経ってからもう一度お試しください。",
 };

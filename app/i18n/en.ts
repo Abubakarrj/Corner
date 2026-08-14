@@ -604,6 +604,32 @@ export const en = {
   "chat.unconfigured":
     "Riley can't answer right now. Email {email} and a person will get back to you.",
 
+  // ——— Riley's info panels ———
+  //
+  // The small tables under a reply: what a basket comes to, whether the
+  // counter is open, whether a courier will come. Assembled on the server,
+  // which has no locale, so it sends keys and the widget says the words. See
+  // Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "What that comes to",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "Before delivery and tip.",
+  "chat.hoursOpenNow": "Open now",
+  "chat.hoursStatus": "Status",
+  "chat.hoursReadyIn": "Ready in",
+  "chat.hoursOrdering": "Ordering",
+  "chat.aboutMinutes": "about {minutes} min",
+  "chat.notRightNow": "not right now",
+  "chat.deliveryOutOfRange": "Out of range",
+  "chat.deliveryYes": "We deliver there",
+  "chat.deliveryAddressLabel": "Address",
+  "chat.deliveryDistance": "Distance",
+  "chat.drivingMiles": "{miles} driving miles",
+  "chat.deliveryWithin": "We deliver within",
+  "chat.milesPlain": "{miles} miles",
+  "chat.deliveryFeeLabel": "Delivery",
+  "chat.deliveryEta": "At the door in",
+  "chat.deliveryQuoteNote": "Quoted for this address. The checkout re-quotes before you pay.",
+
   // ——— What the API routes answer with ———
   //
   // A route has no locale, so it sends the key of the sentence and the
@@ -627,6 +653,9 @@ export const en = {
   "api.fillNameEmail": "Fill in your name and email.",
   "api.rileyDown": "Riley couldn't answer just now. Try again in a moment.",
   "api.rileyNoReply": "Riley didn't have a reply for that. Try rephrasing?",
+  "api.rileyTooFast": "That's a lot of messages at once. Give it a minute.",
+  "api.soldOutNoStore": "There's nowhere to save that yet.",
+  "api.couldNotSave": "We couldn't save that. Try again in a moment.",
   "api.codeWrong": "That code didn't work. It may have expired, send a new one.",
   "api.emailNotReal": "That email address doesn't look real. Check for a typo.",
   "api.codeRateLimit": "That's a few codes already. Give it ten minutes.",

@@ -11,9 +11,9 @@ import {
   optionsComplete,
   packSize,
   unitPriceCents,
-  soldOut,
   type Product,
 } from "./products";
+import { useSoldOut } from "./soldOutStore";
 import ProductImage from "./ProductImage";
 import OptionPicker from "./OptionPicker";
 import useOptionPrompt from "./useOptionPrompt";
@@ -53,7 +53,11 @@ export default function ProductCard({ product }: { product: Product }) {
   // page for them: a bagel order is a handful of small decisions made fast,
   // and a round trip per sandwich would be the slowest part of it.
   const [selected, setSelected] = useState(() => defaultOptions(product));
-  const gone = soldOut(product.slug);
+  // Through the store rather than the bare function: the list is refreshed
+  // from /api/sold-out while the tab is open, and this is what makes a tile
+  // notice. See soldOutStore.ts.
+  const isGone = useSoldOut();
+  const gone = isGone(product.slug);
   const ready = optionsComplete(product, selected) && !gone;
   // The tile's button says what's missing rather than just going dim — the
   // same sentence the product page uses. See useOptionPrompt.

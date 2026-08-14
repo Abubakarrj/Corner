@@ -10,6 +10,7 @@ import { en, type StringKey } from "../../i18n/en";
 import { emailShell, escapeHtml, isEmailConfigured, sendEmail } from "../../email";
 import { renderApplicationPdf } from "./applicationPdf";
 import { toEnglish, type Translation } from "./translate";
+import { clientIp, throttle } from "../../rateLimit";
 
 // Job applications.
 //
@@ -40,36 +41,12 @@ export const runtime = "nodejs";
 const HONEYPOT_FIELD = "company";
 const MIN_FILL_TIME_MS = 4000;
 
-// Best-effort per-IP throttle, in memory — the same shape and the same caveats
-// as /api/drop-list. It resets on deploy and doesn't span instances. The
-// window is generous because a real person can legitimately apply twice (once
-// for themselves, once helping a friend on the same wifi), and the cost of
-// turning away a genuine applicant is higher than the cost of a few extra
-// PDFs.
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-const RATE_LIMIT_MAX = 6;
-const MAX_TRACKED_IPS = 5000;
-const recentByIp = new Map<string, number[]>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (recentByIp.get(ip) ?? []).filter((at) => now - at < RATE_LIMIT_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT_MAX) {
-    recentByIp.set(ip, recent);
-    return true;
-  }
-  recent.push(now);
-  recentByIp.set(ip, recent);
-  if (recentByIp.size > MAX_TRACKED_IPS) {
-    const oldest = recentByIp.keys().next().value;
-    if (oldest !== undefined) recentByIp.delete(oldest);
-  }
-  return false;
-}
-
-function clientIp(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-}
+// Per-IP throttle. The window is generous because a real person can
+// legitimately apply twice (once for themselves, once helping a friend on the
+// same wifi), and the cost of turning away a genuine applicant is higher than
+// the cost of a few extra PDFs. See app/rateLimit.ts for what this is and
+// isn't.
+const APPLICATIONS = throttle({ windowMs: 60 * 60 * 1000, max: 6 });
 
 // Deliberately no MX lookup, unlike /api/drop-list. A DNS hiccup there costs
 // somebody a newsletter; here it would throw away a job application, and we
@@ -267,7 +244,7 @@ async function mailToShop(
 }
 
 export async function POST(request: Request) {
-  if (isRateLimited(clientIp(request))) {
+  if (APPLICATIONS.exceeded(clientIp(request))) {
     return Response.json({ error: "api.tooManyAttempts" }, { status: 429 });
   }
 

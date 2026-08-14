@@ -1,5 +1,6 @@
 import { resolveMx } from "node:dns/promises";
 import { after } from "next/server";
+import { clientIp, throttle } from "../../rateLimit";
 
 // Signup endpoint behind the drop-list modal.
 //
@@ -74,42 +75,8 @@ const HONEYPOT_FIELD = "company";
 // catch real people, only scripts that fill-and-submit in one step.
 const MIN_FILL_TIME_MS = 600;
 
-// Best-effort, in-memory per-IP throttle — resets on every deploy/restart,
-// same caveat as everything else in this app with no durable store yet.
-// Capped so a flood of distinct IPs can't grow this unboundedly.
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const RATE_LIMIT_MAX = 5;
-const MAX_TRACKED_IPS = 5000;
-const submissionsByIp = new Map<string, number[]>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const recent = (submissionsByIp.get(ip) ?? []).filter(
-    (t) => now - t < RATE_LIMIT_WINDOW_MS,
-  );
-
-  if (recent.length >= RATE_LIMIT_MAX) {
-    submissionsByIp.set(ip, recent);
-    return true;
-  }
-
-  recent.push(now);
-  submissionsByIp.set(ip, recent);
-
-  if (submissionsByIp.size > MAX_TRACKED_IPS) {
-    const oldest = submissionsByIp.keys().next().value;
-    if (oldest !== undefined) submissionsByIp.delete(oldest);
-  }
-
-  return false;
-}
-
-function clientIp(request: Request): string {
-  // Render (and most PaaS) sit in front of this app as a proxy; the real
-  // visitor IP arrives via this header rather than a raw socket address.
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || "unknown";
-}
+// Per-IP throttle. See app/rateLimit.ts.
+const SIGNUPS = throttle({ windowMs: 10 * 60 * 1000, max: 5 });
 
 function logEmail(to: string, body: string, label: string) {
   console.info(`[drop-list] would send ${label} to ${to}:\n${body}`);
@@ -164,7 +131,7 @@ function onSignup(email: string) {
 }
 
 export async function POST(request: Request) {
-  if (isRateLimited(clientIp(request))) {
+  if (SIGNUPS.exceeded(clientIp(request))) {
     return Response.json(
       { error: "api.tooManyAttempts" },
       { status: 429 },

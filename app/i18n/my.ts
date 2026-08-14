@@ -753,4 +753,31 @@ export const my: Table = {
   "careers.errSignature": "လက်မှတ်အဖြစ် အမည်အပြည့်အစုံ ရိုက်ထည့်ပါ။",
   "careers.errCheckForm": "အပေါ်မှာ မဖြေရသေးတာ ကျန်နေပါသေးတယ်။",
   "careers.errSendFailed": "မပို့နိုင်ပါ။ ခဏနေ ပြန်ကြိုးစားပါ။",
+
+  // ——— Riley's info panels, and the new API answers ———
+  //
+  // The panels under a reply are assembled on the server, which has no
+  // locale, so they arrive as keys. See Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "စုစုပေါင်း",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "ပို့ဆောင်ခနှင့် ဘောက်ဆူး မပါဝင်ပါ။",
+  "chat.hoursOpenNow": "ယခု ဖွင့်ထားသည်",
+  "chat.hoursStatus": "အခြေအနေ",
+  "chat.hoursReadyIn": "အဆင်သင့်ဖြစ်ချိန်",
+  "chat.hoursOrdering": "မှာယူမှု",
+  "chat.aboutMinutes": "{minutes} မိနစ်ခန့်",
+  "chat.notRightNow": "ယခု မရသေးပါ",
+  "chat.deliveryOutOfRange": "ပို့ဆောင်နယ်မြေ ပြင်ပ",
+  "chat.deliveryYes": "ထိုနေရာသို့ ပို့ပေးနိုင်ပါသည်",
+  "chat.deliveryAddressLabel": "လိပ်စာ",
+  "chat.deliveryDistance": "အကွာအဝေး",
+  "chat.drivingMiles": "ကားဖြင့် {miles} မိုင်",
+  "chat.deliveryWithin": "ပို့ဆောင်နိုင်သည့် အကွာအဝေး",
+  "chat.milesPlain": "{miles} မိုင်",
+  "chat.deliveryFeeLabel": "ပို့ဆောင်ခ",
+  "chat.deliveryEta": "အိမ်ရောက်ချိန်",
+  "chat.deliveryQuoteNote": "ဤလိပ်စာအတွက် တွက်ချက်ထားသည်။ ငွေမပေးမီ ပြန်တွက်ပါမည်။",
+  "api.rileyTooFast": "မက်ဆေ့ချ် များလွန်းနေပါသည်။ ခဏစောင့်ပါ။",
+  "api.soldOutNoStore": "သိမ်းဆည်းရန် နေရာ မရှိသေးပါ။",
+  "api.couldNotSave": "မသိမ်းဆည်းနိုင်ပါ။ ခဏနေ ပြန်ကြိုးစားပါ။",
 };

@@ -750,4 +750,31 @@ export const zh: Table = {
   "careers.errSignature": "请输入全名作为签名。",
   "careers.errCheckForm": "上面还有没答的地方。",
   "careers.errSendFailed": "没能提交成功，请稍后再试。",
+
+  // ——— Riley's info panels, and the new API answers ———
+  //
+  // The panels under a reply are assembled on the server, which has no
+  // locale, so they arrive as keys. See Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "合计",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "不含配送费和小费。",
+  "chat.hoursOpenNow": "正在营业",
+  "chat.hoursStatus": "状态",
+  "chat.hoursReadyIn": "备餐时间",
+  "chat.hoursOrdering": "下单",
+  "chat.aboutMinutes": "约 {minutes} 分钟",
+  "chat.notRightNow": "暂时不可",
+  "chat.deliveryOutOfRange": "超出配送范围",
+  "chat.deliveryYes": "可以配送",
+  "chat.deliveryAddressLabel": "地址",
+  "chat.deliveryDistance": "距离",
+  "chat.drivingMiles": "驾车 {miles} 英里",
+  "chat.deliveryWithin": "配送范围",
+  "chat.milesPlain": "{miles} 英里",
+  "chat.deliveryFeeLabel": "配送费",
+  "chat.deliveryEta": "送达时间",
+  "chat.deliveryQuoteNote": "按此地址报价。结账时会重新计算。",
+  "api.rileyTooFast": "消息发得太快了，请稍等一会儿。",
+  "api.soldOutNoStore": "目前还没有地方保存。",
+  "api.couldNotSave": "没能保存，请稍后再试。",
 };

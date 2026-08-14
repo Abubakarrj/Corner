@@ -2,11 +2,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import { formatPrice, getProduct } from "../../shop/products";
 import { shopPhoneLabel } from "../../shopFacts";
 import { buildSystemPrompt, languageInstruction, RILEY_MAX_TOKENS } from "./riley";
+import { noEmDashes, scrubPartial } from "./scrub";
+import { clientIp, throttle } from "../../rateLimit";
+import { readContext } from "./context";
 import {
   emptyAttachments,
   RILEY_TOOLS,
   runTool,
   type ChatAttachments,
+  type ToolContext,
 } from "./tools";
 
 // Riley — the shop's chat, answered by Claude rather than by the team.
@@ -83,59 +87,27 @@ const MAX_MESSAGE_CHARS = 2000;
 // bill and the visitor's clock.
 const MAX_TOOL_ROUNDS = 6;
 
-// No em dashes, ever.
+// ——— And bounds one *caller* ———
 //
-// The instruction is in Riley's briefing twice, and stripping them out of the
-// briefing itself does most of the work: a model mirrors the punctuation of
-// the text it's given, so a prompt full of dashes is a prompt that teaches
-// them. This is the belt to that pair of braces. It runs on her visible text
-// only, never on tool inputs, so a dash inside an address she's looking up is
-// left alone.
+// Everything above bounds a conversation somebody is having. None of it bounds
+// a script, and until this existed there was nothing that did: the route takes
+// no session, asks for no key, and every turn spends money. One turn is up to
+// seven model rounds with the whole menu in the prompt, and the tools reach
+// Google and Uber on top of that. A loop against this endpoint spends three
+// vendors' budgets at once.
 //
-// The replacement is picked by what sits either side. A sentence already
-// closed by its own punctuation just needs the space ("Good Lox Today!, the
-// best one" is worse than the dash was). A capital letter after it means the
-// dash was joining two sentences, so it becomes a full stop. Anything else was
-// parenthetical, so it becomes a comma.
+// Two counts, because the two costs are different sizes. A turn is cents; a
+// courier quote is a billed call to Uber and it is the one thing here that a
+// script could point at a list of ten thousand addresses. So the quote gets
+// its own, much smaller allowance, and a caller who burns it can still talk to
+// Riley about the menu.
 //
-// A spaced en dash is doing an em dash's job and gets the same treatment. An
-// unspaced one is a range ("7am-2pm") and is left alone.
-const DASH = /([^\s])?\s*[\u2014\u2015]\s*(.?)/g;
-
-export function noEmDashes(text: string): string {
-  return text
-    .replace(DASH, (_match, before: string | undefined, after: string) => {
-      const lead = before ?? "";
-      if (/[.!?:;,]/.test(lead)) return `${lead} ${after}`;
-      const joinsSentences =
-        after.length > 0 && after === after.toUpperCase() && after !== after.toLowerCase();
-      return `${lead}${joinsSentences ? ". " : ", "}${after}`;
-    })
-    .replace(/ \u2013 /g, ", ")
-    .replace(SENTENCE_RUN_ON, "$1 $2");
-}
-
-// "Want to head to checkout?Just tap that" \u2014 a sentence ending and the next
-// one starting with no space between them. It reached the screen twice in one
-// conversation, and while the cause is upstream (a model writing it, or bold
-// markers closing against the next word and being stripped by RichText), the
-// fix belongs here: nothing downstream can tell the difference, and a space
-// that should be there is not a judgement call.
-//
-// Narrow on purpose. It fires only when a *lowercase* letter precedes the
-// punctuation, which is what keeps it away from the things that legitimately
-// run together: "U.S.A" keeps its stops, "$7.00" is digits, and an ellipsis
-// has no capital after it. "e.g.Foo" is caught and wanted.
-const SENTENCE_RUN_ON = /([a-z][.!?])([A-Z])/g;
-
-// The scrub above decides what to put in a dash's place by looking at the
-// character *after* it — which, mid-stream, may not have arrived. A dash at
-// the very end would become a comma on one frame and a full stop on the next,
-// visibly, so a trailing one is held back until the next chunk says what it
-// was joining.
-function scrubPartial(text: string): string {
-  return noEmDashes(text.replace(/[\u2014\u2015\u2013]\s*$/, ""));
-}
+// Both are generous against a real visitor. Thirty messages in ten minutes is
+// a long conversation typed fast; six delivery checks in an hour is somebody
+// who moved house twice. See app/rateLimit.ts for why an in-memory limiter is
+// worth having anyway.
+const TURNS = throttle({ windowMs: 10 * 60_000, max: 30 });
+const QUOTES = throttle({ windowMs: 60 * 60_000, max: 6 });
 
 type Turn = { role: "user" | "assistant"; text: string };
 
@@ -330,6 +302,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  // Before the body is even read: the parse is the cheapest thing here and
+  // refusing early is the point.
+  const caller = clientIp(request);
+  if (TURNS.exceeded(caller)) {
+    // As an ndjson error rather than a 429, like every other failure on this
+    // route. The widget throws away the status and reads the event, so a 429
+    // would reach the visitor as the generic "Riley couldn't answer" instead
+    // of the sentence that tells them what actually happened.
+    return ndjson(async (send) => send({ type: "error", error: "api.rileyTooFast" }));
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -345,10 +328,17 @@ export async function POST(request: Request) {
   } | null;
 
   const rawTurns = Array.isArray(body?.messages) ? body.messages : [];
-  const turns = rawTurns
+  const kept = rawTurns
     .filter(isTurn)
-    .map((turn) => ({ role: turn.role, text: turn.text.slice(0, MAX_MESSAGE_CHARS) }))
-    .slice(-MAX_TURNS);
+    .map((turn) => ({ role: turn.role, text: turn.text.slice(0, MAX_MESSAGE_CHARS) }));
+  const turns = kept.slice(-MAX_TURNS);
+  // Whether the front of the conversation was cut off. Riley is told, further
+  // down, because otherwise she can't tell: a trimmed thread looks exactly
+  // like a short one, and the thing most likely to have been said at the top
+  // and needed at the bottom is a diet or an allergy. Her briefing tells her
+  // to hold on to those for the whole conversation, and silently deleting the
+  // turn where somebody said "I'm vegan" is how she offers them the lox.
+  const trimmed = kept.length > turns.length;
 
   if (turns.length === 0 || turns[turns.length - 1].role !== "user") {
     return ndjson(async (send) => send({ type: "error", error: "api.typeMessage" }));
@@ -412,7 +402,20 @@ export async function POST(request: Request) {
   // A block after the breakpoint gets the same property for free: the prefix
   // above it is untouched, so the menu stays cached, and nothing varies inside
   // the part that is.
-  const where = typeof body?.context === "string" ? body.context.slice(0, 200) : "";
+  //
+  // The sentence is composed here from a checked mode and a flattened label,
+  // not taken from the caller. See readContext above.
+  const context = readContext(body?.context);
+  const where = context?.sentence ?? "";
+
+  // What the tools need that the model can't be asked for: who is calling, so
+  // the billed lookups can be counted against them, and where their order is
+  // already going, so a delivery check about that address doesn't geocode it
+  // a second time.
+  const tools: ToolContext = {
+    quotesLeft: () => !QUOTES.exceeded(caller),
+    destination: context?.destination,
+  };
 
   const messages: Anthropic.Beta.BetaMessageParam[] = turns.map((turn) => ({
     role: turn.role,
@@ -466,8 +469,18 @@ export async function POST(request: Request) {
           // flagship — which needs no instruction at all — would pay for the
           // machinery on every request.
           ...(language ? [{ type: "text" as const, text: language }] : []),
-          ...(where
-            ? [{ type: "text" as const, text: `The customer's order is set to: ${where}.` }]
+          ...(where ? [{ type: "text" as const, text: where }] : []),
+          ...(trimmed
+            ? [
+                {
+                  type: "text" as const,
+                  text:
+                    "This conversation is longer than what you can see. The earliest " +
+                    "turns have been dropped to keep it a manageable length, so if " +
+                    "something they told you seems to be missing, an allergy, a diet, a " +
+                    "name, ask again rather than assuming they never said it.",
+                },
+              ]
             : []),
         ],
         messages,
@@ -507,30 +520,69 @@ export async function POST(request: Request) {
     // first attempt throws before a single character has been written, it runs
     // again, not streaming, on the model that was working before.
     //
-    // Only before anything is written, and only once. A retry after half a
-    // sentence is on screen would repeat it, and a retry that can retry is a
-    // way to spend somebody's money twice on a failure that isn't transient.
-    // GET /api/shop-chat says which combination the key can actually do.
+    // Once, and only once. A retry that can retry is a way to spend somebody's
+    // money twice on a failure that isn't transient. GET /api/shop-chat says
+    // which combination the key can actually do.
+    //
+    // ——— Why it no longer gives up once she's started writing ———
+    //
+    // The guard used to be `recovered || written`: a failure after the first
+    // character rethrew, full stop. That was the right instinct and the wrong
+    // rule, because it only holds for a *round* that has already put text on
+    // screen. Riley's turns are several rounds long — write a line, look
+    // something up, carry on writing — and a throw in round three used to end
+    // the turn on whatever half-sentence had landed, with an error under it.
+    // The visitor cannot tell a truncated answer from a finished one, which is
+    // the failure worth caring about here.
+    //
+    // What made the old rule necessary was duplication: the failed attempt's
+    // partial text is already in `written`, so running the round again appends
+    // it twice. So `written` is snapshotted before each round and restored on
+    // the way into the retry. The bubble rewinds to the last complete thought
+    // and is written forward again, which is visible for a frame and correct.
     let model = MODEL;
     let streaming = true;
     let recovered = false;
 
     for (let index = 0; index <= MAX_TOOL_ROUNDS; index++) {
-      let response: Anthropic.Beta.BetaMessage;
-      try {
-        response = await round(model, streaming);
-      } catch (error) {
-        if (recovered || written) throw error;
-        console.error(
-          `[shop-chat] ${model} failed on the streaming path`,
-          describeFailure(error),
-          `— retrying on ${FALLBACK_MODEL} without streaming`,
-        );
-        recovered = true;
-        model = FALLBACK_MODEL;
-        streaming = false;
-        response = await round(model, streaming);
+      const before = written;
+      let response: Anthropic.Beta.BetaMessage | null = null;
+
+      for (let attempt = 0; attempt < 2 && response === null; attempt++) {
+        try {
+          response = await round(model, streaming);
+        } catch (error) {
+          // `recovered` carries across rounds: once the fallback has been
+          // spent, a later failure is final wherever it happens.
+          const final = recovered || attempt > 0;
+          console.error(
+            `[shop-chat] ${model} failed on round ${index}`,
+            describeFailure(error),
+            final ? "— giving up" : `— retrying on ${FALLBACK_MODEL} without streaming`,
+          );
+          if (final) {
+            // Nothing on screen at all: rethrow, so ndjson sends the error and
+            // the widget takes the turn back out of the thread and refills the
+            // composer. Anything else leaves an empty bubble behind.
+            if (!before && attachments.products.length === 0 && attachments.info.length === 0) {
+              throw error;
+            }
+            written = `${before}${before ? "\n\n" : ""}I lost my thread there, sorry. Ask me again?`;
+            flush();
+            return;
+          }
+          recovered = true;
+          model = FALLBACK_MODEL;
+          streaming = false;
+          // Drop whatever the failed attempt managed to write, so the retry
+          // doesn't say the same half-sentence twice.
+          written = before;
+          flush();
+        }
       }
+      // Unreachable: the loop above either sets `response` or returns. Here to
+      // convince the type checker, which can't see that.
+      if (!response) return;
 
       // stop_reason first, always: on a refusal `content` is empty or partial,
       // and reading content[0] would throw on the one path that most needs to
@@ -566,7 +618,7 @@ export async function POST(request: Request) {
       const results = await Promise.all(
         calls.map(async (call) => {
           try {
-            const outcome = await runTool(call.name, call.input);
+            const outcome = await runTool(call.name, call.input, tools);
             merge(attachments, outcome.attach);
             return {
               type: "tool_result" as const,

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { translate, useLocale, useServerText, useT } from "../i18n";
+import { useLocale, useServerText, useT } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../fulfillment";
 import { useCart } from "./CartContext";
@@ -20,12 +20,43 @@ import { DISPLAY_FONT } from "./shopControls";
 import { OPEN_CHAT_EVENT } from "./openChat";
 import SlidingTabs from "../ui/SlidingTabs";
 
-// One line naming where the order is going, for Riley's context. English on
-// purpose: this is not shown to anybody, it goes into her prompt, and her
-// briefing is written in English.
-function describeContext(fulfillment: Fulfillment): string {
-  const { mode, where } = describeFulfillment(fulfillment);
-  return `${translate("en", mode)} — ${where}`;
+// Where the order is going, for Riley's context.
+//
+// ——— Two fields rather than one sentence ———
+//
+// This used to return `${translate("en", mode)} — ${where}` and the route
+// dropped that string straight into a system block. Two things were wrong with
+// it, and they were the same thing twice: the browser was writing prose that
+// went into a prompt.
+//
+// The em dash was the visible half. Riley is told twice never to write one and
+// the scrub strips them from her replies, and then every visitor past the
+// fulfillment gate handed her a system block with one in it, which is the
+// single most reliable way to teach a model that the rule is negotiable.
+//
+// The seam was the other half. A string is a string: anything the client put
+// in that field arrived inside the system prompt, newlines and headings and
+// all. Sending the mode as an enum and the destination as a bare label means
+// the route composes the sentence and the only free text left is the place
+// name, which is the part Riley genuinely needs and the part no whitelist
+// could enumerate. The route caps and flattens it. See the note there.
+// The pin rides along on a delivery. Riley's check_delivery used to geocode
+// whatever address she was given, including the one the customer had already
+// dropped a point on two screens earlier, which is the guess PinPicker exists
+// to stop. With the point in hand the route can skip the lookup when she's
+// asking about the address on file, and only geocode when she's asking about
+// somewhere else.
+function describeContext(fulfillment: Fulfillment): {
+  mode: Fulfillment["mode"];
+  where: string;
+  lat?: number;
+  lng?: number;
+} {
+  const { where } = describeFulfillment(fulfillment);
+  if (fulfillment.mode === "delivery") {
+    return { mode: "delivery", where, lat: fulfillment.lat, lng: fulfillment.lng };
+  }
+  return { mode: fulfillment.mode, where };
 }
 
 const ERROR_RED = "var(--cb-red)";

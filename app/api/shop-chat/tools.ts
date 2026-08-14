@@ -24,19 +24,25 @@ import {
   type SelectedOptions,
 } from "../../shop/products";
 import { totalsFor } from "../../shop/money";
-import type { ChatAttachments, ProductCard } from "../../shop/chatTypes";
+import type { ChatAttachments, Phrase, ProductCard } from "../../shop/chatTypes";
 import {
+  closeHour,
   isOpenNow,
   minutesUntilClose,
   nextOpening,
+  nextOpeningAt,
   openingStatus,
   PREP_MINUTES,
-  SHOP_ADDRESS_PARTS,
 } from "../../shopFacts";
-import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
+import {
+  DELIVERY_RADIUS_MILES,
+  addressParts,
+} from "../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../googleMaps";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../uberDirect";
-import { deliveryOrigin } from "../../storePlaces";
+import { deliveryOrigin, deliveryStoreFor } from "../../storePlaces";
+import { noEmDashes } from "./scrub";
+import { refreshSoldOut } from "../../soldOut";
 
 // What Riley can actually do.
 //
@@ -87,12 +93,12 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
   {
     name: "search_menu",
     description:
-      "Search the live menu. Call this before naming any item, price, or ingredient. " +
-      "never answer from memory, because prices and availability change and a wrong " +
+      "Search the live menu. Call this before naming any item, price, or ingredient, " +
+      "and never from memory: prices and availability change, and a wrong " +
       "price costs somebody a trip. Also call it when asked what's under a price or " +
       "what's in a category. Returns each item's real price, description, required " +
       "choices, allergens and whether it sold out today. For what somebody eats or " +
-      "avoids — vegetarian, vegan, no pork, no dairy — use check_diet instead: meat " +
+      "avoids, vegetarian, vegan, no pork, no dairy, use check_diet instead: meat " +
       "and honey are not allergens, so this tool cannot answer those.",
     input_schema: {
       type: "object",
@@ -126,9 +132,9 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "What the shop has for a diet: vegetarian, vegan, pork-free, dairy-free or " +
       "fish-free. Call this whenever somebody says what they do or don't eat, rather " +
-      "than working it out from the menu yourself. It returns three lists — what " +
+      "than working it out from the menu yourself. It returns three lists: what " +
       "suits however it's ordered, what suits with the right choices (and which " +
-      "choices those are), and what doesn't — so you can offer the second group " +
+      "choices those are), and what doesn't, so you can offer the second group " +
       "instead of turning somebody away. There is no gluten-free option; every " +
       "bagel is wheat, and the tool says so.",
     input_schema: {
@@ -170,7 +176,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
   {
     name: "price_order",
     description:
-      "Work out what a basket comes to. subtotal, tax and total. ALWAYS call this " +
+      "Work out what a basket comes to: subtotal, tax and total. ALWAYS call this " +
       "instead of adding prices up yourself: it runs the same arithmetic the checkout " +
       "runs, so the figure you quote is the figure they'll be charged. Mental " +
       "arithmetic here is how a chat quotes one number and the till charges another.",
@@ -199,8 +205,8 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "Whether the counter is open right now, when it next opens, and whether there's " +
       "still time to make an order before it shuts. Call this whenever the answer " +
-      "depends on the time. 'are you open', 'can I order now', 'when will it be " +
-      "ready'. rather than assuming.",
+      "depends on the time: 'are you open', 'can I order now', 'when will it be " +
+      "ready', rather than assuming.",
     input_schema: { type: "object", properties: {}, required: [] },
   },
   {
@@ -208,7 +214,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "Whether a courier will deliver to an address, how far it is by road, what the " +
       "delivery costs and how long it takes. Call this the moment somebody gives an " +
-      "address or asks whether you deliver to them. Never guess a delivery fee. it's " +
+      "address or asks whether you deliver to them. Never guess a delivery fee: it's " +
       "quoted per address, so there is no flat rate to quote.",
     input_schema: {
       type: "object",
@@ -225,7 +231,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     name: "show_items",
     description:
       "Put menu items on screen as tappable cards, each with its price and an Add " +
-      "button. Use this instead of listing items in your text. a card is one tap to " +
+      "button. Use this instead of listing items in your text: a card is one tap to " +
       "the basket and a paragraph is not. Call it alongside your reply whenever you " +
       "mention two or more items, or recommend a specific one. Keep your text about " +
       "*why*; let the cards carry the names and prices.",
@@ -246,7 +252,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     description:
       "Offer two or three short things they might say next, as tappable chips. Use " +
       "them for the obvious follow-ups. 'What's on it?', 'Add it', 'Something " +
-      "without dairy'. so answering is a tap. Write them as the visitor would say " +
+      "without dairy', so answering is a tap. Write them as the visitor would say " +
       "them, not as menu options. Skip them when you've asked a direct question that " +
       "needs a real answer, like an address.",
     input_schema: {
@@ -265,8 +271,8 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     name: "add_to_basket",
     description:
       "Put an item in their basket. Only when they've asked for it. 'add it', 'I'll " +
-      "take two', 'sounds good, get me that'. never on your own initiative or to be " +
-      "helpful. Every required choice must be filled in; call get_item first if you " +
+      "take two', 'sounds good, get me that', and never on your own initiative or " +
+      "to be helpful. Every required choice must be filled in; call get_item first if you " +
       "don't know what they are, and ask them rather than guessing which bagel they " +
       "want. This does not place or pay for anything: the basket opens so they can see " +
       "what went in, and checkout is still theirs to press.",
@@ -288,7 +294,7 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
     name: "open_screen",
     description:
       "Offer a button that takes them somewhere in the app. Use it at the end of a " +
-      "thread of conversation. checkout once the basket is right, locations to set a " +
+      "thread of conversation: checkout once the basket is right, locations to set a " +
       "delivery address, account to find an order. One button, and only when there's a " +
       "clear next step; a button on every reply is navigation, not help.",
     input_schema: {
@@ -317,6 +323,35 @@ type ToolResult = {
   // What the browser gets. Merged across every tool call in a turn.
   attach?: Partial<ChatAttachments>;
 };
+
+/** A delivery address the customer has already settled, with the point they
+ *  placed on it. */
+export type Destination = { address: string; lat: number; lng: number };
+
+/** What a tool needs from the request that the model has no way to supply.
+ *
+ *  Passed in rather than read here, because both fields belong to the caller
+ *  and this module has no request to read them from. */
+export type ToolContext = {
+  /** Claims one of this caller's delivery-quote allowance, returning false
+   *  when there is none left. A function and not a number because it counts:
+   *  the tool that spends money is the tool that should mark the spend, and
+   *  a caller who never asks about delivery should never use any of it. */
+  quotesLeft: () => boolean;
+  /** Where their order is already going, when they've chosen. */
+  destination?: Destination;
+};
+
+// Two addresses are the same address if they're the same words. Deliberately
+// crude: this decides whether the customer's own pin can stand in for a
+// geocode, so it has to be *sure*, and the way to be sure is to only say yes
+// when Riley is repeating back the string the app gave her. Anything looser
+// ("close enough") would silently answer a question about somebody's office
+// with the coordinates of their flat.
+function sameAddress(a: string, b: string): boolean {
+  const flatten = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return flatten(a).length > 0 && flatten(a) === flatten(b);
+}
 
 function cardFor(product: Product): ProductCard {
   // A group with no default has to be answered before the item can go in a
@@ -376,6 +411,26 @@ function itemForModel(product: Product) {
   };
 }
 
+// "Open until 2pm" / "Closed · opens tomorrow at 7am", as parts rather than a
+// sentence. openingStatus().label is the same fact already written out in
+// English, which is fine for Riley's own context and useless on a card that a
+// Korean speaker is looking at.
+function statusPhrase(): Phrase {
+  if (isOpenNow()) return { key: "shop.openUntil", hour: closeHour() % 24 };
+  const next = nextOpeningAt();
+  if (!next) return { key: "shop.closed" };
+  return {
+    key:
+      next.when === "today"
+        ? "shop.closedOpensToday"
+        : next.when === "tomorrow"
+          ? "shop.closedOpensTomorrow"
+          : "shop.closedOpensDay",
+    hour: next.hour,
+    day: next.day,
+  };
+}
+
 function asOptions(raw: unknown): SelectedOptions {
   if (typeof raw !== "object" || raw === null) return {};
   const out: SelectedOptions = {};
@@ -385,8 +440,19 @@ function asOptions(raw: unknown): SelectedOptions {
   return out;
 }
 
-export async function runTool(name: string, input: unknown): Promise<ToolResult> {
+export async function runTool(
+  name: string,
+  input: unknown,
+  context: ToolContext,
+): Promise<ToolResult> {
   const args = (input ?? {}) as Record<string, unknown>;
+
+  // What's off the board, before anything reads it. Riley is the surface that
+  // states availability in a sentence rather than dimming a tile, so she is
+  // the one that must not be a deploy behind. Cached for thirty seconds in
+  // app/soldOut.ts, so this is a map read on all but the first call of a
+  // conversation.
+  await refreshSoldOut();
 
   switch (name) {
     case "search_menu": {
@@ -412,7 +478,7 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
           // Said every time, because the honest answer to "is this dairy free"
           // is never yes on a counter with one toaster.
           allergenCaveat:
-            "Ingredient lists, not safety guarantees. one counter, shared boards, one toaster.",
+            "Ingredient lists, not safety guarantees: one counter, shared boards, one toaster.",
         },
       };
     }
@@ -440,7 +506,13 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
 
     case "price_order": {
       const raw = Array.isArray(args.items) ? args.items : [];
-      const lines: { name: string; quantity: number; each: string; lineCents: number }[] = [];
+      const lines: {
+        slug: string;
+        name: string;
+        quantity: number;
+        each: string;
+        lineCents: number;
+      }[] = [];
       let subtotalCents = 0;
 
       for (const entry of raw) {
@@ -452,6 +524,7 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
         const each = unitPriceCents(product, chosen);
         subtotalCents += each * quantity;
         lines.push({
+          slug: product.slug,
           name: product.name,
           quantity,
           each: formatPrice(each),
@@ -472,16 +545,22 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
           info: [
             {
               kind: "totals",
-              title: "What that comes to",
+              title: { key: "chat.totalsTitle" },
               lines: [
                 ...lines.map((line) => ({
-                  label: `${line.quantity}× ${line.name}`,
-                  value: formatPrice(line.lineCents),
+                  // The slug, not the name: the browser has the menu tables
+                  // and this module has the English. See Phrase.
+                  label: {
+                    key: "chat.totalsLine" as const,
+                    item: line.slug,
+                    vars: { quantity: line.quantity },
+                  },
+                  value: { text: formatPrice(line.lineCents) },
                 })),
-                { label: "Tax", value: formatPrice(totals.taxCents) },
-                { label: "Total", value: formatPrice(totals.totalCents) },
+                { label: { key: "checkout.tax" }, value: { text: formatPrice(totals.taxCents) } },
+                { label: { key: "common.total" }, value: { text: formatPrice(totals.totalCents) } },
               ],
-              note: "Before delivery and tip.",
+              note: { key: "chat.totalsNote" },
             },
           ],
         },
@@ -547,12 +626,18 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
           info: [
             {
               kind: "hours",
-              title: open ? "Open now" : "Closed",
+              title: open ? { key: "chat.hoursOpenNow" } : { key: "shop.closed" },
               lines: [
-                { label: "Status", value: status.label },
+                // status.label is English prose, so it can't go on a card. The
+                // same fact, in parts the browser can put into a sentence: the
+                // hour, and which key to put it in. Same three keys the
+                // checkout's closed notice uses.
+                { label: { key: "chat.hoursStatus" }, value: statusPhrase() },
                 {
-                  label: accepting ? "Ready in" : "Ordering",
-                  value: accepting ? `about ${PREP_MINUTES} min` : "not right now",
+                  label: accepting ? { key: "chat.hoursReadyIn" } : { key: "chat.hoursOrdering" },
+                  value: accepting
+                    ? { key: "chat.aboutMinutes", vars: { minutes: PREP_MINUTES } }
+                    : { key: "chat.notRightNow" },
                 },
               ],
             },
@@ -565,11 +650,27 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       const address = typeof args.address === "string" ? args.address.trim() : "";
       if (!address) return { forModel: { error: "No address given." } };
 
-      // Resolved from the shop's address, not the pair typed beside it.
-      // See storePlaces.ts.
-      const origin = await deliveryOrigin();
+      // ——— The customer's own point, when this is the address they set ———
+      //
+      // She is often asking about the address the app already has, because
+      // they told her about it and it's on the fulfillment bar behind her.
+      // That address has a coordinate attached that the *customer* placed on
+      // a map, and geocoding the words again throws it away to substitute a
+      // guess. PinPicker exists to stop exactly that, and this was the last
+      // hop still doing it. Only when the strings match: see sameAddress.
+      const pinned =
+        context.destination && sameAddress(address, context.destination.address)
+          ? context.destination
+          : null;
 
-      const place = await geocode(address, origin);
+      // Chosen against the destination when there is one, so the kitchen that
+      // serves this address is the one the distance is measured from. Without
+      // a point there is nothing to choose against until the geocode lands, so
+      // the first delivering kitchen biases that lookup and the real origin is
+      // taken after — the same order /api/delivery/quote runs in.
+      const biasFrom = await deliveryOrigin(pinned ? [pinned.lat, pinned.lng] : undefined);
+
+      const place = pinned ?? (await geocode(address, biasFrom));
       if (!place) {
         return {
           forModel: {
@@ -578,6 +679,16 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
           },
         };
       }
+
+      // Now the destination is known either way, settle which kitchen it
+      // leaves from. The store and not just its point, because Uber is handed
+      // an address as well as a coordinate and those two have to name the same
+      // counter. This used to be the SHOP_ADDRESS_PARTS constant, which was
+      // right while there was one kitchen and quietly wrong the day there are
+      // two: Riley would quote every address in the city from Koreatown while
+      // the checkout beside her quoted it from wherever is nearest.
+      const { store, place: pickup } = await deliveryStoreFor([place.lat, place.lng]);
+      const origin = pickup.position;
 
       const drive = await driveBetween(origin, [place.lat, place.lng]);
       const miles = drive?.miles ?? null;
@@ -597,11 +708,19 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
             info: [
               {
                 kind: "delivery",
-                title: "Out of range",
+                title: { key: "chat.deliveryOutOfRange" },
                 lines: [
-                  { label: "Address", value: place.address },
-                  { label: "Distance", value: `${miles?.toFixed(1)} driving miles` },
-                  { label: "We deliver within", value: `${DELIVERY_RADIUS_MILES} miles` },
+                  // The address as `text`: a street address is the one thing
+                  // on this card that reads the same in every language.
+                  { label: { key: "chat.deliveryAddressLabel" }, value: { text: place.address } },
+                  {
+                    label: { key: "chat.deliveryDistance" },
+                    value: { key: "chat.drivingMiles", vars: { miles: miles?.toFixed(1) ?? "" } },
+                  },
+                  {
+                    label: { key: "chat.deliveryWithin" },
+                    value: { key: "chat.milesPlain", vars: { miles: DELIVERY_RADIUS_MILES } },
+                  },
                 ],
               },
             ],
@@ -621,8 +740,27 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
         };
       }
 
+      // The one billed call in this file, and the only place a chat message
+      // reaches a vendor who invoices per request. Claimed here rather than at
+      // the top of the tool so the free half still answers: somebody who has
+      // used their allowance can still be told whether an address is in range,
+      // which is most of what they wanted.
+      if (!context.quotesLeft()) {
+        return {
+          forModel: {
+            found: true,
+            address: place.address,
+            drivingMiles: miles,
+            deliverable: null,
+            message:
+              "In range, but the fee can't be priced right now. Don't quote one. " +
+              "Tell them the checkout quotes it for their address.",
+          },
+        };
+      }
+
       const quote = await quoteDelivery({
-        pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
+        pickupAddress: structuredAddress(addressParts(store)),
         pickupLat: origin[0],
         pickupLng: origin[1],
         dropoffAddress: place.address,
@@ -658,15 +796,26 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
           info: [
             {
               kind: "delivery",
-              title: "We deliver there",
+              title: { key: "chat.deliveryYes" },
               lines: [
-                { label: "Address", value: place.address },
-                { label: "Delivery", value: formatPrice(quote.quote.feeCents) },
+                { label: { key: "chat.deliveryAddressLabel" }, value: { text: place.address } },
+                {
+                  label: { key: "chat.deliveryFeeLabel" },
+                  value: { text: formatPrice(quote.quote.feeCents) },
+                },
                 ...(quote.quote.etaMinutes !== null
-                  ? [{ label: "At the door in", value: `about ${quote.quote.etaMinutes} min` }]
+                  ? [
+                      {
+                        label: { key: "chat.deliveryEta" as const },
+                        value: {
+                          key: "chat.aboutMinutes" as const,
+                          vars: { minutes: quote.quote.etaMinutes },
+                        },
+                      },
+                    ]
                   : []),
               ],
-              note: "Quoted for this address. the checkout re-quotes before you pay.",
+              note: { key: "chat.deliveryQuoteNote" },
             },
           ],
         },
@@ -687,7 +836,11 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
     case "suggest_replies": {
       const replies = (Array.isArray(args.replies) ? args.replies : [])
         .filter((reply): reply is string => typeof reply === "string")
-        .map((reply) => reply.trim().slice(0, 40))
+        // Scrubbed like her prose is. A chip is text Riley wrote, and the rule
+        // about dashes doesn't stop applying because the words ended up on a
+        // button: "Something without dairy — vegan?" used to ship intact
+        // underneath a paragraph held to the opposite standard.
+        .map((reply) => noEmDashes(reply).trim().slice(0, 40))
         .filter(Boolean)
         .slice(0, 3);
       return { forModel: { ok: true }, attach: { chips: replies } };
@@ -698,6 +851,30 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       if (!product) return { forModel: { error: "No item with that slug." } };
       if (soldOut(product.slug)) {
         return { forModel: { error: `${product.name} sold out today.` } };
+      }
+
+      // The counter has to be open. Riley is told this in her briefing and
+      // /api/shop-order refuses at the far end, so nothing was ever *sold* out
+      // of hours. What was missing is the bit in between: at 3am she would
+      // cheerfully fill a basket, and the refusal arrived several screens
+      // later at checkout, by which point somebody has picked a bagel, picked
+      // a spread and pressed a button for nothing. Refusing here is the same
+      // answer given at the point the question was asked.
+      //
+      // The next opening time comes with it so she has something to say
+      // instead of just no.
+      if (!isOpenNow()) {
+        return {
+          forModel: {
+            added: false,
+            openNow: false,
+            nextOpening: nextOpening(),
+            message:
+              "The counter is shut, so nothing can go in a basket yet. Tell them " +
+              "when it opens and offer to help them decide in the meantime. Do not " +
+              "say anything was added.",
+          },
+        };
       }
       // Some things in the catalog are not sold through this basket — a gift
       // card is not food and cannot ride in a food order. She can talk about
@@ -772,7 +949,8 @@ export async function runTool(name: string, input: unknown): Promise<ToolResult>
       if (!allowed.includes(screen as (typeof allowed)[number])) {
         return { forModel: { error: "Unknown screen." } };
       }
-      const label = String(args.label ?? "Open").slice(0, 32);
+      // Same scrub as the chips, for the same reason.
+      const label = noEmDashes(String(args.label ?? "Open")).slice(0, 32);
       return {
         forModel: { ok: true },
         attach: {

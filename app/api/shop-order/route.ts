@@ -31,6 +31,7 @@ import {
 } from "../../(marketing)/locations/locations";
 import { joinQueue } from "../../kitchenQueue";
 import { earn } from "../../rewards";
+import { refreshSoldOut } from "../../soldOut";
 
 // Order intake, behind /checkout on the shop subdomain.
 //
@@ -111,6 +112,12 @@ function onOrder(order: Order) {
 }
 
 export async function POST(request: Request) {
+  // What's off the board, before the basket is checked against it. This is the
+  // check that actually stops an order for something the kitchen ran out of,
+  // so it has to be reading today's list rather than whatever shipped in the
+  // bundle. Cached for thirty seconds; see app/soldOut.ts.
+  await refreshSoldOut();
+
   let payload: unknown;
   try {
     payload = await request.json();

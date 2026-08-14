@@ -807,4 +807,31 @@ export const it: Table = {
   "careers.errSignature": "Scrivi il tuo nome completo per firmare.",
   "careers.errCheckForm": "Qualcosa qui sopra è ancora senza risposta.",
   "careers.errSendFailed": "Non siamo riusciti a inviarla. Riprova tra un momento.",
+
+  // ——— Riley's info panels, and the new API answers ———
+  //
+  // The panels under a reply are assembled on the server, which has no
+  // locale, so they arrive as keys. See Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "Il totale",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "Escluse consegna e mancia.",
+  "chat.hoursOpenNow": "Aperto ora",
+  "chat.hoursStatus": "Stato",
+  "chat.hoursReadyIn": "Pronto tra",
+  "chat.hoursOrdering": "Ordini",
+  "chat.aboutMinutes": "circa {minutes} min",
+  "chat.notRightNow": "non ora",
+  "chat.deliveryOutOfRange": "Fuori zona",
+  "chat.deliveryYes": "Consegniamo lì",
+  "chat.deliveryAddressLabel": "Indirizzo",
+  "chat.deliveryDistance": "Distanza",
+  "chat.drivingMiles": "{miles} miglia in auto",
+  "chat.deliveryWithin": "Consegniamo entro",
+  "chat.milesPlain": "{miles} miglia",
+  "chat.deliveryFeeLabel": "Consegna",
+  "chat.deliveryEta": "Alla porta tra",
+  "chat.deliveryQuoteNote": "Calcolato per questo indirizzo. Il pagamento lo ricalcola prima di addebitare.",
+  "api.rileyTooFast": "Sono tanti messaggi insieme. Aspetta un minuto.",
+  "api.soldOutNoStore": "Non c'è ancora dove salvarlo.",
+  "api.couldNotSave": "Non siamo riusciti a salvarlo. Riprova tra poco.",
 };

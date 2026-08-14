@@ -18,8 +18,8 @@ import {
   unitPriceCents,
   type Product,
   type SelectedOptions,
-  soldOut,
 } from "./products";
+import { useSoldOut } from "./soldOutStore";
 
 const STORAGE_KEY = "cb-shop-cart-v1";
 
@@ -355,6 +355,9 @@ export type CartRow = {
 
 export function useCartRows(): CartRow[] {
   const { lines: currentLines } = useCart();
+  // Subscribes this hook to the board as well as to the basket, so a line goes
+  // grey the moment the kitchen runs out rather than at the next navigation.
+  const isGone = useSoldOut();
   return useMemo(
     () =>
       currentLines.flatMap<CartRow>((line) => {
@@ -370,11 +373,11 @@ export function useCartRows(): CartRow[] {
             lineCents: unitCents * line.quantity,
             chosen: describeOptions(product, line.options),
             complete: optionsComplete(product, line.options),
-            gone: soldOut(line.slug),
+            gone: isGone(line.slug),
           },
         ];
       }),
-    [currentLines],
+    [currentLines, isGone],
   );
 }
 

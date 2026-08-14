@@ -309,17 +309,45 @@ export const ALLERGEN_NOTE =
 //
 // A shop that bakes in the morning runs out, and the menu has a Donut of the
 // Day on it — an item that is, by definition, sometimes gone. Riley's briefing
-// has a whole section on how to handle sold out; until this existed the app
-// had no way to tell her, or anyone, that anything was.
+// has a whole section on how to handle sold out, the catalog dims a tile, the
+// cart flags a line and /api/shop-order refuses the order. All four read
+// through soldOut() below.
 //
-// Edited by hand for now, and that's the honest shape of it: there is no
-// stock system and no admin screen. When the POS is connected this comes from
-// there instead, and everything below keeps working — the catalog, the cart,
-// the endpoint and Riley all read through soldOut(), not through this array.
-export const SOLD_OUT: string[] = [];
+// ——— Why this list is no longer a constant ———
+//
+// It was `const SOLD_OUT: string[] = []`, edited by hand, with a comment
+// promising the POS would replace it. Which meant that in practice nothing
+// could ever be sold out: taking the last lox off the board needed somebody to
+// edit TypeScript, open a pull request and wait for a deploy, and by then it
+// is tomorrow. Every one of those four readers was reading an empty array and
+// answering "no, we have plenty" with total confidence, and Riley is the one
+// of the four that says it in a sentence.
+//
+// So the array is the *default*, and app/soldOut.ts replaces its contents at
+// runtime from whichever source the deployment has: a database table, or an
+// environment variable, or nothing, in that order. Anything below the line
+// keeps working unchanged, which is why the mutation happens here rather than
+// each reader learning where the truth lives.
+const OFF_THE_BOARD: string[] = [];
+
+/** What is off the board right now. A copy, so a caller can't edit it. */
+export function soldOutSlugs(): string[] {
+  return [...OFF_THE_BOARD];
+}
+
+/** Replaces the list. Server-side only in practice, called by
+ *  app/soldOut.ts on the server and by the sold-out store in the browser.
+ *
+ *  Deliberately a whole-list replacement rather than add/remove: the source is
+ *  authoritative about the entire board, and a partial update is how two
+ *  writers end up disagreeing about whether the donut came back. */
+export function applySoldOut(slugs: readonly string[]) {
+  OFF_THE_BOARD.length = 0;
+  OFF_THE_BOARD.push(...slugs);
+}
 
 export function soldOut(slug: string): boolean {
-  return SOLD_OUT.includes(slug);
+  return OFF_THE_BOARD.includes(slug);
 }
 
 // ——— Options: defaults, pricing, and line identity ———

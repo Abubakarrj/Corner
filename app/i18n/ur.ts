@@ -755,4 +755,31 @@ export const ur: Table = {
   "careers.errSignature": "دستخط کے لیے اپنا پورا نام لکھیں۔",
   "careers.errCheckForm": "اوپر کسی چیز کا جواب ابھی باقی ہے۔",
   "careers.errSendFailed": "ہم اسے بھیج نہیں سکے۔ ایک لمحے بعد دوبارہ کوشش کریں۔",
+
+  // ——— Riley's info panels, and the new API answers ———
+  //
+  // The panels under a reply are assembled on the server, which has no
+  // locale, so they arrive as keys. See Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "کل",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "ڈیلیوری اور ٹپ کے بغیر۔",
+  "chat.hoursOpenNow": "ابھی کھلا ہے",
+  "chat.hoursStatus": "حالت",
+  "chat.hoursReadyIn": "تیار ہوگا",
+  "chat.hoursOrdering": "آرڈر",
+  "chat.aboutMinutes": "تقریباً {minutes} منٹ",
+  "chat.notRightNow": "ابھی نہیں",
+  "chat.deliveryOutOfRange": "حدود سے باہر",
+  "chat.deliveryYes": "ہم وہاں ڈیلیور کرتے ہیں",
+  "chat.deliveryAddressLabel": "پتہ",
+  "chat.deliveryDistance": "فاصلہ",
+  "chat.drivingMiles": "{miles} میل بذریعہ گاڑی",
+  "chat.deliveryWithin": "ہم اتنے فاصلے تک",
+  "chat.milesPlain": "{miles} میل",
+  "chat.deliveryFeeLabel": "ڈیلیوری",
+  "chat.deliveryEta": "دروازے پر",
+  "chat.deliveryQuoteNote": "اسی پتے کے لیے۔ ادائیگی سے پہلے دوبارہ حساب ہوتا ہے۔",
+  "api.rileyTooFast": "ایک ساتھ بہت سے پیغامات ہیں۔ ایک منٹ رکیں۔",
+  "api.soldOutNoStore": "ابھی اسے محفوظ کرنے کی جگہ نہیں ہے۔",
+  "api.couldNotSave": "ہم اسے محفوظ نہیں کر سکے۔ تھوڑی دیر بعد کوشش کریں۔",
 };

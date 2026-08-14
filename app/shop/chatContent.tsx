@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useT } from "../i18n";
+import { useLocale, useT } from "../i18n";
+import { localeById } from "../localeScript";
+import { clockLabel, weekdayLabel } from "../shopFacts";
 import { useMenu, type MenuText } from "../i18n/menu";
 import ProductImage from "./ProductImage";
 import { formatPrice, getProduct } from "./products";
-import type { ChatAction, ChatScreen, InfoCard, ProductCard } from "./chatTypes";
+import type { ChatAction, ChatScreen, InfoCard, Phrase, ProductCard } from "./chatTypes";
 
 // What a reply from Riley is made of, once it stops being a wall of text.
 //
@@ -263,28 +265,53 @@ export function ProductCards({
 
 // ——— Info panels ———
 
+// A phrase from the server, turned into words in the visitor's language.
+//
+// The four fields it can carry are documented on the type in chatTypes.ts, and
+// each one exists because the server could not have written that fragment
+// itself: a menu item's name, an hour on the clock, a weekday. Everything else
+// is a key and its substitutions.
+function usePhrase(): (phrase: Phrase) => string {
+  const t = useT();
+  const locale = useLocale();
+  const menu = useMenu();
+  const tag = localeById(locale).tag;
+
+  return (phrase: Phrase) => {
+    if (!phrase.key) return phrase.text ?? "";
+    const product = phrase.item ? getProduct(phrase.item) : undefined;
+    return t(phrase.key, {
+      ...phrase.vars,
+      ...(product ? { name: menu.name(product) } : null),
+      ...(phrase.hour !== undefined ? { time: clockLabel(phrase.hour, tag) } : null),
+      ...(phrase.day !== undefined ? { day: weekdayLabel(phrase.day, tag) } : null),
+    });
+  };
+}
+
 // The answer to "are you open", "do you deliver to me", "what does that come
 // to" — as a small table rather than a sentence with numbers buried in it.
 export function InfoPanel({ card }: { card: InfoCard }) {
+  const say = usePhrase();
   return (
     <div className="rounded-2xl border border-line-faint bg-surface p-3">
-      <p className="m-0 text-[12px] font-medium text-ink">{card.title}</p>
+      <p className="m-0 text-[12px] font-medium text-ink">{say(card.title)}</p>
       <div className="mt-1.5 flex flex-col gap-1">
         {card.lines.map((line, index) => (
           <div key={index} className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] text-muted">{line.label}</span>
+            <span className="text-[12px] text-muted">{say(line.label)}</span>
             <span
               className={`shrink-0 text-[12px] text-ink ${
                 // The last row of a totals panel is the total.
                 card.kind === "totals" && index === card.lines.length - 1 ? "font-medium" : ""
               }`}
             >
-              {line.value}
+              {say(line.value)}
             </span>
           </div>
         ))}
       </div>
-      {card.note ? <p className="m-0 mt-1.5 text-[11px] text-quiet">{card.note}</p> : null}
+      {card.note ? <p className="m-0 mt-1.5 text-[11px] text-quiet">{say(card.note)}</p> : null}
     </div>
   );
 }

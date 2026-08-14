@@ -752,4 +752,31 @@ export const ko: Table = {
   "careers.errSignature": "서명을 위해 성명을 입력해 주세요.",
   "careers.errCheckForm": "위에 아직 답하지 않은 항목이 있습니다.",
   "careers.errSendFailed": "보내지 못했습니다. 잠시 후 다시 시도해 주세요.",
+
+  // ——— Riley's info panels, and the new API answers ———
+  //
+  // The panels under a reply are assembled on the server, which has no
+  // locale, so they arrive as keys. See Phrase in app/shop/chatTypes.ts.
+  "chat.totalsTitle": "합계",
+  "chat.totalsLine": "{quantity}× {name}",
+  "chat.totalsNote": "배달비와 팁은 별도입니다.",
+  "chat.hoursOpenNow": "지금 영업 중",
+  "chat.hoursStatus": "상태",
+  "chat.hoursReadyIn": "준비 시간",
+  "chat.hoursOrdering": "주문",
+  "chat.aboutMinutes": "약 {minutes}분",
+  "chat.notRightNow": "지금은 안 됩니다",
+  "chat.deliveryOutOfRange": "배달 구역 밖",
+  "chat.deliveryYes": "배달 가능합니다",
+  "chat.deliveryAddressLabel": "주소",
+  "chat.deliveryDistance": "거리",
+  "chat.drivingMiles": "차로 {miles}마일",
+  "chat.deliveryWithin": "배달 가능 거리",
+  "chat.milesPlain": "{miles}마일",
+  "chat.deliveryFeeLabel": "배달비",
+  "chat.deliveryEta": "도착까지",
+  "chat.deliveryQuoteNote": "이 주소 기준입니다. 결제 전에 다시 계산합니다.",
+  "api.rileyTooFast": "메시지가 너무 많습니다. 잠시 후에 다시 해보세요.",
+  "api.soldOutNoStore": "아직 저장할 곳이 없습니다.",
+  "api.couldNotSave": "저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
 };
