@@ -7,7 +7,7 @@ import { useCapabilities } from "../../capabilities";
 import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { PALETTE } from "../../shop/shopControls";
-import { CLOSE_HOUR, OPEN_HOUR, clockLabel } from "../../shopFacts";
+import { OPEN_HOUR, clockLabel, closeHour } from "../../shopFacts";
 import KitchenLoad from "./KitchenLoad";
 import type { StoreLocation } from "./locations";
 
@@ -156,7 +156,7 @@ export default function LocationSheet({
         <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: muted }}>
           {t("finder.hoursEveryDay", {
             open: clockLabel(OPEN_HOUR, tag),
-            close: clockLabel(CLOSE_HOUR, tag),
+            close: clockLabel(closeHour() % 24, tag),
           })}
         </p>
       </div>

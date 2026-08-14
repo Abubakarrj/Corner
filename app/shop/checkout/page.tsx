@@ -6,7 +6,7 @@ import { useMenu } from "../../i18n/menu";
 import Link from "next/link";
 import { formatPrice } from "../products";
 import { useOpening } from "../../useOpening";
-import { CLOSE_HOUR, clockLabel, weekdayLabel } from "../../shopFacts";
+import { clockLabel, closeHour, weekdayLabel } from "../../shopFacts";
 import { useCapabilities } from "../../capabilities";
 import { PREP_MINUTES } from "../../account";
 import { Button } from "../../ui/Button";
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
           </p>
           <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
             {opening.open
-              ? t("checkout.noTimeBefore", { time: clockLabel(CLOSE_HOUR, tag) })
+              ? t("checkout.noTimeBefore", { time: clockLabel(closeHour() % 24, tag) })
               : opening.next
                 ? t(
                     opening.next.when === "today"

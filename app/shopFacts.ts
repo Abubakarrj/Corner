@@ -146,30 +146,68 @@ function shopClock(now: Date): { day: number; hour: number; minute: number } {
 
 // ——— ⚠️ Testing outside opening hours ———
 //
-// SHOP_OPEN_PREVIEW=1 makes the shop count as open whatever the clock says.
-// It exists because the hours below are the only thing standing between
-// somebody and a test order, and 7am–4pm is a narrow window to do integration
-// work in — the delivery quote, the courier booking, the Toast ticket and the
-// tracker can only be exercised end to end while the shop is open.
+// 7am–4pm is a narrow window to do integration work in, and it is the only
+// thing standing between somebody and a test order: the delivery quote, the
+// courier booking, the Toast ticket, the queue count and the tracker can only
+// be exercised end to end while the shop is open. SHOP_OPEN_PREVIEW moves the
+// closing time so that work can happen in an evening.
 //
-// ⚠️ It must never be set on a deploy real customers use. An order placed at
-// 3am reaches a kitchen with nobody in it: the customer is charged nothing and
-// told the shop is making their breakfast, the courier is booked and arrives
-// at a dark shop, and the first anybody knows is a complaint. This is the same
-// warning PAYMENTS_PREVIEW carries, for the same reason — both of them make
-// the app claim something that is not true.
+//   SHOP_OPEN_PREVIEW=21   the counter closes at 9pm today instead of 4pm
+//   SHOP_OPEN_PREVIEW=1    open at every hour of every day
+//
+// ⚠️ Either way the app will take an order the kitchen is not there to make.
+// The customer is told their breakfast is being prepared, a courier is booked
+// and arrives at a dark shop, and the first anybody knows is a complaint. Same
+// warning PAYMENTS_PREVIEW carries, for the same reason: both make the app
+// claim something that is not true.
+//
+// An hour is the safer of the two and the one to reach for. It bounds the
+// damage — the shop still opens at 7am, so nothing is orderable at 3am — and,
+// more to the point, it expires on its own. A `1` sits in an environment
+// until somebody remembers it is there, which is how a test setting becomes a
+// production one; `21` stops mattering at 9pm whether or not anybody comes
+// back to remove it.
 //
 // Deliberately not NEXT_PUBLIC_. The browser learns about it through
 // /api/capabilities like every other capability, so turning it on is a server
 // decision and there is one place to look.
+function previewSetting(): string {
+  return process.env.SHOP_OPEN_PREVIEW?.trim() ?? "";
+}
+
+/** True while any preview is in force. What /api/capabilities reports. */
 export function openPreview(): boolean {
-  return process.env.SHOP_OPEN_PREVIEW === "1";
+  return previewSetting().length > 0 && closeHour() !== CLOSE_HOUR;
+}
+
+/** Open at every hour, rather than merely later. */
+function alwaysOpen(): boolean {
+  return previewSetting() === "1";
+}
+
+/** The hour the counter actually stops taking orders.
+ *
+ *  CLOSE_HOUR normally. The preview's hour when one is set, so that everything
+ *  reading this agrees — the hours line on the shop sheet, the "no time to
+ *  make that" refusal, and the gate itself. The first cut moved only the gate,
+ *  which would have left the sheet reading "Every Day, 7am–4pm" while the
+ *  checkout happily took an order at half past six. */
+export function closeHour(): number {
+  if (alwaysOpen()) return 24;
+  const hour = Number(previewSetting());
+  // Between the opening hour and midnight, or it is not a closing time. A
+  // typo falls through to the real hours rather than opening the shop.
+  return Number.isInteger(hour) && hour > OPEN_HOUR && hour <= 24 ? hour : CLOSE_HOUR;
+}
+
+export function closeLabel(): string {
+  return clockLabel(closeHour() % 24);
 }
 
 export function isOpenNow(now: Date = new Date()): boolean {
-  if (openPreview()) return true;
+  if (alwaysOpen()) return true;
   const { day, hour } = shopClock(now);
-  return OPEN_DAYS.includes(day) && hour >= OPEN_HOUR && hour < CLOSE_HOUR;
+  return OPEN_DAYS.includes(day) && hour >= OPEN_HOUR && hour < closeHour();
 }
 
 // Minutes left before the counter closes, or 0 if it's already shut. What the
@@ -179,7 +217,7 @@ export function isOpenNow(now: Date = new Date()): boolean {
 export function minutesUntilClose(now: Date = new Date()): number {
   if (!isOpenNow(now)) return 0;
   const { hour, minute } = shopClock(now);
-  return (CLOSE_HOUR - hour) * 60 - minute;
+  return (closeHour() - hour) * 60 - minute;
 }
 
 // When the window opens next, phrased for a person: "tomorrow at 7am", "at
