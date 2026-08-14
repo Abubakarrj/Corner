@@ -85,3 +85,65 @@ export const MAP_STYLE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
     },
   ],
 };
+
+// ——— The pin picker's variant: the same map, with the landmarks back ———
+//
+// The finder answers "where is the counter", and a hundred competing
+// restaurant names are in the way of that. The picker answers a different
+// question — "which of these buildings is yours" — and for that the tofu house
+// on the corner and the Metro stop across the road are not clutter, they are
+// the answer. Adopting the finder's style wholesale took them away, and the
+// street names it keeps are not enough on their own: a tower block has one
+// address on the map and four sides in real life.
+//
+// ——— No Places call ———
+//
+// Worth saying because it looks like a job for it: this needs nothing from the
+// Places API. The names are already on the tile Google is drawing — the quiet
+// style was hiding them — so switching them back on costs one array entry and
+// no request, where a Nearby Search would be a billed call on every settle to
+// re-fetch labels that were there all along.
+//
+// Google applies a style array in order and the last rule for a given
+// feature/element pair wins, so appending is what overrides QUIET's blanket
+// `poi: off` above. The base has to come first.
+function landmarks(theme: MapTheme): google.maps.MapTypeStyle[] {
+  // Quieter than the street names deliberately. Streets place the door and
+  // landmarks only confirm it, so they must not compete: on a screen where
+  // somebody is reading "S Ardmore Ave" to check a pin, "BCD Tofu House" in
+  // the same weight is one more thing to read past.
+  const label = theme === "light" ? "#938c7b" : "#7e786e";
+  const footprint = theme === "light" ? "#e9e4d3" : "#2b2a27";
+  return [
+    // Names yes, Google's coloured icons no. The orange fork and the pink bed
+    // are the single loudest thing on the stock basemap and the reason this
+    // map looked like somebody else's product.
+    { featureType: "poi", elementType: "labels.text", stylers: [{ visibility: "on" }] },
+    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: label }] },
+    { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+
+    // Building footprints, which are how somebody says "mine is the one set
+    // back from the road". Tinted a half-step off the ground rather than
+    // outlined — at zoom 18 an outline per building is a screen of boxes.
+    { featureType: "poi", elementType: "geometry", stylers: [{ color: footprint }, { visibility: "on" }] },
+    {
+      featureType: "landscape.man_made",
+      elementType: "geometry",
+      stylers: [{ color: footprint }, { visibility: "on" }],
+    },
+
+    // A Metro entrance is the best landmark on a city block: it is large,
+    // signposted in the street, and everybody local knows it. Same treatment —
+    // the name without the icon.
+    { featureType: "transit.station", elementType: "labels.text", stylers: [{ visibility: "on" }] },
+    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: label }] },
+    { featureType: "transit.station", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  ];
+}
+
+/** The basemap for placing a delivery pin: the app's palette, with the
+ *  landmarks the finder hides. See the note above. */
+export const PIN_STYLE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
+  light: [...MAP_STYLE.light, ...landmarks("light")],
+  dark: [...MAP_STYLE.dark, ...landmarks("dark")],
+};

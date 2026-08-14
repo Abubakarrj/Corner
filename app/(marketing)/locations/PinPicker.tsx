@@ -7,7 +7,7 @@ import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { Button } from "../../ui/Button";
 import { pinDataUri } from "./mapEngine";
-import { MAP_STYLE } from "./mapStyle";
+import { PIN_STYLE } from "./mapStyle";
 import { useResolvedTheme } from "../../theme";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "./locations";
@@ -270,19 +270,20 @@ export default function PinPicker({
         gestureHandling: "greedy",
         clickableIcons: false,
         keyboardShortcuts: false,
-        // The app's own basemap, the same one the store finder draws. See
-        // mapStyle.ts.
+        // The app's palette, with the landmarks the finder hides. See
+        // PIN_STYLE in mapStyle.ts.
         //
-        // This shipped with no styles at all, which meant Google's stock
-        // blue-and-grey with hotel ratings and restaurant pins on it, sitting
-        // inside a cream-and-olive app — two maps in one product that plainly
-        // were not the same product.
+        // Two passes to get here. It shipped with no styles at all — Google's
+        // stock blue-and-grey with hotel ratings and restaurant pins, inside a
+        // cream-and-olive app. Adopting the finder's style fixed that and cost
+        // the landmarks, which on this screen are not clutter: the street name
+        // places the block and the tofu house on the corner is how somebody
+        // knows which side of it they live on. A tower has one address on the
+        // map and four sides in real life.
         //
-        // It costs the POI labels, and that is a real loss worth naming: "BCD
-        // Tofu House" on the corner is how somebody recognises their own
-        // block. What the quiet style keeps is the street names, which are the
-        // part that actually places a door, and consistency won the trade.
-        styles: MAP_STYLE[themeRef.current],
+        // So the picker gets the palette and the names, without the coloured
+        // icons that made it look like somebody else's product.
+        styles: PIN_STYLE[themeRef.current],
       });
       mapRef.current = map;
       setMapState("ready");
@@ -326,7 +327,7 @@ export default function PinPicker({
   // does.
   useEffect(() => {
     themeRef.current = theme;
-    mapRef.current?.setOptions({ styles: MAP_STYLE[theme] });
+    mapRef.current?.setOptions({ styles: PIN_STYLE[theme] });
   }, [theme]);
 
   // ——— "Use my location" ———
