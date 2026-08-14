@@ -242,6 +242,25 @@ function explainRoutes(status: number, detail: string): string {
       " before concluding the key is from somewhere else."
     );
   }
+  // The second gate, and the one that catches people who have just fixed the
+  // first. Enabling an API on a project and permitting a *key* to call it are
+  // two separate switches in two separate screens. A key with "Restrict key →
+  // Restrict API" set carries an allow-list, and a list written when this
+  // project only did maps and geocoding does not have Routes on it. Turning
+  // Routes on at the project level does not add it, so the call keeps failing
+  // with the API freshly and correctly enabled — which reads as the fix
+  // having done nothing.
+  if (detail.includes("API_KEY_SERVICE_BLOCKED") || detail.includes("are blocked")) {
+    return (
+      "Routes API is enabled on the project, but this key is not allowed to" +
+      " call it. The key has an API restriction list and Routes API is not on" +
+      " it. Open the key at" +
+      " https://console.cloud.google.com/apis/credentials, and under" +
+      " 'API restrictions' either add Routes API to the list or set it to" +
+      " 'Don't restrict key'. Enabling the API on the project and permitting" +
+      " the key to use it are two separate switches; this is the second one."
+    );
+  }
   if (detail.includes("API_KEY_HTTP_REFERRER_BLOCKED") || detail.includes("referer")) {
     return (
       "the key is restricted by HTTP referrer. This call is made from a server" +
