@@ -105,7 +105,12 @@ export default function StoreMap({
    *  locateHere() there — rather than as a camera move. */
   /** `coarse` when the platform's own accuracy radius is too wide to name a
    *  building — iOS with Precise Location off, or a cell-tower fallback. */
-  onLocate?: (point: [number, number], coarse: boolean) => void;
+  //
+  //  May return a promise. Delivery mode turns the position into an address
+  //  before it has anything to show, and the button keeps spinning until it
+  //  does — a control that goes idle before its work is finished invites a
+  //  second press.
+  onLocate?: (point: [number, number], coarse: boolean) => void | Promise<void>;
   /** Refused, unavailable, or timed out. All three are the same thing to
    *  somebody looking at the screen: tell them, and say what to do instead. */
   onLocateFailed?: (why: LocateFailure) => void;
@@ -332,9 +337,9 @@ export default function StoreMap({
             // Every branch of this lives in app/geolocate.ts, including why
             // the old single call asked for the imprecise fix and why a
             // refusal needs different words from a timeout.
-            void locateMe().then((result) => {
-              setLocating(false);
+            void locateMe().then(async (result) => {
               if (!result.ok) {
+                setLocating(false);
                 onLocateFailed?.(result.why);
                 return;
               }
@@ -344,7 +349,11 @@ export default function StoreMap({
               // appeared, and nothing marked where the reader was standing —
               // which is why granting the permission felt like nothing.
               engineRef.current?.setYou(result.fix.point, result.fix.accuracyMeters);
-              onLocate?.(result.fix.point, result.fix.coarse);
+              try {
+                await onLocate?.(result.fix.point, result.fix.coarse);
+              } finally {
+                setLocating(false);
+              }
             });
           }}
           aria-label={t("finder.useMyLocation")}

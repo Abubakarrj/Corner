@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -292,12 +293,46 @@ export default function LocationFinder() {
    *  and the pin are keyed off `searched`, so panning left the map over your
    *  street with nothing on it and the bar still asking you to search. Moving
    *  the camera is not answering the question. */
-  function locateHere(point: [number, number]) {
+  function locateHere(point: [number, number]): void | Promise<void> {
     setLocateNote(null);
+    setToastDismissed(false);
+
+    // ——— Delivery wants an address, not a position ———
+    //
+    // In delivery mode this used to set `searched`, and the delivery branch
+    // throws `searched` away — the results, the rail and the pin all return
+    // early for delivery, and `asked` is keyed off the typed query. So the
+    // button found the visitor, wrote the answer into a field nothing on this
+    // screen reads, and cleared the one field that matters. Pressing it did
+    // nothing, twice over.
+    //
+    // A courier is given a doorway, not a latitude. So the position goes back
+    // to Google to become words, and those words land in the address field
+    // where they can be read, corrected, and confirmed like any other address.
+    if (mode === "delivery") {
+      // Returned, not fired and forgotten: StoreMap keeps the button
+      // spinning until this settles. A reverse geocode is a round trip, and a
+      // button that stops spinning before its work is done invites a second
+      // press against a field that is about to fill itself in.
+      return fetch("/api/geo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reverse", point }),
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((body: { place?: { address?: string } } | null) => {
+          const found = body?.place?.address;
+          // A fix in the middle of a park has no doorway, and neither does a
+          // coarse one. Saying so beats filling the field with a suburb.
+          if (found) setQuery(found);
+          else setLocateNote("unavailable");
+        })
+        .catch(() => setLocateNote("unavailable"));
+    }
+
     setSearched({ point, label: "" });
     setBounds(null);
     setQuery("");
-    setToastDismissed(false);
 
     const closest = nearestLocations(
       point,
@@ -471,6 +506,25 @@ export default function LocationFinder() {
             >
               {t("finder.clear")}
             </button>
+          ) : mode === "delivery" ? (
+            // Where we deliver, on the screen that asks for an address.
+            //
+            // The page existed already, reachable from the (i) beside the
+            // delivery fee — which is deep inside the checkout, after a
+            // basket. Somebody standing at an empty address field wondering
+            // whether we come to them had to fill a basket to find out.
+            //
+            // In the field's own corner, where CLEAR sits once there is text
+            // to clear. The two never coexist: an empty field cannot be
+            // cleared, and a full one has already answered the question this
+            // link is for.
+            <Link
+              href="/delivery-areas"
+              className="cb-press absolute end-5 top-[24px] cursor-pointer text-[13px] underline underline-offset-2 transition-opacity hover:opacity-70"
+              style={{ color: muted }}
+            >
+              {t("deliveryArea.title")}
+            </Link>
           ) : null}
         </div>
 

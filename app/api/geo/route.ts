@@ -2,7 +2,13 @@ import {
   DELIVERY_RADIUS_MILES,
   milesBetween,
 } from "../../(marketing)/locations/locations";
-import { driveBetween, geocode, geocodePlaceId, suggest } from "../../googleMaps";
+import {
+  driveBetween,
+  geocode,
+  geocodePlaceId,
+  reverseGeocode,
+  suggest,
+} from "../../googleMaps";
 import { deliveryOrigin } from "../../storePlaces";
 
 // Resolving an address, and deciding whether we'll deliver to it.
@@ -40,6 +46,7 @@ export async function POST(request: Request) {
     query?: unknown;
     kind?: unknown;
     placeId?: unknown;
+    point?: unknown;
   } | null;
   const query = typeof body?.query === "string" ? body.query.trim() : "";
   const placeId = typeof body?.placeId === "string" ? body.placeId.trim() : "";
@@ -53,6 +60,23 @@ export async function POST(request: Request) {
     if (query.length < 3) return Response.json({ suggestions: [] });
     const suggestions = await suggest(query, kind, await deliveryOrigin());
     return Response.json({ suggestions });
+  }
+
+  // Coordinates back into an address, for the locate button in delivery mode.
+  //
+  // Its own action rather than a flag on "resolve", because the input is a
+  // different shape and so is the failure: a phone standing in a park has a
+  // real position and no doorway, which is not the same as a typo.
+  if (body?.action === "reverse") {
+    const point = body?.point;
+    const lat = Array.isArray(point) ? Number(point[0]) : NaN;
+    const lng = Array.isArray(point) ? Number(point[1]) : NaN;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return Response.json({ error: "api.enterAddress" }, { status: 400 });
+    }
+    const found = await reverseGeocode([lat, lng]);
+    if (!found) return Response.json({ error: "api.addressNotFound" }, { status: 404 });
+    return Response.json({ place: found });
   }
 
   if (body?.action !== "resolve") {

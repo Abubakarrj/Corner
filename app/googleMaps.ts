@@ -121,6 +121,7 @@ function resultsOf(body: GeocodeBody, what: string): GeocodeResult[] | null {
 // It is no less safe than geocoding text. The worry was never the id, it was
 // coordinates: an id is a name we hand to Google ourselves, and the position
 // still comes back from our own server call, which is the part that matters.
+
 export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | null> {
   const key = googleMapsKey();
   if (!key) return null;
@@ -134,6 +135,40 @@ export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | n
 
   const results = resultsOf((await response.json()) as GeocodeBody, "place_id");
   return results ? toPlace(results[0], placeId) : null;
+}
+
+/** An address for a pair of coordinates.
+ *
+ *  The other direction from geocode(), and the reason it exists is the locate
+ *  button in delivery mode: a courier is given a doorway, not a latitude, so
+ *  a position is only useful there once it has been turned back into words
+ *  somebody can check and correct.
+ *
+ *  Deliverable results only, same filter as forward geocoding. A phone's fix
+ *  lands in the middle of a building and Google will happily answer with the
+ *  neighbourhood or the city if it has nothing better — and a delivery to
+ *  "Koreatown, Los Angeles" is not a delivery.
+ */
+export async function reverseGeocode(
+  point: [number, number],
+): Promise<GeocodedPlace | null> {
+  const key = googleMapsKey();
+  if (!key) return null;
+
+  const params = new URLSearchParams({
+    latlng: `${point[0]},${point[1]}`,
+    key,
+    // Ask for the shapes worth having rather than filtering the whole list
+    // afterwards: this is the same set isDeliverable() accepts.
+    result_type: "street_address|premise|subpremise",
+  });
+
+  const response = await fetch(`${GEOCODE_URL}?${params}`, { next: { revalidate: 60 } });
+  if (!response.ok) return null;
+
+  const results = resultsOf((await response.json()) as GeocodeBody, "reverse");
+  const usable = results?.find(isDeliverable);
+  return usable ? toPlace(usable, usable.formatted_address ?? "") : null;
 }
 
 // Turns text into one canonical place.
