@@ -137,38 +137,90 @@ export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | n
   return results ? toPlace(results[0], placeId) : null;
 }
 
-/** An address for a pair of coordinates.
+/** Addresses near a pair of coordinates, nearest first.
  *
- *  The other direction from geocode(), and the reason it exists is the locate
- *  button in delivery mode: a courier is given a doorway, not a latitude, so
- *  a position is only useful there once it has been turned back into words
- *  somebody can check and correct.
+ *  ——— Why a list and not an answer ———
  *
- *  Deliverable results only, same filter as forward geocoding. A phone's fix
- *  lands in the middle of a building and Google will happily answer with the
- *  neighbourhood or the city if it has nothing better — and a delivery to
- *  "Koreatown, Los Angeles" is not a delivery.
+ *  A phone's fix is a point with a radius, and a point in Koreatown has a
+ *  building on every side of it. Standing at 3545 Wilshire Blvd, the first
+ *  deliverable result Google returns was 637 S Ardmore Ave — the same corner,
+ *  a different door, and a courier sent to the wrong one.
+ *
+ *  There is no version of this that guesses correctly every time, because the
+ *  information needed is which building somebody is standing in and the phone
+ *  does not know. So this returns the candidates and the screen asks.
+ *
+ *  ——— Sorted by distance, not by Google's order ———
+ *
+ *  Google returns results in its own relevance order, which is not nearest
+ *  first. Taking the head of that list is what produced the wrong corner.
+ *  These are sorted by real distance from the fix, so the top one is at least
+ *  a defensible default and the rest are ordered the way somebody scanning
+ *  them expects.
+ *
+ *  Deliverable shapes only, deduped by address, capped — a chooser with
+ *  fifteen rows on it is not a chooser.
  */
-export async function reverseGeocode(
+const NEARBY_LIMIT = 6;
+
+// The only shapes a courier can be sent to.
+//
+// `result_type` above asks Google for exactly these, and this checks that it
+// obliged. Belt and braces on purpose: isDeliverable() rejects countries,
+// states and counties, and a neighbourhood is none of those — so a
+// "Koreatown, Los Angeles" with rooftop geometry would pass every existing
+// filter and offer itself as a delivery address.
+const A_DOOR = new Set(["street_address", "premise", "subpremise"]);
+
+function metresBetween(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const dLat = ((b[0] - a[0]) * Math.PI) / 180;
+  const dLng = ((b[1] - a[1]) * Math.PI) / 180;
+  const lat1 = (a[0] * Math.PI) / 180;
+  const lat2 = (b[0] * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+export async function reverseCandidates(
   point: [number, number],
-): Promise<GeocodedPlace | null> {
+): Promise<GeocodedPlace[]> {
   const key = googleMapsKey();
-  if (!key) return null;
+  if (!key) return [];
 
   const params = new URLSearchParams({
     latlng: `${point[0]},${point[1]}`,
     key,
-    // Ask for the shapes worth having rather than filtering the whole list
-    // afterwards: this is the same set isDeliverable() accepts.
+    // The shapes a courier can be sent to. Without this Google mixes in the
+    // neighbourhood, the postal code and the city, and they crowd out the
+    // doors.
     result_type: "street_address|premise|subpremise",
   });
 
   const response = await fetch(`${GEOCODE_URL}?${params}`, { next: { revalidate: 60 } });
-  if (!response.ok) return null;
+  if (!response.ok) return [];
 
   const results = resultsOf((await response.json()) as GeocodeBody, "reverse");
-  const usable = results?.find(isDeliverable);
-  return usable ? toPlace(usable, usable.formatted_address ?? "") : null;
+  if (!results) return [];
+
+  const seen = new Set<string>();
+  return results
+    .filter(isDeliverable)
+    .filter((result) => (result.types ?? []).some((type) => A_DOOR.has(type)))
+    .map((result) => toPlace(result, result.formatted_address ?? ""))
+    .filter((place): place is GeocodedPlace => place !== null)
+    .filter((place) => {
+      const id = place.address.toLowerCase();
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .sort(
+      (a, b) =>
+        metresBetween(point, [a.lat, a.lng]) - metresBetween(point, [b.lat, b.lng]),
+    )
+    .slice(0, NEARBY_LIMIT);
 }
 
 // Turns text into one canonical place.

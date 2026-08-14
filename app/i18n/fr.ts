@@ -51,6 +51,7 @@ export const fr: Table = {
   "finder.locateFailed": "Nous n'avons pas pu obtenir votre position. Cherchez une ville ou un code postal.",
   "finder.locateDenied": "La localisation est désactivée pour ce site. Autorisez-la dans votre navigateur ou vos réglages, puis retouchez.",
   "finder.locateCoarse": "C’est votre zone approximative, pas votre adresse. Activez la Position exacte pour ce site pour vous situer précisément.",
+  "finder.nearbyDoors": "Adresses près de vous",
   "push.turnOn": "Prévenez-moi quand c'est prêt",
   "push.on": "On vous préviendra",
   "push.working": "Un instant…",

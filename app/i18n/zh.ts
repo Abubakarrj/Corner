@@ -52,6 +52,7 @@ export const zh: Table = {
   "finder.locateFailed": "无法获取你的位置。请改用城市或邮编搜索。",
   "finder.locateDenied": "本站的定位权限已关闭。请在浏览器或手机设置中允许后再点一次。",
   "finder.locateCoarse": "这是您的大致区域，不是具体地址。为本站开启“精确位置”即可准确定位。",
+  "finder.nearbyDoors": "您附近的地址",
   "push.turnOn": "做好了通知我",
   "push.on": "我们会通知你",
   "push.working": "稍等…",

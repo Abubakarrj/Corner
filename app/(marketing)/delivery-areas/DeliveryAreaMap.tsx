@@ -226,7 +226,7 @@ export default function DeliveryAreaMap() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {/* The map, or nothing. A grey box captioned "map unavailable" is worse
           than the address check standing on its own — the check is the part
           that answers the question. */}
@@ -234,7 +234,10 @@ export default function DeliveryAreaMap() {
         <div
           ref={holder}
           data-theme={theme}
-          className="aspect-[4/5] max-h-[60vh] w-full overflow-hidden rounded-2xl border border-line"
+          // Fills what the column has left rather than claiming a fixed
+          // ratio. The ResizeObserver below re-fits the polygon whenever that
+          // changes, so the shape is framed correctly at any height.
+          className="min-h-0 w-full flex-1 overflow-hidden rounded-2xl border border-line"
           role="img"
           aria-label={t("deliveryArea.mapLabel", { miles: String(area.radiusMiles) })}
         />

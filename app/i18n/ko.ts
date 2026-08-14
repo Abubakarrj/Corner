@@ -50,6 +50,7 @@ export const ko: Table = {
   "finder.locateFailed": "위치를 가져오지 못했습니다. 도시나 우편번호로 검색해 주세요.",
   "finder.locateDenied": "이 사이트의 위치 권한이 꺼져 있습니다. 브라우저나 휴대폰 설정에서 허용한 뒤 다시 눌러 주세요.",
   "finder.locateCoarse": "대략적인 지역이며 정확한 주소가 아닙니다. 정확한 위치를 이 사이트에 허용하면 정확히 표시됩니다.",
+  "finder.nearbyDoors": "주변 주소",
   "push.turnOn": "준비되면 알려 주세요",
   "push.on": "알려 드릴게요",
   "push.working": "잠시만요…",

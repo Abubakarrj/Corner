@@ -129,6 +129,9 @@ export default function LocationFinder() {
   // changes it — and equally useless to somebody whose phone gave us a
   // kilometre-wide answer, which is a *success* that needs a different two
   // taps in settings. Four outcomes, four sentences. See app/geolocate.ts.
+  // Addresses around the visitor's fix, offered after a locate. Empty unless
+  // there is a real choice to make.
+  const [nearbyDoors, setNearbyDoors] = useState<string[]>([]);
   const [locateNote, setLocateNote] = useState<
     "denied" | "unsupported" | "unavailable" | "coarse" | null
   >(null);
@@ -320,12 +323,29 @@ export default function LocationFinder() {
         body: JSON.stringify({ action: "reverse", point }),
       })
         .then((response) => (response.ok ? response.json() : null))
-        .then((body: { place?: { address?: string } } | null) => {
-          const found = body?.place?.address;
+        .then((body: { places?: { address?: string }[] } | null) => {
+          const found = (body?.places ?? [])
+            .map((place) => place?.address)
+            .filter((address): address is string => Boolean(address));
           // A fix in the middle of a park has no doorway, and neither does a
           // coarse one. Saying so beats filling the field with a suburb.
-          if (found) setQuery(found);
-          else setLocateNote("unavailable");
+          if (found.length === 0) {
+            setLocateNote("unavailable");
+            return;
+          }
+          // The nearest one goes in the field, and the rest are offered.
+          //
+          // A phone knows a point; a point in Koreatown has a building on
+          // every side of it. Standing at 3545 Wilshire, the first result
+          // Google returned was the door round the corner on Ardmore — same
+          // block, wrong address, and a courier sent to it.
+          //
+          // Nothing here can know which building somebody is in, so it stops
+          // pretending to: the closest is filled in because it is usually
+          // right and always editable, and the alternatives sit under the
+          // field until one is picked or the list is dismissed.
+          setQuery(found[0]);
+          setNearbyDoors(found.length > 1 ? found : []);
         })
         .catch(() => setLocateNote("unavailable"));
     }
@@ -484,6 +504,7 @@ export default function LocationFinder() {
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
+              setNearbyDoors([]);
               setBounds(null);
               // Typing invalidates the place that was picked. Leaving it set
               // would keep the map filtered to a town the field no longer
@@ -500,7 +521,10 @@ export default function LocationFinder() {
           {query ? (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                setNearbyDoors([]);
+              }}
               className="absolute end-5 top-[26px] cursor-pointer text-[13px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
               style={{ color: muted }}
             >
@@ -527,6 +551,34 @@ export default function LocationFinder() {
             </Link>
           ) : null}
         </div>
+
+        {/* The doors around where the phone says you are.
+            Only after a locate, only when there is more than one, and gone as
+            soon as one is picked or the field is touched — this is about a
+            position, not about text. See locateHere. */}
+        {nearbyDoors.length > 0 ? (
+          <ul
+            className="m-0 list-none border-t p-0"
+            style={{ borderColor: controlBorder }}
+            aria-label={t("finder.nearbyDoors")}
+          >
+            {nearbyDoors.map((address) => (
+              <li key={address}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery(address);
+                    setNearbyDoors([]);
+                  }}
+                  className="cb-press block w-full cursor-pointer px-5 py-3 text-left text-[14px] transition-colors hover:bg-raise"
+                  style={{ color: address === query ? ink : muted }}
+                >
+                  {address}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <SearchResults
           mode={mode}

@@ -50,6 +50,7 @@ export const es: Table = {
   "finder.locateFailed": "No pudimos obtener tu ubicación. Busca una ciudad o código postal.",
   "finder.locateDenied": "La ubicación está desactivada para este sitio. Actívala en el navegador o en los ajustes del teléfono y vuelve a tocar.",
   "finder.locateCoarse": "Esa es tu zona aproximada, no tu dirección. Activa la Ubicación precisa para este sitio para situarte con exactitud.",
+  "finder.nearbyDoors": "Direcciones cerca de ti",
   "push.turnOn": "Avísame cuando esté listo",
   "push.on": "Te avisamos",
   "push.working": "Un momento…",

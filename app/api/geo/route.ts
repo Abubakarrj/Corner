@@ -6,7 +6,7 @@ import {
   driveBetween,
   geocode,
   geocodePlaceId,
-  reverseGeocode,
+  reverseCandidates,
   suggest,
 } from "../../googleMaps";
 import { deliveryOrigin } from "../../storePlaces";
@@ -74,9 +74,14 @@ export async function POST(request: Request) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       return Response.json({ error: "api.enterAddress" }, { status: 400 });
     }
-    const found = await reverseGeocode([lat, lng]);
-    if (!found) return Response.json({ error: "api.addressNotFound" }, { status: 404 });
-    return Response.json({ place: found });
+    // The whole list, nearest first. One point has a building on every side
+    // of it, and picking for somebody is how a courier ends up at the wrong
+    // door on the right corner — see reverseCandidates.
+    const places = await reverseCandidates([lat, lng]);
+    if (places.length === 0) {
+      return Response.json({ error: "api.addressNotFound" }, { status: 404 });
+    }
+    return Response.json({ places, place: places[0] });
   }
 
   if (body?.action !== "resolve") {
