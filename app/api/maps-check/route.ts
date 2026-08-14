@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { authorized, notFound } from "../../diagnostics";
 import { geocode, googleMapsKey, routeBetween, suggest } from "../../googleMaps";
 import { deliveryOrigin } from "../../storePlaces";
 
@@ -23,24 +23,14 @@ import { deliveryOrigin } from "../../storePlaces";
 //
 // It spends real API quota on every hit, and it names the deployment's
 // configuration problems. Neither is something to leave open. Set
-// MAPS_DIAGNOSTIC_TOKEN, check the page, and remove the variable — with it
-// unset this route does not exist, which is the state it should spend most of
-// its life in.
+// DIAGNOSTIC_TOKEN, check the page, and remove the variable — with it unset
+// this route does not exist, which is the state it should spend most of its
+// life in. The gate is shared with /api/status; see app/diagnostics.ts.
 //
 // It never reports the key itself. Not the value, not a prefix, not a length.
 // The answer to "is the key right" is which calls succeeded.
 
 export const dynamic = "force-dynamic";
-
-/** Constant-time compare that tolerates a length mismatch. A plain === leaks
- *  the token's length through timing, which is a small thing, and using
- *  timingSafeEqual on unequal buffers throws, which is a bigger one. */
-function matches(given: string, expected: string): boolean {
-  const a = Buffer.from(given);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
 
 // Somewhere real to aim at. A fixed address a couple of miles from the
 // counter, rather than the shop itself, which would answer zero miles and
@@ -57,13 +47,7 @@ const PROBE_ADDRESS = "3450 Wilshire Blvd, Los Angeles, CA 90010";
 const PROBE_POINT: [number, number] = [34.0616, -118.3009];
 
 export async function GET(request: Request) {
-  const expected = process.env.MAPS_DIAGNOSTIC_TOKEN;
-  const given = new URL(request.url).searchParams.get("token") ?? "";
-  // 404, not 401. An endpoint that answers "wrong token" has told you it is
-  // there and worth guessing at; one that is simply absent has not.
-  if (!expected || !matches(given, expected)) {
-    return new Response("Not found", { status: 404 });
-  }
+  if (!authorized(request)) return notFound();
 
   if (!googleMapsKey()) {
     return Response.json({

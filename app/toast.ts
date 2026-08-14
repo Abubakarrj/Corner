@@ -477,3 +477,55 @@ function inTheKitchen(order: {
   const stage = foodStageOf(order.guestOrderStatus ?? derivedFulfillment(order));
   return stage === undefined || stage === "received" || stage === "cooking";
 }
+
+/** Whether Toast will actually issue us a token, asked now.
+ *
+ *  For /api/status. Credentials present in the environment is not the same as
+ *  credentials that work, and the difference is a shop that believes orders
+ *  are reaching the kitchen.
+ *
+ *  Deliberately does not go through token() and does not touch its cache. The
+ *  first version did, and it was the exact bug this endpoint exists to find,
+ *  written into the endpoint: the cached token lives for a day, so a status
+ *  check would have reported Toast healthy for twenty-four hours after Toast
+ *  stopped answering. A check that reads a cache is not a check.
+ *
+ *  Nothing here is cached either, in the other direction — a successful probe
+ *  does not seed the cache, because a token minted for a diagnostic is not one
+ *  the order path should be quietly relying on. */
+export async function toastReachable(): Promise<{ ok: true } | { ok: false; why: string }> {
+  const config = toastConfig();
+  if (!config) return { ok: false, why: "not configured" };
+
+  let response: Response;
+  try {
+    response = await fetch(`${config.host}/authentication/v1/authentication/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientId: config.clientId,
+        clientSecret: config.clientSecret,
+        userAccessType: "TOAST_MACHINE_CLIENT",
+      }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      why: `TOAST_API_HOST is unreachable: ${(error as Error).message}`,
+    };
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    return { ok: false, why: `Toast rejected the credentials (${response.status}).` };
+  }
+  if (!response.ok) {
+    return { ok: false, why: `Toast answered ${response.status} to the login call.` };
+  }
+  const body = (await response.json().catch(() => null)) as {
+    token?: { accessToken?: string };
+  } | null;
+  return body?.token?.accessToken
+    ? { ok: true }
+    : { ok: false, why: "Toast accepted the login but returned no token." };
+}
