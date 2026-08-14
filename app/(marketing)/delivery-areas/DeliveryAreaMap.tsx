@@ -34,7 +34,9 @@ type Area = {
 type Check =
   | { state: "idle" }
   | { state: "asking" }
-  | { state: "answered"; inRange: boolean; miles: number; address: string }
+  // Just the answer. It used to carry the distance and the canonical address
+  // as well, and the copy that read them back is gone: see the note below.
+  | { state: "answered"; inRange: boolean }
   | { state: "unsure" }
   | { state: "failed" };
 
@@ -214,12 +216,7 @@ export default function DeliveryAreaMap() {
       if (!response.ok) setCheck({ state: "failed" });
       else if (!body.known) setCheck({ state: "unsure" });
       else
-        setCheck({
-          state: "answered",
-          inRange: Boolean(body.inRange),
-          miles: Number(body.miles),
-          address: String(body.address),
-        });
+        setCheck({ state: "answered", inRange: Boolean(body.inRange) });
     } catch {
       setCheck({ state: "failed" });
     }
@@ -291,11 +288,15 @@ export default function DeliveryAreaMap() {
         </button>
       </form>
 
+      {/* The answer, and only the answer.
+          It used to read "Yes, 4101 5th St, Los Angeles, CA 90020, USA is 1.4
+          miles out." — which reads the address back off the field directly
+          above it, and gives a distance nobody asked for to answer a yes or no
+          question. Both were there because they were available, not because
+          anybody needed them. */}
       {check.state === "answered" ? (
         <p className="m-0 text-[14px] leading-[1.5] text-ink">
-          {check.inRange
-            ? t("deliveryArea.yes", { address: check.address, miles: check.miles.toFixed(1) })
-            : t("deliveryArea.no", { address: check.address, miles: check.miles.toFixed(1) })}
+          {check.inRange ? t("deliveryArea.yes") : t("deliveryArea.no")}
         </p>
       ) : null}
       {check.state === "unsure" ? (

@@ -312,9 +312,9 @@ export const en = {
 
   "deliveryArea.checking": "Checking…",
 
-  "deliveryArea.yes": "Yes — {address} is {miles} miles out.",
+  "deliveryArea.yes": "Within delivery area",
 
-  "deliveryArea.no": "{address} is {miles} miles out, past what we can reach.",
+  "deliveryArea.no": "Sorry, we haven't ventured out that far yet",
 
   "deliveryArea.unsure": "We could not measure that one. Try it at checkout, which asks the courier directly.",
 
