@@ -107,12 +107,23 @@ export default function OrderStatusBar({ dock = false }: { dock?: boolean }) {
               //
               // env(safe-area-inset-bottom) is only non-zero under
               // viewport-fit=cover, which /shop sets and the marketing tree
-              // does not — so on the landing page it resolved to nothing and
-              // the row sat hard against the bottom of the screen with the
-              // home indicator across it. The constant is the floor under
-              // that: real ground on every device, plus the inset on the ones
-              // that report one.
-              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)",
+              // does not — and `dock` is used on exactly one screen, the
+              // marketing landing page. So on the only route this rule runs
+              // on, the env() term is always zero and the constant is the
+              // whole clearance.
+              //
+              // 0.5rem was not enough of one. With the row's own py-2.5 that
+              // put the text 18px off the floor, and an iPhone's home
+              // indicator pill starts about 21px up — so the status line was
+              // sitting under it. 1.25rem clears the pill by roughly 9px,
+              // which is enough to read as deliberate space and not so much
+              // that it reads as a gap on a device with no indicator at all.
+              //
+              // max(), not +. On a route that does report a real inset the
+              // second term already wins and this must not add to it: 34px of
+              // device inset plus 20px of ours is a band, not a margin.
+              paddingBottom:
+                "max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))",
             }
           : null),
       }}
