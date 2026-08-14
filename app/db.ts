@@ -89,6 +89,43 @@ export function db(): Pool | null {
 // written out in full works everywhere.
 export const SCHEMA = "corner_bagel";
 
+/** What a connection failure actually means, where the message is a give-away.
+ *
+ *  ——— The one that cost an evening ———
+ *
+ *    getaddrinfo ENOTFOUND dpg-d9u06m1t0dsc73c8fsd0-a
+ *
+ *  Render gives a managed Postgres two connection strings. The internal one is
+ *  a bare host with no domain on it — `dpg-xxxx-a` — and it resolves only from
+ *  services in the same region and the same account. The external one carries
+ *  a real domain: `dpg-xxxx-a.oregon-postgres.render.com`.
+ *
+ *  Paste the internal string into a service that is not next to the database
+ *  and DNS simply has nothing to look up. The error says ENOTFOUND, which
+ *  reads like a typo in the hostname, and the hostname is correct. Naming it
+ *  here is worth more than the six words node gives you. */
+export function explainDbError(error: unknown): string {
+  const message = (error as Error)?.message ?? String(error);
+  if (/ENOTFOUND\s+dpg-[a-z0-9]+-a$/i.test(message.trim())) {
+    return (
+      `${message} — that is Render's *internal* database hostname, and it` +
+      " resolves only from a service in the same region and account as the" +
+      " database. Use the External Database URL instead: same credentials," +
+      " hostname ending .render.com."
+    );
+  }
+  if (message.includes("ECONNREFUSED")) {
+    return `${message} — the host resolved but nothing is listening. Check the port and that the database is awake.`;
+  }
+  if (message.includes("password authentication failed")) {
+    return `${message} — the host is right and the credentials are not.`;
+  }
+  if (message.includes("does not support SSL")) {
+    return `${message} — a local database with no TLS. See isLocal() below.`;
+  }
+  return message;
+}
+
 const prepared = new Map<string, Promise<void>>();
 
 /** Runs a feature's schema once per process, keyed by name.

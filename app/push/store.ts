@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SCHEMA, db, isDatabaseConfigured, ready } from "../db";
+import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "../db";
 
 // Where push subscriptions live.
 //
@@ -120,7 +120,7 @@ export async function saveSubscription(record: PushSubscriptionRecord): Promise<
     );
     return true;
   } catch (error) {
-    console.error("[push] could not save a subscription:", (error as Error).message);
+    console.error("[push] could not save a subscription:", explainDbError(error));
     return false;
   }
 }
@@ -137,7 +137,7 @@ export async function subscriptionsFor(orderId: string): Promise<PushSubscriptio
     );
     return result.rows.map(toRecord);
   } catch (error) {
-    console.error("[push] could not read subscriptions:", (error as Error).message);
+    console.error("[push] could not read subscriptions:", explainDbError(error));
     return [];
   }
 }
@@ -152,7 +152,7 @@ export async function forgetSubscription(endpoint: string): Promise<void> {
     await prepared();
     await client.query(`DELETE FROM ${SCHEMA}.push_subscriptions WHERE endpoint = $1`, [endpoint]);
   } catch (error) {
-    console.error("[push] could not delete a subscription:", (error as Error).message);
+    console.error("[push] could not delete a subscription:", explainDbError(error));
   }
 }
 
@@ -169,7 +169,7 @@ export async function forgetOrder(orderId: string): Promise<void> {
     await prepared();
     await client.query(`DELETE FROM ${SCHEMA}.push_subscriptions WHERE order_id = $1`, [orderId]);
   } catch (error) {
-    console.error("[push] could not clear an order's subscriptions:", (error as Error).message);
+    console.error("[push] could not clear an order's subscriptions:", explainDbError(error));
   }
 }
 
@@ -189,7 +189,7 @@ export async function subscriptionsForProvider(
     const result = await client.query(`${SELECT_COLUMNS} WHERE ${column} = $1`, [id]);
     return result.rows.map(toRecord);
   } catch (error) {
-    console.error("[push] could not read subscriptions:", (error as Error).message);
+    console.error("[push] could not read subscriptions:", explainDbError(error));
     return [];
   }
 }

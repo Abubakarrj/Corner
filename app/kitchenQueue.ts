@@ -1,6 +1,6 @@
 import "server-only";
 
-import { SCHEMA, db, isDatabaseConfigured, ready } from "./db";
+import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "./db";
 
 // How much work is on the counter right now — the fallback answer.
 //
@@ -97,7 +97,7 @@ export async function ordersAhead(): Promise<number | null> {
     const waiting = result.rows[0]?.waiting;
     return typeof waiting === "number" ? waiting : null;
   } catch (error) {
-    console.error("[kitchen] could not count the queue:", (error as Error).message);
+    console.error("[kitchen] could not count the queue:", explainDbError(error));
     return null;
   }
 }
@@ -119,7 +119,7 @@ export async function joinQueue(id: string, toastGuid?: string): Promise<void> {
       [id, toastGuid ?? null],
     );
   } catch (error) {
-    console.error("[kitchen] could not record an order:", (error as Error).message);
+    console.error("[kitchen] could not record an order:", explainDbError(error));
   }
 }
 
@@ -138,7 +138,7 @@ export async function leaveQueue(toastGuid: string): Promise<void> {
       [toastGuid],
     );
   } catch (error) {
-    console.error("[kitchen] could not close an order:", (error as Error).message);
+    console.error("[kitchen] could not close an order:", explainDbError(error));
   }
 }
 

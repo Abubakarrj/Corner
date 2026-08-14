@@ -1,5 +1,5 @@
 import { authorized, notFound } from "../../diagnostics";
-import { db, isDatabaseConfigured } from "../../db";
+import { db, explainDbError, isDatabaseConfigured } from "../../db";
 import { isAuthConfigured } from "../../auth/auth0";
 import { isEmailConfigured } from "../../email";
 import { googleMapsKey } from "../../googleMaps";
@@ -64,7 +64,7 @@ async function databaseCheck(): Promise<Check> {
     return {
       on: false,
       how: "checked",
-      without: `DATABASE_URL is set but the server refused: ${(error as Error).message}`,
+      without: `DATABASE_URL is set but the server refused: ${explainDbError(error)}`,
     };
   }
 }
