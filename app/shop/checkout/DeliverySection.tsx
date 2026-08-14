@@ -140,25 +140,36 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
         {/* Handed over or left. A pair of buttons rather than a checkbox,
             because neither is the obvious default and a checkbox would make
             one of them look like it. */}
-        <fieldset className="m-0 border-0 border-t border-line-faint p-4">
-          <legend className="mb-2 p-0 text-[12px] text-muted">{t("delivery.handoff")}</legend>
-          <div className="grid grid-cols-2 gap-2">
-            <HandoffChoice
-              value="hand"
-              chosen={handoff}
-              onChoose={setHandoff}
-              label={t("delivery.handToMe")}
-              hint={t("delivery.handToMeHint")}
-            />
-            <HandoffChoice
-              value="door"
-              chosen={handoff}
-              onChoose={setHandoff}
-              label={t("delivery.leaveAtDoor")}
-              hint={t("delivery.leaveAtDoorHint")}
-            />
-          </div>
-        </fieldset>
+        {/* The rule belongs to the wrapper, not to the fieldset.
+            A <legend> is not an ordinary child: the browser lifts it into the
+            fieldset's top border and cuts a gap in that border to make room.
+            Usually invisible, because a fieldset with a full box still reads
+            as a box. Here the top border was the *only* border, so the legend
+            punched a hole in it and "Handing it over" sat in the middle of a
+            rule that stopped either side of the words — the one row in this
+            card whose divider was broken, on a card made of dividers.
+            Borderless fieldset inside a bordered div, and the rule is whole. */}
+        <div className="border-t border-line-faint p-4">
+          <fieldset className="m-0 border-0 p-0">
+            <legend className="mb-2 p-0 text-[12px] text-muted">{t("delivery.handoff")}</legend>
+            <div className="grid grid-cols-2 gap-2">
+              <HandoffChoice
+                value="hand"
+                chosen={handoff}
+                onChoose={setHandoff}
+                label={t("delivery.handToMe")}
+                hint={t("delivery.handToMeHint")}
+              />
+              <HandoffChoice
+                value="door"
+                chosen={handoff}
+                onChoose={setHandoff}
+                label={t("delivery.leaveAtDoor")}
+                hint={t("delivery.leaveAtDoorHint")}
+              />
+            </div>
+          </fieldset>
+        </div>
 
         <div className="border-t border-line-faint p-4">
           <label htmlFor={noteId} className="mb-1 block text-[12px] text-muted">

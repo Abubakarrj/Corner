@@ -98,7 +98,21 @@ export default function OrderStatusBar({ dock = false }: { dock?: boolean }) {
           ? {
               // Above the cookie banner, which docks to the same floor.
               bottom: "var(--cb-consent-h, 0px)",
-              paddingBottom: "env(safe-area-inset-bottom)",
+              // ——— Why there is a constant here and not just env() ———
+              //
+              // On the app-shell routes this bar is followed by the tab bar,
+              // and the tab bar is what carries the clearance at the floor.
+              // Docked, this bar *is* the floor, and it inherited a rule
+              // written for a component that never had to be.
+              //
+              // env(safe-area-inset-bottom) is only non-zero under
+              // viewport-fit=cover, which /shop sets and the marketing tree
+              // does not — so on the landing page it resolved to nothing and
+              // the row sat hard against the bottom of the screen with the
+              // home indicator across it. The constant is the floor under
+              // that: real ground on every device, plus the inset on the ones
+              // that report one.
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)",
             }
           : null),
       }}
