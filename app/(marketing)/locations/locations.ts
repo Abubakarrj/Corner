@@ -223,7 +223,16 @@ export const DELIVERY_ORIGIN = KOREATOWN;
 // decides differently. Uber Direct quotes the actual job on top of this — a
 // courier refusing a run is the harder limit, and it's the one that costs
 // money to hit, so this stays the cheap first filter.
-export const DELIVERY_RADIUS_MILES = 8;
+// Ten, not eight. Eight contradicted the rate card the customer is shown:
+// DELIVERY_BANDS has a 7–10 mile row at $10.99, so an address nine miles out
+// was quoted a price by the fee sheet and then refused by this check. One of
+// the two numbers had to move, and the shop's rule is ten until there is a
+// second kitchen to be nearer to.
+//
+// This is also the number the delivery-area map draws — see app/deliveryArea.ts.
+// A published map is a promise, so changing this changes what the shop has
+// told people, not just what it accepts.
+export const DELIVERY_RADIUS_MILES = 10;
 
 // Great-circle distance in miles.
 //

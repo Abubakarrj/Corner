@@ -293,6 +293,26 @@ export const en = {
   "delivery.pricing": "Pricing…",
 
   "deliveryFee.title": "How the delivery fee works",
+
+  "deliveryArea.title": "Where we deliver",
+
+  "deliveryArea.lead": "Anywhere within {miles} driving miles of the shop. The shaded area is measured on real roads, not a circle — check your address below to be sure.",
+
+  "deliveryArea.mapLabel": "Map of the delivery area, {miles} driving miles from the shop",
+
+  "deliveryArea.placeholder": "Your address",
+
+  "deliveryArea.check": "Check",
+
+  "deliveryArea.checking": "Checking…",
+
+  "deliveryArea.yes": "Yes — {address} is {miles} miles out.",
+
+  "deliveryArea.no": "{address} is {miles} miles out, past what we can reach.",
+
+  "deliveryArea.unsure": "We could not measure that one. Try it at checkout, which asks the courier directly.",
+
+  "deliveryArea.failed": "That did not go through. Try again in a moment.",
   "deliveryFee.yourAddress": "Your address",
   "deliveryFee.milesAway": "{miles} miles from the shop",
   "deliveryFee.distance": "Distance",

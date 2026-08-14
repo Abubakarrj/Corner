@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { useT } from "../../i18n";
@@ -173,6 +174,15 @@ export default function DeliveryFeeInfo({
         <p className="m-0 mt-2 text-[12px] leading-[1.5] text-muted">
           {t("deliveryFee.quotedFresh")}
         </p>
+        {/* The way out to the whole picture. Somebody who opens a fee sheet is
+            often really asking "do you even come to me", and until now the
+            only way to find out was to finish the checkout. */}
+        <Link
+          href="/delivery-areas"
+          className="cb-press mt-3 inline-block cursor-pointer text-[12px] text-sky-ink underline underline-offset-2"
+        >
+          {t("deliveryArea.title")}
+        </Link>
       </Modal>
     </>
   );

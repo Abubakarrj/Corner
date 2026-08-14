@@ -22,6 +22,7 @@ import "server-only";
 
 const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 const ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes";
+const MATRIX_URL = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
 
 export function googleMapsKey(): string | null {
   const key = process.env.GOOGLE_MAPS_API_KEY?.trim();
@@ -385,6 +386,88 @@ export async function driveBetween(
 ): Promise<Drive | null> {
   const result = await routeBetween(origin, destination);
   return result.ok ? result.drive : null;
+}
+
+/** Road miles from one origin to many destinations, in a single call.
+ *
+ *  Same data as calling routeBetween() in a loop, at a fraction of the cost
+ *  and one round trip instead of N. That difference is what makes the
+ *  delivery-area contour affordable: it needs a few hundred distances, and
+ *  as individual route requests that is a few hundred calls.
+ *
+ *  Returns one entry per destination, in the order given. `null` where no
+ *  road route exists — a point in the Pacific, or the far side of a closed
+ *  road — which is a real answer and not an error: nothing is deliverable
+ *  there either.
+ *
+ *  Null for the whole array when the call fails, so a caller can tell "we
+ *  asked and some are unreachable" from "we could not ask".
+ */
+export async function driveMatrixMiles(
+  origin: [number, number],
+  destinations: readonly [number, number][],
+): Promise<(number | null)[] | null> {
+  const key = googleMapsKey();
+  if (!key || destinations.length === 0) return null;
+
+  const waypoint = ([lat, lng]: [number, number]) => ({
+    waypoint: { location: { latLng: { latitude: lat, longitude: lng } } },
+  });
+
+  const response = await fetch(MATRIX_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": key,
+      // `condition` is not optional here the way a field mask usually is: an
+      // unreachable pair comes back with no distanceMeters at all, and
+      // without the condition there is no way to tell that from zero.
+      "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,condition",
+    },
+    body: JSON.stringify({
+      origins: [waypoint(origin)],
+      destinations: destinations.map(waypoint),
+      travelMode: "DRIVE",
+      // Same reasoning as routeBetween: this decides whether an address is in
+      // range at all, and live traffic costs more to tell us something a
+      // radius does not depend on.
+      routingPreference: "TRAFFIC_UNAWARE",
+      units: "IMPERIAL",
+    }),
+    // Whatever calls this does its own caching, and it caches the finished
+    // shape rather than the pieces.
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    console.error(
+      `[maps] Route Matrix failed (${response.status}) — ` +
+        `${explainRoutes(response.status, detail)} ${detail.slice(0, 400)}`,
+    );
+    return null;
+  }
+
+  const body = (await response.json().catch(() => null)) as unknown;
+  if (!Array.isArray(body)) return null;
+
+  const miles: (number | null)[] = destinations.map(() => null);
+  for (const raw of body) {
+    const element = raw as {
+      destinationIndex?: unknown;
+      distanceMeters?: unknown;
+      condition?: unknown;
+    };
+    const index = element.destinationIndex;
+    if (typeof index !== "number" || index < 0 || index >= miles.length) continue;
+    if (element.condition !== "ROUTE_EXISTS") continue;
+    // Zero is a legitimate distance and `|| 0` would swallow it, so the type
+    // check is explicit. A pair with no distance despite ROUTE_EXISTS stays
+    // null rather than becoming a zero-mile trip.
+    if (typeof element.distanceMeters !== "number") continue;
+    miles[index] = element.distanceMeters / 1609.344;
+  }
+  return miles;
 }
 
 export type Suggestion = {
