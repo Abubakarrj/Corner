@@ -295,7 +295,7 @@ export const it: Table = {
   "delivery.pricing": "Calcolo…",
   "deliveryFee.title": "Come si calcola la consegna",
   "deliveryArea.title": "Dove consegniamo",
-  "deliveryArea.lead": "Ovunque entro {miles} miglia di guida dal negozio. L’area ombreggiata è misurata su strade reali, non è un cerchio — controlla il tuo indirizzo qui sotto per esserne certo.",
+  "deliveryArea.lead": "Entro {miles} miglia di guida dal negozio.",
   "deliveryArea.mapLabel": "Mappa dell’area di consegna, a {miles} miglia di guida dal negozio",
   "deliveryArea.placeholder": "Il tuo indirizzo",
   "deliveryArea.check": "Controlla",

@@ -295,7 +295,7 @@ export const fa: Table = {
   "delivery.pricing": "در حال محاسبه…",
   "deliveryFee.title": "هزینه ارسال چطور حساب می‌شود",
   "deliveryArea.title": "کجا تحویل می‌دهیم",
-  "deliveryArea.lead": "هر جایی تا {miles} مایل رانندگی از مغازه. محدوده رنگی روی خیابان‌های واقعی اندازه‌گیری شده، دایره نیست — برای اطمینان نشانی خود را پایین بررسی کنید.",
+  "deliveryArea.lead": "تا {miles} مایل رانندگی از مغازه.",
   "deliveryArea.mapLabel": "نقشه محدوده تحویل، {miles} مایل رانندگی از مغازه",
   "deliveryArea.placeholder": "نشانی شما",
   "deliveryArea.check": "بررسی",

@@ -262,7 +262,7 @@ export const ja: Table = {
   "delivery.pricing": "計算中…",
   "deliveryFee.title": "配達料の決まり方",
   "deliveryArea.title": "配達エリア",
-  "deliveryArea.lead": "店舗から走行距離{miles}マイル以内ならどこへでも。色のついた範囲は円ではなく実際の道路で測っています。念のため下でご住所をご確認ください。",
+  "deliveryArea.lead": "店舗から走行距離{miles}マイル以内。",
   "deliveryArea.mapLabel": "配達エリアの地図、店舗から走行距離{miles}マイル",
   "deliveryArea.placeholder": "ご住所",
   "deliveryArea.check": "確認",

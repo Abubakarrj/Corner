@@ -295,7 +295,7 @@ export const fr: Table = {
   "delivery.pricing": "Calcul…",
   "deliveryFee.title": "Comment sont calculés les frais de livraison",
   "deliveryArea.title": "Où nous livrons",
-  "deliveryArea.lead": "Partout à moins de {miles} miles de route de la boutique. La zone ombrée est mesurée sur de vraies routes, ce n’est pas un cercle — vérifiez votre adresse ci-dessous pour en être sûr.",
+  "deliveryArea.lead": "À moins de {miles} miles de route de la boutique.",
   "deliveryArea.mapLabel": "Carte de la zone de livraison, à {miles} miles de route de la boutique",
   "deliveryArea.placeholder": "Votre adresse",
   "deliveryArea.check": "Vérifier",

@@ -262,7 +262,7 @@ export const ko: Table = {
   "delivery.pricing": "계산 중…",
   "deliveryFee.title": "배달비는 이렇게 정해집니다",
   "deliveryArea.title": "배달 가능 지역",
-  "deliveryArea.lead": "매장에서 운전 거리 {miles}마일 이내라면 어디든 갑니다. 음영 구역은 원이 아니라 실제 도로로 측정한 범위입니다 — 확실히 하시려면 아래에서 주소를 확인해 보세요.",
+  "deliveryArea.lead": "매장에서 운전 거리 {miles}마일 이내.",
   "deliveryArea.mapLabel": "배달 지역 지도, 매장에서 운전 거리 {miles}마일",
   "deliveryArea.placeholder": "주소",
   "deliveryArea.check": "확인",

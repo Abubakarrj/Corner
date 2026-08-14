@@ -264,7 +264,7 @@ export const zh: Table = {
   "delivery.pricing": "计算中…",
   "deliveryFee.title": "配送费是怎么算的",
   "deliveryArea.title": "配送范围",
-  "deliveryArea.lead": "距门店行车 {miles} 英里以内均可配送。阴影区域是按实际道路测算的，不是一个圆 — 想确认请在下方查询您的地址。",
+  "deliveryArea.lead": "距门店行车 {miles} 英里以内。",
   "deliveryArea.mapLabel": "配送范围地图，距门店行车 {miles} 英里",
   "deliveryArea.placeholder": "您的地址",
   "deliveryArea.check": "查询",

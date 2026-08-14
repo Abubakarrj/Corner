@@ -298,7 +298,7 @@ export const en = {
 
   "deliveryArea.title": "Where we deliver",
 
-  "deliveryArea.lead": "Anywhere within {miles} driving miles of the shop. The shaded area is measured on real roads, not a circle — check your address below to be sure.",
+  "deliveryArea.lead": "Within {miles} driving miles of the shop.",
 
   "deliveryArea.mapLabel": "Map of the delivery area, {miles} driving miles from the shop",
 

@@ -265,7 +265,7 @@ export const ur: Table = {
   "delivery.pricing": "کرایہ نکالا جا رہا ہے…",
   "deliveryFee.title": "ڈیلیوری فیس کیسے بنتی ہے",
   "deliveryArea.title": "ہم کہاں ڈیلیوری کرتے ہیں",
-  "deliveryArea.lead": "دکان سے {miles} ڈرائیونگ میل کے اندر کہیں بھی۔ رنگین علاقہ اصل سڑکوں پر ناپا گیا ہے، دائرہ نہیں — یقین کے لیے نیچے اپنا پتہ چیک کریں۔",
+  "deliveryArea.lead": "دکان سے {miles} ڈرائیونگ میل کے اندر۔",
   "deliveryArea.mapLabel": "ڈیلیوری علاقے کا نقشہ، دکان سے {miles} ڈرائیونگ میل",
   "deliveryArea.placeholder": "آپ کا پتہ",
   "deliveryArea.check": "چیک کریں",
