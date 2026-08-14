@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { loadMaps, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "../locations/locations";
 import { useResolvedTheme } from "../../theme";
+import { useFulfillment } from "../../fulfillment";
 import { useT } from "../../i18n";
 
 // The shaded map of where we deliver.
@@ -42,7 +43,26 @@ export default function DeliveryAreaMap() {
   const theme = useResolvedTheme();
   const holder = useRef<HTMLDivElement>(null);
   const [area, setArea] = useState<Area | null>(null);
-  const [address, setAddress] = useState("");
+  // Prefilled with the address the basket is already going to, when there is
+  // one. Somebody who opens this from the (i) beside the delivery fee has
+  // typed their address once already, at the top of the checkout — asking
+  // them to type it again to find out whether we come there is asking a
+  // question we can see the answer to.
+  //
+  // Editable, because the other reason to open this page is to ask about a
+  // *different* address: the office, a friend's place, somewhere you are
+  // thinking of having lunch. Prefilled is a starting point, not a lock.
+  //
+  // Derived rather than copied into state. The fulfillment store hydrates
+  // from localStorage after the first paint, so seeding useState with it
+  // captures the empty value and keeps it; syncing the two with an effect
+  // fixes that by making the component render itself twice on load. `typed`
+  // is null until somebody touches the field, and until then the store's own
+  // value is what shows — so a late arrival appears without either problem.
+  const fulfillment = useFulfillment();
+  const known = fulfillment?.mode === "delivery" ? fulfillment.address : "";
+  const [typed, setTyped] = useState<string | null>(null);
+  const address = typed ?? known;
   const [check, setCheck] = useState<Check>({ state: "idle" });
   const [hints, setHints] = useState<Suggestion[]>([]);
   // Set the moment a suggestion is taken, so choosing one does not
@@ -60,7 +80,10 @@ export default function DeliveryAreaMap() {
   // lands — a slow answer to "3545 W" arriving after the answer to
   // "3545 Wilshire" would overwrite good suggestions with stale ones.
   useEffect(() => {
-    const input = address.trim();
+    // Only for text somebody actually entered. A prefilled address arrived
+    // from the checkout already resolved, and opening a suggestion list over
+    // it on load would cover the button and ask a question nobody asked.
+    const input = typed?.trim() ?? "";
     if (input.length < 3 || input === settled.current) {
       setHints([]);
       return;
@@ -78,7 +101,7 @@ export default function DeliveryAreaMap() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [address]);
+  }, [typed]);
 
   useEffect(() => {
     let live = true;
@@ -144,11 +167,25 @@ export default function DeliveryAreaMap() {
       // Fit the shape rather than trusting the zoom guess above: the contour
       // is wider east-west than north-south and a fixed zoom crops it on a
       // phone held upright.
+      //
+      // Re-fit whenever the box changes size, which on a phone it does after
+      // the first fit. Two loads of this page were framing the same polygon
+      // differently — one cropped tight, one small in a sea of map — because
+      // fitBounds ran against whatever height the container had at that
+      // instant, and then iOS collapsed its URL bar and the container grew
+      // under a zoom computed for the old one. The container has a fixed
+      // aspect ratio now, which removes most of that, and this catches the
+      // rest: rotation, a split view, a keyboard opening.
       const bounds = new maps.LatLngBounds();
       path.forEach((point) => bounds.extend(point));
-      instance.fitBounds(bounds, 24);
+      const fit = () => instance.fitBounds(bounds, 24);
+      fit();
+
+      const watcher = new ResizeObserver(fit);
+      watcher.observe(holder.current);
 
       cleanup = () => {
+        watcher.disconnect();
         shape.setMap(null);
         pin.setMap(null);
         map.current = null;
@@ -197,7 +234,7 @@ export default function DeliveryAreaMap() {
         <div
           ref={holder}
           data-theme={theme}
-          className="h-[52vh] min-h-[280px] w-full overflow-hidden rounded-2xl border border-line"
+          className="aspect-[4/5] max-h-[60vh] w-full overflow-hidden rounded-2xl border border-line"
           role="img"
           aria-label={t("deliveryArea.mapLabel", { miles: String(area.radiusMiles) })}
         />
@@ -207,7 +244,7 @@ export default function DeliveryAreaMap() {
         <div className="relative min-w-0 flex-1">
           <input
             value={address}
-            onChange={(event) => setAddress(event.target.value)}
+            onChange={(event) => setTyped(event.target.value)}
             placeholder={t("deliveryArea.placeholder")}
             aria-label={t("deliveryArea.placeholder")}
             autoComplete="street-address"
@@ -225,7 +262,7 @@ export default function DeliveryAreaMap() {
                     onClick={() => {
                       const picked = [hint.primary, hint.secondary].filter(Boolean).join(", ");
                       settled.current = picked;
-                      setAddress(picked);
+                      setTyped(picked);
                       setHints([]);
                     }}
                     className="cb-press block w-full cursor-pointer px-4 py-3 text-left transition-colors hover:bg-raise"

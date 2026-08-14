@@ -13,11 +13,20 @@ import { hasTabBar } from "./(marketing)/TabBar";
 // Visibility on the shop subdomain is decided by the caller — app/layout.tsx
 // — server-side via the Host header. See the comment there for why.
 
-// Routes that print their own privacy link in their own footer. This one is
-// fixed to the bottom-right of the *viewport*, so on a long page it floats
-// over whatever line happens to be there — on /careers it was landing across
-// the equal-opportunity paragraph, next to a second copy of itself.
-const OWN_PRIVACY_LINK = ["/careers", "/careers/apply"];
+// Routes where this floating line lands on top of something. It is fixed to
+// the bottom-right of the *viewport*, so on any page whose content reaches
+// that corner it prints straight through the words.
+//
+// /careers and /careers/apply print their own privacy link in their own
+// footer, so it was landing across the equal-opportunity paragraph next to a
+// second copy of itself.
+//
+// /delivery-areas is here for the other reason: the page is about a phone
+// screen tall, so the answer under the Check button — "Yes, 3545 Wilshire is
+// 0.9 miles out" — sits at exactly the height this line floats at, and the
+// two overlapped into an unreadable smudge. It is a sheet with a close button
+// rather than a page somebody browses, and a sheet does not need a footer.
+const OWN_PRIVACY_LINK = ["/careers", "/careers/apply", "/delivery-areas"];
 
 export default function PrivacyFooterLink() {
   const t = useT();
