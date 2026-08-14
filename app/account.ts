@@ -604,7 +604,9 @@ export type OrderProgress = {
   fraction: number;
   // The key and the time for "Ready around 8:24am", or null once it's past
   // the estimate. A key, for the same reason the stages carry one.
-  eta: { key: StringKey; time: string } | null;
+  /** `reported` means the provider gave us this time rather than us deriving
+   *  it from the clock. The tracker drops the word "estimated" when it's set. */
+  eta: { key: StringKey; time: string; reported: boolean } | null;
   settled: boolean;
 };
 
@@ -798,12 +800,19 @@ export function progressFor(
     fraction,
     // No estimate once it is really ready: "ready around 8:24" under the word
     // Ready is the page arguing with itself.
+    //
+    // Uber's own arrival time wins where there is one. Ours is placed-at plus
+    // a constant — the same answer at 6am and in a downpour, and blind to
+    // whether a courier has even been assigned. Uber is watching the traffic.
+    // `reported` travels with it so the screen can stop calling it an
+    // estimate, because at that point it isn't ours to estimate.
     eta:
       settled || arrived
         ? null
         : {
             key: delivery ? "order.arrivingAround" : "order.readyAround",
-            time: formatClock(order.placedAt + totalMinutes * 60000, tag),
+            time: formatClock(live?.etaAt ?? order.placedAt + totalMinutes * 60000, tag),
+            reported: typeof live?.etaAt === "number",
           },
     settled,
   };

@@ -264,15 +264,42 @@ export type DeliveryState = {
       pickup_complete, dropoff, delivered, canceled, returned. Mapped to our
       stages in app/orderStatus.ts, in one place. */
   status: string | null;
+  /** When Uber expects the bag to arrive, epoch ms, or null.
+   *
+   *  The reason this file grew past `status`. Our tracker's arrival time was
+   *  derived — placed-at plus a constant — which is a guess that cannot know
+   *  about traffic, a courier three streets away, or a pickup that has not
+   *  happened yet. Uber is watching all of that. Reported beats derived. */
+  dropoffEta: number | null;
+  /** Who is bringing it, and in what. Absent until a courier is assigned. */
+  courierName: string | null;
+  courierVehicle: string | null;
 };
+
+// Uber sends timestamps as RFC3339. Anything unparseable is treated as absent
+// rather than as an epoch of zero, which would render as 1970 on a tracker.
+function instant(value: unknown): number | null {
+  if (typeof value !== "string") return null;
+  const at = Date.parse(value);
+  return Number.isFinite(at) ? at : null;
+}
+
+function text(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
 
 /** What Uber currently says about a delivery.
  *
  *  A GET, unlike everything else here, so it does not go through call() —
- *  that helper posts. Kept small on purpose: the courier's live position is
- *  Uber's own tracking page, linked from the order, and rebuilding a map of
- *  somebody else's driver would be a worse version of a page that exists.
- *  This is only for the stage the tracker shows in words. */
+ *  that helper posts.
+ *
+ *  Still no courier coordinates. The line is drawn there rather than at the
+ *  ETA on purpose: a position is only worth having if it is live, and ours
+ *  would be a marker that jumps once per poll — a worse version of the page
+ *  Uber already runs. An arrival time and a courier's name do not degrade
+ *  that way. They are true for minutes at a stretch, they read the same in
+ *  our ten languages as in one, and they replace a number this app was
+ *  otherwise making up. */
 export async function fetchDelivery(deliveryId: string): Promise<DeliveryState | null> {
   const config = uberConfig();
   if (!config) return null;
@@ -286,8 +313,17 @@ export async function fetchDelivery(deliveryId: string): Promise<DeliveryState |
   if (!response.ok) return null;
   const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return null;
+  // Every field below is optional in practice — a delivery that has not been
+  // assigned yet has no courier, and Uber has been known to omit an eta on a
+  // pending job. Each one is read on its own so a missing courier cannot take
+  // the ETA down with it, and absent stays absent rather than becoming a
+  // placeholder somebody has to read.
+  const courier = (body.courier ?? null) as Record<string, unknown> | null;
   return {
     deliveryId,
-    status: typeof body.status === "string" ? body.status : null,
+    status: text(body.status),
+    dropoffEta: instant(body.dropoff_eta),
+    courierName: courier ? text(courier.name) : null,
+    courierVehicle: courier ? text(courier.vehicle_type) : null,
   };
 }

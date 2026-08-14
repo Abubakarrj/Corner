@@ -64,9 +64,20 @@ async function ask(key: string): Promise<void> {
     // Identity matters: useSyncExternalStore compares snapshots, so handing
     // back a new object for an unchanged status would re-render every watcher
     // three times a minute for nothing.
+    //
+    // Every rendered field has to be in this comparison, not just the stages.
+    // The ETA and the courier's name are drawn on the tracker now, and while
+    // this only looked at food and courier a courier being assigned — or an
+    // arrival time sliding ten minutes in traffic — was a change the screen
+    // was told to ignore. It would have surfaced on the next stage change and
+    // looked like a lag, which is the kind of bug that gets blamed on Uber.
+    const was = current.status;
     if (
-      current.status?.food === body.food &&
-      current.status?.courier === body.courier
+      was?.food === body.food &&
+      was?.courier === body.courier &&
+      was?.etaAt === body.etaAt &&
+      was?.courierName === body.courierName &&
+      was?.courierVehicle === body.courierVehicle
     ) {
       return;
     }

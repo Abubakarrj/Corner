@@ -23,6 +23,16 @@ export type CourierStage =
 export type LiveStatus = {
   food?: FoodStage;
   courier?: CourierStage;
+  /** When the courier is expected, epoch ms — Uber's number, not ours.
+   *
+   *  The tracker's own arrival time is placed-at plus a constant, which is
+   *  the same answer at 6am and in a downpour. This one is watching the
+   *  traffic and the courier. Where it exists it wins; where it doesn't the
+   *  estimate carries on exactly as before. */
+  etaAt?: number;
+  /** Who has the bag. Absent until Uber assigns somebody. */
+  courierName?: string;
+  courierVehicle?: string;
   /** When the provider last told us, epoch ms. */
   at: number;
 };

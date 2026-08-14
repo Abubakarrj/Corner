@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLocale, useT } from "../../../i18n";
+import { useLocale, useT, type StringKey } from "../../../i18n";
 import { useMenu } from "../../../i18n/menu";
 import { localeById } from "../../../localeScript";
 import { fulfillmentModeKey } from "../../../fulfillment";
@@ -69,6 +69,7 @@ export default function OrderTracker({ id }: { id: string }) {
   // opening it then shows a courier who has nothing of ours yet. Unknown
   // stays visible — see handedToCourier.
   const followable = handedToCourier(live?.courier) ?? true;
+  const vehicle = vehicleKey(live?.courierVehicle);
 
   if (!order) {
     return (
@@ -129,13 +130,34 @@ export default function OrderTracker({ id }: { id: string }) {
         />
       </div>
 
+      {/* "· estimated" is a disclaimer, and it is only honest while the time
+          is one. Once Uber reports its own arrival time this is no longer
+          our arithmetic, and hedging a courier's number as though it were a
+          guess of ours undersells the one piece of real information on the
+          page. */}
       <p className="mt-2 text-[13px]" style={{ color: faint }}>
         {progress.eta
-          ? t("order.estimated", {
-              eta: t(progress.eta.key, { time: progress.eta.time }),
-            })
+          ? progress.eta.reported
+            ? t(progress.eta.key, { time: progress.eta.time })
+            : t("order.estimated", {
+                eta: t(progress.eta.key, { time: progress.eta.time }),
+              })
           : t("order.shopConfirms")}
       </p>
+
+      {/* Who has the bag, once somebody does. Uber hands us a first name and
+          a vehicle type, and both are worth showing: a name makes the person
+          on the doorstep expected rather than a stranger, and the vehicle is
+          what you look for out of the window. Absent until a courier is
+          assigned, and absent entirely on a pickup order — this renders
+          nothing rather than a row saying nobody. */}
+      {live?.courierName ? (
+        <p className="mt-3 text-[14px]" style={{ color: ink }}>
+          {vehicle
+            ? t("order.courierWith", { name: live.courierName, vehicle: t(vehicle) })
+            : t("order.courier", { name: live.courierName })}
+        </p>
+      ) : null}
 
       {/* The stages, as a list rather than a horizontal stepper: four labels
           across a phone either truncate or shrink below reading size. */}
@@ -223,6 +245,37 @@ export default function OrderTracker({ id }: { id: string }) {
       </p>
     </div>
   );
+}
+
+// Uber's vehicle_type, turned into a word this app can say in ten languages.
+//
+// Unrecognised types return null rather than falling through to the raw
+// token, and the sentence above drops to the courier's name alone. That
+// matters more than the completeness of this list: Uber can add a vehicle
+// tomorrow, and the failure has to be a shorter sentence rather than the
+// English word "moped" in the middle of a Burmese one.
+function vehicleKey(type: string | undefined): StringKey | null {
+  switch (type?.toLowerCase()) {
+    case "car":
+      return "vehicle.car";
+    case "bicycle":
+    case "bike":
+      return "vehicle.bicycle";
+    case "motorcycle":
+    case "moped":
+      return "vehicle.motorcycle";
+    case "scooter":
+      return "vehicle.scooter";
+    case "van":
+      return "vehicle.van";
+    case "truck":
+      return "vehicle.truck";
+    case "walker":
+    case "walking":
+      return "vehicle.onFoot";
+    default:
+      return null;
+  }
 }
 
 function Receipt({

@@ -130,8 +130,19 @@ export async function refresh(
   const courier = courierStageOf(state?.status ?? null);
   if (!state || courier === undefined) return undefined;
   const was = read(`uber:${id}`, now)?.courier;
-  const status: LiveStatus = { courier, at: now };
+  // The ETA and the courier ride along with the stage rather than being
+  // fetched separately: they came out of the same response, and splitting
+  // them would mean two calls to say one thing.
+  const status: LiveStatus = {
+    courier,
+    ...(state.dropoffEta === null ? {} : { etaAt: state.dropoffEta }),
+    ...(state.courierName === null ? {} : { courierName: state.courierName }),
+    ...(state.courierVehicle === null ? {} : { courierVehicle: state.courierVehicle }),
+    at: now,
+  };
   write(`uber:${id}`, status);
+  // Still only on a stage change. An ETA that slides by a minute is not
+  // worth a notification, and Uber's does slide.
   if (was !== courier) await announce("uber", id, courier);
   return status;
 }
@@ -154,7 +165,16 @@ export async function statusOf(
   const food = parts[0]?.food;
   const courier = parts[1]?.courier;
   if (food === undefined && courier === undefined) return null;
+  // The courier half also carries the ETA and who is driving. Named one at a
+  // time rather than spread, because this crosses into the browser: every
+  // field listed here is a field a customer can read, and that list should be
+  // something somebody chose rather than whatever the Uber client happened to
+  // pick up.
+  const { etaAt, courierName, courierVehicle } = parts[1] ?? {};
   return {
+    ...(etaAt === undefined ? {} : { etaAt }),
+    ...(courierName === undefined ? {} : { courierName }),
+    ...(courierVehicle === undefined ? {} : { courierVehicle }),
     ...(food === undefined ? {} : { food }),
     ...(courier === undefined ? {} : { courier }),
     at: Math.max(parts[0]?.at ?? 0, parts[1]?.at ?? 0),
