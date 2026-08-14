@@ -9,6 +9,7 @@ import { useCapabilities } from "../../capabilities";
 import { BackIcon, CloseIcon, IconButtonLink } from "../../ui/IconButton";
 import CateringModal from "./CateringModal";
 import SearchResults, { type ResolvedPlace } from "./SearchResults";
+import PinPicker, { type PinResult } from "./PinPicker";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
 import { useLocale, useT, type StringKey } from "../../i18n";
@@ -134,9 +135,16 @@ export default function LocationFinder() {
   // changes it — and equally useless to somebody whose phone gave us a
   // kilometre-wide answer, which is a *success* that needs a different two
   // taps in settings. Four outcomes, four sentences. See app/geolocate.ts.
-  // Addresses around the visitor's fix, offered after a locate. Empty unless
-  // there is a real choice to make.
-  const [nearbyDoors, setNearbyDoors] = useState<string[]>([]);
+  // The pin step, when delivery is being set up. Null the rest of the time.
+  //
+  // It carries where to open the map and what that spot was called, which is
+  // whatever we already knew — a typed address's coordinates, or a GPS fix.
+  // Both are a starting frame and neither is treated as an answer; see
+  // PinPicker.tsx for why that distinction is the entire point.
+  const [pinning, setPinning] = useState<{
+    start: [number, number];
+    address: string;
+  } | null>(null);
   const [locateNote, setLocateNote] = useState<
     "denied" | "unsupported" | "unavailable" | "coarse" | null
   >(null);
@@ -253,10 +261,32 @@ export default function LocationFinder() {
     chooseLocation(location);
   }
 
-  // The delivery equivalent: a resolved, in-range address is a destination,
-  // so it opens the menu the same way choosing a shop does.
+  // The delivery equivalent — and it no longer finishes the job.
+  //
+  // A resolved address used to become the destination directly. It is a very
+  // good guess at a block and a fair one at a door, and the difference between
+  // those two is a courier on the wrong street. So it becomes the *frame* for
+  // the pin instead: the map opens on it, at door zoom, and the customer says
+  // whether it is right. One tap if it is.
   function chooseAddress(resolved: ResolvedPlace) {
-    setFulfillment({ mode: "delivery", address: resolved.address });
+    setPinning({ start: [resolved.lat, resolved.lng], address: resolved.address });
+  }
+
+  // The pin is placed. This is the only thing in the app that writes a
+  // delivery destination, and it writes both halves — see the note on
+  // Fulfillment in app/fulfillment.ts for which one wins.
+  function confirmPin(result: PinResult) {
+    setFulfillment({
+      mode: "delivery",
+      // The label falls back to the frame's address when the pin landed
+      // somewhere with no street number of its own. Never to a coordinate
+      // pair: "34.0614, -118.3079" on an order ticket is not an address, it
+      // is a number the kitchen cannot read out to a courier on the phone.
+      address: result.address || pinning?.address || "",
+      lat: result.point[0],
+      lng: result.point[1],
+    });
+    setPinning(null);
     router.push("/shop");
   }
 
@@ -317,54 +347,26 @@ export default function LocationFinder() {
     setLocateNote(null);
     setToastDismissed(false);
 
-    // ——— Delivery wants an address, not a position ———
+    // ——— Delivery wants a doorway, and a GPS fix is not one ———
     //
-    // In delivery mode this used to set `searched`, and the delivery branch
-    // throws `searched` away — the results, the rail and the pin all return
-    // early for delivery, and `asked` is keyed off the typed query. So the
-    // button found the visitor, wrote the answer into a field nothing on this
-    // screen reads, and cleared the one field that matters. Pressing it did
-    // nothing, twice over.
+    // This used to reverse-geocode the fix and put the nearest door in the
+    // address field, with the alternatives listed underneath. That was a
+    // better guess than the first one it made — sorted by distance, filtered
+    // to real street addresses — and it was still a guess, chosen by us, about
+    // something only the person holding the phone knows.
     //
-    // A courier is given a doorway, not a latitude. So the position goes back
-    // to Google to become words, and those words land in the address field
-    // where they can be read, corrected, and confirmed like any other address.
+    // Standing at 3545 Wilshire in Koreatown, the building's registered
+    // entrance is round the corner on Ardmore. Nothing in the data says which
+    // of those two a courier should walk to. Ranking candidates harder does
+    // not add the missing fact.
+    //
+    // So the fix stops being an answer and becomes a frame: it opens the map
+    // over the right roof and the customer places the point. A phone is very
+    // good at "you are on this block", which is exactly what a starting frame
+    // needs to be.
     if (mode === "delivery") {
-      // Returned, not fired and forgotten: StoreMap keeps the button
-      // spinning until this settles. A reverse geocode is a round trip, and a
-      // button that stops spinning before its work is done invites a second
-      // press against a field that is about to fill itself in.
-      return fetch("/api/geo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reverse", point }),
-      })
-        .then((response) => (response.ok ? response.json() : null))
-        .then((body: { places?: { address?: string }[] } | null) => {
-          const found = (body?.places ?? [])
-            .map((place) => place?.address)
-            .filter((address): address is string => Boolean(address));
-          // A fix in the middle of a park has no doorway, and neither does a
-          // coarse one. Saying so beats filling the field with a suburb.
-          if (found.length === 0) {
-            setLocateNote("unavailable");
-            return;
-          }
-          // The nearest one goes in the field, and the rest are offered.
-          //
-          // A phone knows a point; a point in Koreatown has a building on
-          // every side of it. Standing at 3545 Wilshire, the first result
-          // Google returned was the door round the corner on Ardmore — same
-          // block, wrong address, and a courier sent to it.
-          //
-          // Nothing here can know which building somebody is in, so it stops
-          // pretending to: the closest is filled in because it is usually
-          // right and always editable, and the alternatives sit under the
-          // field until one is picked or the list is dismissed.
-          setQuery(found[0]);
-          setNearbyDoors(found.length > 1 ? found : []);
-        })
-        .catch(() => setLocateNote("unavailable"));
+      setPinning({ start: point, address: "" });
+      return;
     }
 
     setSearched({ point, label: "" });
@@ -468,6 +470,41 @@ export default function LocationFinder() {
           the mode pills were floating in the middle of a 1440px band with
           the back and close buttons pinned to opposite edges of the screen,
           and the search rule ran the whole width. */}
+      {/* The pin step takes the whole shell.
+          Not a modal over the finder: this is a map somebody has to aim, and
+          a map inside a sheet on top of a map is two scroll surfaces and half
+          the height. It is one screen, with its own way back, and the finder
+          is still mounted underneath so cancelling returns to exactly the
+          search that opened it. */}
+      {pinning ? (
+        <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-5 pb-5 pt-[calc(env(safe-area-inset-top)+20px)]">
+          <h1
+            className="m-0 text-[22px] font-medium leading-tight tracking-[-0.01em]"
+            style={{ color: ink }}
+          >
+            {t("pin.title")}
+          </h1>
+          <p className="m-0 mb-4 mt-1.5 text-[14px] leading-[1.5]" style={{ color: muted }}>
+            {t("pin.lead")}
+          </p>
+          <PinPicker
+            // Keyed on the starting point, so arriving from a different
+            // search builds a fresh map rather than leaving the old camera
+            // parked over the previous address.
+            key={`${pinning.start[0]},${pinning.start[1]}`}
+            start={pinning.start}
+            startAddress={pinning.address}
+            onConfirm={confirmPin}
+            onCancel={() => setPinning(null)}
+          />
+        </div>
+      ) : null}
+
+      {/* Everything below is the finder proper. Hidden rather than unmounted
+          while the pin is up: the search that led here, its results and the
+          map's camera are all state somebody expects to find again if they
+          back out. */}
+      <div className={pinning ? "hidden" : "contents"}>
       <header className="mx-auto w-full max-w-2xl shrink-0 pt-[env(safe-area-inset-top)]">
         {/* Everything in this row tightens below 390px.
 
@@ -531,8 +568,7 @@ export default function LocationFinder() {
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
-              setNearbyDoors([]);
-              setBounds(null);
+                  setBounds(null);
               // Typing invalidates the place that was picked. Leaving it set
               // would keep the map filtered to a town the field no longer
               // names, with nothing on screen explaining why.
@@ -550,8 +586,7 @@ export default function LocationFinder() {
               type="button"
               onClick={() => {
                 setQuery("");
-                setNearbyDoors([]);
-              }}
+                    }}
               className="absolute end-5 top-[26px] cursor-pointer text-[13px] font-medium uppercase tracking-[0.08em] transition-opacity hover:opacity-60"
               style={{ color: muted }}
             >
@@ -579,33 +614,14 @@ export default function LocationFinder() {
           ) : null}
         </div>
 
-        {/* The doors around where the phone says you are.
-            Only after a locate, only when there is more than one, and gone as
-            soon as one is picked or the field is touched — this is about a
-            position, not about text. See locateHere. */}
-        {nearbyDoors.length > 0 ? (
-          <ul
-            className="m-0 list-none border-t p-0"
-            style={{ borderColor: controlBorder }}
-            aria-label={t("finder.nearbyDoors")}
-          >
-            {nearbyDoors.map((address) => (
-              <li key={address}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuery(address);
-                    setNearbyDoors([]);
-                  }}
-                  className="cb-press block w-full cursor-pointer px-5 py-3 text-left text-[14px] transition-colors hover:bg-raise"
-                  style={{ color: address === query ? ink : muted }}
-                >
-                  {address}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {/* The list of doors around the visitor's fix used to sit here, filled
+            in after a locate and offering six addresses to choose between.
+            It is gone, and its absence is the point: it existed because a
+            reverse geocode cannot know which building somebody is in, and
+            asking them to identify their own home from a ranked list of
+            neighbours is passing our uncertainty to the one person who never
+            had any. The pin asks the same question in the form they can
+            actually answer. See locateHere. */}
 
         <SearchResults
           mode={mode}
@@ -703,6 +719,8 @@ export default function LocationFinder() {
         </div>
       </div>
 
+      </div>
+
       {/* The finder is the front door for Home, and the first step for Menu.
           Which one lit it is the only difference. */}
       <CateringModal
@@ -710,6 +728,9 @@ export default function LocationFinder() {
         onClose={() => setCateringFor(null)}
       />
 
+      {/* Outside the hidden wrapper: the tab bar is the app's own furniture
+          and stays put through the pin step, so backing out of it lands
+          somewhere rather than nowhere. */}
       <TabBar active={activeTab} />
     </div>
   );

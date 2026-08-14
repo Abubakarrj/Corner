@@ -84,6 +84,61 @@ export async function POST(request: Request) {
     return Response.json({ places, place: places[0] });
   }
 
+  // A dropped pin: what is under it, and whether we deliver there.
+  //
+  // ——— Why this is not "reverse" plus "resolve" ———
+  //
+  // Those two would answer the same question about two different points. The
+  // reverse gives back a doorway *near* the pin, resolve then geocodes that
+  // doorway's words, and the coordinates that come back are the geocoder's
+  // idea of the address rather than the point somebody actually chose. The
+  // range check would then be measuring to a place the customer never touched.
+  //
+  // Here the pin is the point, start to finish. The address is a label read
+  // off it and nothing is measured to anything else — which is the whole
+  // reason the picker exists.
+  //
+  // A pin with no doorway near it is a success here, not a 404 — the range
+  // verdict is still a real answer about a real point, and that is what this
+  // endpoint was asked for.
+  //
+  // The picker is stricter, and deliberately: it will not let somebody confirm
+  // a destination whose address came back empty, because a blank line under
+  // "Deliver to" on the kitchen's ticket is not something a courier can be
+  // read out. Two different rules about the same response, and both are right
+  // for where they sit. See the note on `noLabel` in PinPicker.tsx.
+  if (body?.action === "pin") {
+    const point = body?.point;
+    const lat = Array.isArray(point) ? Number(point[0]) : NaN;
+    const lng = Array.isArray(point) ? Number(point[1]) : NaN;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return Response.json({ error: "api.enterAddress" }, { status: 400 });
+    }
+
+    const origin = await deliveryOrigin();
+    // Both at once. They are independent lookups against the same point and
+    // the picker is waiting on the pair, so running them in sequence would
+    // make a settle feel twice as slow for no reason.
+    const [places, drive] = await Promise.all([
+      reverseCandidates([lat, lng]),
+      driveBetween(origin, [lat, lng]),
+    ]);
+    // Same fallback as the resolve path below, and the same caveat: a straight
+    // line reads short, so while Routes is down the radius is quietly wider
+    // than it says. The courier quote is the real gate.
+    const miles = drive?.miles ?? milesBetween(origin, [lat, lng]);
+
+    return Response.json({
+      address: places[0]?.address ?? "",
+      lat,
+      lng,
+      miles,
+      measuredBy: drive ? "road" : "straight-line",
+      inRange: miles <= DELIVERY_RADIUS_MILES,
+      radiusMiles: DELIVERY_RADIUS_MILES,
+    });
+  }
+
   if (body?.action !== "resolve") {
     return Response.json({ error: "api.unknownAction" }, { status: 400 });
   }

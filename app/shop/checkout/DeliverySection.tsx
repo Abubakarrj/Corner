@@ -57,7 +57,15 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
     setHandoff,
     courierNote,
     setCourierNote,
+    fulfillment,
   } = checkout;
+
+  // Whether this destination carries a point the customer placed, rather than
+  // only words for something to geocode later. See PinPicker.tsx.
+  const pinned =
+    fulfillment?.mode === "delivery" &&
+    typeof fulfillment.lat === "number" &&
+    typeof fulfillment.lng === "number";
 
   const aptId = useId();
   const noteId = useId();
@@ -118,6 +126,30 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
           <div className="min-w-0 flex-1">
             <p className="m-0 text-[14px] leading-[1.4] text-ink">
               {where?.where ?? ""}
+            </p>
+            {/* Whether the courier is going to a point somebody placed or to
+                whatever a geocoder makes of those words, said plainly.
+
+                It is one line and it is worth the room. This address is the
+                most expensive thing on the screen to get wrong — a card can be
+                re-entered, a wrong doorway is a bag on somebody else's step —
+                and this is the last place before payment where it can be
+                fixed. A delivery set up before the picker existed has no pin,
+                and that is a real difference in how accurate it will be, so it
+                is not glossed over.
+
+                "Adjust" goes to /locations rather than opening a map here.
+                The picker is a full screen and this is a card inside a form;
+                the finder is where a destination is chosen, and sending
+                somebody there keeps one answer to "where does this go". */}
+            <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted">
+              <span>{pinned ? t("pin.pinned") : t("delivery.noPinYet")}</span>
+              <Link
+                href="/locations?for=menu"
+                className="cursor-pointer text-ink underline underline-offset-2"
+              >
+                {pinned ? t("pin.adjust") : t("pin.title")}
+              </Link>
             </p>
             {/* The unit, under the street it belongs to rather than in a
                 separate section — it is one address, and splitting it across

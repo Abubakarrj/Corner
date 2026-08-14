@@ -195,6 +195,14 @@ export function useCheckout(): Checkout {
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
   const isDelivery = fulfillment?.mode === "delivery";
   const deliveryAddress = fulfillment?.mode === "delivery" ? fulfillment.address : null;
+  // The point the customer dropped a pin on, when there is one. Sent with the
+  // address so the quote is priced to the doorway they chose rather than to
+  // whatever the geocoder makes of the words — see PinPicker.tsx.
+  //
+  // Absent on a delivery saved before the picker existed; the endpoint
+  // geocodes in that case, which is what it always did.
+  const deliveryLat = fulfillment?.mode === "delivery" ? fulfillment.lat : undefined;
+  const deliveryLng = fulfillment?.mode === "delivery" ? fulfillment.lng : undefined;
 
   // What the courier charges to take this order to this address, from Uber
   // Direct via /api/delivery/quote. Fetched rather than assumed: a flat
@@ -236,7 +244,11 @@ export function useCheckout(): Checkout {
     void fetch("/api/delivery/quote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address: deliveryAddress }),
+      body: JSON.stringify({
+        address: deliveryAddress,
+        lat: deliveryLat,
+        lng: deliveryLng,
+      }),
     })
       .then(async (response) => {
         const body = await response.json().catch(() => null);
@@ -255,7 +267,10 @@ export function useCheckout(): Checkout {
     return () => {
       live = false;
     };
-  }, [deliveryAddress]);
+    // The pin is part of the destination, so moving it has to re-quote even
+    // when the words are unchanged — the same street address on the other side
+    // of a block is a different drive.
+  }, [deliveryAddress, deliveryLat, deliveryLng]);
 
   // A row that never got its bagel chosen can't be made, and the endpoint
   // refuses it — so the button refuses first, and says where to fix it.

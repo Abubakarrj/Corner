@@ -13,9 +13,17 @@ import { deliveryOrigin } from "../../../storePlaces";
 // hands that same id to Uber when it books the courier, which is what stops
 // the customer being shown one price and the shop being billed another.
 //
-// The address is re-geocoded here. It arrives as text — the visitor picked it
-// on the finder, and it has been sitting in localStorage since — so nothing
-// about its coordinates is known until this asks.
+// ——— The pin comes first, the words second ———
+//
+// ⚠️ When coordinates arrive with the address, they are the destination and
+// this does not geocode anything. That is the point of PinPicker: the customer
+// placed that point on a map, and re-deriving one from the address string
+// would throw their answer away and substitute a guess — the exact thing the
+// picker was built to stop.
+//
+// Geocoding stays as the fallback for a delivery chosen before the picker
+// existed, which is a plain address in somebody's localStorage with no point
+// attached.
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +35,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
-  const address = (payload as { address?: unknown })?.address;
+  const body = payload as { address?: unknown; lat?: unknown; lng?: unknown } | null;
+  const address = body?.address;
   if (typeof address !== "string" || address.trim().length === 0) {
     return Response.json({ error: "api.missingAddress" }, { status: 400 });
   }
@@ -37,7 +46,18 @@ export async function POST(request: Request) {
   // somebody walking up and down W 8th Street with a bag. See storePlaces.ts.
   const origin = await deliveryOrigin();
 
-  const place = await geocode(address.trim(), origin);
+  const pinLat = Number(body?.lat);
+  const pinLng = Number(body?.lng);
+  const pinned =
+    Number.isFinite(pinLat) &&
+    Number.isFinite(pinLng) &&
+    Math.abs(pinLat) <= 90 &&
+    Math.abs(pinLng) <= 180;
+
+  const place = pinned
+    ? { address: address.trim(), lat: pinLat, lng: pinLng }
+    : await geocode(address.trim(), origin);
+
   if (!place) {
     return Response.json(
       { error: "api.addressNotFound" },

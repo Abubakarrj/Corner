@@ -22,11 +22,32 @@ export type Fulfillment =
   // LOCATIONS; `label` and `detail` are denormalised so the shop can name the
   // destination without importing the marketing tree's data.
   | { mode: "pickup" | "catering"; locationId: string; label: string; detail: string }
-  // Delivery has no location of ours — the address is the visitor's, stored
-  // as typed. It isn't geocoded or validated against a delivery radius yet;
-  // that needs an address service, and until then this is a string we show
-  // back to them rather than something the system can reason about.
-  | { mode: "delivery"; address: string };
+  // Delivery has no location of ours. The address is the visitor's, and it
+  // travels with the point they dropped a pin on.
+  //
+  // ——— The pin is the destination; the address is the label ———
+  //
+  // ⚠️ These two can disagree, and when they do the pin wins. That is the
+  // whole reason the pair exists.
+  //
+  // Before this, delivery was an address string and nothing else, so every
+  // stage that needed coordinates geocoded the words again: the range check
+  // geocoded, the courier quote geocoded, and Uber geocoded a third time at
+  // its end. Three guesses at one doorway, none of them the customer's, and
+  // "3545 Wilshire Blvd" in Koreatown resolves to a building with an entrance
+  // on Ardmore — the block is right and the door is wrong, which is a courier
+  // standing on the wrong street.
+  //
+  // So the customer places the point themselves and it is carried from there:
+  // see PinPicker.tsx. The address string stays because a courier is a person
+  // who reads one, and because it is what the order confirmation shows — but
+  // nothing derives a position from it any more.
+  //
+  // lat/lng are optional because a delivery chosen before this existed is
+  // already sitting in somebody's localStorage. Those fall back to geocoding
+  // the words, which is what they have always done; there is nothing better
+  // to do with them and dropping the basket would be worse.
+  | { mode: "delivery"; address: string; lat?: number; lng?: number };
 
 function isFulfillment(value: unknown): value is Fulfillment {
   if (typeof value !== "object" || value === null) return false;
