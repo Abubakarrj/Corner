@@ -7,6 +7,8 @@ import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { Button } from "../../ui/Button";
 import { pinDataUri } from "./mapEngine";
+import { MAP_STYLE } from "./mapStyle";
+import { useResolvedTheme } from "../../theme";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "./locations";
 
@@ -52,6 +54,13 @@ import { DELIVERY_ORIGIN } from "./locations";
 // words are still arriving. A screen that greys out its own button while it
 // asks Google what a street is called is a screen that has forgotten which of
 // the two things it is holding is the real one.
+
+// The look of anything floating on the map. The same string the finder uses,
+// and the reason it is a constant there applies twice as hard now that two
+// screens draw controls over a basemap: three controls describing the same
+// object separately are three controls that drift apart.
+const CHROME =
+  "border border-map-chrome-edge bg-map-chrome shadow-[var(--cb-map-chrome-shadow)]";
 
 /** Metres. Below this a settle is treated as the same spot and no lookup
  *  fires — a map settling twice after one flick is not two questions. */
@@ -106,11 +115,15 @@ export default function PinPicker({
 }) {
   const t = useT();
   const locale = useLocale();
+  const theme = useResolvedTheme();
   const holderRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const youRef = useRef<google.maps.Marker | null>(null);
   const centreRef = useRef<[number, number]>(start);
   const askedAtRef = useRef<[number, number] | null>(null);
+  // The theme at the moment the map is built. A ref because the mount effect
+  // reads it once and must not re-run when it changes.
+  const themeRef = useRef(theme);
   // Always "idle", even when a starting address was handed in. That address
   // came from somewhere else and its range has not been checked against this
   // point, so it is a label to show and not a verdict to trust; the first
@@ -256,10 +269,20 @@ export default function PinPicker({
         disableDefaultUI: true,
         gestureHandling: "greedy",
         clickableIcons: false,
-        // Google's own POI labels stay on here, unlike the store finder's
-        // quiet basemap. This map is for recognising your own building, and
-        // the pharmacy on the corner is exactly how somebody does that.
         keyboardShortcuts: false,
+        // The app's own basemap, the same one the store finder draws. See
+        // mapStyle.ts.
+        //
+        // This shipped with no styles at all, which meant Google's stock
+        // blue-and-grey with hotel ratings and restaurant pins on it, sitting
+        // inside a cream-and-olive app — two maps in one product that plainly
+        // were not the same product.
+        //
+        // It costs the POI labels, and that is a real loss worth naming: "BCD
+        // Tofu House" on the corner is how somebody recognises their own
+        // block. What the quiet style keeps is the street names, which are the
+        // part that actually places a door, and consistency won the trade.
+        styles: MAP_STYLE[themeRef.current],
       });
       mapRef.current = map;
       setMapState("ready");
@@ -290,9 +313,21 @@ export default function PinPicker({
       listeners.forEach((listener) => listener.remove());
       mapRef.current = null;
     };
-    // start and locale are read once, on purpose — see the note above.
+    // Deliberately empty. `start`, `locale`, `ask` and the theme are all read
+    // once, for the first paint: the theme is applied by the effect below
+    // rather than by rebuilding, and re-running this on any of them would
+    // throw away a map somebody is aiming and snap their pin back to the
+    // starting frame.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Light and dark, without rebuilding. setOptions swaps the style array on a
+  // live map, which is what lets the picker follow the app the way the finder
+  // does.
+  useEffect(() => {
+    themeRef.current = theme;
+    mapRef.current?.setOptions({ styles: MAP_STYLE[theme] });
+  }, [theme]);
 
   // ——— "Use my location" ———
   //
@@ -423,16 +458,54 @@ export default function PinPicker({
           }}
         />
 
+        {/* The same controls as the store finder, in the same place and the
+            same shell — see CHROME. Two maps in one app whose buttons sit at
+            different corners in different colours are two maps somebody has to
+            learn separately. */}
         <button
           type="button"
           onClick={goToMe}
           disabled={mapState !== "ready" || locating}
           aria-label={t("finder.useMyLocation")}
           aria-busy={locating}
-          className="cb-press absolute end-3 top-3 z-20 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink shadow-[0_6px_20px_rgba(0,0,0,0.12)] disabled:cursor-default disabled:opacity-60"
+          className={`cb-press absolute end-4 top-4 z-20 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-ink transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-60 ${CHROME}`}
         >
           <CrosshairIcon spinning={locating} />
         </button>
+
+        {/* Zoom, stacked under the locate button exactly as on the finder.
+            It was missing here, and it is the one control this screen needs
+            most: "zoom in to be exact" is the instruction printed under the
+            map, and on a desktop there was no way to follow it. */}
+        <div
+          className={`absolute end-4 top-[68px] z-20 flex w-11 flex-col overflow-hidden rounded-xl ${CHROME}`}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              const map = mapRef.current;
+              if (map) map.setZoom((map.getZoom() ?? 18) + 1);
+            }}
+            disabled={mapState !== "ready"}
+            aria-label={t("finder.zoomIn")}
+            className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-raise disabled:cursor-default disabled:opacity-60"
+          >
+            +
+          </button>
+          <span aria-hidden className="h-px w-full bg-map-chrome-edge" />
+          <button
+            type="button"
+            onClick={() => {
+              const map = mapRef.current;
+              if (map) map.setZoom((map.getZoom() ?? 18) - 1);
+            }}
+            disabled={mapState !== "ready"}
+            aria-label={t("finder.zoomOut")}
+            className="flex h-11 cursor-pointer items-center justify-center text-[22px] leading-none text-ink transition-colors hover:bg-raise disabled:cursor-default disabled:opacity-60"
+          >
+            &minus;
+          </button>
+        </div>
       </div>
 
       {/* Under the map: what is there, and the two ways out. */}
