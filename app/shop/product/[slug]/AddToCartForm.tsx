@@ -10,8 +10,8 @@ import {
   getProduct,
   optionsComplete,
   unitPriceCents,
-  soldOut,
 } from "../../products";
+import { useSoldOut } from "../../soldOutStore";
 import OptionPicker from "../../OptionPicker";
 import useOptionPrompt from "../../useOptionPrompt";
 import { requestOpenBasket } from "../../openBasket";
@@ -45,10 +45,17 @@ export default function AddToCartForm({
   // still sitting there while somebody picks a different flavour is a tick
   // about an order they have stopped thinking about.
   const [added, setAdded] = useState(false);
+  // Above the early return: a hook cannot be called conditionally, and this
+  // component returns null for an unknown slug.
+  const isGone = useSoldOut();
 
   if (!product) return null;
 
-  const gone = soldOut(product.slug);
+  // Through the store, like the catalog tile and the cart row. Read straight
+  // from products.ts this was the one screen that could not learn an item had
+  // gone: the tile you tapped said Sold Out and the page it opened offered to
+  // add it, because nothing here was subscribed to anything.
+  const gone = isGone(product.slug);
   const ready = optionsComplete(product, selected) && !gone;
   // What is still missing, if anything — the button says it. See
   // useOptionPrompt: a dead button is not a message.

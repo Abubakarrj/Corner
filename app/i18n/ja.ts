@@ -778,4 +778,8 @@ export const ja: Table = {
   "api.rileyTooFast": "メッセージが多すぎます。少し時間をおいてください。",
   "api.soldOutNoStore": "まだ保存先がありません。",
   "api.couldNotSave": "保存できませんでした。少し経ってからもう一度お試しください。",
+  "chat.rileyUnavailable": "Riley は今お答えできません。お店（{phone}）にお電話いただければ担当者が対応します。",
+  "chat.rileyRefused": "それについてはお手伝いできません、すみません。ご注文のことでしたら {phone} までお電話ください。",
+  "chat.rileyLostThread": "話の流れを見失ってしまいました、すみません。もう一度お聞かせいただけますか。",
+  "chat.rileyTooLong": "思ったより時間がかかってしまいました。もう一度お聞かせいただけますか。",
 };

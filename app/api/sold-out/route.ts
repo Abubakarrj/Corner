@@ -2,6 +2,7 @@ import { getProduct } from "../../shop/products";
 import { markAvailable, markSoldOut, soldOutNow } from "../../soldOut";
 import { isDatabaseConfigured } from "../../db";
 import { clientIp, throttle } from "../../rateLimit";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 // What is off the board, read by the app and written by the kitchen.
 //
@@ -50,6 +51,20 @@ export async function GET() {
   );
 }
 
+// Compared through a hash, not with ===.
+//
+// `a === b` on strings returns as soon as two characters differ, so how long
+// it takes is a function of how much of the token was right. That is a real
+// side channel and the standard answer is a constant-time compare. Hashing
+// both sides first is what makes that usable here: timingSafeEqual throws on
+// buffers of different lengths, so comparing the raw tokens would either crash
+// on a short guess or leak the length in the length check. Two SHA-256 digests
+// are always 32 bytes, whatever went in.
+function sameToken(offered: string, expected: string): boolean {
+  const digest = (value: string) => createHash("sha256").update(value, "utf8").digest();
+  return timingSafeEqual(digest(offered), digest(expected));
+}
+
 function authorized(request: Request): boolean {
   const expected = process.env.KITCHEN_TOKEN?.trim();
   if (!expected) return false;
@@ -57,7 +72,7 @@ function authorized(request: Request): boolean {
   const offered = header.toLowerCase().startsWith("bearer ")
     ? header.slice(7).trim()
     : "";
-  return offered.length > 0 && offered === expected;
+  return offered.length > 0 && sameToken(offered, expected);
 }
 
 export async function POST(request: Request) {

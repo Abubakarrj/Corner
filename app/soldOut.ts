@@ -66,6 +66,26 @@ const TTL_MS = 30_000;
 let cached: { at: number; slugs: string[] } | null = null;
 let inFlight: Promise<string[]> | null = null;
 
+// Bumped by every write, and the reason is a race worth spelling out.
+//
+// A read that is already in the air when a write lands was started against the
+// old board. Without this it would come back, find `cached` cleared, and
+// install its own stale answer with a brand new timestamp — hiding the write
+// for a full TTL. Worse, the very request that made the write calls
+// soldOutNow() to build its response, so the endpoint would tell the kitchen
+// tablet that the donuts are still on the board a moment after taking them
+// off.
+//
+// So a read publishes only if the board has not moved underneath it, and a
+// write drops the in-flight read so the next caller starts a fresh one.
+let generation = 0;
+
+function invalidate() {
+  generation += 1;
+  cached = null;
+  inFlight = null;
+}
+
 function fromEnv(): string[] | null {
   const raw = process.env.SOLD_OUT_SLUGS?.trim();
   if (!raw) return null;
@@ -108,13 +128,16 @@ export async function soldOutNow(): Promise<string[]> {
   // One read per process per expiry, however many requests land in the gap.
   if (inFlight) return inFlight;
 
+  const startedAt = generation;
+  const previous = cached?.slugs;
   inFlight = (async () => {
-    const found = (await fromDatabase()) ?? fromEnv() ?? cached?.slugs ?? [];
+    const found = (await fromDatabase()) ?? fromEnv() ?? previous ?? [];
     const slugs = found.filter((slug) => getProduct(slug) !== undefined);
-    cached = { at: Date.now(), slugs };
+    // Only if nothing was written while this was in the air. See `generation`.
+    if (generation === startedAt) cached = { at: Date.now(), slugs };
     return slugs;
   })().finally(() => {
-    inFlight = null;
+    if (generation === startedAt) inFlight = null;
   });
 
   return inFlight;
@@ -141,7 +164,7 @@ export async function markSoldOut(slug: string, until?: Date): Promise<void> {
      ON CONFLICT (slug) DO UPDATE SET since = now(), until = EXCLUDED.until`,
     [slug, until ?? null],
   );
-  cached = null;
+  invalidate();
 }
 
 /** Puts it back on the board. */
@@ -150,5 +173,5 @@ export async function markAvailable(slug: string): Promise<void> {
   const client = db();
   if (!client) throw new Error("no database URL configured");
   await client.query(`DELETE FROM ${SCHEMA}.sold_out WHERE slug = $1`, [slug]);
-  cached = null;
+  invalidate();
 }

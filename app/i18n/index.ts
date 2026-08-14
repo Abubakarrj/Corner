@@ -8,20 +8,13 @@ import {
   localeById,
   type LocaleId,
 } from "../localeScript";
-import { en, type StringKey, type Table } from "./en";
-import { es } from "./es";
-import { fr } from "./fr";
-import { it } from "./it";
-import { fa } from "./fa";
-import { ko } from "./ko";
-import { ur } from "./ur";
-import { ja } from "./ja";
-import { zh } from "./zh";
-import { my } from "./my";
+import { en } from "./en";
+// The tables and the lookup live in a module with no "use client" on it, so
+// the chat route can use them too. See the note at the top of strings.ts.
+import { translate, type StringKey, type Vars } from "./strings";
 
-export type { StringKey };
-
-const TABLES: Record<LocaleId, Table> = { en, es, fr, it, ko, ur, fa, ja, zh, my };
+export type { StringKey, Vars };
+export { translate };
 
 // The chosen language, and the function that looks a string up in it.
 //
@@ -118,29 +111,6 @@ export function setLocale(id: LocaleId) {
   // refresh() rather than notifying directly: it re-reads and compares, so
   // setting the language it is already on doesn't re-render the app.
   refresh();
-}
-
-// The values a string can be given, as in t("finder.about", { name: "Koreatown" }).
-export type Vars = Record<string, string | number>;
-
-// Substitution is {name}, not string concatenation, and that is the whole
-// reason it exists. A sentence assembled from fragments in code assumes
-// English word order: "{name} is {miles} miles away" has the distance before
-// the shop in some languages and after it in others, and a translator who has
-// the whole sentence can move the pieces. One who is handed three fragments
-// cannot.
-function fill(text: string, vars?: Vars): string {
-  if (!vars) return text;
-  return text.replace(/\{(\w+)\}/g, (whole, key: string) =>
-    key in vars ? String(vars[key]) : whole,
-  );
-}
-
-// Falls back to English for any key a language hasn't been given yet, which is
-// what makes shipping a translation possible one screen at a time: a missing
-// string is an English word in the right place, not a blank or a key name.
-export function translate(locale: LocaleId, key: StringKey, vars?: Vars): string {
-  return fill(TABLES[locale]?.[key] ?? en[key] ?? key, vars);
 }
 
 // The hook every component uses: `const t = useT();` then `t("finder.pickup")`.

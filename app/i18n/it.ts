@@ -834,4 +834,8 @@ export const it: Table = {
   "api.rileyTooFast": "Sono tanti messaggi insieme. Aspetta un minuto.",
   "api.soldOutNoStore": "Non c'è ancora dove salvarlo.",
   "api.couldNotSave": "Non siamo riusciti a salvarlo. Riprova tra poco.",
+  "chat.rileyUnavailable": "Riley non può rispondere adesso. Chiama il negozio al {phone} e ti aiuta una persona.",
+  "chat.rileyRefused": "Su questo non posso aiutarti, scusa. Se riguarda un ordine, chiama il negozio al {phone}.",
+  "chat.rileyLostThread": "Ho perso il filo, scusa. Me lo richiedi?",
+  "chat.rileyTooLong": "Ci ha messo più del dovuto. Me lo richiedi?",
 };

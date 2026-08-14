@@ -5,6 +5,8 @@ import { buildSystemPrompt, languageInstruction, RILEY_MAX_TOKENS } from "./rile
 import { noEmDashes, scrubPartial } from "./scrub";
 import { clientIp, throttle } from "../../rateLimit";
 import { readContext } from "./context";
+import { translate } from "../../i18n/strings";
+import { localeById } from "../../localeScript";
 import {
   emptyAttachments,
   RILEY_TOOLS,
@@ -152,8 +154,33 @@ function client(): Anthropic | null {
 
 function merge(into: ChatAttachments, from: Partial<ChatAttachments> | undefined) {
   if (!from) return;
-  if (from.products) into.products.push(...from.products);
-  if (from.info) into.info.push(...from.info);
+  if (from.products) {
+    // Deduplicated by slug, because these accumulate across rounds and the
+    // rail keys its cards on the slug. Riley calling show_items twice in one
+    // turn with an item in common — "a sandwich and a drink", then "and this
+    // one goes well with it" — put the same card in twice, which is two React
+    // children with the same key and two Add buttons for one bagel. The first
+    // mention wins, so the order she chose is kept.
+    const seen = new Set(into.products.map((card) => card.slug));
+    for (const card of from.products) {
+      if (seen.has(card.slug)) continue;
+      seen.add(card.slug);
+      into.products.push(card);
+    }
+  }
+  if (from.info) {
+    // Identical panels collapse, for the same reason. check_hours asked twice
+    // in one turn returns the same answer twice, and two copies of "Open now"
+    // stacked under one reply is not more information. Compared by content, so
+    // two delivery panels for two different addresses both stand.
+    const seen = new Set(into.info.map((card) => JSON.stringify(card)));
+    for (const card of from.info) {
+      const key = JSON.stringify(card);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      into.info.push(card);
+    }
+  }
   if (from.actions) into.actions.push(...from.actions);
   // Chips replace rather than accumulate: two sets of quick replies stacked
   // under one message is a menu, and the last word should win.
@@ -394,6 +421,19 @@ export async function POST(request: Request) {
   const language =
     typeof body?.locale === "string" ? languageInstruction(body.locale) : null;
 
+  // ——— The one route that does know the visitor's language ———
+  //
+  // Every other route answers with a key and lets the screen say the words,
+  // because a route has no locale. This one has: the widget sends it so Riley
+  // knows which language to answer in. Which makes the four sentences below
+  // *hers*, written here rather than by the model, the only place in the app
+  // where a server can and therefore must translate. They shipped as English
+  // literals and went into the bubble that way, so a Korean conversation
+  // ended in "That took longer than it should have, ask me again?".
+  const locale = localeById(typeof body?.locale === "string" ? body.locale : "en").id;
+  const say = (key: Parameters<typeof translate>[1], vars?: Record<string, string>) =>
+    translate(locale, key, vars);
+
   const anthropic = client();
   if (!anthropic) {
     // No key configured. Sent as Riley's own reply rather than as an error, so
@@ -402,7 +442,7 @@ export async function POST(request: Request) {
     return ndjson(async (send) =>
       send({
         type: "text",
-        text: `Riley can't answer right now. Call the shop on ${shopPhoneLabel()} and a person will help.`,
+        text: say("chat.rileyUnavailable", { phone: shopPhoneLabel() }),
       }),
     );
   }
@@ -447,14 +487,60 @@ export async function POST(request: Request) {
     const attachments = emptyAttachments();
     // Across rounds, not per round: she may write a line, look something up,
     // and carry on writing, and that is one reply to whoever is reading it.
+    //
+    // Two buffers, not one. `written` is what she has finished saying;
+    // `pending` is the round in flight, which is not folded in until the round
+    // ends and it has been checked. See append() and settle().
     let written = "";
+    let pending = "";
     let sent = "";
 
+    // The reply as it stands. Rounds are paragraphs: glued, the last sentence
+    // of one ran into the first of the next, and then SENTENCE_RUN_ON in the
+    // scrub — which exists to repair "checkout?Just tap" — inserted a space
+    // and made the join invisible. A repair applied across a seam hides the
+    // seam, so the break goes in first.
+    const joined = () =>
+      pending && written && !written.endsWith("\n\n")
+        ? `${written}\n\n${pending}`
+        : `${written}${pending}`;
+
     const flush = () => {
-      const next = scrubPartial(written);
+      const next = scrubPartial(joined());
       if (next === sent) return;
       sent = next;
       send({ type: "text", text: next });
+    };
+
+    // ——— What streams live, and what waits ———
+    //
+    // The first thing she writes in a turn streams token by token: that is the
+    // whole latency story on this route, and it covers the common shape where
+    // she looks something up in round one and writes the answer in round two,
+    // because nothing is on screen yet when that answer starts.
+    //
+    // A round that writes *after* she has already written does not stream. It
+    // is held until the round ends, because until then there is no way to know
+    // it is not a restatement — and a restatement that streams appears on
+    // screen in full and is then taken back, which is a flicker of doubled
+    // text where there used to be a permanently doubled sentence. The cost is
+    // that a continuation lands in one go; it is a sentence, and it comes
+    // after a tool call the visitor already waited on.
+    const append = (chunk: string) => {
+      if (!chunk) return;
+      pending += chunk;
+      if (!written) flush();
+    };
+
+    // End of a round: keep what it wrote, or drop it if it only said again
+    // what is already on screen. There is no reading of a chat reply where the
+    // same sentence twice in one bubble was meant, so this does not have to be
+    // clever to be safe.
+    const settle = () => {
+      const said = pending.trim();
+      if (said && !written.trimEnd().endsWith(said)) written = joined();
+      pending = "";
+      flush();
     };
 
     // One turn's request, minus the two things that are allowed to vary when
@@ -513,35 +599,8 @@ export async function POST(request: Request) {
     // see the retry below. It accumulates the same `written` so everything
     // downstream is identical either way; the only difference is that the
     // whole reply lands in one go instead of at reading speed.
-    // What the round currently running has written, on its own. `written` is
-    // the whole reply across rounds; this is the slice one round added, which
-    // is what the repeat check below needs to reason about.
-    let roundText = "";
-
-    // Text arriving from a round, added to the reply.
-    //
-    // ——— Why there is a paragraph break in here ———
-    //
-    // Rounds used to concatenate raw: `written += chunk`, round after round.
-    // Riley writes a line, looks something up, writes again, and those are two
-    // paragraphs of one message. Glued, the last sentence of one ran straight
-    // into the first of the next: "...today?What sounds". Then SENTENCE_RUN_ON
-    // in the scrub, which exists to fix a model writing "checkout?Just tap",
-    // put a space in and made the seam invisible, so a doubled sentence
-    // reached the screen reading as one perfectly ordinary line.
-    //
-    // That is the sharp edge worth naming: the scrub is a repair, and a repair
-    // applied across a join hides the join. The break goes in first.
-    const append = (chunk: string) => {
-      if (!chunk) return;
-      if (!roundText && written && !written.endsWith("\n\n")) written += "\n\n";
-      roundText += chunk;
-      written += chunk;
-      flush();
-    };
-
     const round = async (model: string, streaming: boolean) => {
-      roundText = "";
+      pending = "";
       if (!streaming) {
         const answer = await anthropic.beta.messages.create(request(model));
         append(
@@ -592,6 +651,8 @@ export async function POST(request: Request) {
     let recovered = false;
 
     for (let index = 0; index <= MAX_TOOL_ROUNDS; index++) {
+      // What is already on screen when this round starts. `written` only moves
+      // at settle(), so a failed attempt cannot have changed it.
       const before = written;
       let response: Anthropic.Beta.BetaMessage | null = null;
 
@@ -614,7 +675,7 @@ export async function POST(request: Request) {
             if (!before && attachments.products.length === 0 && attachments.info.length === 0) {
               throw error;
             }
-            written = `${before}${before ? "\n\n" : ""}I lost my thread there, sorry. Ask me again?`;
+            written = `${written}${written ? "\n\n" : ""}${say("chat.rileyLostThread")}`;
             flush();
             return;
           }
@@ -622,8 +683,9 @@ export async function POST(request: Request) {
           model = FALLBACK_MODEL;
           streaming = false;
           // Drop whatever the failed attempt managed to write, so the retry
-          // doesn't say the same half-sentence twice.
-          written = before;
+          // doesn't say the same half-sentence twice. `written` needs no
+          // rewinding: a round only folds into it once it has finished.
+          pending = "";
           flush();
         }
       }
@@ -637,23 +699,13 @@ export async function POST(request: Request) {
       if (response.stop_reason === "refusal") {
         send({
           type: "text",
-          text: `I can't help with that one, sorry. If it's about an order, call the shop on ${shopPhoneLabel()}.`,
+          text: say("chat.rileyRefused", { phone: shopPhoneLabel() }),
         });
         return;
       }
 
-      // She said it again. Dropped rather than shown twice.
-      //
-      // The belt to the SILENT_TOOLS brace below: that stops the round most
-      // likely to produce a restatement from running at all, and this catches
-      // one wherever else it comes from. There is no reading of a chat reply
-      // where the same sentence, twice, in one bubble, was what somebody meant
-      // to write, so the check does not have to be clever to be safe.
-      const said = roundText.trim();
-      if (said && before.trimEnd().endsWith(said)) {
-        written = before;
-        flush();
-      }
+      // The round is over: keep what it wrote, or drop a restatement.
+      settle();
 
       const calls = response.content.filter(
         (block): block is Anthropic.Beta.BetaToolUseBlock => block.type === "tool_use",
@@ -727,7 +779,7 @@ export async function POST(request: Request) {
     // Out of rounds. Whatever she attached along the way is already on screen;
     // this is the sentence to go with it.
     console.warn("[shop-chat] hit the tool-round ceiling");
-    written = `${written}${written ? "\n\n" : ""}That took longer than it should have, ask me again?`;
+    written = `${written}${written ? "\n\n" : ""}${say("chat.rileyTooLong")}`;
     flush();
   });
 }

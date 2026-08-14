@@ -785,4 +785,8 @@ export const es: Table = {
   "api.rileyTooFast": "Son muchos mensajes seguidos. Espera un minuto.",
   "api.soldOutNoStore": "Todavía no hay dónde guardar eso.",
   "api.couldNotSave": "No hemos podido guardarlo. Inténtalo en un momento.",
+  "chat.rileyUnavailable": "Riley no puede responder ahora. Llama a la tienda al {phone} y te atenderá una persona.",
+  "chat.rileyRefused": "Con eso no puedo ayudarte, lo siento. Si es sobre un pedido, llama a la tienda al {phone}.",
+  "chat.rileyLostThread": "Se me ha ido el hilo, perdona. ¿Me lo preguntas otra vez?",
+  "chat.rileyTooLong": "Eso ha tardado más de la cuenta. ¿Me lo preguntas otra vez?",
 };

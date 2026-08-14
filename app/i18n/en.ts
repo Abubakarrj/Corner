@@ -653,6 +653,20 @@ export const en = {
   "api.fillNameEmail": "Fill in your name and email.",
   "api.rileyDown": "Riley couldn't answer just now. Try again in a moment.",
   "api.rileyNoReply": "Riley didn't have a reply for that. Try rephrasing?",
+
+  // ——— Riley's own four sentences ———
+  //
+  // Not the model's words: written here, sent as text in her bubble, for the
+  // four moments she cannot answer normally. Translated by the chat route
+  // itself, which unusually does know the locale, because a Korean
+  // conversation ending in an English apology is worse than the failure it is
+  // apologising for. See app/i18n/strings.ts.
+  "chat.rileyUnavailable":
+    "Riley can't answer right now. Call the shop on {phone} and a person will help.",
+  "chat.rileyRefused":
+    "I can't help with that one, sorry. If it's about an order, call the shop on {phone}.",
+  "chat.rileyLostThread": "I lost my thread there, sorry. Ask me again?",
+  "chat.rileyTooLong": "That took longer than it should have, ask me again?",
   "api.rileyTooFast": "That's a lot of messages at once. Give it a minute.",
   "api.soldOutNoStore": "There's nowhere to save that yet.",
   "api.couldNotSave": "We couldn't save that. Try again in a moment.",

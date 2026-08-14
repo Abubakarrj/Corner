@@ -210,9 +210,10 @@ export function useCheckout(): Checkout {
   // taken out of the basket. Rendered as a notice, then dismissed.
   //
   // Distinct from `unavailable` below, which is what the *browser* already
-  // knows is off the board. SOLD_OUT ships in the bundle, so a tab left open
-  // across a deploy — or, once this comes from the till, any tab at all — has
-  // a stale copy, and the server is the only one that can say.
+  // knows is off the board. The browser polls /api/sold-out and is at worst
+  // half a minute behind, which is exactly long enough for the last lox to go
+  // while somebody is filling in their name. The server is the only one that
+  // can say at the moment it matters.
   const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
 
   // The card fields, in their own hook so the number has no route into the

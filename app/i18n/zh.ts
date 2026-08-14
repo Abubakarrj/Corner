@@ -777,4 +777,8 @@ export const zh: Table = {
   "api.rileyTooFast": "消息发得太快了，请稍等一会儿。",
   "api.soldOutNoStore": "目前还没有地方保存。",
   "api.couldNotSave": "没能保存，请稍后再试。",
+  "chat.rileyUnavailable": "Riley 现在无法回答。请拨打 {phone} 联系门店，会有人帮您。",
+  "chat.rileyRefused": "这个我帮不上忙，抱歉。如果是订单的事，请拨打 {phone}。",
+  "chat.rileyLostThread": "我这边断了思路，抱歉。可以再问我一次吗？",
+  "chat.rileyTooLong": "花的时间比预期久。可以再问我一次吗？",
 };

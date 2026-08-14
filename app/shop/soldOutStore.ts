@@ -1,7 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { applySoldOut, soldOut } from "./products";
+import { useMemo, useSyncExternalStore } from "react";
+import { applySoldOut } from "./products";
 
 // What's off the board, in the browser.
 //
@@ -39,15 +39,30 @@ const REFRESH_MS = 5 * 60_000;
 
 const listeners = new Set<() => void>();
 
-// Bumped on every change. The snapshot has to be a primitive that changes
-// identity, because the list itself lives in products.ts and mutating an array
-// in place is invisible to useSyncExternalStore.
-let version = 0;
+// The snapshot: the board as a set, rebuilt whenever it moves.
+//
+// A set rather than a counter, and that is not a detail. The first cut kept a
+// version number and had the hook return the bare soldOut() function, on the
+// reasoning that the number is what makes React notice module state changed.
+// It does, for a component that reads the answer directly. It does nothing for
+// one that memoises: useCartRows keys its rows on [lines, isGone], and a
+// constant isGone means those deps never move, so the memo kept handing back
+// rows built before the kitchen ran out.
+//
+// Making the snapshot the value itself removes the whole class. The identity
+// changes when the board changes, a closure over it genuinely depends on it,
+// and there is no counter to remember to bump.
+let snapshot: ReadonlySet<string> = new Set();
 let listening = false;
 let timer: number | null = null;
 
-function announce() {
-  version += 1;
+// A stable empty set for the server snapshot. React calls getServerSnapshot
+// more than once and compares by identity; a fresh `new Set()` each time is an
+// infinite loop.
+const NOTHING: ReadonlySet<string> = new Set();
+
+function announce(slugs: readonly string[]) {
+  snapshot = new Set(slugs);
   listeners.forEach((listener) => listener());
 }
 
@@ -59,10 +74,21 @@ async function pull() {
     if (!Array.isArray(body.slugs)) return;
     const slugs = body.slugs.filter((slug): slug is string => typeof slug === "string");
     applySoldOut(slugs);
-    announce();
+    announce(slugs);
   } catch {
     // Offline, or the endpoint is down. Keep what we have. See above.
   }
+}
+
+// A named handler, so it can be taken off again.
+//
+// It used to be an inline arrow, which meant it could only ever be added.
+// `listening` goes back to false when the last subscriber leaves, so the next
+// mount attached a second one, and a third, and every one of them fired a
+// fetch on the next tab focus. Navigating between the catalog and an item is
+// exactly that mount and unmount, so it grew as fast as somebody browses.
+function onVisible() {
+  if (document.visibilityState === "visible") void pull();
 }
 
 function subscribe(callback: () => void) {
@@ -70,9 +96,7 @@ function subscribe(callback: () => void) {
     listening = true;
     void pull();
     timer = window.setInterval(() => void pull(), REFRESH_MS);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") void pull();
-    });
+    document.addEventListener("visibilitychange", onVisible);
   }
   listeners.add(callback);
   return () => {
@@ -81,28 +105,29 @@ function subscribe(callback: () => void) {
       window.clearInterval(timer);
       timer = null;
       listening = false;
+      document.removeEventListener("visibilitychange", onVisible);
     }
   };
 }
 
-function getSnapshot(): number {
-  return version;
+function getSnapshot(): ReadonlySet<string> {
+  return snapshot;
 }
 
-function getServerSnapshot(): number {
-  // The markup is rendered against whatever the server's list was at the time,
-  // and the first client render has to agree with it or React throws away the
-  // tree. Zero on both sides; the fetch above corrects it a moment later.
-  return 0;
+function getServerSnapshot(): ReadonlySet<string> {
+  // Empty, and the server render has to agree: see the note on applySoldOut in
+  // products.ts about why the server's own list never reaches this markup.
+  return NOTHING;
 }
 
 /** Whether an item is off the board, as a function that re-renders its caller
  *  when the answer changes.
  *
- *  `const isGone = useSoldOut();` then `isGone(product.slug)`. The version is
- *  read for its subscription rather than its value, which is the whole trick:
- *  the list is module state and this is what makes React notice it moved. */
+ *  `const isGone = useSoldOut();` then `isGone(product.slug)`.
+ *
+ *  The identity moves when the board moves, so a caller that memoises on it
+ *  recomputes. See the note on `snapshot` above for why that matters. */
 export function useSoldOut(): (slug: string) => boolean {
-  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  return soldOut;
+  const gone = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return useMemo(() => (slug: string) => gone.has(slug), [gone]);
 }

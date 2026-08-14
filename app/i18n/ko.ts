@@ -779,4 +779,8 @@ export const ko: Table = {
   "api.rileyTooFast": "메시지가 너무 많습니다. 잠시 후에 다시 해보세요.",
   "api.soldOutNoStore": "아직 저장할 곳이 없습니다.",
   "api.couldNotSave": "저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  "chat.rileyUnavailable": "지금은 Riley가 답할 수 없습니다. {phone}으로 전화하시면 담당자가 도와드립니다.",
+  "chat.rileyRefused": "그건 제가 도와드릴 수 없어요, 죄송합니다. 주문에 관한 일이면 {phone}으로 전화해 주세요.",
+  "chat.rileyLostThread": "흐름을 놓쳤어요, 죄송합니다. 다시 물어봐 주시겠어요?",
+  "chat.rileyTooLong": "생각보다 오래 걸렸네요. 다시 물어봐 주시겠어요?",
 };

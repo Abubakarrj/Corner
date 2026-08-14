@@ -416,7 +416,16 @@ function itemForModel(product: Product) {
 // English, which is fine for Riley's own context and useless on a card that a
 // Korean speaker is looking at.
 function statusPhrase(): Phrase {
-  if (isOpenNow()) return { key: "shop.openUntil", hour: closeHour() % 24 };
+  if (isOpenNow()) {
+    // ⚠️ 24 means there is no closing time: SHOP_OPEN_PREVIEW is on and the
+    // gate has been told the counter never shuts. The obvious `closeHour() %
+    // 24` turns that into 0, and clockLabel(0) is "12am", so the card claimed
+    // the shop closes at midnight while Riley's own briefing, which reads
+    // CLOSE_HOUR, said 4pm. Nothing to name is not the same as midnight.
+    const closes = closeHour();
+    if (closes >= 24) return { key: "chat.hoursOpenNow" };
+    return { key: "shop.openUntil", hour: closes };
+  }
   const next = nextOpeningAt();
   if (!next) return { key: "shop.closed" };
   return {
