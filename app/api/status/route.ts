@@ -49,8 +49,10 @@ async function databaseCheck(): Promise<Check> {
       on: false,
       how: "checked",
       without:
-        "DATABASE_URL is not set. Push notifications cannot be stored, and the" +
-        " queue line under the Order button renders nothing.",
+        "No database URL. Set CORNER_DATABASE_URL (or DATABASE_URL, when" +
+        " nothing else on the account has claimed it). Push notifications" +
+        " cannot be stored, and the queue line under the Order button" +
+        " renders nothing.",
     };
   }
   const client = db();
@@ -64,7 +66,7 @@ async function databaseCheck(): Promise<Check> {
     return {
       on: false,
       how: "checked",
-      without: `DATABASE_URL is set but the server refused: ${explainDbError(error)}`,
+      without: `A database URL is set but the server refused: ${explainDbError(error)}`,
     };
   }
 }

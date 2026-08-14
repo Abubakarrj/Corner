@@ -15,6 +15,31 @@ import { Pool } from "pg";
 // and the site goes down rather than the feature.
 //
 // So: one pool, and each feature owns its own table and its own schema.
+//
+// ——— Which variable holds the connection string ———
+//
+// CORNER_DATABASE_URL when it is set, DATABASE_URL otherwise.
+//
+// DATABASE_URL is the name every platform reaches for, which is exactly the
+// problem: on a Render account running more than one thing, it is already
+// spoken for. It was here, holding an internal Render hostname —
+// `dpg-xxxx-a`, no domain — which resolves only from a service in the same
+// region and account as the database. Correct for whatever set it, and
+// unreachable from this one, so every write failed with ENOTFOUND.
+//
+// Editing it in place was the wrong fix. That variable belongs to something
+// else; overwriting it to suit this app would trade one broken feature for
+// another, somewhere nobody is looking.
+//
+// So this app gets a name of its own, and DATABASE_URL keeps working as the
+// default for a deployment where nothing else has claimed it.
+function connectionString(): string | undefined {
+  return (
+    process.env.CORNER_DATABASE_URL?.trim() ||
+    process.env.DATABASE_URL?.trim() ||
+    undefined
+  );
+}
 
 /** A database on this machine, which will not be speaking TLS. */
 function isLocal(url: string): boolean {
@@ -29,7 +54,7 @@ function isLocal(url: string): boolean {
 let pool: Pool | null = null;
 
 export function isDatabaseConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return connectionString() !== undefined;
 }
 
 /** The pool, or null when no database is attached.
@@ -38,7 +63,7 @@ export function isDatabaseConfigured(): boolean {
  *  notifications go unsent, the kitchen queue says it does not know. A shop
  *  without a database still takes orders. */
 export function db(): Pool | null {
-  const url = process.env.DATABASE_URL;
+  const url = connectionString();
   if (!url) return null;
   if (!pool) {
     pool = new Pool({
@@ -137,7 +162,7 @@ const prepared = new Map<string, Promise<void>>();
  *  normal thing to recover from. */
 export function ready(name: string, schema: string): Promise<void> {
   const client = db();
-  if (!client) return Promise.reject(new Error("no DATABASE_URL"));
+  if (!client) return Promise.reject(new Error("no database URL configured"));
 
   const existing = prepared.get(name);
   if (existing) return existing;
