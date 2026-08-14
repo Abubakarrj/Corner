@@ -270,6 +270,9 @@ export const fa: Table = {
   "kitchen.clear": "بدون سفارش در نوبت",
   "kitchen.aheadOne": "۱ سفارش در نوبت",
   "kitchen.ahead": "{count} سفارش در نوبت",
+  "queue.next": "سفارش شما نفر بعدی است.",
+  "queue.aheadOne": "۱ سفارش پیش از شما.",
+  "queue.ahead": "{count} سفارش پیش از شما.",
 
   "delivery.carriedBy": "ارسال با",
   "delivery.arrivingBetween": "بین {from} تا {to} می‌رسد",

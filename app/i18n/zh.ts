@@ -239,6 +239,9 @@ export const zh: Table = {
   "kitchen.clear": "前面没有订单",
   "kitchen.aheadOne": "前面 1 单",
   "kitchen.ahead": "前面 {count} 单",
+  "queue.next": "下一个就是您的订单。",
+  "queue.aheadOne": "您前面还有 1 个订单。",
+  "queue.ahead": "您前面还有 {count} 个订单。",
 
   "delivery.carriedBy": "配送方",
   "delivery.arrivingBetween": "{from}–{to} 送达",

@@ -240,6 +240,9 @@ export const ur: Table = {
   "kitchen.clear": "کوئی آرڈر آگے نہیں",
   "kitchen.aheadOne": "1 آرڈر آگے",
   "kitchen.ahead": "{count} آرڈر آگے",
+  "queue.next": "اگلا آپ کا آرڈر ہے۔",
+  "queue.aheadOne": "آپ سے پہلے 1 آرڈر ہے۔",
+  "queue.ahead": "آپ سے پہلے {count} آرڈر ہیں۔",
 
   "delivery.carriedBy": "پہنچانے والا",
   "delivery.arrivingBetween": "{from} سے {to} کے درمیان پہنچے گا",

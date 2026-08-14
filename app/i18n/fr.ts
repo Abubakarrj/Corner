@@ -269,6 +269,9 @@ export const fr: Table = {
   "kitchen.clear": "Aucune commande avant vous",
   "kitchen.aheadOne": "1 commande avant vous",
   "kitchen.ahead": "{count} commandes avant vous",
+  "queue.next": "Le vôtre est le prochain.",
+  "queue.aheadOne": "1 commande avant la vôtre.",
+  "queue.ahead": "{count} commandes avant la vôtre.",
 
   "delivery.carriedBy": "Livré par",
   "delivery.arrivingBetween": "Arrive entre {from} et {to}",

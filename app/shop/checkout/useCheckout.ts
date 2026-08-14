@@ -388,6 +388,11 @@ export function useCheckout(): Checkout {
         // to ask about this order later, and the tracker's clock is the only
         // thing it has to go on.
         ...(typeof result?.orderGuid === "string" ? { toastGuid: result.orderGuid } : {}),
+        // The handle for "how many are ahead of mine". Its own field rather
+        // than reusing toastGuid, because the queue is keyed by the guid on
+        // one path and by an id the endpoint invents on the other, and the
+        // screen asking should not have to know which shop it is standing in.
+        ...(typeof result?.queueId === "string" ? { queueId: result.queueId } : {}),
         ...(typeof result?.readyAt === "number" ? { readyAt: result.readyAt } : {}),
         ...(typeof result?.deliveryId === "string" ? { deliveryId: result.deliveryId } : {}),
         // The card, as a receipt describes one. Brand and four digits, on this

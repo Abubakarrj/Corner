@@ -102,6 +102,53 @@ export async function ordersAhead(): Promise<number | null> {
   }
 }
 
+/** How many orders are ahead of one particular order, or null when we cannot
+ *  say — which includes not being able to find that order at all.
+ *
+ *  ——— Why this is not ordersAhead() minus one ———
+ *
+ *  Before you order, the useful question is how much work is on the counter:
+ *  that decides whether you have time. After you order you are in the line,
+ *  and the question is your place in it — a number that goes down while you
+ *  watch, which is the only reason to show it at all.
+ *
+ *  Those are different counts, not the same count offset by one. Orders
+ *  placed after yours are ahead of nobody and must not be in it.
+ *
+ *  Null when the row is missing rather than zero. A zero here reads as "yours
+ *  is next", and saying that about an order the kitchen has no record of is
+ *  the worst available answer. */
+export async function ordersAheadOf(id: string): Promise<number | null> {
+  const client = db();
+  if (!client) return null;
+  try {
+    await prepared();
+    // One round trip, and the CTE is what makes an absent order distinguish
+    // itself: no row in `mine` means no rows out, which is null. A LEFT JOIN
+    // rather than a WHERE so an order that is genuinely first still returns a
+    // row, counting zero, instead of collapsing into the same empty result as
+    // an order we have never heard of.
+    const result = await client.query(
+      `WITH mine AS (
+         SELECT placed_at FROM ${SCHEMA}.kitchen_queue WHERE id = $1
+       )
+       SELECT count(q.id)::int AS ahead
+         FROM mine
+         LEFT JOIN ${SCHEMA}.kitchen_queue q
+           ON q.ready_at IS NULL
+          AND q.placed_at < mine.placed_at
+          AND q.placed_at > now() - ($2 || ' minutes')::interval
+        GROUP BY mine.placed_at`,
+      [id, String(STALE_MINUTES)],
+    );
+    const ahead = result.rows[0]?.ahead;
+    return typeof ahead === "number" ? ahead : null;
+  } catch (error) {
+    console.error("[kitchen] could not place an order in the queue:", explainDbError(error));
+    return null;
+  }
+}
+
 /** Put an order in the queue. Called after the kitchen has accepted it.
  *
  *  Never throws. A queue counter is the least important thing happening at the

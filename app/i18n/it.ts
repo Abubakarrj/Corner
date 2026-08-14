@@ -269,6 +269,9 @@ export const it: Table = {
   "kitchen.clear": "Nessun ordine prima",
   "kitchen.aheadOne": "1 ordine prima",
   "kitchen.ahead": "{count} ordini prima",
+  "queue.next": "Il tuo è il prossimo.",
+  "queue.aheadOne": "1 ordine prima del tuo.",
+  "queue.ahead": "{count} ordini prima del tuo.",
 
   "delivery.carriedBy": "Lo porta",
   "delivery.arrivingBetween": "Arriva tra le {from} e le {to}",

@@ -269,6 +269,9 @@ export const en = {
   "kitchen.clear": "No orders ahead",
   "kitchen.aheadOne": "1 order ahead",
   "kitchen.ahead": "{count} orders ahead",
+  "queue.next": "Yours is next.",
+  "queue.aheadOne": "1 order ahead of yours.",
+  "queue.ahead": "{count} orders ahead of yours.",
 
   // The delivery block on checkout, and the (i) that explains the fee.
   "delivery.carriedBy": "Carried by",

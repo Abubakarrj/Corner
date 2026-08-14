@@ -237,6 +237,9 @@ export const my: Table = {
   "kitchen.clear": "စောင့်ဆိုင်းမှု မရှိ",
   "kitchen.aheadOne": "ရှေ့တွင် ၁ ခု",
   "kitchen.ahead": "ရှေ့တွင် {count} ခု",
+  "queue.next": "နောက်တစ်ခုက သင့်အော်ဒါပါ။",
+  "queue.aheadOne": "သင့်ရှေ့မှာ ၁ ခု ရှိပါတယ်။",
+  "queue.ahead": "သင့်ရှေ့မှာ {count} ခု ရှိပါတယ်။",
 
   "delivery.carriedBy": "ပို့ဆောင်သူ",
   "delivery.arrivingBetween": "{from}–{to} အတွင်း ရောက်ပါမည်",

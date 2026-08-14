@@ -9,6 +9,7 @@ import Confetti from "../../ui/Confetti";
 import { DISPLAY_FONT } from "../shopControls";
 import { Money } from "./CheckoutSections";
 import DeliveryFeeInfo from "./DeliveryFeeInfo";
+import QueuePlace from "./QueuePlace";
 import UberDirectMark from "./UberDirectMark";
 import type { Tender } from "./PaymentSection";
 
@@ -112,6 +113,13 @@ export default function PurchaseComplete({
             <>{t("checkout.weWillHaveItReady")}</>
           )}
         </p>
+
+        {/* Where this order sits in the line. Under the timing sentence and
+            above the money, because it belongs with "when", and because the
+            number people came back to this screen for is how long — not what
+            they already know they spent. Renders nothing when the queue
+            cannot say, which includes every deployment without a database. */}
+        <QueuePlace queueId={order?.queueId} />
 
         {bill ? (
           <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft bg-surface p-4 text-left">

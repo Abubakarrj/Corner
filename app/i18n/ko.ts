@@ -237,6 +237,9 @@ export const ko: Table = {
   "kitchen.clear": "대기 주문 없음",
   "kitchen.aheadOne": "앞에 1건",
   "kitchen.ahead": "앞에 {count}건",
+  "queue.next": "다음이 고객님 주문입니다.",
+  "queue.aheadOne": "고객님 앞에 1건 있습니다.",
+  "queue.ahead": "고객님 앞에 {count}건 있습니다.",
 
   "delivery.carriedBy": "배달 파트너",
   "delivery.arrivingBetween": "{from}–{to} 도착",

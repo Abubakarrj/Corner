@@ -86,6 +86,14 @@ export type PlacedOrder = {
   // Absent on orders placed before this existed, and on any order the kitchen
   // heard about some other way.
   toastGuid?: string;
+  // The kitchen queue's handle on this order, for "two orders ahead of
+  // yours". Toast's guid where Toast is connected and an id the order
+  // endpoint invents where it isn't — one field either way, so nothing
+  // reading it has to know which.
+  //
+  // Absent on orders placed before this existed, and on any order the queue
+  // could not record. Both render as no line rather than as a zero.
+  queueId?: string;
   // Uber's id for the courier's job, on a delivery. The other half of the
   // pair: Toast says where the food is, Uber says where the driver is, and an
   // order in a car needs both to be tracked honestly.

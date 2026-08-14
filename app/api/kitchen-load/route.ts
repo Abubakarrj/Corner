@@ -1,4 +1,4 @@
-import { ordersAhead } from "../../kitchenQueue";
+import { ordersAhead, ordersAheadOf } from "../../kitchenQueue";
 import { isOpenNow } from "../../shopFacts";
 import { countOpenOrders, isToastConfigured } from "../../toast";
 
@@ -53,7 +53,40 @@ async function currentCount(): Promise<number | null> {
   return ahead;
 }
 
-export async function GET() {
+// ——— Two questions, one endpoint ———
+//
+// Without `?id=`: how much work is on the counter. That is the question
+// before you order, and it decides whether you have time to walk over.
+//
+// With `?id=`: how many orders are ahead of that one. That is the question
+// after you order, and it is a different count — not the first minus one,
+// because orders placed after yours are ahead of nobody.
+//
+// The second never goes to Toast. Orders Hub gives a better count of the
+// whole counter but no way to say where one ticket sits in it; our own table
+// timestamps every row, so position comes from there or not at all. On a
+// deployment with Toast and no database the load line works and the position
+// line renders nothing, which is the right way round — the shop-wide number
+// is the one strangers see.
+//
+// And it is never cached. The count below is shared by everyone looking at
+// the map; a position belongs to one order and caching it under a shared key
+// would hand somebody else's place in the line to the next visitor.
+async function positionFor(id: string): Promise<Response> {
+  const ahead = await ordersAheadOf(id);
+  if (ahead === null) return Response.json({ known: false, why: "unavailable" });
+  return Response.json({ known: true, ahead }, { headers: { "Cache-Control": "no-store" } });
+}
+
+export async function GET(request: Request) {
+  const id = new URL(request.url).searchParams.get("id")?.trim();
+  // Deliberately before the opening-hours check. An order placed at 3:55pm is
+  // still being made at 4:05pm, and telling the person waiting for it that the
+  // shop is shut — when they are holding a receipt from it — is worse than
+  // saying nothing. The shop-wide count keeps the check: that one is for
+  // somebody deciding whether to come, and there is no queue to join.
+  if (id) return positionFor(id);
+
   // ——— Why `why` is here ———
   //
   // `{ known: false }` on its own is the right answer for the component and a

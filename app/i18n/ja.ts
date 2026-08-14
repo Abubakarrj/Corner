@@ -237,6 +237,9 @@ export const ja: Table = {
   "kitchen.clear": "待ちなし",
   "kitchen.aheadOne": "前に1件",
   "kitchen.ahead": "前に{count}件",
+  "queue.next": "次はお客様のご注文です。",
+  "queue.aheadOne": "お客様の前に1件あります。",
+  "queue.ahead": "お客様の前に{count}件あります。",
 
   "delivery.carriedBy": "配達",
   "delivery.arrivingBetween": "{from}〜{to}に到着",

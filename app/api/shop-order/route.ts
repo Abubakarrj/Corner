@@ -392,6 +392,11 @@ export async function POST(request: Request) {
         ok: true,
         totals,
         orderGuid: sent.orderGuid,
+        // Same value as orderGuid here, and named separately on purpose: the
+        // client asks about its place in the line with this, and it should
+        // not have to know that the queue happens to be keyed by Toast's id
+        // on one path and by something we made up on the other.
+        queueId: sent.orderGuid,
         // When the shop says it will be ready, from Toast rather than from
         // our own fixed estimate. Absent when Toast didn't send one, and the
         // client falls back exactly as before.
@@ -407,10 +412,16 @@ export async function POST(request: Request) {
   // the clock instead. Still counted: the food is being made either way, and a
   // queue that only works once Toast is connected is a queue that reads clear
   // through the exact period the shop is running on this path.
-  await joinQueue(`local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  // Handed back, unlike before. This id used to be generated here and thrown
+  // away, which meant the row existed and nothing could ever point at it —
+  // fine while the only question was how many rows there were, useless the
+  // moment a customer wants to know where *theirs* sits. On the Toast path
+  // the guid does this job and is already returned.
+  const queueId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  await joinQueue(queueId);
 
   return Response.json(
-    { ok: true, totals, submitted: "logged", ...(await bookCourier()) },
+    { ok: true, totals, submitted: "logged", queueId, ...(await bookCourier()) },
     { status: 200 },
   );
 
