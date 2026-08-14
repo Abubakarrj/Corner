@@ -26,6 +26,7 @@ import {
 } from "../../uberDirect";
 import { deliveryOrigin } from "../../storePlaces";
 import { joinQueue } from "../../kitchenQueue";
+import { earn } from "../../rewards";
 
 // Order intake, behind /checkout on the shop subdomain.
 //
@@ -402,6 +403,9 @@ export async function POST(request: Request) {
     // fallback that has been silently accumulating nothing is not a fallback,
     // it is a second outage waiting behind the first.
     await joinQueue(sent.orderGuid, sent.orderGuid);
+    // Points, on the subtotal, keyed to this order so a retry cannot pay
+    // twice. Awaited but incapable of failing the order — see earn().
+    await earn(order.email, sent.orderGuid, subtotalCents);
 
     return Response.json(
       {
@@ -435,6 +439,10 @@ export async function POST(request: Request) {
   // the guid does this job and is already returned.
   const queueId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await joinQueue(queueId);
+  // Same on this path. The ref is the queue id rather than a Toast guid,
+  // which is the only handle this branch has — and it is the one the client
+  // gets back, so the two agree about which order was paid for.
+  await earn(order.email, queueId, subtotalCents);
 
   return Response.json(
     { ok: true, totals, submitted: "logged", queueId, ...(await bookCourier()) },

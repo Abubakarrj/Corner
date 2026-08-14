@@ -34,7 +34,12 @@ const { ink, cream, border, muted, controlBorder } = PALETTE;
 // by the basket, at the point it always was. Gated, the Reorder tab bounced
 // to the map before showing anybody anything, which is a tab that never does
 // what its label says on the first tap.
-const UNGATED = ["/shop/account", "/shop/order", "/shop/reorder"];
+//
+// /shop/rewards is here for the same reason as the account: a points balance
+// and a member code are facts about you, not about an order, and asking
+// somebody to pick pickup or delivery before they can read a number is asking
+// a question that has nothing to do with the answer.
+const UNGATED = ["/shop/account", "/shop/order", "/shop/reorder", "/shop/rewards"];
 
 function ordering(pathname: string): boolean {
   return !UNGATED.some(

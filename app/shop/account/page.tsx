@@ -181,6 +181,19 @@ export default function AccountPage() {
           label={t("account.myOrders")}
           value={orders.length > 0 ? t("account.allOrders") : t("account.nothingYet")}
         />
+        {/* Points and the member code.
+
+            No balance in the value. It would be the nicest thing on this
+            screen and it would cost a fetch that this page does not otherwise
+            need — and the failure mode is the one thing a points balance must
+            never do, which is render as a number when it could not be read.
+            A row that says what is behind it takes you one tap to a screen
+            that knows. */}
+        <AccountLinkRow
+          href="/shop/rewards"
+          label={t("rewards.title")}
+          value={t("rewards.rowValue")}
+        />
         {/* Riley, over whatever you were looking at, rather than a route.
             See app/shop/openChat.ts. */}
         <AccountButtonRow
