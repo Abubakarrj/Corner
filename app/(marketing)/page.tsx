@@ -86,7 +86,7 @@ export default function Home() {
             between them. These numbers put it against the R that ends
             CORNER, and because the box stays square at every breakpoint they
             hold from 192px to 288px without a second set. */}
-        <AboutMark className="absolute left-[79%] top-[13%]" />
+        <AboutMark className="absolute left-[91%] top-[25%]" />
       </div>
 
       {/* Language and appearance, in the corner opposite the privacy line, so
