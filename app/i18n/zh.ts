@@ -262,6 +262,8 @@ export const zh: Table = {
   "deliveryFee.distance": "距离",
   "deliveryFee.fee": "费用",
   "deliveryFee.band": "{from}–{to} 英里",
+  "deliveryFee.tripFee": "加州行程费",
+  "deliveryFee.yourFee": "您的费用",
   "deliveryFee.passthrough": "Corner Bagel 不额外加价。",
   "deliveryFee.quotedFresh": "Uber 在你下单那一刻按地址报价，所以这就是你付的钱。天气和路况可能会让它变动。",
 

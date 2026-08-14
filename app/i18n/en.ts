@@ -294,6 +294,8 @@ export const en = {
   "deliveryFee.distance": "Distance",
   "deliveryFee.fee": "Fee",
   "deliveryFee.band": "{from}–{to} mi",
+  "deliveryFee.tripFee": "California trip fee",
+  "deliveryFee.yourFee": "Your fee",
   "deliveryFee.passthrough": "Corner Bagel adds nothing on top of this.",
   "deliveryFee.quotedFresh":
     "Uber prices your address at the moment you order, so this is what you pay. Weather and traffic can move it.",

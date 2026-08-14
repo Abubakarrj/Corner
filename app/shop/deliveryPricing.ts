@@ -28,16 +28,15 @@ export type DeliveryBand = {
   /** Miles from the counter, exclusive of the band below it. */
   fromMiles: number;
   toMiles: number;
-  /** Uber's flat rate for the band, as published on their dashboard. */
+  /** Uber's distance rate for the band, as published on their dashboard.
+   *  Not the whole fee — TRIP_FEE_CENTS is added to it. */
   feeCents: number;
 };
 
-// Uber Direct's flat rates, transcribed from direct.uber.com.
+// Uber Direct's distance rates, transcribed from direct.uber.com.
 //
-// These are the whole fee for a band. They went through a spell of being
-// treated as a base with California's $3 driver fee added on top, which made
-// the table read $10.99 to $13.99 — the shop confirmed these are the flat
-// rates Uber charges, so they are printed as they are published.
+// These are the distance component and not the whole fee — see the trip fee
+// below, which is added to every one of them.
 export const DELIVERY_BANDS: readonly DeliveryBand[] = [
   { fromMiles: 0, toMiles: 5, feeCents: 799 },
   { fromMiles: 5, toMiles: 6, feeCents: 899 },
@@ -45,20 +44,61 @@ export const DELIVERY_BANDS: readonly DeliveryBand[] = [
   { fromMiles: 7, toMiles: 10, feeCents: 1099 },
 ];
 
-// ——— Why no row is highlighted ———
+// California's driver benefits fee, added to every trip in the state under
+// Prop 22. Uber bills it on top of the distance rate rather than inside it.
 //
-// There is no key that reliably picks the customer's band.
+// ——— This number has been in and out twice, so: the evidence ———
 //
-// By fee: a real order on this shop quoted $12.99, which is not one of the
-// four numbers above. Whatever produces that gap — a surcharge, a zone, a
-// surge — a fee cannot be matched back to a band it does not equal.
+// It was removed on the understanding that the table above was already
+// all-in. Two real quotes say otherwise, and both reconcile exactly:
 //
-// By distance: the miles come from Google Routes and the band comes from
-// Uber, and the two are separate opinions about the same drive. Google
-// routing 6.9 miles where Uber priced the next band up would light the wrong
-// row on a correct bill.
+//   0.9 mi  →  $7.99 (0–5 band)  + $3.00  =  $10.99  quoted
+//   ~6.5 mi →  $9.99 (6–7 band)  + $3.00  =  $12.99  quoted
 //
-// So the table is a reference and the quote is the number. The customer's
-// actual fee is printed above it, larger, and nothing claims the two are the
-// same thing. A highlight that is right most of the time is worse than none
-// on the one screen whose job is showing the arithmetic holds.
+// The $12.99 is the one that mattered: it is not on the card at all, and for
+// months there was no way to explain it, because Routes was disabled and the
+// distance that picks the band was never known. With Routes answering, the
+// arithmetic closes.
+//
+// It is still only two data points, which is why nothing below asserts the
+// sum — explainFee() checks it against the quote every time and declines to
+// explain anything it cannot make add up.
+export const TRIP_FEE_CENTS = 300;
+
+/** The band a distance falls in, or null past the delivery radius. */
+export function bandForMiles(miles: number): DeliveryBand | null {
+  if (!Number.isFinite(miles) || miles < 0) return null;
+  return DELIVERY_BANDS.find((band) => miles <= band.toMiles) ?? null;
+}
+
+export type FeeExplanation = {
+  band: DeliveryBand;
+  tripFeeCents: number;
+  totalCents: number;
+};
+
+// The arithmetic behind a quoted fee — but only when it actually is the
+// arithmetic behind that quoted fee.
+//
+// ——— Why this is allowed to give up ———
+//
+// The quote is the number the customer pays and the number the shop is
+// billed; this file never sets it. So an explanation is a claim about
+// somebody else's pricing, checked against their answer, and there are
+// ordinary reasons for the check to fail: Uber repricing a band, a surge, a
+// zone with different terms, or this constant going stale.
+//
+// When it fails, the sheet shows the quote by itself. A breakdown that is
+// right most of the time is worse than none on the one screen whose entire
+// job is to show that the number is not padded — being caught out by a
+// customer with a calculator is exactly the suspicion it exists to answer.
+export function explainFee(
+  miles: number | null | undefined,
+  feeCents: number | null | undefined,
+): FeeExplanation | null {
+  if (typeof miles !== "number" || typeof feeCents !== "number") return null;
+  const band = bandForMiles(miles);
+  if (!band) return null;
+  if (band.feeCents + TRIP_FEE_CENTS !== feeCents) return null;
+  return { band, tripFeeCents: TRIP_FEE_CENTS, totalCents: feeCents };
+}

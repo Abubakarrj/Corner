@@ -261,6 +261,8 @@ export const my: Table = {
   "deliveryFee.distance": "အကွာအဝေး",
   "deliveryFee.fee": "ခ",
   "deliveryFee.band": "{from}–{to} မိုင်",
+  "deliveryFee.tripFee": "ကယ်လီဖိုးနီးယား ခရီးစဉ်ခ",
+  "deliveryFee.yourFee": "သင့်ပို့ခ",
   "deliveryFee.passthrough": "Corner Bagel က အပိုမတင်ပါ။",
   "deliveryFee.quotedFresh":
     "Uber က မှာယူချိန်မှာပဲ သင့်လိပ်စာအတွက် ဈေးထုတ်ပါသည်၊ ဒါကြောင့် ဒါက သင်ပေးရမည့် ငွေပါ။ ရာသီဥတုနှင့် ယာဉ်ကြောကြောင့် ပြောင်းနိုင်ပါသည်။",

@@ -263,6 +263,8 @@ export const es: Table = {
   "deliveryFee.distance": "Distancia",
   "deliveryFee.fee": "Tarifa",
   "deliveryFee.band": "{from}–{to} mi",
+  "deliveryFee.tripFee": "Tarifa por viaje en California",
+  "deliveryFee.yourFee": "Tu tarifa",
   "deliveryFee.passthrough": "Corner Bagel no añade nada encima.",
   "deliveryFee.quotedFresh":
     "Uber calcula tu dirección en el momento de pedir, así que esto es lo que pagas. El clima y el tráfico pueden moverlo.",

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { useT } from "../../i18n";
 import { formatPrice } from "../products";
-import { DELIVERY_BANDS } from "../deliveryPricing";
+import { DELIVERY_BANDS, explainFee } from "../deliveryPricing";
 import UberDirectMark from "./UberDirectMark";
 
 // The (i) beside the delivery fee, and what it opens.
@@ -17,26 +17,25 @@ import UberDirectMark from "./UberDirectMark";
 // tell that by looking at it. So this shows the rate card the number came off,
 // and says the shop adds nothing.
 //
-// No row is highlighted, and the reasons are in deliveryPricing.ts — worth
-// reading before anybody wires one back in. Briefly: a quoted fee cannot be
-// matched to a band it does not equal, and a distance from Google is a second
-// opinion about a drive Uber already priced. The customer's own fee sits above
-// the table instead, larger, and nothing claims the two are the same thing.
+// ——— The table has to add up to the number above it ———
 //
-// The mileage line under that fee is the only thing here that needs Google,
-// and it is decoration: absent, this still works.
+// For a while it didn't, and it was worse than showing nothing: a customer
+// 0.9 miles out saw "$10.99" over a card whose first row said 0–5 mi $7.99.
+// The rate card is here to answer "am I being padded", and one that disagrees
+// with the bill by three dollars answers yes.
 //
-// ——— And almost nothing else ———
+// It disagreed because the card is the *distance* rate and California's trip
+// fee is charged on top of it. That could not be shown before, because
+// picking a customer's band needs their distance and Routes was disabled — so
+// there was no key, no highlight, and no way to break out a surcharge against
+// a band nobody could identify. With Routes answering, all three are possible
+// and the arithmetic closes.
 //
-// This started with a heading, a paragraph explaining distance pricing, and a
-// footnote breaking out California's driver fee. All three were cut. A sheet
-// opened from an (i) beside a delivery fee does not need a heading about
-// delivery fees; the paragraph said in prose what the table says in four rows;
-// and the rates below are flat, so there is no surcharge to break out.
-//
-// The quote stays the source of truth — see app/shop/deliveryPricing.ts. If
-// the card and the fee ever disagree, the fee is right and the card is stale,
-// which is why nothing here recomputes the total.
+// So: the customer's band is lit, the trip fee is its own row, and they sum
+// to the quote. explainFee() checks that sum against the real quote and
+// returns null when it doesn't hold — in which case this falls back to the
+// bare card, and the fee stands on its own without a breakdown claiming to
+// explain it. The quote is never recomputed from these numbers.
 export default function DeliveryFeeInfo({
   miles,
   feeCents,
@@ -49,6 +48,8 @@ export default function DeliveryFeeInfo({
 
   const priced = typeof feeCents === "number" && feeCents > 0;
   const known = typeof miles === "number" && Number.isFinite(miles);
+  // Null unless the bands and the trip fee actually reconstruct the quote.
+  const breakdown = explainFee(miles, feeCents);
 
   return (
     <>
@@ -94,10 +95,11 @@ export default function DeliveryFeeInfo({
           </div>
         ) : null}
 
-        {/* The last row drops its underline. With the surcharge row gone the
-            table ends on a rule, and the paragraph below opens with one — two
-            hairlines a few pixels apart, which reads as a mistake rather than
-            as a divider. */}
+        {/* The last body row drops its underline, so the table doesn't end on
+            a rule a few pixels above the next one — two hairlines that close
+            together read as a mistake rather than a divider. The total's own
+            rule comes from the tfoot instead, which is only there when there
+            is a total to rule off. */}
         <table className="mt-4 w-full border-collapse text-[14px] [&_tbody_tr:last-child_td]:border-b-0">
           <thead>
             <tr>
@@ -110,22 +112,61 @@ export default function DeliveryFeeInfo({
             </tr>
           </thead>
           <tbody>
-            {DELIVERY_BANDS.map((band) => (
-              <tr key={band.toMiles}>
+            {DELIVERY_BANDS.map((band) => {
+              // The row this order is on. Lit rather than filtered to it: the
+              // other three are what make the lit one mean something — a
+              // single row saying "0–5 mi $7.99" is a price, four rows with
+              // one lit is a rate card you can see yourself on.
+              const yours = breakdown?.band === band;
+              return (
+                <tr key={band.toMiles}>
+                  <td
+                    className={
+                      "border-b border-line-faint py-2 " +
+                      (yours ? "font-medium text-ink" : "text-muted")
+                    }
+                  >
+                    {t("deliveryFee.band", { from: band.fromMiles, to: band.toMiles })}
+                  </td>
+                  <td
+                    className={
+                      "border-b border-line-faint py-2 text-right tabular-nums " +
+                      (yours ? "font-medium text-ink" : "text-muted")
+                    }
+                  >
+                    {formatPrice(band.feeCents)}
+                  </td>
+                </tr>
+              );
+            })}
+            {/* Charged on every trip in California, on top of the distance
+                rate. Without this row the card is three dollars short of the
+                bill and reads as the padding it is here to disprove. */}
+            {breakdown ? (
+              <tr>
                 <td className="border-b border-line-faint py-2 text-muted">
-                  {t("deliveryFee.band", { from: band.fromMiles, to: band.toMiles })}
+                  {t("deliveryFee.tripFee")}
                 </td>
                 <td className="border-b border-line-faint py-2 text-right tabular-nums text-muted">
-                  {formatPrice(band.feeCents)}
+                  +{formatPrice(breakdown.tripFeeCents)}
                 </td>
               </tr>
-            ))}
+            ) : null}
           </tbody>
+          {breakdown ? (
+            <tfoot>
+              <tr>
+                <td className="border-t border-line pt-2 font-medium text-ink">
+                  {t("deliveryFee.yourFee")}
+                </td>
+                <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
+                  {formatPrice(breakdown.totalCents)}
+                </td>
+              </tr>
+            </tfoot>
+          ) : null}
         </table>
 
-        {/* No surcharge footnote. These are Uber's flat rates, so there is
-            nothing to break out — and the customer pays one delivery fee
-            either way, which is printed above. */}
         <p className="m-0 mt-4 border-t border-line pt-4 text-[13px] leading-[1.55] text-ink">
           {t("deliveryFee.passthrough")}
         </p>

@@ -260,6 +260,8 @@ export const ja: Table = {
   "deliveryFee.distance": "距離",
   "deliveryFee.fee": "料金",
   "deliveryFee.band": "{from}〜{to}マイル",
+  "deliveryFee.tripFee": "カリフォルニア運行手数料",
+  "deliveryFee.yourFee": "お客様の料金",
   "deliveryFee.passthrough": "Corner Bagel は上乗せしません。",
   "deliveryFee.quotedFresh": "Uber がご注文の時点でご住所の料金を出すので、これがお支払い額です。天候や渋滞で変わることがあります。",
 
