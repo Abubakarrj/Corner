@@ -266,7 +266,7 @@ export const ko: Table = {
 
   "order.notFound": "해당 주문을 찾을 수 없습니다.",
   "order.keptOnDevice":
-    "주문은 주문한 기기에 저장되므로 다른 휴대폰에서 한 주문은 여기 표시되지 않습니다.",
+    "로그인하시면 주문이 따라옵니다. 로그인하지 않으면 주문한 기기에만 저장되므로, 다른 기기에서 한 주문은 여기에 표시되지 않습니다.",
   "order.callShop": "매장에 전화하기",
   "order.somethingWrong": "이 주문에 문제가 있나요?",
   "order.followCourier": "배달원 위치 보기",

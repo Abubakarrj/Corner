@@ -265,7 +265,7 @@ export const ja: Table = {
 
   "order.notFound": "そのご注文が見つかりません。",
   "order.keptOnDevice":
-    "ご注文は注文した端末に保存されるため、別の端末からのご注文はここには表示されません。",
+    "サインインするとご注文が引き継がれます。サインインしていない場合は注文した端末にのみ保存されるため、別の端末からのご注文はここには表示されません。",
   "order.callShop": "店舗に電話",
   "order.somethingWrong": "このご注文に何か問題がありますか？",
   "order.followCourier": "配達員を追跡",

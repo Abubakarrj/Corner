@@ -266,7 +266,8 @@ export const zh: Table = {
   "deliveryFee.quotedFresh": "Uber 在你下单那一刻按地址报价，所以这就是你付的钱。天气和路况可能会让它变动。",
 
   "order.notFound": "找不到该订单。",
-  "order.keptOnDevice": "订单保存在下单的设备上，所以在别的手机下的单不会显示在这里。",
+  "order.keptOnDevice":
+    "登录后订单会跟着你走。未登录时，订单只保存在下单的那台设备上，用别的手机下的单不会显示在这里。",
   "order.callShop": "致电门店",
   "order.somethingWrong": "这份订单有问题吗？",
   "order.followCourier": "追踪配送员",

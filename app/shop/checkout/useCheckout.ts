@@ -6,7 +6,7 @@ import { useCart, useCartRows } from "../CartContext";
 import { totalsFor, type OrderTotals } from "../money";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
-import { recordOrder, type PlacedOrder } from "../../account";
+import { pushOrder, recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
 import { BRAND_LABEL } from "./card";
 import { completed, refused } from "../../haptics";
@@ -395,6 +395,12 @@ export function useCheckout(): Checkout {
         // the number, which is the point of it.
         ...(paid ? { cardBrand: BRAND_LABEL[paid.brand], cardLast4: paid.last4 } : {}),
       });
+      // Up to the account, when there is one. Deliberately not awaited: the
+      // order is placed, the kitchen has it, and this device has its own copy
+      // — a history write must never be able to hold up or fail a checkout.
+      // Signed out, /api/orders answers 204 and nothing happens.
+      void pushOrder(record);
+
       setPlaced(record);
       setStatus("placed");
       // The once-a-visit one. Kept for this and nothing else, so it keeps

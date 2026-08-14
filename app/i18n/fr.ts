@@ -299,7 +299,7 @@ export const fr: Table = {
 
   "order.notFound": "Nous ne trouvons pas cette commande.",
   "order.keptOnDevice":
-    "Les commandes restent sur l'appareil depuis lequel elles ont été passées : une commande faite sur un autre téléphone n'apparaîtra pas ici.",
+    "Connectez-vous et vos commandes vous suivent. Déconnecté, elles restent sur l'appareil depuis lequel elles ont été passées : une commande faite sur un autre téléphone n'apparaîtra pas ici.",
   "order.callShop": "Appeler la boutique",
   "order.somethingWrong": "Un souci avec cette commande ?",
   "order.followCourier": "Suivre le coursier",

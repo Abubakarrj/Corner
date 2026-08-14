@@ -15,9 +15,15 @@ import type { LiveStatus } from "./orderStages";
 // cache in front of it — it asks /api/auth/me once on load and holds the
 // answer — which is exactly what the old note here said it would become.
 //
-// ⚠️ The *orders* half is still this device only. There is no orders backend,
-// so a history recorded here doesn't follow anybody to a second phone, and
-// clearing site data loses it. Nothing in the app claims otherwise.
+// The orders half is this device first, and a signed-in customer's orders are
+// also kept server-side — see app/orderHistory.ts. The direction is what keeps
+// it simple: this store is still the only thing any screen reads, and the
+// server fills it in through mergeOrders() below. So the app works signed out,
+// offline, and on a deployment with no database, exactly as it did.
+//
+// ⚠️ Signed out, it is still this device only. A history recorded here does not
+// follow anybody to a second phone and clearing site data loses it, and nothing
+// in the app claims otherwise.
 //
 // Neither half should gate anything genuinely private without a server check.
 // A cookie says who you are; this cache says who the last /api/auth/me call
@@ -262,8 +268,14 @@ export async function syncSession(): Promise<void> {
     // Auth0 not configured: leave whatever is local alone rather than signing
     // somebody out of a shop that has no sign-in yet.
     if (!body.configured) return;
-    if (body.user) signIn(body.user);
-    else forgetLocalAccount();
+    if (body.user) {
+      signIn(body.user);
+      // Only once there is a session. Signed out, /api/orders answers 204 and
+      // the call is a round trip for nothing on every page load.
+      await pullOrders();
+    } else {
+      forgetLocalAccount();
+    }
   } catch {
     // Offline, or the route is down. The cached answer stands.
   }
@@ -365,6 +377,109 @@ export function recordOrder(
   }
   emit();
   return placed;
+}
+
+// ——— The server's copy ———
+//
+// Orders live on this device, and that has one real cost: order breakfast on a
+// phone, open the site on a laptop, and the tracker has never heard of you.
+// app/orderHistory.ts is the other half — a copy kept against the signed-in
+// email, so a second device can be told.
+//
+// The direction matters. The device store stays the thing every screen reads,
+// and the server is a source that fills it in. Nothing downstream learned a
+// new way to get an order, so the app still works signed out, offline, and on
+// a deployment with no database.
+
+/** Fold server-held orders into the device list.
+ *
+ *  The device wins on conflict. Its copy is the one written at the moment of
+ *  ordering with everything the checkout knew — the card's brand and last
+ *  four are only ever here, never sent — and the server's copy is that same
+ *  record a moment later. Preferring the server would swap a complete record
+ *  for one that has been through JSON twice for no gain.
+ *
+ *  Sorted newest-first and capped like recordOrder does, because activeOrder()
+ *  and the history both read position rather than re-sorting. */
+export function mergeOrders(incoming: PlacedOrder[]): void {
+  if (incoming.length === 0) return;
+  const byId = new Map<string, PlacedOrder>();
+  for (const order of incoming) byId.set(order.id, order);
+  // Second, so a device record overwrites the server's for the same id.
+  for (const order of orders) byId.set(order.id, order);
+
+  const merged = [...byId.values()]
+    .sort((a, b) => b.placedAt - a.placedAt)
+    .slice(0, 50);
+
+  // Nothing new: leave the array identity alone. useSyncExternalStore compares
+  // by reference, and handing it a fresh array on every sync would re-render
+  // every screen holding an order for no reason.
+  if (
+    merged.length === orders.length &&
+    merged.every((order, index) => order.id === orders[index]?.id)
+  ) {
+    return;
+  }
+
+  orders = merged;
+  try {
+    window.localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  } catch {
+    // Private browsing or a full quota. The merged list still holds for this
+    // page's lifetime, which is what the screens are about to read.
+  }
+  emit();
+}
+
+/** Ask the server for this account's orders and merge them in.
+ *
+ *  Silent about everything: signed out answers 204, no database answers 204,
+ *  and a failure is a list that stays as it was. None of those is worth a
+ *  word on screen — the device's own orders are already there. */
+export async function pullOrders(): Promise<void> {
+  try {
+    const response = await fetch("/api/orders", { cache: "no-store" });
+    if (!response.ok || response.status === 204) return;
+    const body = (await response.json()) as { orders?: unknown };
+    if (!Array.isArray(body.orders)) return;
+    mergeOrders(body.orders.filter(isPlacedOrder));
+  } catch {
+    // Offline, or the route is down. What is on the device stands.
+  }
+}
+
+/** Send one up. Called after an order is recorded.
+ *
+ *  Never awaited by the checkout and never able to fail it: the order is
+ *  placed, the kitchen has it, and the device has its own copy. This is a
+ *  convenience for the customer's other phone. */
+export async function pushOrder(order: PlacedOrder): Promise<void> {
+  try {
+    await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+      keepalive: true,
+    });
+  } catch {
+    // As above.
+  }
+}
+
+/** The same shape check readOrders() applies to localStorage, against a
+ *  payload that came over the network. Everything here is this customer's own
+ *  record coming back, but "our own server sent it" is not a reason to render
+ *  a half-built object into a tracker. */
+function isPlacedOrder(value: unknown): value is PlacedOrder {
+  const order = value as PlacedOrder | null;
+  return (
+    typeof order === "object" &&
+    order !== null &&
+    typeof order.id === "string" &&
+    typeof order.placedAt === "number" &&
+    Array.isArray(order.items)
+  );
 }
 
 export function clearOrders() {

@@ -300,7 +300,7 @@ export const en = {
 
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice":
-    "Orders are kept on the device they were placed from, so one placed on another phone won't show here.",
+    "Sign in and your orders follow you. Signed out, they're kept on the device they were placed from, so one placed on another phone won't show here.",
   "order.callShop": "Call the shop",
   "order.somethingWrong": "Something wrong with this order?",
   "order.followCourier": "Follow the courier",

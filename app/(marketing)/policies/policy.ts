@@ -284,6 +284,7 @@ const enPrivacy: Policy = {
           items: [
             "Process and fulfill orders",
             "Communicate regarding your orders",
+            "Show you your own order history and its progress when you are signed in",
             "Provide customer support",
             "Improve our products and services",
             "Personalize your experience",
@@ -292,6 +293,23 @@ const enPrivacy: Policy = {
             "Prevent fraud and maintain security",
             "Comply with legal obligations",
           ],
+        },
+      ],
+    },
+    {
+      heading: "Your Order History",
+      blocks: [
+        {
+          kind: "p",
+          text: "When you are signed in, we keep a record of the orders you place — what was ordered, what it cost, and where it was going — against your email address, so that your order and its progress are available on any device you sign in on. We keep the fifty most recent; older ones are removed as new ones arrive. Card numbers are never part of this record. Where an order was paid by card we keep only the card brand and its last four digits, as a receipt does.",
+        },
+        {
+          kind: "p",
+          text: "When you are not signed in, your orders are kept only in your own browser's storage on the device you ordered from. They are not sent to us for this purpose, they do not follow you to another device, and clearing your browsing data removes them.",
+        },
+        {
+          kind: "p",
+          text: "To have your stored order history deleted, contact us at the address at the end of this policy.",
         },
       ],
     },
