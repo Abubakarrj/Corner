@@ -4,55 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import {
-  formatOrderDate,
-  orderTotals,
-  progressFor,
   signOut,
-  summarizeOrderItems,
   summarizeUsuals,
   useAccount,
   useOrders,
-  STATUS_LABEL,
-  type OrderStatus,
-  type PlacedOrder,
 } from "../../account";
 import { useCart } from "../CartContext";
 import { Button, ButtonLink } from "../../ui/Button";
 import ThemeToggle from "../../ui/ThemeToggle";
 import LanguagePicker from "../../ui/LanguagePicker";
-import { useLocale, useT, type StringKey } from "../../i18n";
+import { useT, type StringKey } from "../../i18n";
 import { useMenu } from "../../i18n/menu";
-import { localeById } from "../../localeScript";
-import { formatPrice, getProduct } from "../products";
+import { SHOP_EMAIL } from "../../shopFacts";
+import { AccountButtonRow, AccountLinkRow } from "./AccountRow";
+import OrderCard from "./OrderCard";
+import { requestOpenChat } from "../openChat";
+import { getProduct } from "../products";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
 import { DISPLAY_FONT, PALETTE } from "../shopControls";
 
-const { ink, muted, faint, border, surface, controlBorder } = PALETTE;
-
-// Chip colours per status. The stage is estimated from the clock rather than
-// reported — see the warning on OrderStatus in app/account.ts — but the whole
-// set is here so the day a POS starts reporting, this doesn't need touching.
-const STATUS_STYLE: Record<OrderStatus, { bg: string; fg: string; border: string }> = {
-  placed: { bg: "transparent", fg: muted, border: controlBorder },
-  "in-the-kitchen": { bg: "var(--cb-raise)", fg: "var(--cb-muted)", border: "var(--cb-line-soft)" },
-  ready: { bg: "var(--cb-good-bg)", fg: "var(--cb-ink)", border: "var(--cb-line-soft)" },
-  "on-the-way": { bg: "var(--cb-good-bg)", fg: "var(--cb-muted)", border: "var(--cb-line-soft)" },
-  complete: { bg: "transparent", fg: muted, border: controlBorder },
-};
-
-function StatusChip({ status }: { status: OrderStatus }) {
-  const t = useT();
-  const style = STATUS_STYLE[status];
-  return (
-    <span
-      className="shrink-0 rounded-full border px-2.5 py-[3px] text-[11px] leading-none"
-      style={{ backgroundColor: style.bg, color: style.fg, borderColor: style.border }}
-    >
-      {t(STATUS_LABEL[status])}
-    </span>
-  );
-}
+const { ink, muted, faint, border, surface } = PALETTE;
 
 // "Good morning" until noon, "Good afternoon" until 5, "Good evening" after.
 // Read from the visitor's own clock, not the shop's: a greeting is about the
@@ -99,13 +71,12 @@ export default function AccountPage() {
   const { addItem } = useCart();
   const t = useT();
   const menu = useMenu();
-  const tag = localeById(useLocale()).tag;
 
   const usuals = useMemo(() => summarizeUsuals(orders), [orders]);
-  // The reference's "{t("account.recentActivity")}" is a short status feed above the
-  // orders themselves — the last few things that changed, not the orders in
-  // full. With one status in play it's the last few orders placed.
-  const activity = useMemo(() => orders.slice(0, 3), [orders]);
+  // The newest few, with the rest a row away. This screen used to print every
+  // order it had — fifty of them, after the history started syncing — under
+  // the settings somebody actually came here to change.
+  const recent = useMemo(() => orders.slice(0, 3), [orders]);
 
   // Not signed in: nothing to show, and the way in is /membership. The
   // header only offers this link to a signed-in visitor, so reaching it
@@ -262,34 +233,11 @@ export default function AccountPage() {
           ) : null}
 
           <section className="mt-9">
-            <SectionHeading>{t("account.recentActivity")}</SectionHeading>
-            <div className="cb-stagger flex flex-col gap-2">
-              {activity.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5"
-                  style={{ borderColor: border, backgroundColor: surface }}
-                >
-                  <span className="min-w-0 truncate text-[14px]" style={{ color: ink }}>
-                    {order.id} &middot;{" "}
-                    {t(
-                      STATUS_LABEL[
-                        progressFor(order).stages[progressFor(order).current].status
-                      ],
-                    )}
-                  </span>
-                  <span className="shrink-0 text-[13px]" style={{ color: muted }}>
-                    {formatOrderDate(order.placedAt, tag)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mt-9">
-            <SectionHeading>{t("account.recentOrders")}</SectionHeading>
+            <SectionHeading aside={t("account.ordersCount", { count: orders.length })}>
+              {t("account.recentOrders")}
+            </SectionHeading>
             <div className="cb-stagger flex flex-col gap-3">
-              {orders.map((order) => (
+              {recent.map((order) => (
                 <OrderCard key={order.id} order={order} />
               ))}
             </div>
@@ -297,10 +245,44 @@ export default function AccountPage() {
         </>
       )}
 
+      {/* ——— The rows ———
+
+          Everything that is a destination rather than a thing to look at.
+          The account used to print all of this inline, one bordered section
+          under another, so an old order and a language switch were drawn at
+          the same weight and finding either meant reading past the other.
+
+          Order matters: orders first because that is what this screen is for,
+          then the two ways to reach a person, then the settings that sit
+          below in full. */}
+      <div className="mt-9 border-t border-line-faint">
+        <AccountLinkRow
+          href="/shop/account/orders"
+          label={t("account.myOrders")}
+          value={orders.length > 0 ? t("account.allOrders") : t("account.nothingYet")}
+        />
+        {/* Riley, over whatever you were looking at, rather than a route.
+            See app/shop/openChat.ts. */}
+        <AccountButtonRow
+          onClick={requestOpenChat}
+          label={t("account.customerService")}
+          value={t("account.liveChat")}
+        />
+        {/* A real inbox, because there is nowhere better for it to go and a
+            form that posts into a table nobody reads is worse than an email
+            somebody answers. */}
+        <AccountLinkRow
+          href={`mailto:${SHOP_EMAIL}`}
+          label={t("account.feedback")}
+          value={SHOP_EMAIL}
+          last
+        />
+      </div>
+
       {/* Settings, such as they are. Sits outside the orders branch so it's
           reachable on a brand-new account too — the same control is on the
           home screen for anyone not signed in. */}
-      <section className="mt-9 border-t pt-6" style={{ borderColor: border }}>
+      <section className="mt-8">
         <SectionHeading>{t("settings.language")}</SectionHeading>
         <div className="flex items-center justify-between gap-4">
           <p className="m-0 text-[13px] leading-[1.5]" style={{ color: muted }}>
@@ -319,83 +301,6 @@ export default function AccountPage() {
           </div>
         </div>
       </section>
-    </div>
-  );
-}
-
-function OrderCard({ order }: { order: PlacedOrder }) {
-  const t = useT();
-  const menu = useMenu();
-  const tag = localeById(useLocale()).tag;
-  const { addItem } = useCart();
-  const summary = summarizeOrderItems(order);
-  const first = summary?.first;
-  const product = first ? getProduct(first.slug) : undefined;
-  const firstName = first ? menu.recorded(first).name : order.id;
-  // An order still in flight offers tracking; a settled one offers a reorder.
-  // Showing both on every row makes neither read as the thing to do.
-  const progress = progressFor(order);
-  const live = !progress.settled;
-
-  return (
-    <div
-      className="flex gap-4 rounded-2xl border p-4"
-      style={{ borderColor: border, backgroundColor: surface }}
-    >
-      <ProductImage
-        swatch={product?.swatch ?? "var(--cb-faint)"}
-        name={firstName}
-        className="h-16 w-16 shrink-0 rounded-xl"
-      />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[14px]" style={{ color: ink }}>
-            {order.id}
-          </span>
-          <StatusChip status={progress.stages[progress.current].status} />
-        </div>
-
-        <p className="mt-1 line-clamp-1 text-[14px]" style={{ color: ink }}>
-          {summary
-            ? summary.more > 0
-              ? t("account.plusMore", { name: firstName, count: summary.more })
-              : firstName
-            : t("account.noOrders")}
-        </p>
-        <p className="mt-0.5 text-[12px]" style={{ color: faint }}>
-          {order.fulfillmentWhere} · {formatOrderDate(order.placedAt, tag)}
-        </p>
-
-        <div className="mt-2 flex items-end justify-between gap-3">
-          {/* What it came to, not what the food cost — the same number the
-              tracker and the confirmation show. */}
-          <span className="text-[15px]" style={{ color: ink }}>
-            {formatPrice(orderTotals(order).totalCents)}
-          </span>
-          {live ? (
-            <ButtonLink href={`/shop/order/${order.id}`} size="sm">
-              {t("common.trackOrder")}
-            </ButtonLink>
-          ) : (
-            <Button
-              variant="secondary"
-              size="sm"
-              // Puts the whole order back in the basket. Items the menu has
-              // since dropped are skipped by addItem rather than failing the
-              // reorder — the rest of a lunch is better than none of it.
-              onClick={() => {
-                for (const item of order.items) {
-                  addItem(item.slug, item.quantity, item.options);
-                }
-                requestOpenBasket();
-              }}
-            >
-              {t("account.reorder")}
-            </Button>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

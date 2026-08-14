@@ -17,6 +17,7 @@ import { formatPrice, getProduct } from "./products";
 import { InfoPanel, ProductCards, RichText, ScreenButton } from "./chatContent";
 import { emptyAttachments, type ChatAttachments, type ProductCard } from "./chatTypes";
 import { DISPLAY_FONT } from "./shopControls";
+import { OPEN_CHAT_EVENT } from "./openChat";
 
 // One line naming where the order is going, for Riley's context. English on
 // purpose: this is not shown to anybody, it goes into her prompt, and her
@@ -227,6 +228,14 @@ export default function ChatWidget() {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
+
+  // Opened from elsewhere — the account's Customer Service row. See
+  // app/shop/openChat.ts for why this is an event rather than lifted state.
+  useEffect(() => {
+    const onAsk = () => setOpen(true);
+    window.addEventListener(OPEN_CHAT_EVENT, onAsk);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onAsk);
+  }, []);
 
   // Keep the newest message in view as the thread grows.
   useEffect(() => {
