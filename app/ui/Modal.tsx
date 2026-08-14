@@ -1,8 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useT } from "../i18n";
 import { closeAfter } from "./transitions";
+
+// Whether we are past the first client render, so the portal below has a
+// document to reach for.
+//
+// useSyncExternalStore rather than a useState set in an effect: the server
+// snapshot is false, the client snapshot is true, and React handles the
+// changeover itself. A mount flag written from an effect trips the
+// set-state-in-effect rule and has to explain itself; this needs no exception.
+const noSubscribe = () => () => {};
+const onClient = () => true;
+const onServer = () => false;
 
 // The shell every modal in the app shares.
 //
@@ -41,6 +53,7 @@ export default function Modal({
 }) {
   const t = useT();
   const panelRef = useRef<HTMLDivElement>(null);
+  const mounted = useSyncExternalStore(noSubscribe, onClient, onServer);
 
   useEffect(() => {
     if (!open) return;
@@ -104,7 +117,31 @@ export default function Modal({
     [open],
   );
 
-  return (
+  // ——— Portalled to the body, and it has to be ———
+  //
+  // `position: fixed` is relative to the viewport only while no ancestor has
+  // made itself a containing block, and a surprising number of ordinary things
+  // do: transform, translate, scale, rotate, filter, backdrop-filter,
+  // perspective, will-change, contain.
+  //
+  // Riley's chat panel carries `translate-y-0 scale-100` so it can slide and
+  // settle when it opens. In Tailwind v4 those compile to the standalone
+  // `translate` and `scale` properties, and *any* non-`none` value there makes
+  // a containing block — including the identity values this pair resolves to,
+  // `translate: 0px` and `scale: 1`. So a class list that reads "no offset, no
+  // scaling" silently reparents every fixed descendant.
+  //
+  // The panel is also `overflow-hidden`, which is the other half. Opening the
+  // delivery fee sheet from the (i) inside the chat put a 92dvh dialog inside
+  // a 486px box and clipped it: the top scrolled away, the dim covered only
+  // the chat, and what the customer saw was a sheet with no heading beginning
+  // mid-table. Measured, not guessed — a `fixed inset-0` probe inside the
+  // panel came back 342×484 at y=339 rather than 390×900 at 0.
+  //
+  // Portalling to the body fixes it for every modal at once and stops this
+  // being a thing anybody has to remember: a dialog should not care what the
+  // button that opened it is nested inside.
+  const surface = (
     <div
       inert={!open}
       className="fixed inset-0 flex items-end justify-center sm:items-center"
@@ -192,4 +229,8 @@ export default function Modal({
       </div>
     </div>
   );
+
+  // Nothing on the server: a dialog is closed on first paint anyway, so there
+  // is no markup to match and nothing to hydrate.
+  return mounted ? createPortal(surface, document.body) : null;
 }
