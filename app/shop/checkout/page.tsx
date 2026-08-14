@@ -19,6 +19,7 @@ import SecureNote from "./SecureNote";
 import PurchaseComplete from "./PurchaseComplete";
 import PaymentSection from "./PaymentSection";
 import TipPicker from "./TipPicker";
+import SoldOutNotice from "./SoldOutNotice";
 
 // Checkout, in two steps: who you are and where it's going, then how you're
 // paying.
@@ -59,6 +60,8 @@ export default function CheckoutPage() {
     totals,
     incomplete,
     unavailable,
+    soldOutNow,
+    dismissSoldOut,
     where,
     isDelivery,
     quote,
@@ -121,6 +124,10 @@ export default function CheckoutPage() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="mx-auto max-w-lg px-4 pb-10 pt-6 sm:px-6">
+      {/* Refused for something that sold out while this basket was open.
+          The hook has already taken those lines out; this says which. */}
+      <SoldOutNotice names={soldOutNow} onClose={dismissSoldOut} />
+
       <h1
         className="m-0 mb-4 text-[20px] font-medium text-ink"
         style={{ fontFamily: DISPLAY_FONT }}

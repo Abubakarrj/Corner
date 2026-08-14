@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useServerText, useT } from "../../i18n";
 import { useCart, useCartRows } from "../CartContext";
+import { getProduct, lineKey } from "../products";
 import { totalsFor, type OrderTotals } from "../money";
 import { describeFulfillment, useFulfillment, type Fulfillment } from "../../fulfillment";
 import { useOpening } from "../../useOpening";
@@ -70,8 +71,13 @@ export type Checkout = {
   totals: OrderTotals;
   /** Rows that never got their choices made; the endpoint refuses these. */
   incomplete: CartRow[];
-  /** Rows that sold out after the basket was filled. */
+  /** Rows that sold out after the basket was filled, as far as this browser
+   *  knows. */
   unavailable: CartRow[];
+  /** Items the endpoint refused as sold out, already removed from the basket.
+   *  Empty until that happens; cleared by dismissing the notice. */
+  soldOutNow: string[];
+  dismissSoldOut: () => void;
 
   // ——— Where it's going ———
   fulfillment: Fulfillment | null;
@@ -147,7 +153,7 @@ export type Checkout = {
 export function useCheckout(): Checkout {
   const t = useT();
   const st = useServerText();
-  const { subtotalCents, clear } = useCart();
+  const { lines, removeItem, subtotalCents, clear } = useCart();
   const rows = useCartRows();
   const fulfillment = useFulfillment();
   const opening = useOpening();
@@ -172,6 +178,14 @@ export function useCheckout(): Checkout {
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
+  // Names of items the endpoint refused as sold out and this hook has already
+  // taken out of the basket. Rendered as a notice, then dismissed.
+  //
+  // Distinct from `unavailable` below, which is what the *browser* already
+  // knows is off the board. SOLD_OUT ships in the bundle, so a tab left open
+  // across a deploy — or, once this comes from the till, any tab at all — has
+  // a stale copy, and the server is the only one that can say.
+  const [soldOutNow, setSoldOutNow] = useState<string[]>([]);
 
   // The card fields, in their own hook so the number has no route into the
   // request body below. `tried` is passed in for the same reason the name and
@@ -342,6 +356,32 @@ export function useCheckout(): Checkout {
       });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
+        // ——— Sold out between filling the basket and paying ———
+        //
+        // The only refusal the customer cannot act on from an error message
+        // alone. Every other one is "fix this field"; this one is "something
+        // in your basket no longer exists", and leaving it there means Pay
+        // fails again on the next press, forever.
+        //
+        // So the lines go, and the screen names what went. Removing them
+        // silently would be worse than the loop: somebody would pay for a
+        // shorter order than the one they read.
+        const gone = Array.isArray(result?.soldOut)
+          ? (result.soldOut as unknown[]).filter(
+              (slug): slug is string => typeof slug === "string",
+            )
+          : [];
+        if (gone.length > 0) {
+          const names = gone
+            .map((slug) => getProduct(slug)?.name)
+            .filter((name): name is string => Boolean(name));
+          for (const line of lines) {
+            if (gone.includes(line.slug)) removeItem(lineKey(line.slug, line.options));
+          }
+          setSoldOutNow(names);
+          setStatus("idle");
+          return;
+        }
         throw new Error(st(result?.error) || t("checkout.somethingWentWrong"));
       }
 
@@ -427,6 +467,8 @@ export function useCheckout(): Checkout {
     totals,
     incomplete,
     unavailable,
+    soldOutNow,
+    dismissSoldOut: () => setSoldOutNow([]),
 
     fulfillment,
     where,

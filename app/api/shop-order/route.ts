@@ -178,8 +178,24 @@ export async function POST(request: Request) {
     // Gone since the basket was filled. 409 rather than 400: the request is
     // well-formed, the world moved.
     if (soldOut(slug)) {
+      // Every sold-out line, not the first one found.
+      //
+      // Refusing one at a time is a loop the customer has to run: pay, get
+      // refused, remove that line, pay, get refused again. The whole basket
+      // is already in front of us, so the whole answer goes back at once and
+      // the client can clear all of them in a single step.
+      //
+      // The slugs travel too. Without them the browser is told a name in a
+      // sentence and has to match it back against its own lines by string —
+      // in ten languages, against a name the endpoint wrote in English.
+      const gone = rawItems
+        .map((raw) => (raw as { slug?: unknown })?.slug)
+        .filter((s): s is string => typeof s === "string" && soldOut(s));
       return Response.json(
-        { error: `${product.name} sold out today.` },
+        {
+          error: "api.soldOutNow",
+          soldOut: [...new Set(gone)],
+        },
         { status: 409 },
       );
     }

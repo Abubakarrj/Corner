@@ -11,6 +11,7 @@ import SecureNote from "./checkout/SecureNote";
 import PaymentSection from "./checkout/PaymentSection";
 import TipPicker from "./checkout/TipPicker";
 import type { Checkout } from "./checkout/useCheckout";
+import SoldOutNotice from "./checkout/SoldOutNotice";
 
 // Checkout, inside the chat panel.
 //
@@ -41,6 +42,8 @@ export default function ChatCheckout({
     totals,
     incomplete,
     unavailable,
+    soldOutNow,
+    dismissSoldOut,
     where,
     isDelivery,
     quote,
@@ -80,6 +83,10 @@ export default function ChatCheckout({
       }}
       className="flex flex-col gap-4 px-3.5 py-3.5"
     >
+      {/* Refused for something that sold out while this basket was open.
+          The hook has already taken those lines out; this says which. */}
+      <SoldOutNotice names={soldOutNow} onClose={dismissSoldOut} />
+
       {/* Where it's going, stated rather than editable. Changing it means
           changing the whole order's shape — pickup counter, delivery address,
           catering kitchen — and that belongs on the map, not in a line of a
