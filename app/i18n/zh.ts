@@ -340,6 +340,8 @@ export const zh: Table = {
   "account.onceOrdered": "下过单后，常点的会显示在这里，再来一份只需一次点击。",
   "account.reorderUsuals": "再来一份常点的",
   "reorder.emptyTitle": "还没有可以再来一单的内容",
+  "reorder.signInTitle": "登录后可再来一单",
+  "reorder.signInBody": "您的常点和历史订单保存在账户里。",
   "reorder.emptyBody": "下单一次，您的常点就会出现在这里，下次一点即可。",
   "reorder.add": "加入",
   "reorder.wholeOrders": "整单再来一次",

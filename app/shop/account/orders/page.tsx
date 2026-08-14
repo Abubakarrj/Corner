@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useAccount, useOrders } from "../../../account";
 import { ButtonLink } from "../../../ui/Button";
 import { useT } from "../../../i18n";
@@ -37,16 +36,8 @@ export default function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
-      <Link
-        href="/shop/account"
-        className="inline-block cursor-pointer text-[13px] underline"
-        style={{ color: muted }}
-      >
-        ← {t("account.title")}
-      </Link>
-
       <h1
-        className="mt-5 text-[24px] font-medium leading-tight tracking-[-0.01em]"
+        className="text-[24px] font-medium leading-tight tracking-[-0.01em]"
         style={{ color: ink, fontFamily: DISPLAY_FONT }}
       >
         {t("account.myOrders")}

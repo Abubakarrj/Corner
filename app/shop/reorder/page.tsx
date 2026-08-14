@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { summarizeUsuals, useOrders } from "../../account";
+import { summarizeUsuals, useAccount, useOrders } from "../../account";
 import { useCart } from "../CartContext";
 import { Button, ButtonLink } from "../../ui/Button";
 import { useT } from "../../i18n";
@@ -31,14 +31,19 @@ const { ink, muted, faint, border, surface } = PALETTE;
 // occasionally, this is somewhere you go at eight in the morning with one
 // hand.
 //
-// ——— And why it does not require an account ———
+// ——— Signed in only ———
 //
-// The usuals are derived from orders on this device, which exist whether or
-// not anybody signed in. Sending a repeat customer to a login screen to see
-// what they ordered from this same phone last week would be asking for a
-// password to unlock their own memory. Signing in adds the orders from their
-// other phone; it is not the price of entry.
+// This screen was open to anyone at first, on the argument that the usuals
+// come from this device's own orders and asking for a password to see them
+// is asking somebody to unlock their own memory. The shop's call is that
+// reordering is an account feature, so it is gated: the tab sends a signed
+// out visitor to /membership, and a direct visit gets the same prompt rather
+// than a blank screen.
+//
+// The device's orders are still the source once you are in. Signing in adds
+// the ones placed on another phone; it does not replace what is here.
 export default function ReorderPage() {
+  const account = useAccount();
   const orders = useOrders();
   const { addItem } = useCart();
   const t = useT();
@@ -52,22 +57,29 @@ export default function ReorderPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
-      <Link
-        href="/shop"
-        className="inline-block cursor-pointer text-[13px] underline"
-        style={{ color: muted }}
-      >
-        ← {t("common.backToMenu")}
-      </Link>
-
       <h1
-        className="mt-5 text-[24px] font-medium leading-tight tracking-[-0.01em]"
+        className="text-[24px] font-medium leading-tight tracking-[-0.01em]"
         style={{ color: ink, fontFamily: DISPLAY_FONT }}
       >
         {t("nav.reorder")}
       </h1>
 
-      {orders.length === 0 ? (
+      {!account ? (
+        <div
+          className="mt-8 rounded-2xl border p-6 text-center"
+          style={{ borderColor: border, backgroundColor: surface }}
+        >
+          <p className="text-[14px] font-medium" style={{ color: ink }}>
+            {t("reorder.signInTitle")}
+          </p>
+          <p className="mx-auto mt-1.5 max-w-xs text-[13px] leading-[1.5]" style={{ color: muted }}>
+            {t("reorder.signInBody")}
+          </p>
+          <ButtonLink href="/membership" className="mt-5">
+            {t("account.joinOrSignIn")}
+          </ButtonLink>
+        </div>
+      ) : orders.length === 0 ? (
         <div
           className="mt-8 rounded-2xl border p-6 text-center"
           style={{ borderColor: border, backgroundColor: surface }}

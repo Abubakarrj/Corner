@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { signOut, useAccount, useOrders } from "../../account";
@@ -89,18 +88,12 @@ export default function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
-      {/* The shop header above this has a search field and a basket and no way
-          back to the catalog, so without this the account is a room with no
-          door — the tab bar isn't on shop routes. */}
-      <Link
-        href="/shop"
-        className="inline-block cursor-pointer text-[13px] underline"
-        style={{ color: muted }}
-      >
-        ← Back to the menu
-      </Link>
-
-      <div className="mt-5 flex items-start justify-between gap-4">
+      {/* No back link here. There used to be one, written when the shop
+          header had no way out of a page — it has a BackButton on every shop
+          route now, so this was a second back control an inch below the
+          first, and two of them is worse than none: neither reads as the
+          one to use. */}
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1
             className="text-[24px] font-medium leading-tight tracking-[-0.01em]"

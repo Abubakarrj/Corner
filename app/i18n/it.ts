@@ -376,6 +376,8 @@ export const it: Table = {
     "Dopo il primo ordine i tuoi soliti compaiono qui, così il secondo giro è questione di un tocco.",
   "account.reorderUsuals": "Riordina i tuoi soliti",
   "reorder.emptyTitle": "Ancora niente da riordinare",
+  "reorder.signInTitle": "Accedi per riordinare",
+  "reorder.signInBody": "I tuoi soliti e i tuoi ordini passati stanno nel tuo account.",
   "reorder.emptyBody": "Ordina una volta e i tuoi soliti compariranno qui, così il bis è un tocco.",
   "reorder.add": "Aggiungi",
   "reorder.wholeOrders": "Riordina tutto l’ordine",

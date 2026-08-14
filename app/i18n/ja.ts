@@ -339,6 +339,8 @@ export const ja: Table = {
     "ご注文いただくと、いつものメニューがここに並び、次回はワンタップで頼めます。",
   "account.reorderUsuals": "いつものを再注文",
   "reorder.emptyTitle": "まだ再注文できるものがありません",
+  "reorder.signInTitle": "再注文にはサインインが必要です",
+  "reorder.signInBody": "いつものと過去のご注文はアカウントに紐づいています。",
   "reorder.emptyBody": "一度ご注文いただくと、いつものがここに並び、次回はワンタップで済みます。",
   "reorder.add": "追加",
   "reorder.wholeOrders": "注文をまるごともう一度",

@@ -376,6 +376,8 @@ export const fr: Table = {
     "Une fois que vous aurez commandé, vos habitudes apparaîtront ici et un deuxième tour ne prendra qu'un geste.",
   "account.reorderUsuals": "Recommander vos habitudes",
   "reorder.emptyTitle": "Rien à recommander pour l’instant",
+  "reorder.signInTitle": "Connectez-vous pour recommander",
+  "reorder.signInBody": "Vos habitudes et vos commandes passées sont liées à votre compte.",
   "reorder.emptyBody": "Commandez une fois et vos habitudes apparaîtront ici, pour que la suivante tienne en un geste.",
   "reorder.add": "Ajouter",
   "reorder.wholeOrders": "Recommander toute la commande",

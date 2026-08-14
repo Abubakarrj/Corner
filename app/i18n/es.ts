@@ -344,6 +344,8 @@ export const es: Table = {
     "Cuando pidas, tus habituales aparecerán aquí para que repetir sea un solo toque.",
   "account.reorderUsuals": "Repite tus habituales",
   "reorder.emptyTitle": "Todavía no hay nada que repetir",
+  "reorder.signInTitle": "Inicia sesión para repetir",
+  "reorder.signInBody": "Tus habituales y tus pedidos anteriores viven en tu cuenta.",
   "reorder.emptyBody": "Pide una vez y tus habituales aparecerán aquí, para que la segunda vez sea un toque.",
   "reorder.add": "Añadir",
   "reorder.wholeOrders": "Repetir el pedido entero",

@@ -318,12 +318,14 @@ export default function TabBar({ active }: { active: TabId }) {
           //
           // They are different questions. Account is about you: who is signed
           // in, what you have bought, how the app is set up. Reorder is about
-          // lunch. So Reorder has /shop/reorder, and it does not ask anybody
-          // to sign in first — the usuals come from this device's own orders,
-          // and demanding a password to see what you bought from this phone
-          // last week is asking somebody to unlock their own memory.
-          const href =
-            item.id === "account" && !account ? "/membership" : item.href;
+          // lunch. So Reorder has /shop/reorder.
+          //
+          // Both are behind sign-in. Reordering is an account feature here,
+          // which is a decision about the product rather than about what is
+          // technically possible — the usuals could be derived from this
+          // device alone, and are not offered that way.
+          const signedInHref = item.id === "reorder" || item.id === "account";
+          const href = signedInHref && !account ? "/membership" : item.href;
           const isActive = item.id === active;
           const tone = isActive ? ink : TAB_REST;
           const body = (
