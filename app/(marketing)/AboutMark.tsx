@@ -15,7 +15,7 @@ import { useT } from "../i18n";
 //
 // ——— Small mark, ordinary hit area ———
 //
-// The circle is 13px and the link around it is 28px. Those are deliberately
+// The circle is 11px and the link around it is 28px. Those are deliberately
 // different numbers. The first cut made the visible mark the whole button at
 // 28px, and beside a logo it stopped reading as a footnote and started
 // competing with the name — the loudest thing on a page whose only job is the
@@ -28,7 +28,7 @@ import { useT } from "../i18n";
 // It does not grow with the logo either. The mark is 192px on a phone and
 // 288px on a desktop, and a badge that scaled with it would be a 20px circle
 // beside a big wordmark — louder on the screen with the most room, which is
-// backwards. Fixed at 13px, it reads quieter the larger the logo gets.
+// backwards. Fixed at 11px, it reads quieter the larger the logo gets.
 export default function AboutMark({ className = "" }: { className?: string }) {
   const t = useT();
   return (
@@ -39,7 +39,7 @@ export default function AboutMark({ className = "" }: { className?: string }) {
     >
       <span
         aria-hidden
-        className="flex h-[13px] w-[13px] items-center justify-center rounded-full border border-line-grey text-[8px] leading-none text-quiet transition-colors group-hover:border-ink group-hover:text-ink"
+        className="flex h-[11px] w-[11px] items-center justify-center rounded-full border border-line-grey text-[7px] leading-none text-quiet transition-colors group-hover:border-ink group-hover:text-ink"
       >
         i
       </span>
