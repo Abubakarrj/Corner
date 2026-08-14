@@ -457,10 +457,16 @@ export async function POST(request: Request) {
           .filter(Boolean)
           .join(" · ")
           .slice(0, 280) || undefined,
+      // The choices travel with the item. Toast has always had them as
+      // modifiers; Uber was getting the bare product name, so a courier's
+      // screen read "Egg & Schmear" for an order that specified a bagel and a
+      // spread. priceCents already includes the upcharge, so the manifest was
+      // showing the right money for the wrong item.
       items: items.map((item) => ({
         name: item.name,
         quantity: item.quantity,
         priceCents: item.priceCents,
+        options: item.optionsLabel,
       })),
     });
 

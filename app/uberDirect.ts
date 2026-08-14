@@ -211,6 +211,34 @@ export type CreateResult =
   | { ok: true; delivery: Delivery }
   | { ok: false; reason: string };
 
+// How long a manifest item's name may be.
+//
+// Uber does not publish a limit and a create that is rejected for a long
+// name does not fail politely — it fails the whole delivery, on an order the
+// kitchen has already accepted. So this stays well inside anything plausible.
+const MANIFEST_NAME_MAX = 120;
+
+/** "Egg & Schmear (Jalapeño Cheddar, Vegan plain)".
+ *
+ *  Uber's manifest carries a name, a quantity and a price, and nothing that
+ *  holds modifiers. So the choices go in the name or they do not travel: the
+ *  courier's screen said "Egg & Schmear" while the customer had ordered a
+ *  specific bagel with a specific spread. That matters at the two moments
+ *  this manifest exists for — somebody at a door saying this is not what they
+ *  ordered, and a bag going back to the shop that support has to identify.
+ *
+ *  The product name is protected on truncation and the choices are what get
+ *  cut. A clipped list of spreads is still recognisable; a clipped product
+ *  name is a different item. */
+function manifestName(name: string, options?: string): string {
+  const choices = options?.trim();
+  if (!choices) return name.slice(0, MANIFEST_NAME_MAX);
+  const room = MANIFEST_NAME_MAX - name.length - 3; // " (" and ")"
+  if (room < 4) return name.slice(0, MANIFEST_NAME_MAX);
+  const fitted = choices.length <= room ? choices : `${choices.slice(0, room - 1)}…`;
+  return `${name} (${fitted})`;
+}
+
 export async function createDelivery(input: {
   quoteId: string;
   pickupName: string;
@@ -222,7 +250,11 @@ export async function createDelivery(input: {
   dropoffNote?: string;
   // What's in the bag. Uber shows this to the courier and uses it for the
   // undeliverable-return flow, so it's the real items and not "food".
-  items: { name: string; quantity: number; priceCents: number }[];
+  //
+  // `options` is the customer's choices — the bagel, the spread — as one
+  // string. Uber's manifest has no modifiers field, so they are folded into
+  // the name below or they do not travel at all.
+  items: { name: string; quantity: number; priceCents: number; options?: string }[];
 }): Promise<CreateResult> {
   const config = uberConfig();
   if (!config) return { ok: false, reason: "not-configured" };
@@ -237,7 +269,7 @@ export async function createDelivery(input: {
     dropoff_phone_number: input.dropoffPhone,
     ...(input.dropoffNote ? { dropoff_notes: input.dropoffNote.slice(0, 280) } : {}),
     manifest_items: input.items.map((item) => ({
-      name: item.name,
+      name: manifestName(item.name, item.options),
       quantity: item.quantity,
       price: item.priceCents,
       size: "small",
