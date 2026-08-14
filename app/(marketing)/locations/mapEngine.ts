@@ -35,6 +35,24 @@ export type MapEngine = {
   setMarkers(locations: StoreLocation[], onSelect: (id: string) => void): void;
   // Marks one pin as the selected one, so the map shows which card you are on.
   setSelected(id: string | null): void;
+  // Where the visitor is, as a dot, with the platform's own accuracy radius
+  // drawn around it. Null clears it.
+  //
+  // ——— Why the radius is drawn and not just the dot ———
+  //
+  // "Use my location" panned the camera and searched, and put nothing on the
+  // map where the visitor was standing. That is why granting the permission
+  // felt like nothing had happened: the map moved, some shops appeared, and
+  // the one thing the button is named after was invisible.
+  //
+  // The circle is the second half of it, and it is the honest half. A phone
+  // reporting eight metres and a phone reporting two kilometres are both
+  // "your location", and the difference between them is the whole of what
+  // Precise Location does. A dot alone claims a doorstep either way; a dot
+  // inside a circle the size of the neighbourhood says exactly what the OS
+  // told us, without anybody having to read a sentence about a settings
+  // toggle.
+  setYou(point: [number, number] | null, accuracyMeters?: number): void;
   panTo(point: [number, number], zoom?: number): void;
   getZoom(): number;
   setZoom(zoom: number): void;

@@ -334,8 +334,17 @@ export default function StoreMap({
             // refusal needs different words from a timeout.
             void locateMe().then((result) => {
               setLocating(false);
-              if (result.ok) onLocate?.(result.fix.point, result.fix.coarse);
-              else onLocateFailed?.(result.why);
+              if (!result.ok) {
+                onLocateFailed?.(result.why);
+                return;
+              }
+              // The dot goes on before anything else happens. This is the
+              // thing the button is named after, and it used to be the one
+              // thing the button did not do: the camera moved, shops
+              // appeared, and nothing marked where the reader was standing —
+              // which is why granting the permission felt like nothing.
+              engineRef.current?.setYou(result.fix.point, result.fix.accuracyMeters);
+              onLocate?.(result.fix.point, result.fix.coarse);
             });
           }}
           aria-label={t("finder.useMyLocation")}

@@ -147,6 +147,8 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
     element: HTMLElement;
   }[] = [];
   let selected: string | null = null;
+  let youMarker: Marker | null = null;
+  let youSizer: (() => void) | null = null;
 
   const engine: MapEngine = {
     setTheme(theme) {
@@ -184,6 +186,57 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
           entry.id === id ? "2" : "1",
         );
       });
+    },
+
+    // The reader's own position. A DOM marker, like the shop pins above, so
+    // the two stack in one coordinate system and nothing needs a GeoJSON
+    // source.
+    //
+    // The accuracy circle is drawn in CSS pixels from the metres at the
+    // current zoom, and recomputed on every move — MapLibre has no
+    // metre-radius primitive short of a circle layer with a pixel-per-metre
+    // expression, and a listener is less machinery than the expression.
+    setYou(point, accuracyMeters) {
+      youMarker?.remove();
+      youMarker = null;
+      if (youSizer) {
+        map.off("zoom", youSizer);
+        map.off("move", youSizer);
+        youSizer = null;
+      }
+      if (!point) return;
+
+      const element = document.createElement("div");
+      element.style.pointerEvents = "none";
+      element.style.position = "relative";
+      element.innerHTML =
+        '<span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);' +
+        'width:18px;height:18px;border-radius:9999px;background:#1a73e8;' +
+        'box-shadow:0 0 0 3px #fff,0 0 0 5px rgba(26,115,232,0.25)"></span>' +
+        '<span data-halo style="position:absolute;left:50%;top:50%;' +
+        "transform:translate(-50%,-50%);border-radius:9999px;" +
+        'background:rgba(26,115,232,0.12);border:1px solid rgba(26,115,232,0.35);' +
+        'width:0;height:0"></span>';
+
+      youMarker = new Marker({ element, anchor: "center" })
+        .setLngLat([point[1], point[0]])
+        .addTo(map);
+
+      const halo = element.querySelector<HTMLElement>("[data-halo]");
+      if (!halo || typeof accuracyMeters !== "number" || accuracyMeters <= 40) return;
+
+      const size = () => {
+        // Web-Mercator ground resolution at this latitude and zoom.
+        const metresPerPixel =
+          (156543.03392 * Math.cos((point[0] * Math.PI) / 180)) / 2 ** map.getZoom();
+        const diameter = (accuracyMeters / metresPerPixel) * 2;
+        halo.style.width = `${diameter}px`;
+        halo.style.height = `${diameter}px`;
+      };
+      size();
+      youSizer = size;
+      map.on("zoom", size);
+      map.on("move", size);
     },
 
     panTo(point, zoom) {

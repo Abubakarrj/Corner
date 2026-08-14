@@ -98,6 +98,22 @@ const MAP_STYLE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
   ],
 };
 
+// The "you are here" dot: a white ring around a blue disc, with a soft outer
+// glow so it survives both a pale road and a dark basemap. Blue rather than
+// anything in the produce palette on purpose — this is the one mark on the
+// map that is not us, and every map anybody has ever used draws the reader
+// in blue.
+const YOU_BLUE = "#1a73e8";
+const YOU_DOT =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">' +
+      '<circle cx="9" cy="9" r="8" fill="#1a73e8" fill-opacity="0.18"/>' +
+      '<circle cx="9" cy="9" r="6" fill="#ffffff"/>' +
+      '<circle cx="9" cy="9" r="4.4" fill="#1a73e8"/>' +
+      "</svg>",
+  );
+
 export const createGoogleEngine: EngineFactory = async (holder, options) => {
   const maps = await loadMaps(options.language);
   if (!maps) return null;
@@ -135,6 +151,8 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
   map.addListener("zoom_changed", options.onMoved);
 
   let entries: { id: string; kind: StoreLocation["kind"]; marker: google.maps.Marker }[] = [];
+  let you: google.maps.Marker | null = null;
+  let halo: google.maps.Circle | null = null;
   let selected: string | null = null;
 
   const icon = (kind: StoreLocation["kind"], isSelected: boolean): google.maps.Icon => {
@@ -179,6 +197,54 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
       });
     },
 
+    // ——— You are here ———
+    //
+    // A Google Marker rather than the library's own accuracy widget, because
+    // there is no such widget: the blue dot on maps.google.com is Google's
+    // app, not the JavaScript API, and every embedder draws its own.
+    //
+    // Two objects. The dot is fixed-size chrome — it is a cursor, and a cursor
+    // that grows when you zoom out stops being one. The circle is in metres,
+    // so it grows and shrinks with the map exactly as the uncertainty it
+    // stands for does, which is the point of drawing it.
+    setYou(point, accuracyMeters) {
+      you?.setMap(null);
+      halo?.setMap(null);
+      you = null;
+      halo = null;
+      if (!point) return;
+
+      const position = { lat: point[0], lng: point[1] };
+      // Below this the circle is smaller than the dot and draws as a smudge
+      // around it. A fix that good does not need its uncertainty illustrated.
+      if (typeof accuracyMeters === "number" && accuracyMeters > 40) {
+        halo = new google.maps.Circle({
+          center: position,
+          radius: accuracyMeters,
+          strokeColor: YOU_BLUE,
+          strokeOpacity: 0.35,
+          strokeWeight: 1,
+          fillColor: YOU_BLUE,
+          fillOpacity: 0.12,
+          clickable: false,
+          map,
+        });
+      }
+      you = new google.maps.Marker({
+        position,
+        map,
+        clickable: false,
+        // Above the shop pins: it is where the reader is, and a shop sitting
+        // on top of it hides the one thing that answers "where am I".
+        zIndex: 1000,
+        icon: {
+          url: YOU_DOT,
+          scaledSize: new google.maps.Size(18, 18),
+          anchor: new google.maps.Point(9, 9),
+        },
+      });
+    },
+
     panTo(point, zoom) {
       map.panTo({ lat: point[0], lng: point[1] });
       if (typeof zoom === "number") map.setZoom(zoom);
@@ -201,6 +267,8 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
     },
 
     destroy() {
+      you?.setMap(null);
+      halo?.setMap(null);
       entries.forEach((entry) => entry.marker.setMap(null));
       entries = [];
     },
