@@ -115,7 +115,11 @@ export async function POST(request: Request) {
       return Response.json({ error: "api.enterAddress" }, { status: 400 });
     }
 
-    const origin = await deliveryOrigin();
+    // The origin is chosen against this pin, not fixed. With one kitchen that
+    // is the same answer either way; with two it is the difference between
+    // measuring to the shop that would serve this address and measuring to the
+    // one that would not. See deliveryOrigin in storePlaces.ts.
+    const origin = await deliveryOrigin([lat, lng]);
     // Both at once. They are independent lookups against the same point and
     // the picker is waiting on the pair, so running them in sequence would
     // make a settle feel twice as slow for no reason.
@@ -194,7 +198,7 @@ export async function POST(request: Request) {
   // The shop's real coordinates, not the ones typed next to its address —
   // this is the centre the delivery radius is measured out of. See
   // storePlaces.ts.
-  const origin = await deliveryOrigin();
+  const origin = await deliveryOrigin([place.lat, place.lng]);
   const drive = await driveBetween(origin, [place.lat, place.lng]);
   // Falling back to the straight line rather than refusing: a routing failure
   // shouldn't stop somebody ordering. It reads short, so the radius is the

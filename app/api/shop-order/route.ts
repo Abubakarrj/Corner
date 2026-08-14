@@ -24,7 +24,11 @@ import {
   quoteDelivery,
   structuredAddress,
 } from "../../uberDirect";
-import { deliveryOrigin } from "../../storePlaces";
+import { deliveryOrigin, deliveryStoreFor } from "../../storePlaces";
+import {
+  addressParts,
+  type StoreLocation,
+} from "../../(marketing)/locations/locations";
 import { joinQueue } from "../../kitchenQueue";
 import { earn } from "../../rewards";
 
@@ -247,15 +251,44 @@ export async function POST(request: Request) {
   // The comparison exists for the customer, not for us: if the fresh quote is
   // materially higher than the one they agreed to, the order stops and they
   // see the new number rather than finding it on a receipt.
-  const fulfillment = (body as { fulfillment?: { mode?: unknown; address?: unknown } })
-    ?.fulfillment;
+  const fulfillment = (
+    body as {
+      fulfillment?: { mode?: unknown; address?: unknown; lat?: unknown; lng?: unknown };
+    }
+  )?.fulfillment;
   const forDelivery = fulfillment?.mode === "delivery";
   const deliveryAddress =
     typeof fulfillment?.address === "string" ? fulfillment.address.trim() : "";
 
+  // ⚠️ The pin, and this is the hop where losing it costs the most.
+  //
+  // Everything upstream — the range check, the fee, the ETA — is a number on a
+  // screen. This one books a courier and tells them where to drive. Geocoding
+  // the address here instead would mean the customer placed a point, was
+  // quoted against it, and then had a dispatch sent to Google's idea of the
+  // words: the fee they agreed to and the doorway they get would be measured
+  // to two different places.
+  //
+  // Validated rather than trusted. It arrives through the browser like
+  // everything else in this body, and a coordinate that came through the
+  // browser is one the browser can change — an out-of-band pair falls back to
+  // the geocoder, which is where a delivery saved before the picker existed
+  // goes anyway.
+  const pinLat = Number(fulfillment?.lat);
+  const pinLng = Number(fulfillment?.lng);
+  const pinned =
+    Number.isFinite(pinLat) &&
+    Number.isFinite(pinLng) &&
+    Math.abs(pinLat) <= 90 &&
+    Math.abs(pinLng) <= 180;
+
   let deliveryCents = 0;
   let deliveryQuoteId: string | null = null;
   let dropoff: { address: string; lat: number; lng: number } | null = null;
+  // Which counter the courier collects from. Settled when the quote is taken
+  // and reused when the delivery is booked, so the two name the same shop —
+  // re-deriving it at booking time would be two chances to pick differently.
+  let pickupStore: StoreLocation | null = null;
 
   // ——— What the driver is told ———
   //
@@ -283,18 +316,25 @@ export async function POST(request: Request) {
     }
 
     // The counter, resolved from its address rather than the coordinates
-    // typed beside it. This is what the courier is sent to. See
-    // storePlaces.ts.
-    const origin = await deliveryOrigin();
-
-    const place = await geocode(deliveryAddress, origin);
+    // typed beside it, and chosen against where this order is going. This is
+    // what the courier collects from. See storePlaces.ts.
+    const biasedTo: [number, number] | undefined = pinned ? [pinLat, pinLng] : undefined;
+    const place = pinned
+      ? { address: deliveryAddress, lat: pinLat, lng: pinLng }
+      : await geocode(deliveryAddress, await deliveryOrigin());
     if (!place) {
       return Response.json({ error: "api.addressNotFound" }, { status: 400 });
     }
     dropoff = place;
 
+    const { store, place: counter } = await deliveryStoreFor(
+      biasedTo ?? [place.lat, place.lng],
+    );
+    const origin = counter.position;
+    pickupStore = store;
+
     const fresh = await quoteDelivery({
-      pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
+      pickupAddress: structuredAddress(addressParts(store)),
       pickupLat: origin[0],
       pickupLng: origin[1],
       dropoffAddress: place.address,
@@ -470,8 +510,10 @@ export async function POST(request: Request) {
     const [firstName, ...rest] = order.name.split(/\s+/);
     const booked = await createDelivery({
       quoteId: deliveryQuoteId,
-      pickupName: "Corner Bagel",
-      pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
+      pickupName: pickupStore ? `Corner Bagel ${pickupStore.name}` : "Corner Bagel",
+      pickupAddress: structuredAddress(
+        pickupStore ? addressParts(pickupStore) : SHOP_ADDRESS_PARTS,
+      ),
       pickupPhone: SHOP_PHONE,
       dropoffName: `${firstName ?? ""} ${rest.join(" ")}`.trim() || order.email,
       dropoffAddress: dropoff.address,

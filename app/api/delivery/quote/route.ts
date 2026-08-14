@@ -1,8 +1,11 @@
-import { DELIVERY_RADIUS_MILES } from "../../../(marketing)/locations/locations";
+import {
+  DELIVERY_RADIUS_MILES,
+  addressParts,
+} from "../../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../../googleMaps";
-import { PREP_MINUTES, SHOP_ADDRESS_PARTS } from "../../../shopFacts";
+import { PREP_MINUTES } from "../../../shopFacts";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../../uberDirect";
-import { deliveryOrigin } from "../../../storePlaces";
+import { deliveryOrigin, deliveryStoreFor } from "../../../storePlaces";
 
 // What a courier will charge to take this order to this address, and when
 // they'll have it there.
@@ -41,11 +44,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "api.missingAddress" }, { status: 400 });
   }
 
-  // Resolved from the shop's address rather than the pair typed beside it.
-  // This is the point a courier is sent to; a block's worth of error in it is
-  // somebody walking up and down W 8th Street with a bag. See storePlaces.ts.
-  const origin = await deliveryOrigin();
-
   const pinLat = Number(body?.lat);
   const pinLng = Number(body?.lng);
   const pinned =
@@ -53,6 +51,17 @@ export async function POST(request: Request) {
     Number.isFinite(pinLng) &&
     Math.abs(pinLat) <= 90 &&
     Math.abs(pinLng) <= 180;
+
+  // Resolved from the shop's address rather than the pair typed beside it.
+  // This is the point a courier collects from; a block's worth of error in it
+  // is somebody walking up and down W 8th Street with a bag. See
+  // storePlaces.ts.
+  //
+  // Chosen against the destination when there is a pin, so the kitchen that
+  // serves this address is the one that gets the job. Without a pin there is
+  // no destination to choose against until the geocode lands, so the first
+  // delivering kitchen biases that lookup and the real origin is taken after.
+  const origin = await deliveryOrigin(pinned ? [pinLat, pinLng] : undefined);
 
   const place = pinned
     ? { address: address.trim(), lat: pinLat, lng: pinLng }
@@ -65,7 +74,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const drive = await driveBetween(origin, [place.lat, place.lng]);
+  // Now that the destination is known either way, settle which kitchen it
+  // leaves from. Identical to `origin` above on the pinned path and on a
+  // one-shop deployment; different on a geocoded address that turned out to be
+  // nearer a second kitchen.
+  //
+  // The store and not only its point, because the courier is handed an address
+  // as well as a coordinate and those two have to name the same counter.
+  const { store, place: pickup } = await deliveryStoreFor([place.lat, place.lng]);
+  const from = pickup.position;
+
+  const drive = await driveBetween(from, [place.lat, place.lng]);
   if (drive && drive.miles > DELIVERY_RADIUS_MILES) {
     return Response.json(
       {
@@ -84,9 +103,9 @@ export async function POST(request: Request) {
   }
 
   const quote = await quoteDelivery({
-    pickupAddress: structuredAddress(SHOP_ADDRESS_PARTS),
-    pickupLat: origin[0],
-    pickupLng: origin[1],
+    pickupAddress: structuredAddress(addressParts(store)),
+    pickupLat: from[0],
+    pickupLng: from[1],
     dropoffAddress: place.address,
     dropoffLat: place.lat,
     dropoffLng: place.lng,

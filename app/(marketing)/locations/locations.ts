@@ -36,6 +36,19 @@ export type StoreLocation = {
   // doing a different job, and modelling it as a second location would put a
   // duplicate pin on the map at the same coordinates.
   catering?: boolean;
+  // ——— What this shop will and will not do ———
+  //
+  // Both default to true, so adding a shop is adding an address and nothing
+  // else. They exist because a second shop is not automatically a second
+  // everything: a kitchen with no counter takes deliveries and no collections,
+  // a small counter in a food hall is the reverse, and a shop being *listed*
+  // is a separate fact from a shop being able to take an order today.
+  //
+  // Read through pickupStores() and deliveringStores() rather than directly —
+  // a shop that opts out of pickup must not appear in a pickup list, and a
+  // caller that filters by hand is a caller that will forget to.
+  pickup?: boolean;
+  delivery?: boolean;
 };
 
 // The shop, and the kitchen every delivery leaves from.
@@ -45,7 +58,8 @@ export type StoreLocation = {
 // Koreatown — which matches both the location's name and the +1 213 number
 // the drop-list welcome email links to. An earlier pass had this pin in
 // Manhattan on the same reasoning about "Korean Town", which was wrong.
-// Worth confirming.
+//
+// The street number was confirmed by the shop as 3064 rather than 3076.
 //
 // The coordinates are approximate — the block, not the doorway — and they are
 // now the fallback rather than the answer. app/storePlaces.ts resolves this
@@ -87,7 +101,77 @@ export const KOREATOWN: StoreLocation = {
   ],
 };
 
+// ⚠️ One shop today, and everything below is written for several.
+//
+// That is deliberate rather than speculative. The shop's stated plan is to
+// hold a ten-mile radius until it opens more counters, and the work that has
+// to happen when it does is the work that is easy to get wrong under time
+// pressure: which kitchen a delivery leaves from, which counters can be
+// collected from, and what "how far away are you" means when the answer
+// depends on which shop you meant.
+//
+// So adding a second shop is adding a record to this array. Nothing else in
+// the codebase names KOREATOWN as "the shop" any more — see nearestDelivering
+// below, and deliveryOrigin in storePlaces.ts, both of which already do the
+// right thing for a list of one.
+//
+// What is *not* built is a store picker on screen. A list of nearby shops with
+// one row in it reads as a list that lost its other rows, and the choice it
+// offers does not exist yet.
 export const LOCATIONS: StoreLocation[] = [KOREATOWN];
+
+/** A shop's address split the way a courier API wants it.
+ *
+ *  Derived from the record rather than written a second time in shopFacts.
+ *  With one shop the two agreed; with two, a constant pickup address beside a
+ *  chosen pickup *coordinate* is a courier sent to the right point with the
+ *  wrong street on the docket — and the docket is what they read.
+ *
+ *  `city` on a StoreLocation is "Los Angeles, CA 90005", which is how a card
+ *  shows it and not how an API wants it, so it is split here. A record whose
+ *  city does not parse falls back to putting the whole string in the city
+ *  field, which is wrong but visible, rather than silently dropping a ZIP. */
+export function addressParts(store: StoreLocation): {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+} {
+  const match = /^(.*),\s*([A-Z]{2})\s*(\d{5})(?:-\d{4})?$/.exec(store.city.trim());
+  if (!match) {
+    return { street: store.address, city: store.city, state: "", zip: "" };
+  }
+  return { street: store.address, city: match[1].trim(), state: match[2], zip: match[3] };
+}
+
+/** Shops somebody can collect from. */
+export function pickupStores(): StoreLocation[] {
+  return LOCATIONS.filter((store) => store.kind === "shop" && store.pickup !== false);
+}
+
+/** Kitchens a delivery can leave from. */
+export function deliveringStores(): StoreLocation[] {
+  return LOCATIONS.filter((store) => store.delivery !== false);
+}
+
+/** The kitchen a delivery to this point leaves from.
+ *
+ *  Straight-line, and that is the right ruler for this one job: it picks
+ *  *which* shop, and the drive from the winner is measured properly by Routes
+ *  afterwards. Road-routing every shop against every address to choose between
+ *  them would be a Route Matrix call per address search to break a tie that a
+ *  straight line gets right almost every time — and when it doesn't, the two
+ *  shops are close enough together that either could serve.
+ *
+ *  Null when no shop delivers at all, which is a configuration to notice
+ *  rather than a case to paper over. */
+export function nearestDelivering(to: [number, number]): StoreLocation | null {
+  const open = deliveringStores();
+  if (open.length === 0) return null;
+  return open.reduce((best, store) =>
+    milesBetween(to, store.position) < milesBetween(to, best.position) ? store : best,
+  );
+}
 
 // What every shop answers to, regardless of which one it is. Kept apart from
 // each location's own aliases so a second shop inherits them instead of
@@ -184,7 +268,12 @@ export function nearestLocations(
 ): NearbyLocation[] {
   return pool
     .filter((location) =>
-      kind === "catering" ? location.catering === true : location.kind === kind,
+      kind === "catering"
+        ? location.catering === true
+        : // A shop that has opted out of pickup is still a shop and still on
+          // the map — it just cannot be collected from, so it must not appear
+          // in the list somebody is choosing a counter out of.
+          location.kind === kind && (kind !== "shop" || location.pickup !== false),
     )
     .map((location) => ({ location, miles: milesBetween(point, location.position) }))
     .sort((a, b) => a.miles - b.miles);

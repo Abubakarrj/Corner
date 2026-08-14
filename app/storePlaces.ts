@@ -2,7 +2,9 @@ import "server-only";
 import { geocode } from "./googleMaps";
 import {
   LOCATIONS,
+  deliveringStores,
   milesBetween,
+  nearestDelivering,
   type StoreLocation,
 } from "./(marketing)/locations/locations";
 
@@ -120,13 +122,37 @@ export async function storePlaces(): Promise<Record<string, StorePlace>> {
   return Object.fromEntries(entries);
 }
 
-// The point a courier is told to collect from, and the centre every delivery
+// The point a courier is told to collect from, and the centre a delivery
 // radius is measured out of.
 //
-// A function rather than the constant it replaced, because the answer now
-// involves a lookup. Callers await it once at the top of a request; it is a
-// map read after the first one.
-export async function deliveryOrigin(): Promise<[number, number]> {
-  const { position } = await storePlace(LOCATIONS[0]);
+// A function rather than the constant it replaced, because the answer involves
+// a lookup. Callers await it once at the top of a request; it is a map read
+// after the first one.
+//
+// ——— `to` is what makes a second shop a data entry ———
+//
+// With one kitchen the origin is a constant and this argument changes nothing.
+// With two it is the whole question: a delivery to Studio City should leave
+// from the Studio City kitchen, and measuring its range from Koreatown would
+// refuse an address that is four minutes from a counter.
+//
+// Optional, because two callers genuinely have no destination in hand — the
+// finder biasing an address search, and Riley answering "how far do you
+// deliver". Both want "the shop, roughly", and the first delivering shop is
+// the honest answer to that as long as there is one. It stops being honest the
+// day there are three, and the type is what will make that obvious: the day
+// somebody has to pick, they have to pass a point.
+export async function deliveryOrigin(to?: [number, number]): Promise<[number, number]> {
+  const store = (to ? nearestDelivering(to) : null) ?? deliveringStores()[0] ?? LOCATIONS[0];
+  const { position } = await storePlace(store);
   return position;
+}
+
+/** The kitchen itself, not just its coordinates — for a courier pickup that
+ *  needs the address and the name as well as the point. */
+export async function deliveryStoreFor(
+  to?: [number, number],
+): Promise<{ store: StoreLocation; place: StorePlace }> {
+  const store = (to ? nearestDelivering(to) : null) ?? deliveringStores()[0] ?? LOCATIONS[0];
+  return { store, place: await storePlace(store) };
 }
