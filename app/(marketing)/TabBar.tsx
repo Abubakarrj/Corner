@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useT, type StringKey } from "../i18n";
 import { useAccount } from "../account";
 import { PALETTE, SHOP_FONT } from "../shop/shopControls";
+import OrderStatusBar from "../shop/OrderStatusBar";
 
 // Same produce palette as the pantry: ink marks the active tab, cream is
 // the ground, and the rule above the bar is the shop's section border.
@@ -280,6 +281,17 @@ export default function TabBar({ active }: { active: TabId }) {
   const t = useT();
 
   return (
+    <>
+      {/* A live order, above the tabs.
+          It used to live only under the shop header, which meant placing an
+          order and then tapping Home lost the tracker entirely — the one
+          screen a customer keeps coming back to while they wait, and the
+          only way back was the browser's back button or the account page.
+          Here it rides every screen that has tabs, and it is part of the
+          same flex column, so the body above shrinks by its height rather
+          than sliding under it. Renders nothing when no order is in
+          flight. */}
+      <OrderStatusBar />
     <nav
       className="shrink-0 border-t pb-[env(safe-area-inset-bottom)]"
       style={{
@@ -342,5 +354,6 @@ export default function TabBar({ active }: { active: TabId }) {
         })}
       </ul>
     </nav>
+    </>
   );
 }
