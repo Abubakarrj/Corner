@@ -236,7 +236,10 @@ function explainRoutes(status: number, detail: string): string {
         ? ` Enable it at https://console.cloud.google.com/apis/library/routes.googleapis.com?project=${project}`
         : " Enable it in the Cloud console; the error body names the project id.") +
       " Note this is the project the *key* belongs to, which is not always the" +
-      " one you were last looking at."
+      " one you were last looking at — and that Google reports it as a number" +
+      " while the console usually shows an id like gen-lang-client-0000000000." +
+      " Those are two names for one project, so check the number matches" +
+      " before concluding the key is from somewhere else."
     );
   }
   if (detail.includes("API_KEY_HTTP_REFERRER_BLOCKED") || detail.includes("referer")) {
