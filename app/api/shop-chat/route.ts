@@ -109,6 +109,27 @@ const MAX_TOOL_ROUNDS = 6;
 const TURNS = throttle({ windowMs: 10 * 60_000, max: 30 });
 const QUOTES = throttle({ windowMs: 60 * 60_000, max: 6 });
 
+// Tools that hand nothing back to Riley.
+//
+// These three put something on the visitor's screen and return {ok: true} or
+// a list of the names she just chose herself. Nothing in that is new
+// information, which means a round that called only these has taught her
+// nothing and the next round has nothing to go on.
+//
+// ——— The doubled sentence ———
+//
+// That round used to run anyway, and what came back was the visitor reading
+// "What sounds good today? What sounds good today?". She had written her
+// reply, called suggest_replies to put chips on screen, been handed {ok:
+// true}, and had nothing left to say but her own closing line a second time.
+// Both halves landed in the same bubble because the reply accumulates across
+// rounds.
+//
+// Ending the turn here is not only the fix, it is the cheaper path: that
+// round was a whole model request, with the menu in the prompt, spent on
+// restating a sentence already on screen.
+const SILENT_TOOLS = new Set(["suggest_replies", "open_screen", "show_items"]);
+
 type Turn = { role: "user" | "assistant"; text: string };
 
 function isTurn(value: unknown): value is Turn {
@@ -492,23 +513,49 @@ export async function POST(request: Request) {
     // see the retry below. It accumulates the same `written` so everything
     // downstream is identical either way; the only difference is that the
     // whole reply lands in one go instead of at reading speed.
+    // What the round currently running has written, on its own. `written` is
+    // the whole reply across rounds; this is the slice one round added, which
+    // is what the repeat check below needs to reason about.
+    let roundText = "";
+
+    // Text arriving from a round, added to the reply.
+    //
+    // ——— Why there is a paragraph break in here ———
+    //
+    // Rounds used to concatenate raw: `written += chunk`, round after round.
+    // Riley writes a line, looks something up, writes again, and those are two
+    // paragraphs of one message. Glued, the last sentence of one ran straight
+    // into the first of the next: "...today?What sounds". Then SENTENCE_RUN_ON
+    // in the scrub, which exists to fix a model writing "checkout?Just tap",
+    // put a space in and made the seam invisible, so a doubled sentence
+    // reached the screen reading as one perfectly ordinary line.
+    //
+    // That is the sharp edge worth naming: the scrub is a repair, and a repair
+    // applied across a join hides the join. The break goes in first.
+    const append = (chunk: string) => {
+      if (!chunk) return;
+      if (!roundText && written && !written.endsWith("\n\n")) written += "\n\n";
+      roundText += chunk;
+      written += chunk;
+      flush();
+    };
+
     const round = async (model: string, streaming: boolean) => {
+      roundText = "";
       if (!streaming) {
         const answer = await anthropic.beta.messages.create(request(model));
-        written += answer.content
-          .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
-          .map((block) => block.text)
-          .join("");
-        flush();
+        append(
+          answer.content
+            .filter((block): block is Anthropic.Beta.BetaTextBlock => block.type === "text")
+            .map((block) => block.text)
+            .join(""),
+        );
         return answer;
       }
       const stream = anthropic.beta.messages.stream(request(model));
       // The only place text reaches the visitor. Fires as tokens land, so a
       // reply appears at reading speed rather than all at once when it ends.
-      stream.on("text", (chunk) => {
-        written += chunk;
-        flush();
-      });
+      stream.on("text", (chunk) => append(chunk));
       return stream.finalMessage();
     };
 
@@ -595,6 +642,19 @@ export async function POST(request: Request) {
         return;
       }
 
+      // She said it again. Dropped rather than shown twice.
+      //
+      // The belt to the SILENT_TOOLS brace below: that stops the round most
+      // likely to produce a restatement from running at all, and this catches
+      // one wherever else it comes from. There is no reading of a chat reply
+      // where the same sentence, twice, in one bubble, was what somebody meant
+      // to write, so the check does not have to be clever to be safe.
+      const said = roundText.trim();
+      if (said && before.trimEnd().endsWith(said)) {
+        written = before;
+        flush();
+      }
+
       const calls = response.content.filter(
         (block): block is Anthropic.Beta.BetaToolUseBlock => block.type === "tool_use",
       );
@@ -648,6 +708,20 @@ export async function POST(request: Request) {
       // is the right way round: it's the answer, and the sentence is the
       // caption.
       send({ type: "attach", ...attachments });
+
+      // Nothing came back that she could read, and she has already written her
+      // reply. The next round would be a whole model request whose only
+      // possible contribution is more of a sentence already on screen, which
+      // is precisely what it used to contribute. See SILENT_TOOLS.
+      //
+      // Guarded on having written something: "show me sandwiches" is answered
+      // by show_items alone, and that turn does need one more round to put a
+      // caption under the rail.
+      if (written.trim() && calls.every((call) => SILENT_TOOLS.has(call.name))) {
+        written = noEmDashes(written).trim();
+        flush();
+        return;
+      }
     }
 
     // Out of rounds. Whatever she attached along the way is already on screen;
