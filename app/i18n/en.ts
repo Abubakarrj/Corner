@@ -56,6 +56,8 @@ export const en = {
   "finder.startSearch": "Search a store, city, state or zip to get started.",
   "finder.useMyLocation": "Use my location",
   "finder.locateFailed": "We couldn't get your location. Search a city or ZIP instead.",
+  "finder.locateDenied": "Location is off for this site. Allow it in your browser or phone settings, then tap again.",
+  "finder.locateCoarse": "That’s your general area, not your address. Turn on Precise Location for this site to place you exactly.",
 
   "push.turnOn": "Tell me when it's ready",
   "push.on": "We'll let you know",

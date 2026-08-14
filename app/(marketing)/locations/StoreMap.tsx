@@ -8,6 +8,7 @@ import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations"
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
 import { useLocale, useT } from "../../i18n";
+import { locateMe, type LocateFailure } from "../../geolocate";
 import { localeById } from "../../localeScript";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
@@ -102,10 +103,12 @@ export default function StoreMap({
   onSearchArea: (bounds: MapBounds) => void;
   /** A position from the browser. The finder treats it as a search — see
    *  locateHere() there — rather than as a camera move. */
-  onLocate?: (point: [number, number]) => void;
+  /** `coarse` when the platform's own accuracy radius is too wide to name a
+   *  building — iOS with Precise Location off, or a cell-tower fallback. */
+  onLocate?: (point: [number, number], coarse: boolean) => void;
   /** Refused, unavailable, or timed out. All three are the same thing to
    *  somebody looking at the screen: tell them, and say what to do instead. */
-  onLocateFailed?: () => void;
+  onLocateFailed?: (why: LocateFailure) => void;
   // Committing to a location is the whole point of this screen: the menu
   // can't price or route an order without knowing where it's going.
   onChoose: (location: StoreLocation) => void;
@@ -325,22 +328,15 @@ export default function StoreMap({
           type="button"
           disabled={locating}
           onClick={() => {
-            if (!navigator.geolocation) {
-              onLocateFailed?.();
-              return;
-            }
             setLocating(true);
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                setLocating(false);
-                onLocate?.([position.coords.latitude, position.coords.longitude]);
-              },
-              () => {
-                setLocating(false);
-                onLocateFailed?.();
-              },
-              { enableHighAccuracy: false, timeout: 8000 },
-            );
+            // Every branch of this lives in app/geolocate.ts, including why
+            // the old single call asked for the imprecise fix and why a
+            // refusal needs different words from a timeout.
+            void locateMe().then((result) => {
+              setLocating(false);
+              if (result.ok) onLocate?.(result.fix.point, result.fix.coarse);
+              else onLocateFailed?.(result.why);
+            });
           }}
           aria-label={t("finder.useMyLocation")}
           aria-busy={locating}

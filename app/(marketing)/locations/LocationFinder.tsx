@@ -123,7 +123,14 @@ export default function LocationFinder() {
   // at all is the single clearest way to make a working feature feel broken.
   // It goes in the bar along the bottom, where every other answer this screen
   // gives already goes.
-  const [locateFailed, setLocateFailed] = useState(false);
+  // Not a boolean any more. "We couldn't get your location" is useless
+  // advice to somebody who refused the permission — nothing on this screen
+  // changes it — and equally useless to somebody whose phone gave us a
+  // kilometre-wide answer, which is a *success* that needs a different two
+  // taps in settings. Four outcomes, four sentences. See app/geolocate.ts.
+  const [locateNote, setLocateNote] = useState<
+    "denied" | "unsupported" | "unavailable" | "coarse" | null
+  >(null);
   // The shop whose catering sheet is up, or null. Catering doesn't open the
   // menu — see CateringModal.
   const [cateringFor, setCateringFor] = useState<StoreLocation | null>(null);
@@ -286,7 +293,7 @@ export default function LocationFinder() {
    *  street with nothing on it and the bar still asking you to search. Moving
    *  the camera is not answering the question. */
   function locateHere(point: [number, number]) {
-    setLocateFailed(false);
+    setLocateNote(null);
     setSearched({ point, label: "" });
     setBounds(null);
     setQuery("");
@@ -326,14 +333,18 @@ export default function LocationFinder() {
 
   const showToast =
     !toastDismissed &&
-    (locateFailed ||
+    (locateNote !== null ||
       deliveryOff ||
       !asked ||
       missed !== null ||
       (mode !== "delivery" && results.length === 0));
 
-  const toastText = locateFailed
-    ? t("finder.locateFailed")
+  const toastText = locateNote
+    ? locateNote === "denied"
+      ? t("finder.locateDenied")
+      : locateNote === "coarse"
+        ? t("finder.locateCoarse")
+        : t("finder.locateFailed")
     : deliveryOff
     ? // The endpoint's own words, so the page and the API cannot drift into
       // telling somebody two different things about the same outage.
@@ -486,9 +497,16 @@ export default function LocationFinder() {
         locations={results}
         showSearchArea={mode !== "delivery"}
         onSearchArea={setBounds}
-        onLocate={locateHere}
-        onLocateFailed={() => {
-          setLocateFailed(true);
+        onLocate={(point, coarse) => {
+          // The search runs either way — a rough fix still puts the map on
+          // the right part of the city, and refusing to use it would throw
+          // away the answer to tell somebody about a settings toggle.
+          locateHere(point);
+          setLocateNote(coarse ? "coarse" : null);
+          if (coarse) setToastDismissed(false);
+        }}
+        onLocateFailed={(why) => {
+          setLocateNote(why);
           setToastDismissed(false);
         }}
         onChoose={chooseLocation}

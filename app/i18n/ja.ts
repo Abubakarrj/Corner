@@ -48,6 +48,8 @@ export const ja: Table = {
   "finder.startSearch": "店舗、市、州、郵便番号を検索してください。",
   "finder.useMyLocation": "現在地を使う",
   "finder.locateFailed": "現在地を取得できませんでした。市区町村か郵便番号で検索してください。",
+  "finder.locateDenied": "このサイトの位置情報がオフです。ブラウザまたは端末の設定で許可してから、もう一度タップしてください。",
+  "finder.locateCoarse": "これはおおよその地域で、ご住所ではありません。正確な位置情報をこのサイトでオンにすると正確に表示されます。",
   "push.turnOn": "用意ができたら知らせて",
   "push.on": "お知らせします",
   "push.working": "少々お待ちください…",

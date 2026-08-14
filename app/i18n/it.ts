@@ -49,6 +49,8 @@ export const it: Table = {
   "finder.startSearch": "Cerca un negozio, una città, uno stato o un CAP per iniziare.",
   "finder.useMyLocation": "Usa la mia posizione",
   "finder.locateFailed": "Non siamo riusciti a rilevare la tua posizione. Cerca una città o un CAP.",
+  "finder.locateDenied": "La posizione è disattivata per questo sito. Attivala nel browser o nelle impostazioni del telefono, poi tocca di nuovo.",
+  "finder.locateCoarse": "Questa è la tua zona, non il tuo indirizzo. Attiva la Posizione precisa per questo sito per individuarti con esattezza.",
   "push.turnOn": "Avvisami quando è pronto",
   "push.on": "Ti avvisiamo",
   "push.working": "Un attimo…",
