@@ -54,12 +54,24 @@ async function currentCount(): Promise<number | null> {
 }
 
 export async function GET() {
-  // A shut shop has no queue worth reporting. The count would be whatever was
-  // left open when the kitchen closed, which is a number about yesterday.
-  if (!isOpenNow()) return Response.json({ known: false });
+  // ——— Why `why` is here ———
+  //
+  // `{ known: false }` on its own is the right answer for the component and a
+  // useless one for a person. It means the shop is shut, or it means no source
+  // could answer, and those have completely different fixes — one is a clock
+  // and one is a broken connection. Working out which took a round trip and a
+  // token-gated endpoint, twice.
+  //
+  // Two values, and neither is worth hiding. Opening hours are printed on the
+  // door. "unavailable" says a count could not be produced without naming
+  // Toast, Postgres, or anything about how either is reached — a visitor
+  // learns only what the missing line already told them.
+  //
+  // Nothing reads this but a human. The component checks `known` and stops.
+  if (!isOpenNow()) return Response.json({ known: false, why: "closed" });
 
   const ahead = await currentCount();
-  if (ahead === null) return Response.json({ known: false });
+  if (ahead === null) return Response.json({ known: false, why: "unavailable" });
 
   return Response.json(
     { known: true, ahead },
