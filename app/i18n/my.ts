@@ -6,6 +6,7 @@ export const my: Table = {
   "nav.reorder": "ပြန်မှာရန်",
   "nav.gift": "လက်ဆောင်",
   "nav.about": "အကြောင်း",
+  "nav.account": "အကောင့်",
   "nav.primary": "ပင်မလမ်းညွှန်",
 
   "common.close": "ပိတ်ရန်",

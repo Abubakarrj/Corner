@@ -13,6 +13,7 @@ export const en = {
   "nav.reorder": "Reorder",
   "nav.gift": "Gift",
   "nav.about": "About",
+  "nav.account": "Account",
   "nav.primary": "Primary",
 
   "common.close": "Close",

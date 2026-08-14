@@ -8,6 +8,7 @@ export const zh: Table = {
   "nav.reorder": "再来一单",
   "nav.gift": "礼品",
   "nav.about": "关于",
+  "nav.account": "账户",
   "nav.primary": "主导航",
 
   "common.close": "关闭",

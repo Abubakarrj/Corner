@@ -202,7 +202,13 @@ export default function AccountPage() {
       ) : (
         <>
           {usuals.length > 0 ? (
-            <section className="mt-9">
+            // The Reorder tab's destination. Account and Reorder both lead
+            // here, and without an anchor they would land on the same pixel
+            // and be the same tab twice — this is the half of the page
+            // Reorder is actually about. Absent when there are no usuals yet,
+            // which is correct: the tab then lands at the top, where the
+            // account explains that ordering once is what fills this in.
+            <section id="usuals" className="mt-9">
               <SectionHeading>{t("account.reorderUsuals")}</SectionHeading>
               <div className="cb-stagger grid grid-cols-2 gap-3">
                 {usuals.map((usual) => {

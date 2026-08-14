@@ -6,6 +6,7 @@ export const ko: Table = {
   "nav.reorder": "재주문",
   "nav.gift": "선물",
   "nav.about": "소개",
+  "nav.account": "계정",
   "nav.primary": "주요 메뉴",
 
   "common.close": "닫기",

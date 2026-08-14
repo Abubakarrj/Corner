@@ -21,7 +21,7 @@ const { cream, ink, border, muted } = PALETTE;
 // clearly duller than ink, so the state contrast survives the fix.
 const TAB_REST = muted;
 
-export type TabId = "home" | "menu" | "reorder" | "gift" | "about";
+export type TabId = "home" | "menu" | "reorder" | "gift" | "account";
 
 // The routes that render this bar. Anything fixed to the bottom of the
 // screen has to know, or it lands on top of the tabs: PrivacyFooterLink hides
@@ -64,7 +64,7 @@ const NAV: { id: TabId; label: StringKey; href: string | null }[] = [
   { id: "menu", label: "nav.menu", href: "/locations?for=menu" },
   { id: "reorder", label: "nav.reorder", href: "/membership" },
   { id: "gift", label: "nav.gift", href: "/gift" },
-  { id: "about", label: "nav.about", href: "/about" },
+  { id: "account", label: "nav.account", href: "/shop/account" },
 ];
 
 // Each icon has a resting outline and a filled or opened state for the tab
@@ -243,29 +243,30 @@ function NavIcon({ id, active }: { id: TabId; active: boolean }) {
       </svg>
     );
 
+  // Account. A head and shoulders, which fills on the tab you are on the same
+  // way the others do.
+  //
+  // This slot used to be the (i) that opened /about. About is not something
+  // anybody navigates to twice, and it was holding a fifth of the bar for it
+  // while the account — the card, the order history, the usuals — had no door
+  // of its own. About moved to the front door, beside the mark.
   return (
     <svg {...common} aria-hidden>
       <circle
         cx="12"
-        cy="12"
-        r="8.4"
+        cy="8.6"
+        r="3.6"
         stroke="currentColor"
         strokeWidth="1.6"
         fill={filled}
         className={MOTION}
       />
       <path
-        d="M12 11v5.4"
-        stroke={active ? PALETTE.cream : "currentColor"}
+        d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"
+        stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
-        className={MOTION}
-      />
-      <circle
-        cx="12"
-        cy="7.9"
-        r="1"
-        fill={active ? PALETTE.cream : "currentColor"}
+        fill={filled}
         className={MOTION}
       />
     </svg>
@@ -310,8 +311,24 @@ export default function TabBar({ active }: { active: TabId }) {
           as a website footer rather than a tab bar. */}
       <ul className="m-0 mx-auto flex max-w-2xl list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
+          // Both of these lead to you, and they must not lead to the same
+          // pixel. Account is the door — the card, the details, the history.
+          // Reorder is one thing on the other side of that door, so it lands
+          // on the usuals rather than at the top of the page above them.
+          //
+          // Signed out they converge on the sign-in screen, which is correct:
+          // there is no account to show and no usuals to reorder, and the one
+          // act that fixes both is the same act.
           const href =
-            item.id === "reorder" && account ? "/shop/account" : item.href;
+            item.id === "reorder"
+              ? account
+                ? "/shop/account#usuals"
+                : "/membership"
+              : item.id === "account"
+                ? account
+                  ? "/shop/account"
+                  : "/membership"
+                : item.href;
           const isActive = item.id === active;
           const tone = isActive ? ink : TAB_REST;
           const body = (

@@ -6,6 +6,7 @@ export const it: Table = {
   "nav.reorder": "Riordina",
   "nav.gift": "Regalo",
   "nav.about": "Chi siamo",
+  "nav.account": "Account",
   "nav.primary": "Principale",
 
   "common.close": "Chiudi",

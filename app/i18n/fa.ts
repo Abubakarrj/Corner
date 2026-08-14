@@ -14,6 +14,7 @@ export const fa: Table = {
   "nav.reorder": "سفارش دوباره",
   "nav.gift": "هدیه",
   "nav.about": "درباره ما",
+  "nav.account": "حساب",
   "nav.primary": "اصلی",
 
   "common.close": "بستن",

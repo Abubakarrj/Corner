@@ -9,6 +9,7 @@ export const ur: Table = {
   "nav.reorder": "دوبارہ آرڈر",
   "nav.gift": "تحفہ",
   "nav.about": "تعارف",
+  "nav.account": "اکاؤنٹ",
   "nav.primary": "بنیادی",
 
   "common.close": "بند کریں",

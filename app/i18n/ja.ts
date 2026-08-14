@@ -6,6 +6,7 @@ export const ja: Table = {
   "nav.reorder": "再注文",
   "nav.gift": "ギフト",
   "nav.about": "情報",
+  "nav.account": "アカウント",
   "nav.primary": "メインナビ",
 
   "common.close": "閉じる",

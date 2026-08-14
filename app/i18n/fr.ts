@@ -6,6 +6,7 @@ export const fr: Table = {
   "nav.reorder": "Recommander",
   "nav.gift": "Cadeau",
   "nav.about": "À propos",
+  "nav.account": "Compte",
   "nav.primary": "Principal",
 
   "common.close": "Fermer",
