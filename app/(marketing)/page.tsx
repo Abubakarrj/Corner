@@ -79,14 +79,37 @@ export default function Home() {
             deliberate — this is the quietest thing on the page and making it
             finger-sized would make it the loudest. Everything that matters
             here is one tap on a 288px logo. */}
-        {/* Percentages, not edges. The box is square and the artwork is
-            object-contain inside it, so the mark sits in a band through the
-            middle and the box's own top-right corner is empty air — pinned
-            there the (i) floated a centimetre above the logo with nothing
-            between them. These numbers put it against the R that ends
-            CORNER, and because the box stays square at every breakpoint they
-            hold from 192px to 288px without a second set. */}
-        <AboutMark className="absolute left-[96%] top-[20%]" />
+        {/* Percentages, not edges, and measured rather than guessed.
+            The box is square and the artwork is object-contain inside it, so
+            the wordmark is 2.59:1 and sits in a band through the middle —
+            30.6% to 69.1% — leaving the box's own top-right corner as empty
+            air. Pinned there the (i) floated above the logo with nothing
+            between them.
+
+            Rendered at 288px and scanned for ink, the R that ends CORNER
+            occupies x 244–278, y 93–137: its top-right corner is (96.5%,
+            32.3%). These two numbers put the 11px circle just off that
+            shoulder with about 4px of air under it — near enough to belong to
+            the R, clear enough not to touch it.
+
+            ⚠️ They position the *box*, not the mark. The box is 28px of hit
+            area around an 11px circle, so the circle's centre sits 14px in
+            from both — and 14px is a fixed number against a container that
+            scales, so the centre does not land in the same relative place at
+            every size. Measured: (97.9%, 28.9%) at 288px, (100.3%, 31.3%) at
+            192px.
+
+            That drift is left alone rather than removed with a translate,
+            because it happens to work. The circle does not scale either, so on
+            the small logo it is proportionally bigger — and the same drift
+            slides it from just above the R's shoulder at 288px to beside the R
+            at 192px, which is where the room is. Centring it on one percentage
+            pair instead would put it a pixel off the letter on a phone.
+
+            Both ends were rendered and looked at. This is a near miss in two
+            axes by design, so redrawing the logo means measuring again — the
+            ink scan that produced these numbers is in the commit. */}
+        <AboutMark className="absolute left-[93%] top-[24%]" />
       </div>
 
       {/* Language and appearance, in the corner opposite the privacy line, so
