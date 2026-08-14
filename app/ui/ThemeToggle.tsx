@@ -28,6 +28,13 @@ import { useResolvedTheme } from "../theme";
 // stored preference. They sit on different grounds, which is what `shell` is
 // for: the shop is a cream app whose rules are the warm --cb-line-soft, and
 // the marketing home is white, where that warm set reads as tan.
+//
+// The track is --cb-knob-track, the palette's one deliberate neutral. It used to
+// be --cb-surface in light and --cb-ink in dark, and both are warm off-whites
+// — correct as a page ground and as a text colour, wrong as a filled 46×28
+// slab, where warmth that is invisible in a line of type reads plainly as tan.
+// See the token's note in globals.css. The knob and the icons stay on the warm
+// set: they are small, dark, and on the pill rather than being it.
 export default function ThemeToggle({
   className = "",
   shell = "surface",
@@ -48,7 +55,7 @@ export default function ThemeToggle({
       onClick={() => setThemePreference(dark ? "light" : "dark")}
       className={`cb-press relative inline-flex h-7 w-[46px] shrink-0 cursor-pointer items-center rounded-full border transition-colors ${
         shell === "page" ? "border-line-grey" : "border-line-soft"
-      } ${dark ? "bg-ink" : "bg-surface"} ${className}`}
+      } bg-knob-track ${className}`}
     >
       {/* The icon sits on the side the knob isn't, so the pill always shows
           one glyph and one disc rather than crowding both into 46px. */}

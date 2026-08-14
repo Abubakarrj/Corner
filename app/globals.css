@@ -25,6 +25,29 @@
   --cb-raise: #efebdd;
   --cb-tile: #ece6d8;
 
+  /* The appearance switch's track, and the one neutral in a warm palette.
+   *
+   * It used to take --cb-surface in light and --cb-ink in dark. Both are warm
+   * off-whites — #fdfcf7 and #f2eee5 — which is right for a page ground and
+   * right for text, and wrong for this. Warmth you cannot see in a line of
+   * type is plainly visible in a filled 46×28 slab, so the switch read tan
+   * against the white front door in light, and tan against near-black in dark.
+   *
+   * Deliberately one value for both themes and not redefined below. The pill
+   * is light in either theme — what changes is which side the knob sits on and
+   * whether it shows a sun or a moon — so a second value would be the same
+   * colour written twice, waiting to drift apart.
+   *
+   * ——— And do not call it "switch" ———
+   *
+   * It was --cb-switch, with --color-switch beside the rest in @theme inline,
+   * and the effect was that the token vanished from the compiled stylesheet
+   * and `bg-switch` was never generated at all. No error, no warning: the pill
+   * simply came out transparent, which on a white page looks like nothing
+   * happened. Every neighbour in the same block compiled fine, which is what
+   * makes it worth writing down — the name is the whole difference. */
+  --cb-knob-track: #ffffff;
+
   /* The ink, and what reads on it.
    *
    * This was the brand olive, and because everything resolves through it —
@@ -372,6 +395,7 @@
   --color-map-chrome: var(--cb-map-chrome);
   --color-map-chrome-edge: var(--cb-map-chrome-edge);
   --color-raise: var(--cb-raise);
+  --color-knob-track: var(--cb-knob-track);
   --color-tile: var(--cb-tile);
   --color-ink: var(--cb-ink);
   --color-on-ink: var(--cb-on-ink);
