@@ -3,25 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import {
-  signOut,
-  summarizeUsuals,
-  useAccount,
-  useOrders,
-} from "../../account";
-import { useCart } from "../CartContext";
+import { signOut, useAccount, useOrders } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
 import ThemeToggle from "../../ui/ThemeToggle";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { useT, type StringKey } from "../../i18n";
-import { useMenu } from "../../i18n/menu";
 import { SHOP_EMAIL } from "../../shopFacts";
 import { AccountButtonRow, AccountLinkRow } from "./AccountRow";
 import OrderCard from "./OrderCard";
 import { requestOpenChat } from "../openChat";
-import { getProduct } from "../products";
-import ProductImage from "../ProductImage";
-import { requestOpenBasket } from "../openBasket";
 import { DISPLAY_FONT, PALETTE } from "../shopControls";
 
 const { ink, muted, faint, border, surface } = PALETTE;
@@ -68,11 +58,8 @@ export default function AccountPage() {
   const router = useRouter();
   const account = useAccount();
   const orders = useOrders();
-  const { addItem } = useCart();
   const t = useT();
-  const menu = useMenu();
 
-  const usuals = useMemo(() => summarizeUsuals(orders), [orders]);
   // The newest few, with the rest a row away. This screen used to print every
   // order it had — fifty of them, after the history started syncing — under
   // the settings somebody actually came here to change.
@@ -172,66 +159,6 @@ export default function AccountPage() {
         </div>
       ) : (
         <>
-          {usuals.length > 0 ? (
-            // The Reorder tab's destination. Account and Reorder both lead
-            // here, and without an anchor they would land on the same pixel
-            // and be the same tab twice — this is the half of the page
-            // Reorder is actually about. Absent when there are no usuals yet,
-            // which is correct: the tab then lands at the top, where the
-            // account explains that ordering once is what fills this in.
-            <section id="usuals" className="mt-9">
-              <SectionHeading>{t("account.reorderUsuals")}</SectionHeading>
-              <div className="cb-stagger grid grid-cols-2 gap-3">
-                {usuals.map((usual) => {
-                  const product = getProduct(usual.slug);
-                  return (
-                    <div
-                      key={`${usual.slug}-${usual.optionsLabel}`}
-                      className="flex flex-col rounded-2xl border p-3"
-                      style={{ borderColor: border, backgroundColor: surface }}
-                    >
-                      <ProductImage
-                        swatch={product?.swatch ?? "var(--cb-faint)"}
-                        name={menu.recorded(usual).name}
-                        className="aspect-square w-full rounded-xl"
-                      />
-                      <p
-                        className="mt-2.5 line-clamp-1 text-[14px]"
-                        style={{ color: ink, fontFamily: DISPLAY_FONT }}
-                      >
-                        {menu.recorded(usual).name}
-                      </p>
-                      {menu.recorded(usual).options ? (
-                        <p className="mt-0.5 line-clamp-1 text-[12px]" style={{ color: muted }}>
-                          {menu.recorded(usual).options}
-                        </p>
-                      ) : null}
-                      <p className="mt-0.5 text-[12px]" style={{ color: faint }}>
-                        {t("account.orderedBefore", { count: usual.timesOrdered })}
-                      </p>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        block
-                        // Adds it exactly as it was ordered, options and all
-                        // — that's the whole point of a usual. It goes through
-                        // the normal add, so it merges with a matching line
-                        // already in the basket.
-                        onClick={() => {
-                          addItem(usual.slug, 1, usual.options);
-                          requestOpenBasket();
-                        }}
-                        className="mt-3"
-                      >
-                        <span aria-hidden>+</span> Add
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
           <section className="mt-9">
             <SectionHeading aside={t("account.ordersCount", { count: orders.length })}>
               {t("account.recentOrders")}

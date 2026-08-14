@@ -27,7 +27,14 @@ const { ink, cream, border, muted, controlBorder } = PALETTE;
 // you do without a basket — gating them sends someone who just typed a code
 // out of their email to a map, which is how a successful sign-in used to end
 // up on /locations.
-const UNGATED = ["/shop/account", "/shop/order"];
+//
+// /shop/reorder joins them, and it is the least obvious of the three because
+// reordering does end in a basket. But it is a list of what you have had
+// before, and reading it needs no destination — the destination is asked for
+// by the basket, at the point it always was. Gated, the Reorder tab bounced
+// to the map before showing anybody anything, which is a tab that never does
+// what its label says on the first tap.
+const UNGATED = ["/shop/account", "/shop/order", "/shop/reorder"];
 
 function ordering(pathname: string): boolean {
   return !UNGATED.some(

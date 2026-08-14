@@ -339,6 +339,10 @@ export const ko: Table = {
   "account.onceOrdered":
     "주문하시면 자주 드시는 메뉴가 여기 표시되어 다음엔 한 번만 누르면 됩니다.",
   "account.reorderUsuals": "자주 먹는 메뉴 재주문",
+  "reorder.emptyTitle": "아직 다시 주문할 것이 없습니다",
+  "reorder.emptyBody": "한 번 주문하시면 자주 드시는 메뉴가 여기에 모여, 다음부터는 한 번만 누르면 됩니다.",
+  "reorder.add": "담기",
+  "reorder.wholeOrders": "주문 전체를 다시",
   "account.recentActivity": "최근 활동",
   "account.recentOrders": "최근 주문",
   "account.myOrders": "내 주문",

@@ -375,6 +375,10 @@ export const it: Table = {
   "account.onceOrdered":
     "Dopo il primo ordine i tuoi soliti compaiono qui, così il secondo giro è questione di un tocco.",
   "account.reorderUsuals": "Riordina i tuoi soliti",
+  "reorder.emptyTitle": "Ancora niente da riordinare",
+  "reorder.emptyBody": "Ordina una volta e i tuoi soliti compariranno qui, così il bis è un tocco.",
+  "reorder.add": "Aggiungi",
+  "reorder.wholeOrders": "Riordina tutto l’ordine",
   "account.recentActivity": "Attività recente",
   "account.recentOrders": "Ordini recenti",
   "account.myOrders": "I miei ordini",

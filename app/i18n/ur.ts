@@ -342,6 +342,10 @@ export const ur: Table = {
   "account.onceOrdered":
     "آرڈر کرنے کے بعد آپ کے پسندیدہ یہاں نظر آئیں گے تاکہ دوبارہ منگوانا ایک ٹیپ میں ہو جائے۔",
   "account.reorderUsuals": "اپنے پسندیدہ دوبارہ منگوائیں",
+  "reorder.emptyTitle": "ابھی دوبارہ آرڈر کرنے کو کچھ نہیں",
+  "reorder.emptyBody": "ایک بار آرڈر کریں، آپ کی پسندیدہ چیزیں یہاں آ جائیں گی تاکہ اگلی بار ایک ٹیپ کافی ہو۔",
+  "reorder.add": "شامل کریں",
+  "reorder.wholeOrders": "پورا آرڈر دوبارہ",
   "account.recentActivity": "حالیہ سرگرمی",
   "account.recentOrders": "حالیہ آرڈرز",
   "account.myOrders": "میرے آرڈرز",

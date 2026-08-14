@@ -343,6 +343,10 @@ export const es: Table = {
   "account.onceOrdered":
     "Cuando pidas, tus habituales aparecerán aquí para que repetir sea un solo toque.",
   "account.reorderUsuals": "Repite tus habituales",
+  "reorder.emptyTitle": "Todavía no hay nada que repetir",
+  "reorder.emptyBody": "Pide una vez y tus habituales aparecerán aquí, para que la segunda vez sea un toque.",
+  "reorder.add": "Añadir",
+  "reorder.wholeOrders": "Repetir el pedido entero",
   "account.recentActivity": "Actividad reciente",
   "account.recentOrders": "Pedidos recientes",
   "account.myOrders": "Mis pedidos",

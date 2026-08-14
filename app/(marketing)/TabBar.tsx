@@ -62,7 +62,7 @@ const NAV: { id: TabId; label: StringKey; href: string | null }[] = [
   // ?for=menu is how the map knows to light Menu rather than Home — they
   // are the same screen reached two ways.
   { id: "menu", label: "nav.menu", href: "/locations?for=menu" },
-  { id: "reorder", label: "nav.reorder", href: "/membership" },
+  { id: "reorder", label: "nav.reorder", href: "/shop/reorder" },
   { id: "gift", label: "nav.gift", href: "/gift" },
   { id: "account", label: "nav.account", href: "/shop/account" },
 ];
@@ -311,24 +311,19 @@ export default function TabBar({ active }: { active: TabId }) {
           as a website footer rather than a tab bar. */}
       <ul className="m-0 mx-auto flex max-w-2xl list-none items-stretch justify-around p-0 px-2 pt-[9px]">
         {NAV.map((item) => {
-          // Both of these lead to you, and they must not lead to the same
-          // pixel. Account is the door — the card, the details, the history.
-          // Reorder is one thing on the other side of that door, so it lands
-          // on the usuals rather than at the top of the page above them.
+          // Two tabs, two screens. They pointed at one page for a while,
+          // told apart by an anchor — Account at the top, Reorder scrolled
+          // halfway down it — which is one tab wearing two labels, and the
+          // back button cannot tell which you meant.
           //
-          // Signed out they converge on the sign-in screen, which is correct:
-          // there is no account to show and no usuals to reorder, and the one
-          // act that fixes both is the same act.
+          // They are different questions. Account is about you: who is signed
+          // in, what you have bought, how the app is set up. Reorder is about
+          // lunch. So Reorder has /shop/reorder, and it does not ask anybody
+          // to sign in first — the usuals come from this device's own orders,
+          // and demanding a password to see what you bought from this phone
+          // last week is asking somebody to unlock their own memory.
           const href =
-            item.id === "reorder"
-              ? account
-                ? "/shop/account#usuals"
-                : "/membership"
-              : item.id === "account"
-                ? account
-                  ? "/shop/account"
-                  : "/membership"
-                : item.href;
+            item.id === "account" && !account ? "/membership" : item.href;
           const isActive = item.id === active;
           const tone = isActive ? ink : TAB_REST;
           const body = (

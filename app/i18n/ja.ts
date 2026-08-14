@@ -338,6 +338,10 @@ export const ja: Table = {
   "account.onceOrdered":
     "ご注文いただくと、いつものメニューがここに並び、次回はワンタップで頼めます。",
   "account.reorderUsuals": "いつものを再注文",
+  "reorder.emptyTitle": "まだ再注文できるものがありません",
+  "reorder.emptyBody": "一度ご注文いただくと、いつものがここに並び、次回はワンタップで済みます。",
+  "reorder.add": "追加",
+  "reorder.wholeOrders": "注文をまるごともう一度",
   "account.recentActivity": "最近の履歴",
   "account.recentOrders": "最近のご注文",
   "account.myOrders": "ご注文履歴",

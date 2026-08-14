@@ -277,7 +277,7 @@ export default function MembershipForm({
         </div>
       </main>
 
-      <TabBar active="reorder" />
+      <TabBar active="account" />
     </div>
   );
 }

@@ -384,6 +384,10 @@ export const en = {
   "account.onceOrdered":
     "Once you've ordered, your usuals show up here so a second round takes one tap.",
   "account.reorderUsuals": "Reorder your usuals",
+  "reorder.emptyTitle": "Nothing to reorder yet",
+  "reorder.emptyBody": "Order once and your usuals show up here, so the second round takes one tap.",
+  "reorder.add": "Add",
+  "reorder.wholeOrders": "Order the whole thing again",
   "account.recentActivity": "Recent activity",
   "account.recentOrders": "Recent orders",
   "account.myOrders": "My orders",

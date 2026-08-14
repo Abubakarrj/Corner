@@ -375,6 +375,10 @@ export const fa: Table = {
   "account.onceOrdered":
     "پس از اولین سفارش، همیشگی‌های شما اینجا می‌آیند تا دور دوم فقط یک لمس باشد.",
   "account.reorderUsuals": "سفارش دوبارهٔ همیشگی‌ها",
+  "reorder.emptyTitle": "هنوز چیزی برای سفارش دوباره نیست",
+  "reorder.emptyBody": "یک بار سفارش دهید تا همیشگی‌هایتان اینجا بیاید و دفعه بعد فقط یک لمس باشد.",
+  "reorder.add": "افزودن",
+  "reorder.wholeOrders": "کل سفارش را دوباره بده",
   "account.recentActivity": "فعالیت اخیر",
   "account.recentOrders": "سفارش‌های اخیر",
   "account.myOrders": "سفارش‌های من",
