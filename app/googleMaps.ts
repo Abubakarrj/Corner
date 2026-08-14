@@ -225,9 +225,18 @@ function explainRoutes(status: number, detail: string): string {
     );
   }
   if (detail.includes("SERVICE_DISABLED") || detail.includes("has not been used in project")) {
+    // Google puts the exact enable-it link in the message, and the message is
+    // long enough that the truncation below cut it off halfway through the
+    // word "routes". Pulled to the front so it survives, because it is the one
+    // part of this that is a click rather than a search.
+    const project = detail.match(/project (\d+)/)?.[1];
     return (
-      "Routes API is not enabled on the project this key belongs to. Enable it" +
-      " in the Cloud console; the error body names the project id."
+      "Routes API is not enabled on the project this key belongs to." +
+      (project
+        ? ` Enable it at https://console.cloud.google.com/apis/library/routes.googleapis.com?project=${project}`
+        : " Enable it in the Cloud console; the error body names the project id.") +
+      " Note this is the project the *key* belongs to, which is not always the" +
+      " one you were last looking at."
     );
   }
   if (detail.includes("API_KEY_HTTP_REFERRER_BLOCKED") || detail.includes("referer")) {
@@ -313,7 +322,7 @@ export async function routeBetween(
     console.error(
       `[maps] Routes API failed (${response.status}) — ${why}` +
         ` Distances now fall back to straight-line, which reads short.` +
-        ` ${detail.slice(0, 200)}`,
+        ` ${detail.slice(0, 400)}`,
     );
     return { ok: false, status: response.status, why, detail: detail.slice(0, 400) };
   }
