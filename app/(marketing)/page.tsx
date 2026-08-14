@@ -3,6 +3,7 @@ import Link from "next/link";
 import ThemeToggle from "../ui/ThemeToggle";
 import LanguagePicker from "../ui/LanguagePicker";
 import WorkWithUsChip from "../ui/WorkWithUsChip";
+import OrderStatusBar from "../shop/OrderStatusBar";
 
 // The "SHOP PANTRY" button and its arrow annotation used to sit under the
 // logo here, linking to /shop. Pulled until the pantry is ready to launch —
@@ -75,6 +76,18 @@ export default function Home() {
         <LanguagePicker shell="page" />
         <ThemeToggle shell="page" />
       </div>
+
+      {/* A live order, docked to the floor. This is the front door — it is
+          where the app opens, and where somebody who has already ordered
+          comes back to. Without this, arriving here after ordering showed the
+          mark and nothing else, and the way to the tracker was to tap
+          through to the map and find the bar there.
+
+          Docked rather than in the column because the column is a centred
+          logo: putting the bar in it would push the mark off centre on the
+          one screen whose whole composition is that it is centred. Renders
+          nothing when no order is in flight, which is nearly always. */}
+      <OrderStatusBar dock />
     </div>
   );
 }

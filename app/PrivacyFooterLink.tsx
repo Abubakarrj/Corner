@@ -34,8 +34,11 @@ export default function PrivacyFooterLink() {
         // screen's own curve. Inert (env() is 0) in a normal browser tab.
         //
         // And clears the cookie banner, which docks to the same edge at a
-        // higher z-index — this line was printed straight through it.
-        bottom: "calc(1rem + env(safe-area-inset-bottom) + var(--cb-consent-h, 0px))",
+        // higher z-index — this line was printed straight through it. Same
+        // for the live-order bar on the landing page: it publishes its own
+        // height for exactly this, and the token is 0px wherever it isn't.
+        bottom:
+          "calc(1rem + env(safe-area-inset-bottom) + var(--cb-consent-h, 0px) + var(--cb-orderbar-h, 0px))",
         // Literal white, not a token. mixBlendMode:difference against white
         // is an inversion — it comes out dark on a light page and light on a
         // dark one, which is exactly the behaviour wanted and is why this

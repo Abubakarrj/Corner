@@ -500,6 +500,9 @@ body {
    mounted — a value has to exist or calc() collapses the whole declaration. */
 :root {
   --cb-consent-h: 0px;
+  /* Same contract, for the docked live-order bar on the landing page. Zero
+     unless OrderStatusBar is both docked and showing something. */
+  --cb-orderbar-h: 0px;
 }
 
 /* The full-screen app shells: the map finder, the gift gallery, the sign-in

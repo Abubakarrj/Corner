@@ -2,19 +2,53 @@
 
 import Link from "next/link";
 import { useT } from "../i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { activeOrder, progressFor, useOrders } from "../account";
 import { useLiveStatus } from "./useLiveStatus";
-import { PALETTE } from "./shopControls";
+import { SHOP_FONT } from "./shopControls";
 
-const { skySoft, skyInk } = PALETTE;
+// Docked height, published on <html> so a fixed element at the same edge can
+// lift itself clear. Same arrangement as --cb-consent-h in CookieConsent, and
+// for the same reason: a fixed bar takes no space, so nothing knows it's there.
+const BAR_HEIGHT_VAR = "--cb-orderbar-h";
+
+function usePublishedHeight(active: boolean) {
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const clear = () => root.style.setProperty(BAR_HEIGHT_VAR, "0px");
+    if (!active) {
+      clear();
+      return;
+    }
+    const element = ref.current;
+    if (!element) return;
+
+    const publish = () => {
+      root.style.setProperty(BAR_HEIGHT_VAR, `${element.offsetHeight}px`);
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      clear();
+    };
+  }, [active]);
+
+  return ref;
+}
 
 // The live-order bar, in the shape a delivery app puts at the top of its home
 // screen: what's happening, when it's expected, and a way through to the
 // tracker. Sits under the shop header while an order is in flight and
 // disappears once its estimate has run out — a bar that sits there for a week
 // saying "Ready around 8:24am" is worse than no bar.
-export default function OrderStatusBar() {
+//
+// `dock` fixes it to the floor instead of leaving it in the flow, for the
+// landing page, which has no column to sit at the bottom of.
+export default function OrderStatusBar({ dock = false }: { dock?: boolean }) {
   const t = useT();
   const orders = useOrders();
 
@@ -28,9 +62,10 @@ export default function OrderStatusBar() {
   }, []);
 
   const order = activeOrder(orders);
-  // Before the early return: a hook cannot be called conditionally, and this
-  // one is written to take undefined for exactly that reason.
+  // Before the early return: a hook cannot be called conditionally, and both
+  // of these are written to take the absent case for exactly that reason.
   const live = useLiveStatus(order ?? undefined);
+  const ref = usePublishedHeight(dock && order !== null);
   if (!order) return null;
 
   const progress = progressFor(order, "en-US", undefined, live);
@@ -38,29 +73,58 @@ export default function OrderStatusBar() {
 
   return (
     <Link
+      ref={ref}
       href={`/shop/order/${order.id}`}
-      // Sky, because this bar is the app telling you something rather than
-      // asking you for something. It used to be a filled ink slab, which is
-      // the same weight as a primary button and read as one — the loudest
-      // thing on the screen, above a menu you are trying to read.
-      style={{ backgroundColor: skySoft, color: skyInk }}
-      className="block cursor-pointer transition-opacity hover:opacity-95"
+      // ——— Why this isn't sky any more ———
+      //
+      // It was: a soft sky slab, chosen so the bar reads as the app telling
+      // you something rather than as a primary button. That worked on the
+      // shop's cream page and failed on the one screen people actually wait
+      // on. This bar sits directly under Google's map, and Google's map is
+      // blue — pale blue ocean in light mode, navy in dark. Soft sky landed
+      // in the same family as the water in both, so the bar dissolved into
+      // the coastline and the pulsing dot, which is the whole live signal,
+      // was the lowest-contrast thing in the row.
+      //
+      // The ground is the app's own surface now, matching the tab bar below
+      // it, so the two read as one block of chrome docked over the map
+      // instead of a tinted strip floating in it. Nothing is lost by that:
+      // sky moved to the dot and the action, where it is a small amount of
+      // saturated colour on a neutral field rather than a large amount of
+      // unsaturated colour on a coloured one, and it carries further.
+      style={{
+        fontFamily: SHOP_FONT,
+        ...(dock
+          ? {
+              // Above the cookie banner, which docks to the same floor.
+              bottom: "var(--cb-consent-h, 0px)",
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }
+          : null),
+      }}
+      className={
+        "block cursor-pointer border-y border-line bg-surface text-ink" +
+        " transition-colors hover:bg-raise" +
+        // Under the banner's z-[1000] on purpose: the banner has to be
+        // reachable, and this has somewhere else to be read from.
+        (dock ? " fixed inset-x-0 z-[900] border-b-0" : "")
+      }
     >
       <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
         <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-on-ink/70 motion-reduce:animate-none" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-on-ink" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky opacity-70 motion-reduce:animate-none" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-sky" />
         </span>
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
           {t(stage.label)}
           {progress.eta ? (
-            <span className="font-normal opacity-80">
+            <span className="font-normal text-muted">
               {" "}
               · {t(progress.eta.key, { time: progress.eta.time })}
             </span>
           ) : null}
         </span>
-        <span className="shrink-0 text-[12px] font-medium uppercase tracking-[0.06em] underline underline-offset-2">
+        <span className="shrink-0 text-[12px] font-medium uppercase tracking-[0.06em] text-sky-ink underline underline-offset-2">
           {t("common.trackOrder")}
         </span>
       </div>
