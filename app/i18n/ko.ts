@@ -260,7 +260,6 @@ export const ko: Table = {
   "deliveryFee.distance": "거리",
   "deliveryFee.fee": "요금",
   "deliveryFee.band": "{from}–{to}마일",
-  "deliveryFee.yours": "해당",
   "deliveryFee.passthrough": "Corner Bagel은 여기에 아무것도 더하지 않습니다.",
   "deliveryFee.quotedFresh":
     "Uber가 주문 시점에 주소를 기준으로 계산하므로 이 금액을 그대로 내시게 됩니다. 날씨와 교통에 따라 달라질 수 있습니다.",

@@ -263,7 +263,6 @@ export const ur: Table = {
   "deliveryFee.distance": "فاصلہ",
   "deliveryFee.fee": "کرایہ",
   "deliveryFee.band": "{from}–{to} میل",
-  "deliveryFee.yours": "آپ کا",
   "deliveryFee.passthrough": "Corner Bagel اس پر کچھ نہیں بڑھاتا۔",
   "deliveryFee.quotedFresh":
     "Uber آرڈر کے وقت آپ کے پتے کا کرایہ نکالتا ہے، سو یہی آپ ادا کریں گے۔ موسم اور ٹریفک سے بدل سکتا ہے۔",

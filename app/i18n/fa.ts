@@ -293,7 +293,6 @@ export const fa: Table = {
   "deliveryFee.distance": "فاصله",
   "deliveryFee.fee": "هزینه",
   "deliveryFee.band": "{from}–{to} مایل",
-  "deliveryFee.yours": "مال شما",
   "deliveryFee.passthrough": "Corner Bagel چیزی روی آن نمی‌گذارد.",
   "deliveryFee.quotedFresh":
     "Uber آدرس شما را در همان لحظه سفارش قیمت می‌دهد، پس همین مبلغ را می‌پردازید. هوا و ترافیک می‌تواند تغییرش دهد.",

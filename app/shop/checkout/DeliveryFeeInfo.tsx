@@ -4,7 +4,7 @@ import { useState } from "react";
 import Modal from "../../ui/Modal";
 import { useT } from "../../i18n";
 import { formatPrice } from "../products";
-import { DELIVERY_BANDS, bandForFee, chargedCents } from "../deliveryPricing";
+import { DELIVERY_BANDS } from "../deliveryPricing";
 import UberDirectMark from "./UberDirectMark";
 
 // The (i) beside the delivery fee, and what it opens.
@@ -17,23 +17,22 @@ import UberDirectMark from "./UberDirectMark";
 // tell that by looking at it. So this shows the rate card the number came off,
 // and says the shop adds nothing.
 //
-// The lit-up row is the part that makes it land. A table of bands is
-// abstract; the band your own fee came off, with that fee above it, is
-// somebody checking our arithmetic and finding it holds.
+// No row is highlighted, and the reasons are in deliveryPricing.ts — worth
+// reading before anybody wires one back in. Briefly: a quoted fee cannot be
+// matched to a band it does not equal, and a distance from Google is a second
+// opinion about a drive Uber already priced. The customer's own fee sits above
+// the table instead, larger, and nothing claims the two are the same thing.
 //
-// That row is chosen by the fee and not by a distance — the reasons are in
-// bandForFee(), and they are worth reading before anybody wires a map back
-// into this. The mileage line under the fee is the only thing here that needs
-// Google, and it is decoration: absent, this still works.
+// The mileage line under that fee is the only thing here that needs Google,
+// and it is decoration: absent, this still works.
 //
 // ——— And almost nothing else ———
 //
 // This started with a heading, a paragraph explaining distance pricing, and a
-// footnote breaking out the state trip fee. All three were cut. A sheet opened
-// from an (i) beside a delivery fee does not need a heading about delivery
-// fees; the paragraph said in prose what the table says in four rows; and the
-// trip fee is inside every number above, so splitting it out again described a
-// line the customer's bill does not have.
+// footnote breaking out California's driver fee. All three were cut. A sheet
+// opened from an (i) beside a delivery fee does not need a heading about
+// delivery fees; the paragraph said in prose what the table says in four rows;
+// and the rates below are flat, so there is no surcharge to break out.
 //
 // The quote stays the source of truth — see app/shop/deliveryPricing.ts. If
 // the card and the fee ever disagree, the fee is right and the card is stale,
@@ -48,12 +47,8 @@ export default function DeliveryFeeInfo({
   const t = useT();
   const [open, setOpen] = useState(false);
 
-  // The fee is what lights up a row — it is what Uber charged, and it names
-  // its own band. The distance is decoration on top, shown when Google Routes
-  // has an answer and left out when it doesn't. See bandForFee().
   const priced = typeof feeCents === "number" && feeCents > 0;
   const known = typeof miles === "number" && Number.isFinite(miles);
-  const yourBand = priced ? bandForFee(feeCents as number) : null;
 
   return (
     <>
@@ -115,48 +110,22 @@ export default function DeliveryFeeInfo({
             </tr>
           </thead>
           <tbody>
-            {DELIVERY_BANDS.map((band) => {
-              const yours = yourBand === band;
-              return (
-                <tr key={band.toMiles}>
-                  <td
-                    className={`border-b border-line-faint py-2 ${
-                      yours ? "font-medium text-ink" : "text-muted"
-                    }`}
-                  >
-                    {t("deliveryFee.band", { from: band.fromMiles, to: band.toMiles })}
-                    {/* Named rather than only shaded, so the row that applies
-                        survives a screen reader and a colourblind reader
-                        both. */}
-                    {yours ? (
-                      <span className="ml-2 text-[11px] font-normal text-muted">
-                        {t("deliveryFee.yours")}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td
-                    className={`border-b border-line-faint py-2 text-right tabular-nums ${
-                      yours ? "font-medium text-ink" : "text-muted"
-                    }`}
-                  >
-                    {/* What is charged, not what the rate card says. Uber's
-                        quote already carries the trip fee, so a table of bare
-                        band rates would have no row matching the line on the
-                        bill — see chargedCents(). */}
-                    {formatPrice(chargedCents(band))}
-                  </td>
-                </tr>
-              );
-            })}
+            {DELIVERY_BANDS.map((band) => (
+              <tr key={band.toMiles}>
+                <td className="border-b border-line-faint py-2 text-muted">
+                  {t("deliveryFee.band", { from: band.fromMiles, to: band.toMiles })}
+                </td>
+                <td className="border-b border-line-faint py-2 text-right tabular-nums text-muted">
+                  {formatPrice(band.feeCents)}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
-        {/* The trip fee is folded into every number above and is not called
-            out. It was a footnote explaining a line item that no longer
-            exists on the bill — the customer pays one delivery fee, and a
-            paragraph breaking it into a rate and a state surcharge is our
-            accounting, not their business. chargedCents() still keeps the two
-            apart in the data, where it matters. */}
+        {/* No surcharge footnote. These are Uber's flat rates, so there is
+            nothing to break out — and the customer pays one delivery fee
+            either way, which is printed above. */}
         <p className="m-0 mt-4 border-t border-line pt-4 text-[13px] leading-[1.55] text-ink">
           {t("deliveryFee.passthrough")}
         </p>
