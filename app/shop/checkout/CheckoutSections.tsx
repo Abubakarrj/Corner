@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import Swap from "../../ui/Swap";
 
 // The small parts checkout is assembled from. They live here rather than
 // inline in page.tsx because the page is long enough already, and because a
@@ -181,17 +182,21 @@ export function Money({
         <span className="truncate">{label}</span>
         {after}
       </span>
-      <span
+      {/* Swapped rather than replaced. Every row on a bill can change while
+          somebody is looking at it — a spread, a quantity, a tip, a courier
+          quote arriving — and four numbers changing silently means none of
+          them announces which one moved. See app/ui/Swap.tsx; it is 120ms and
+          the new value is readable throughout. */}
+      <Swap
+        value={amount}
         className={
           strong
-            ? "text-[15px] font-medium text-ink"
+            ? "justify-items-end text-[15px] font-medium text-ink"
             : tone === "credit"
-              ? "text-[14px] text-ink"
-              : "text-[14px] text-ink"
+              ? "justify-items-end text-[14px] text-ink"
+              : "justify-items-end text-[14px] text-ink"
         }
-      >
-        {amount}
-      </span>
+      />
     </div>
   );
 }

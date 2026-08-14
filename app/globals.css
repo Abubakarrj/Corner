@@ -48,6 +48,40 @@
    * makes it worth writing down — the name is the whole difference. */
   --cb-knob-track: #ffffff;
 
+/* ——— Motion ———
+ *
+ * Three durations and three curves, and every transition in the product
+ * resolves through one of them. Same argument as the palette above: values
+ * typed inline cannot be changed together, and this codebase had accumulated
+ * 60ms, 140ms, 160ms, 180ms, 200ms, 220ms and five Tailwind duration classes,
+ * none of which were chosen against each other.
+ *
+ * The scale is short on purpose. Motion here exists to say that something
+ * changed, opened, arrived or finished — not to be watched. An animation long
+ * enough to notice waiting for is too long, and 280ms is the ceiling rather
+ * than the norm.
+ *
+ * ——— Why three curves and not one ———
+ *
+ * Entering and leaving are not the same gesture. Something arriving should
+ * decelerate into place, which is what --ease-enter does: it covers most of
+ * its distance immediately and settles. Something leaving should get out of
+ * the way, which is --ease-exit accelerating out. --ease-standard is for
+ * changes that are neither — a colour, a state, a control responding to a
+ * finger.
+ *
+ * No bounce, deliberately. An overshoot on a bagel shop's Add button reads as
+ * a toy, and it is the first thing that stops being charming on the fiftieth
+ * order.
+ */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
+
+  --cb-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --cb-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --cb-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
   /* The ink, and what reads on it.
    *
    * This was the brand olive, and because everything resolves through it —
@@ -396,6 +430,15 @@
   --color-map-chrome-edge: var(--cb-map-chrome-edge);
   --color-raise: var(--cb-raise);
   --color-knob-track: var(--cb-knob-track);
+
+  /* Motion, as class-list utilities: ease-standard / ease-enter / ease-exit.
+     Same three curves as the custom properties at the top, which is what
+     plain CSS in this file uses. Durations stay raw — Tailwind has no
+     --duration-* namespace, so a class list asks for them as
+     duration-[var(--motion-base)]. */
+  --ease-standard: var(--cb-ease-standard);
+  --ease-enter: var(--cb-ease-enter);
+  --ease-exit: var(--cb-ease-exit);
   --color-tile: var(--cb-tile);
   --color-ink: var(--cb-ink);
   --color-on-ink: var(--cb-on-ink);
@@ -708,17 +751,20 @@ body {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition:
-    transform 220ms cubic-bezier(0.22, 1.4, 0.36, 1),
-    opacity 140ms ease-out,
-    background-color 160ms ease-out,
-    border-color 160ms ease-out,
-    color 160ms ease-out,
-    box-shadow 160ms ease-out;
+    transform var(--motion-slow) cubic-bezier(0.22, 1.4, 0.36, 1),
+    opacity var(--motion-fast) var(--cb-ease-standard),
+    background-color var(--motion-fast) var(--cb-ease-standard),
+    border-color var(--motion-fast) var(--cb-ease-standard),
+    color var(--motion-fast) var(--cb-ease-standard),
+    box-shadow var(--motion-fast) var(--cb-ease-standard);
 }
+/* The press itself is faster than the release, which is what makes a control
+   feel answered rather than animated: the finger gets an immediate response
+   and the recovery is allowed to take its time. */
 .cb-press:active {
   transform: scale(0.96);
-  transition-duration: 60ms, 60ms, 60ms, 60ms, 60ms, 60ms;
-  transition-timing-function: ease-out;
+  transition-duration: 60ms;
+  transition-timing-function: var(--cb-ease-exit);
 }
 
 /* A control that can't be pressed shouldn't pretend. Without this a disabled
@@ -740,4 +786,47 @@ body {
 }
 .maplibregl-ctrl-attrib a {
   color: var(--cb-muted);
+}
+
+/* ——— Swap: a value changing visibly ———
+ *
+ * See app/ui/Swap.tsx for what this is for. The mechanics:
+ *
+ * One grid cell, so the value sits on its own baseline and a rise of 4px moves
+ * nothing around it. inline-grid rather than inline-block because a
+ * transformed inline element does not reliably keep its baseline, which on a
+ * totals row is the difference between a number nudging and a whole line
+ * shifting.
+ *
+ * transform and opacity only. Animating the height or the position of a
+ * number in a totals column is a layout pass per frame on a list that may have
+ * a dozen of them.
+ */
+.cb-swap {
+  display: inline-grid;
+  grid-template-areas: "v";
+  align-items: baseline;
+  justify-items: inherit;
+}
+.cb-swap > * {
+  grid-area: v;
+}
+.cb-swap-in {
+  animation: cbSwapIn var(--motion-fast) var(--cb-ease-enter) both;
+}
+@keyframes cbSwapIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Reduced motion keeps the change and drops the movement. The new value still
+   replaces the old one instantly and correctly; what goes is the 4px and the
+   fade. A price is information, not decoration, so it is never delayed or
+   hidden here — see the note in Swap.tsx. */
+@media (prefers-reduced-motion: reduce) {
+  .cb-swap-in {
+    animation: none;
+  }
 }

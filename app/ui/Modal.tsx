@@ -114,9 +114,15 @@ export default function Modal({
         opacity: open ? 1 : 0,
         visibility: open ? "visible" : "hidden",
         pointerEvents: open ? "auto" : "none",
+        // Tokens, not literals — see the motion block in globals.css. The
+        // values are what this already did; naming them is what stops the
+        // next dialog picking its own 200ms.
+        //
+        // Exit is one step faster than entry, and that asymmetry is the whole
+        // trick: arriving should settle, leaving should get out of the way.
         transition: open
-          ? "opacity 200ms ease-out"
-          : "opacity 180ms ease-in, visibility 0s linear 180ms",
+          ? "opacity var(--motion-base) var(--cb-ease-enter)"
+          : "opacity var(--motion-fast) var(--cb-ease-exit), visibility 0s linear var(--motion-fast)",
       }}
     >
       {/* A dim, not a blur — see the note above. */}
@@ -136,7 +142,12 @@ export default function Modal({
         className="relative max-h-[92dvh] w-full max-w-[420px] overflow-y-auto overscroll-contain rounded-t-3xl bg-surface px-6 pb-[calc(24px+env(safe-area-inset-bottom))] pt-6 outline-none sm:rounded-3xl sm:pb-7"
         style={{
           transform: open ? "none" : "translateY(14px)",
-          transition: "transform 220ms cubic-bezier(0.22, 0.9, 0.3, 1)",
+          // 14px and a fade, never a scale from zero: a sheet that grows out
+          // of nothing reads as a pop-up, and at this size the eye cannot
+          // tell a scale from a slide anyway.
+          transition: open
+            ? "transform var(--motion-base) var(--cb-ease-enter)"
+            : "transform var(--motion-fast) var(--cb-ease-exit)",
           boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.16)",
         }}
       >
