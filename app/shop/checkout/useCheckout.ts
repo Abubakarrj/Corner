@@ -5,7 +5,12 @@ import { useServerText, useT } from "../../i18n";
 import { useCart, useCartRows } from "../CartContext";
 import { getProduct, lineKey } from "../products";
 import { totalsFor, type OrderTotals } from "../money";
-import { describeFulfillment, useFulfillment, type Fulfillment } from "../../fulfillment";
+import {
+  describeFulfillment,
+  peekFulfillment,
+  useFulfillment,
+  type Fulfillment,
+} from "../../fulfillment";
 import { useOpening } from "../../useOpening";
 import { pushOrder, recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
@@ -165,12 +170,35 @@ export function useCheckout(): Checkout {
   const [curbside, setCurbside] = useState(false);
   const [utensils, setUtensils] = useState(false);
   const [note, setNote] = useState("");
-  const [deliveryDetail, setDeliveryDetail] = useState("");
+  // Seeded from the destination, not blank.
+  //
+  // The unit and the courier note were captured while the customer was looking
+  // at a map of their own building (see PinPicker), which is the moment they
+  // are actually in mind. Asking again here — three screens later, next to a
+  // card form — is how "Apt 4B" ends up missing from the order that needed it.
+  //
+  // A lazy initialiser, so this is the value at mount and editable from then
+  // on. Syncing it to the fulfillment on every change would overwrite what
+  // somebody typed on this screen with what they typed on the last one.
+  //
+  // ⚠️ peekFulfillment, not the `fulfillment` above. The hook reports null for
+  // one render after hydration — deliberately, so the server's markup and the
+  // client's first pass agree — and a lazy initialiser runs exactly once, in
+  // that render. Reading the hook here would seed both fields from null every
+  // time and silently drop the unit on every delivery. Same trap FulfillmentGate
+  // documents, in a different disguise.
+  const [deliveryDetail, setDeliveryDetail] = useState(() => {
+    const known = peekFulfillment();
+    return known?.mode === "delivery" ? (known.unit ?? "") : "";
+  });
   // Handed over in person by default. "Leave at door" is the choice somebody
   // makes deliberately; defaulting to it would leave bags on doorsteps for
   // people who never asked.
   const [handoff, setHandoff] = useState<Handoff>("hand");
-  const [courierNote, setCourierNote] = useState("");
+  const [courierNote, setCourierNote] = useState(() => {
+    const known = peekFulfillment();
+    return known?.mode === "delivery" ? (known.instructions ?? "") : "";
+  });
   const [tipCents, setTipCents] = useState(0);
   const [tender, setTender] = useState<Tender>("counter");
   const [step, setStep] = useState<CheckoutStep>("details");

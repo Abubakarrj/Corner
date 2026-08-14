@@ -7,6 +7,8 @@ import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { Button } from "../../ui/Button";
 import { pinDataUri } from "./mapEngine";
+import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
+import { DELIVERY_ORIGIN } from "./locations";
 
 // Where the courier actually goes, placed by the person who lives there.
 //
@@ -62,14 +64,22 @@ export type PinResult = {
   point: [number, number];
   /** What Google calls this spot. May be empty — the pin still stands. */
   address: string;
+  placeId?: string;
+  /** Apartment, suite, floor. The part of an address no geocoder can know. */
+  unit: string;
+  /** "Entrance on Ardmore", "gate code 4432". For the courier, not the kitchen. */
+  instructions: string;
   inRange: boolean;
   miles: number | null;
 };
 
+/** One of the places Google recognises around the pin. */
+export type NearbyPlace = { address: string; placeId?: string };
+
 type Lookup =
   | { at: "idle" }
   | { at: "asking" }
-  | { at: "known"; address: string; inRange: boolean; miles: number | null }
+  | { at: "known"; inRange: boolean; miles: number | null }
   | { at: "nowhere" };
 
 function metresBetween(a: [number, number], b: [number, number]): number {
@@ -106,7 +116,27 @@ export default function PinPicker({
   // point, so it is a label to show and not a verdict to trust; the first
   // settle replaces it with one that has been.
   const [lookup, setLookup] = useState<Lookup>({ at: "idle" });
-  const [label, setLabel] = useState(startAddress ?? "");
+  // The places around the pin, and which of them is being used as its name.
+  //
+  // ——— This list is not the old one ———
+  //
+  // The finder used to show exactly this after a locate, and it was removed
+  // for a good reason: there, the list *was* the answer, so picking the wrong
+  // row sent a courier to the wrong door and there was nothing else to correct
+  // it with.
+  //
+  // Here the pin has already answered. These are names for a point that is
+  // fixed, which is a question somebody can answer from a list because getting
+  // it wrong costs a label rather than a destination. It is also the fastest
+  // way to say "the building, not the shop on its ground floor" — one tap,
+  // where nudging a pin cannot express it at all.
+  const [nearby, setNearby] = useState<NearbyPlace[]>([]);
+  const [chosen, setChosen] = useState<NearbyPlace | null>(
+    startAddress ? { address: startAddress } : null,
+  );
+  const [unit, setUnit] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const label = chosen?.address ?? "";
   const [moving, setMoving] = useState(false);
   const [locating, setLocating] = useState(false);
   // ——— Three states, and the third one matters ———
@@ -146,33 +176,49 @@ export default function PinPicker({
       body: JSON.stringify({ action: "pin", point }),
     })
       .then((response) => (response.ok ? response.json() : null))
-      .then((body: { address?: string; inRange?: boolean; miles?: number | null } | null) => {
-        // Only if the map has not moved on since. A slow lookup landing after
-        // a later pan would put the wrong street under the pin.
-        if (askedAtRef.current !== point) return;
-        if (!body?.address) {
-          setLookup({ at: "nowhere" });
-          // The label is only cleared once the pin has left where it started.
-          //
-          // At the starting point the caller's address is the best name this
-          // spot has — it is what framed the screen, and it is what the
-          // fallback uses when the map could not load at all. Blanking it
-          // because the geocoder had nothing to add would throw away a good
-          // typed address on a lookup that found nothing.
-          //
-          // Once the pin has moved, that name is about somewhere else, and
-          // keeping it would be labelling one point with another's address.
-          if (metresBetween(start, point) >= SAME_SPOT_METRES) setLabel("");
-          return;
-        }
-        setLabel(body.address);
-        setLookup({
-          at: "known",
-          address: body.address,
-          inRange: body.inRange !== false,
-          miles: typeof body.miles === "number" ? body.miles : null,
-        });
-      })
+      .then(
+        (
+          body: {
+            places?: NearbyPlace[];
+            address?: string;
+            inRange?: boolean;
+            miles?: number | null;
+          } | null,
+        ) => {
+          // Only if the map has not moved on since. A slow lookup landing
+          // after a later pan would put the wrong street under the pin.
+          if (askedAtRef.current !== point) return;
+          const places = (body?.places ?? []).filter((place) => place?.address);
+          setNearby(places);
+
+          if (places.length === 0) {
+            setLookup({ at: "nowhere" });
+            // The name is only cleared once the pin has left where it started.
+            //
+            // At the starting point the caller's address is the best name this
+            // spot has — it framed the screen, and it is what the fallback
+            // uses when the map could not load at all. Blanking it because the
+            // geocoder had nothing to add would throw away a good typed
+            // address on a lookup that found nothing.
+            //
+            // Once the pin has moved, that name is about somewhere else, and
+            // keeping it would be labelling one point with another's address.
+            if (metresBetween(start, point) >= SAME_SPOT_METRES) setChosen(null);
+            return;
+          }
+
+          // The nearest is selected, and the rest are one tap away. Selecting
+          // for somebody is only safe because the selection names a point they
+          // already fixed — it cannot move the destination, only mislabel it,
+          // and the list is right there.
+          setChosen(places[0]);
+          setLookup({
+            at: "known",
+            inRange: body?.inRange !== false,
+            miles: typeof body?.miles === "number" ? body.miles : null,
+          });
+        },
+      )
       .catch(() => {
         if (askedAtRef.current === point) setLookup({ at: "nowhere" });
       });
@@ -305,8 +351,35 @@ export default function PinPicker({
   // three, which is what the line under the field asks for.
   const noLabel = label.trim().length === 0;
 
+  /** Moves the map — and so the pin — to a place picked from the search.
+   *
+   *  panTo rather than a re-centre without animation: the pin does not move
+   *  on screen, so a jump gives no sense of having travelled, and somebody who
+   *  mis-taps a suggestion has nothing to undo by eye. */
+  function goTo(point: [number, number]) {
+    const map = mapRef.current;
+    if (!map) {
+      // No map to move. The point still becomes the destination, which is the
+      // same fallback the rest of this screen takes.
+      centreRef.current = point;
+      ask(point);
+      return;
+    }
+    map.panTo({ lat: point[0], lng: point[1] });
+    map.setZoom(18);
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {/* Search, above the map rather than on a screen before it.
+          They were two steps: find the address, then confirm the pin. One
+          screen is better because the two are one act — you type a street, you
+          see the pin land, you nudge it. Splitting them means backing out of
+          the map to fix a typo. */}
+      <div className="relative z-30 mb-3 shrink-0">
+        <PinSearch onPick={goTo} />
+      </div>
+
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-line">
         <div ref={holderRef} className="absolute inset-0" />
 
@@ -367,22 +440,73 @@ export default function PinPicker({
         <p className="m-0 text-[12px] uppercase tracking-[0.08em] text-faint">
           {t("pin.deliverTo")}
         </p>
-        {/* The address, or an em dash. Never the nearest suburb dressed up as
-            a doorway — that substitution is the whole class of mistake this
-            screen exists to stop, and making it here would be making it in the
-            one place the customer is looking straight at it.
+        {/* The places around the pin, nearest first, with the nearest picked.
 
-            When it is blank the red line below explains what to do, so this
-            slot stays a placeholder rather than repeating the sentence. */}
-        <p className="m-0 mt-1 min-h-[42px] text-[15px] leading-[1.4] text-ink">
-          {lookup.at === "asking" && !label ? (
-            <span className="text-muted">{t("pin.checking")}</span>
-          ) : label ? (
-            label
-          ) : (
-            <span className="text-quiet">&mdash;</span>
-          )}
-        </p>
+            One row when Google only knows one thing here, which is the common
+            case on a residential street and reads as a plain label rather than
+            a choice. Several when the pin is on a block with a tower on it,
+            which is where the old flow went wrong: 3545 Wilshire and 637 S
+            Ardmore are the same building from two streets, and only the person
+            who lives there knows which one their post comes to.
+
+            Radios, not a dropdown. Two or three addresses are worth seeing at
+            once — the whole point is comparing them — and a closed control
+            would hide the alternative behind a tap on the one screen where
+            noticing it matters.
+
+            Never the em dash and the list together: when there is nothing
+            here, the red line below is the message. */}
+        {nearby.length > 0 ? (
+          <ul
+            className="m-0 mt-1 list-none p-0"
+            role="radiogroup"
+            aria-label={t("pin.nearbyPlaces")}
+          >
+            {nearby.map((place) => {
+              const active = place.address === label;
+              return (
+                <li key={place.address}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setChosen(place)}
+                    className="cb-press flex w-full cursor-pointer items-start gap-2.5 py-2 text-start"
+                  >
+                    <span
+                      aria-hidden
+                      className={`mt-[3px] h-[15px] w-[15px] shrink-0 rounded-full border-2 ${
+                        active ? "border-ink bg-ink" : "border-line-mute"
+                      }`}
+                      style={
+                        active
+                          ? { boxShadow: "inset 0 0 0 2.5px var(--cb-surface)" }
+                          : undefined
+                      }
+                    />
+                    <span
+                      className={`min-w-0 text-[15px] leading-[1.35] ${
+                        active ? "text-ink" : "text-muted"
+                      }`}
+                    >
+                      {place.address}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="m-0 mt-1 min-h-[42px] text-[15px] leading-[1.4] text-ink">
+            {lookup.at === "asking" ? (
+              <span className="text-muted">{t("pin.checking")}</span>
+            ) : label ? (
+              label
+            ) : (
+              <span className="text-quiet">&mdash;</span>
+            )}
+          </p>
+        )}
 
         {/* One line, and the order is the order of consequence.
             Whatever is stopping Confirm goes first, because a disabled button
@@ -410,6 +534,38 @@ export default function PinPicker({
           </p>
         )}
 
+        {/* The two things no map and no geocoder can know.
+            Asked here rather than at checkout because this is the moment
+            somebody is looking at a picture of their own building, which is
+            when "the entrance is on Ardmore" is actually in mind. Checkout
+            prefills from these and can still change them — a one-off "leave it
+            with the neighbour" is about an order, not about an address. */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-[12px] text-muted">{t("delivery.unit")}</span>
+            <input
+              value={unit}
+              onChange={(event) => setUnit(event.target.value)}
+              maxLength={60}
+              autoComplete="address-line2"
+              placeholder={t("delivery.unitPlaceholder")}
+              className="w-full rounded-xl border border-line-soft bg-surface px-4 py-2.5 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[12px] text-muted">
+              {t("pin.instructions")}
+            </span>
+            <input
+              value={instructions}
+              onChange={(event) => setInstructions(event.target.value)}
+              maxLength={140}
+              placeholder={t("pin.instructionsPlaceholder")}
+              className="w-full rounded-xl border border-line-soft bg-surface px-4 py-2.5 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+            />
+          </label>
+        </div>
+
         <div className="mt-4 flex gap-3">
           <Button variant="secondary" onClick={onCancel} className="flex-1">
             {t("common.back")}
@@ -426,6 +582,9 @@ export default function PinPicker({
               onConfirm({
                 point: centreRef.current,
                 address: label,
+                placeId: chosen?.placeId,
+                unit: unit.trim(),
+                instructions: instructions.trim(),
                 inRange: !outOfRange,
                 miles: lookup.at === "known" ? lookup.miles : null,
               })
@@ -458,5 +617,122 @@ function CrosshairIcon({ spinning }: { spinning: boolean }) {
         strokeLinecap="round"
       />
     </svg>
+  );
+}
+
+// The address field above the map.
+//
+// Google Places autocomplete straight out of the browser through the library
+// the map already loaded — no hop through our own server on a keystroke. See
+// suggestAddresses in googleMapsPublic.ts, which falls back to /api/geo when
+// the library did not load.
+//
+// ——— What picking a suggestion does, and does not, do ———
+//
+// It moves the camera. That is all. The suggestion's coordinates are Google's
+// idea of where those words are, which is the guess this whole screen exists
+// to stop trusting — so they frame the map and the pin still decides. Somebody
+// who types their own street and taps Confirm without moving anything has
+// accepted that guess deliberately, which is a different thing from never
+// having been shown it.
+function PinSearch({ onPick }: { onPick: (point: [number, number]) => void }) {
+  const t = useT();
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  // The suggestions, and the query they belong to, in one piece of state.
+  //
+  // Two, and the pairing is only true between renders — which is the bug this
+  // shape prevents: a slow answer for "3545 W" arriving after the field reads
+  // "3545 Wilshire" would render one list under the other's text. Keeping them
+  // together means the render can ask "are these for what is typed now?" and
+  // that question is answerable, rather than having to be cleared by an effect
+  // racing the same response.
+  const [found, setFound] = useState<{ forQuery: string; items: Suggestion[] }>({
+    forQuery: "",
+    items: [],
+  });
+
+  useEffect(() => {
+    const typed = query.trim();
+    if (typed.length < 3) return;
+    const controller = new AbortController();
+    // A pause, not a request per character. Places bills per session and per
+    // keystroke is a lot of both.
+    const timer = window.setTimeout(() => {
+      void suggestAddresses(typed, "address", DELIVERY_ORIGIN.position, controller.signal)
+        .then((items) => {
+          setFound({ forQuery: typed, items });
+          setOpen(true);
+        })
+        .catch(() => {
+          // Aborted, or Places refused. An empty list is the honest render
+          // and the field still works — the map is the way to be precise.
+        });
+    }, 220);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query]);
+
+  async function pick(suggestion: Suggestion) {
+    setQuery(suggestion.primary);
+    setOpen(false);
+    // Resolved on the server, like every other address in this app: a
+    // coordinate that came through the browser is a coordinate the browser
+    // can change, and this one frames a delivery.
+    const response = await fetch("/api/geo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "resolve", placeId: suggestion.id, kind: "address" }),
+    }).catch(() => null);
+    const body = response?.ok ? await response.json().catch(() => null) : null;
+    if (typeof body?.lat === "number" && typeof body?.lng === "number") {
+      onPick([body.lat, body.lng]);
+    }
+  }
+
+  const typed = query.trim();
+  // Only ever the list that belongs to what is on screen. Nothing has to be
+  // cleared, so nothing can be cleared late.
+  const suggestions = found.forQuery === typed && typed.length >= 3 ? found.items : [];
+  const showing = open && suggestions.length > 0;
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        inputMode="search"
+        autoComplete="off"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        onFocus={() => setOpen(true)}
+        aria-label={t("pin.searchLabel")}
+        placeholder={t("pin.searchPlaceholder")}
+        className="w-full rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+      />
+      {showing ? (
+        <ul
+          role="listbox"
+          aria-label={t("pin.searchLabel")}
+          className="absolute inset-x-0 top-[calc(100%+6px)] z-40 m-0 max-h-[240px] list-none overflow-y-auto rounded-xl border border-line-faint bg-panel p-1 shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+        >
+          {suggestions.map((suggestion) => (
+            <li key={suggestion.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={false}
+                onClick={() => void pick(suggestion)}
+                className="cb-press block w-full cursor-pointer rounded-lg px-3 py-2.5 text-start transition-colors hover:bg-raise"
+              >
+                <span className="block text-[14px] text-ink">{suggestion.primary}</span>
+                <span className="block text-[12px] text-muted">{suggestion.secondary}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }

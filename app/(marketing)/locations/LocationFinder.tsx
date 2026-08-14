@@ -285,6 +285,13 @@ export default function LocationFinder() {
       address: result.address || pinning?.address || "",
       lat: result.point[0],
       lng: result.point[1],
+      // Only when they exist. An undefined key is absent from the stored JSON;
+      // an empty string is a value that later reads as "they answered, and the
+      // answer was nothing", which is how a prefilled field ends up blanking
+      // one the customer had already filled in.
+      ...(result.placeId ? { placeId: result.placeId } : {}),
+      ...(result.unit ? { unit: result.unit } : {}),
+      ...(result.instructions ? { instructions: result.instructions } : {}),
     });
     setPinning(null);
     router.push("/shop");

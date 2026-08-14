@@ -129,6 +129,13 @@ export async function POST(request: Request) {
     const miles = drive?.miles ?? milesBetween(origin, [lat, lng]);
 
     return Response.json({
+      // The whole list, nearest first, because the picker offers it. One
+      // point in Koreatown has a building on every side of it and the tower
+      // above it, and which of those names the customer's home is a question
+      // only they can answer — but a *name* is all it decides, since the
+      // destination is the pin they already placed. That is the difference
+      // between this list and the one it replaced.
+      places: places.map((place) => ({ address: place.address, placeId: place.placeId })),
       address: places[0]?.address ?? "",
       lat,
       lng,

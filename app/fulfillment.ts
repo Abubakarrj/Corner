@@ -47,7 +47,31 @@ export type Fulfillment =
   // already sitting in somebody's localStorage. Those fall back to geocoding
   // the words, which is what they have always done; there is nothing better
   // to do with them and dropping the basket would be worse.
-  | { mode: "delivery"; address: string; lat?: number; lng?: number };
+  //
+  // ——— The rest of what a courier needs, kept with the address ———
+  //
+  // `unit` and `instructions` used to live in checkout state and nowhere else,
+  // which meant they were retyped on every order and forgotten on most. They
+  // belong here for a plainer reason too: the moment somebody is looking at a
+  // map of their own building is the moment "entrance on Ardmore" and "4B" are
+  // actually in their head. Asking three screens later, next to a card form,
+  // is asking at the worst time.
+  //
+  // Checkout prefills from these and can still edit — a one-off "leave it with
+  // the neighbour" is about an order, not about an address.
+  //
+  // `placeId` is Google's handle for whatever the address names. Kept so a
+  // later lookup can name the same place without spelling it out again; it is
+  // never the destination, which is lat/lng above.
+  | {
+      mode: "delivery";
+      address: string;
+      lat?: number;
+      lng?: number;
+      placeId?: string;
+      unit?: string;
+      instructions?: string;
+    };
 
 function isFulfillment(value: unknown): value is Fulfillment {
   if (typeof value !== "object" || value === null) return false;

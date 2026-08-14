@@ -48,10 +48,19 @@ export type GeocodedPlace = {
   address: string;
   lat: number;
   lng: number;
+  // Google's own handle for this place, when the response carried one.
+  //
+  // Kept so a place can be named again later without spelling it out — an
+  // address string round-trips through a geocoder and can come back subtly
+  // different, an id does not. It is never a position: a place id resolves to
+  // whatever Google thinks the address means, which is exactly the guess the
+  // pin exists to replace.
+  placeId?: string;
 };
 
 type GeocodeResult = {
   formatted_address?: string;
+  place_id?: string;
   types?: string[];
   partial_match?: boolean;
   geometry?: {
@@ -94,7 +103,12 @@ function toPlace(result: GeocodeResult | undefined, fallbackName: string): Geoco
   const lat = result?.geometry?.location?.lat;
   const lng = result?.geometry?.location?.lng;
   if (typeof lat !== "number" || typeof lng !== "number") return null;
-  return { address: result?.formatted_address ?? fallbackName, lat, lng };
+  return {
+    address: result?.formatted_address ?? fallbackName,
+    lat,
+    lng,
+    ...(typeof result?.place_id === "string" ? { placeId: result.place_id } : {}),
+  };
 }
 
 // Google answers 200 with a status string, so the HTTP code alone says
