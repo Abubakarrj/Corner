@@ -4,7 +4,6 @@ import ThemeToggle from "../ui/ThemeToggle";
 import LanguagePicker from "../ui/LanguagePicker";
 import AboutMenu from "../ui/AboutMenu";
 import OrderStatusBar from "../shop/OrderStatusBar";
-import AboutMark from "./AboutMark";
 
 // The "SHOP PANTRY" button and its arrow annotation used to sit under the
 // logo here, linking to /shop. Pulled until the pantry is ready to launch —
@@ -27,90 +26,41 @@ export default function Home() {
   return (
     <div className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-page p-6">
       {/* The logo is the front door into the app: tapping it opens the map,
-          which is where an order starts. It used to open /about — that copy
-          is still there, and now it is the (i) right beside the mark.
+          which is where an order starts.
 
-          The mark and About together.
-          One `relative` box holding two links rather than one, because an
-          anchor cannot be nested inside another anchor — putting the (i)
-          inside the logo's Link would make the whole mark's markup invalid
-          and the (i) unclickable in some browsers. Siblings, positioned
-          against the same box. */}
-      <div className="relative">
-        <Link href="/locations" className="cursor-pointer">
-          <div className="relative h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 lg:h-72 lg:w-72">
+          It used to open /about, and for a while a small (i) sat off the R's
+          shoulder to keep a door to that copy. Both are gone: About Us in the
+          corner strip holds Our Story now, and a second entrance to one page
+          beside a mark whose whole composition is that it is a mark was one
+          more thing on a screen that reads best with almost nothing on it.
+          The `relative` wrapper that positioned the (i) went with it. */}
+      <Link href="/locations" className="cursor-pointer">
+        <div className="relative h-48 w-48 sm:h-56 sm:w-56 md:h-64 md:w-64 lg:h-72 lg:w-72">
+          <Image
+            src="/logo.svg"
+            // The brand name alone. "Logo" added nothing a screen reader
+            // needs, and it was the one English word on an otherwise
+            // translated page.
+            alt="Corner Bagel"
+            fill
+            unoptimized
+            priority
+            className="object-contain"
+          />
+          <div className="absolute bottom-[25%] right-[-16%] aspect-square w-[16%] animate-logo-roll">
             <Image
-              src="/logo.svg"
-              // The brand name alone. "Logo" added nothing a screen reader
-              // needs, and it was the one English word on an otherwise
-              // translated page.
-              alt="Corner Bagel"
+              src="/logo-2.svg"
+              // Decorative: the rolling bagel is the same mark again, and
+              // announcing it twice is noise.
+              alt=""
               fill
               unoptimized
               priority
               className="object-contain"
             />
-            <div className="absolute bottom-[25%] right-[-16%] aspect-square w-[16%] animate-logo-roll">
-              <Image
-                src="/logo-2.svg"
-                // Decorative: the rolling bagel is the same mark again, and
-                // announcing it twice is noise.
-                alt=""
-                fill
-                unoptimized
-                priority
-                className="object-contain"
-              />
-            </div>
           </div>
-        </Link>
-
-        {/* About, at the top-right of the mark — level with the R that ends
-            CORNER. It was the fifth tab, which is a fifth of the bar spent on
-            a page nobody visits twice; the account had no door at all. So
-            they traded places.
-
-            Here rather than in the corner strip with hiring, language and
-            appearance: those three are settings about how you use the app,
-            and this is about the shop. Beside the name is where a story about
-            the name belongs.
-
-            Its own hit area, 28px, which is under the 44px guideline and
-            deliberate — this is the quietest thing on the page and making it
-            finger-sized would make it the loudest. Everything that matters
-            here is one tap on a 288px logo. */}
-        {/* Percentages, not edges, and measured rather than guessed.
-            The box is square and the artwork is object-contain inside it, so
-            the wordmark is 2.59:1 and sits in a band through the middle —
-            30.6% to 69.1% — leaving the box's own top-right corner as empty
-            air. Pinned there the (i) floated above the logo with nothing
-            between them.
-
-            Rendered at 288px and scanned for ink, the R that ends CORNER
-            occupies x 244–278, y 93–137: its top-right corner is (96.5%,
-            32.3%). These two numbers put the 11px circle just off that
-            shoulder with about 4px of air under it — near enough to belong to
-            the R, clear enough not to touch it.
-
-            ⚠️ They position the *box*, not the mark. The box is 28px of hit
-            area around an 11px circle, so the circle's centre sits 14px in
-            from both — and 14px is a fixed number against a container that
-            scales, so the centre does not land in the same relative place at
-            every size. Measured: (97.9%, 28.9%) at 288px, (100.3%, 31.3%) at
-            192px.
-
-            That drift is left alone rather than removed with a translate,
-            because it happens to work. The circle does not scale either, so on
-            the small logo it is proportionally bigger — and the same drift
-            slides it from just above the R's shoulder at 288px to beside the R
-            at 192px, which is where the room is. Centring it on one percentage
-            pair instead would put it a pixel off the letter on a phone.
-
-            Both ends were rendered and looked at. This is a near miss in two
-            axes by design, so redrawing the logo means measuring again — the
-            ink scan that produced these numbers is in the commit. */}
-        <AboutMark className="absolute left-[93%] top-[24%]" />
-      </div>
+        </div>
+      </Link>
 
       {/* About, language and appearance, in the corner opposite the privacy
           line, so the chrome brackets the page rather than crowding it. All
