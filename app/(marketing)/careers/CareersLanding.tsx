@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useT, type StringKey } from "../../i18n";
@@ -51,15 +52,41 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
   const locale = useLocale();
   const titleOf = (role: PositionId) =>
     POSITIONS.find((position) => position.id === role)?.label;
-  // When every job is at the same shop, the shop is not a fact that
-  // distinguishes one row from another — it is the same word four times, and
-  // on a 390px card in Spanish it was the word that pushed the tags onto a
-  // second line. So it moves up to the heading, where it is said once.
+  // ——— The board's three filters ———
   //
-  // Computed, not assumed. The day a second shop opens, this goes back to
-  // being a tag on each row, which is where it belongs the moment it starts
-  // telling you something.
-  const shops = [...new Set(openings.map((opening) => opening.location))];
+  // Position, shop, and how much of a week. "" is All, which is the state the
+  // page opens in and the only one that can be reached from a fresh visit —
+  // there is no filter in the URL, deliberately. A careers page is somewhere
+  // people arrive from a chip on the front door, and landing on a pre-narrowed
+  // list because of a link somebody shared is how an opening goes unseen.
+  const [role, setRole] = useState("");
+  const [where, setWhere] = useState("");
+  const [hours, setHours] = useState("");
+
+  // What each filter can offer, taken from the openings rather than from the
+  // type. TERMS lists what a job *could* be; this lists what is actually being
+  // hired for, so the Type filter never offers "Part time" when nothing on the
+  // page is part time. Order is the order the shop wrote them in.
+  const unique = <T,>(values: T[]) => [...new Set(values)];
+  const roleOptions = unique(openings.map((opening) => opening.role));
+  const placeOptions = unique(openings.map((opening) => opening.location));
+  const hourOptions = unique(
+    openings.flatMap((opening) => TERMS[opening.role]?.hours ?? []),
+  );
+
+  const shown = openings.filter(
+    (opening) =>
+      (role === "" || opening.role === role) &&
+      (where === "" || opening.location === where) &&
+      (hours === "" ||
+        (TERMS[opening.role]?.hours ?? []).includes(hours as "full" | "part")),
+  );
+
+  // Whether the shop is worth naming on each row. One shop and it is the same
+  // word four times; the filter above says it once. Measured against what is
+  // *shown* rather than what exists, so filtering down to one shop takes the
+  // repeated word off the rows too.
+  const shops = unique(shown.map((opening) => opening.location));
   const oneShop = shops.length === 1 ? shops[0] : null;
 
   return (
@@ -201,24 +228,60 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             "Open roles" was 11px, uppercase, letterspaced and grey — the same
             treatment as a form field's caption. On a page whose entire purpose
             is the list underneath it, that is the timidest thing on screen:
-            the section that matters most was the one set smallest.
-
-            So it is a heading now, at 26/30, in the same weight as the title
-            above it. Size does the separating rather than weight, which is how
-            the rest of this app is set. The shop's name goes underneath as a
-            quiet line rather than beside it, because it is a note about the
-            list and not half of its name. */}
+            the section that matters most was the one set smallest. */}
         <h2 className="m-0 mt-14 text-[26px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[30px]">
           {t("careers.openRoles")}
         </h2>
-        {oneShop ? (
-          <p className="m-0 mt-1.5 text-[14px] leading-[1.5] text-muted">{oneShop}</p>
-        ) : null}
+
+        {/* ——— The three filters ———
+
+            The shop's name used to sit here as a quiet line under the heading,
+            because there is one shop and saying it four times down the list was
+            three times too many. It is a filter now instead, alongside the job
+            and the hours, which says the same thing and does something with it.
+
+            Native <select>. Not the app's own listbox, which is built for the
+            language picker's job of showing a current value on a chip: these
+            are three controls in a row on a 320px phone, and a native select
+            hands the whole list to the platform's own picker — a wheel on iOS,
+            a sheet on Android, a menu on a desktop — with keyboard, type-ahead
+            and screen-reader support that nobody has to write or test. The only
+            thing given up is the arrow's exact drawing, which is worth it.
+
+            Every option comes from the openings themselves, so a facet can
+            never offer a filter that returns nothing: add a shop to
+            openings.ts and it appears here, remove it and it goes. */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Facet
+            label={t("careers.allPositions")}
+            value={role}
+            onChange={setRole}
+            options={roleOptions.map((id) => ({
+              value: id,
+              label: t(titleOf(id) ?? "careers.allPositions"),
+            }))}
+          />
+          <Facet
+            label={t("careers.allLocations")}
+            value={where}
+            onChange={setWhere}
+            options={placeOptions.map((place) => ({ value: place, label: place }))}
+          />
+          <Facet
+            label={t("careers.allTypes")}
+            value={hours}
+            onChange={setHours}
+            options={hourOptions.map((id) => ({
+              value: id,
+              label: t(id === "full" ? "careers.typeFull" : "careers.typePart"),
+            }))}
+          />
+        </div>
 
         {/* The heavy rule is the list's own top edge now that the heading has
             stopped needing one under it. */}
         <ul className="m-0 mt-5 list-none border-t border-ink p-0">
-          {openings.map((opening) => {
+          {shown.map((opening) => {
             const label = titleOf(opening.role);
             if (!label) return null;
             const terms = TERMS[opening.role];
@@ -320,6 +383,16 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           })}
         </ul>
 
+        {/* Nothing matched, said in the list's own space so the page does not
+            silently lose its middle. It sits under the rule the list would
+            have started with, which is why the rule is on the <ul> and not on
+            the first row. */}
+        {shown.length === 0 ? (
+          <p className="m-0 border-t border-line py-8 text-[15px] leading-[1.55] text-muted">
+            {t("careers.noMatches")}
+          </p>
+        ) : null}
+
         {/* For somebody who would rather not pick a row. The form asks which
             job when nothing else has.
 
@@ -360,6 +433,103 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
         </footer>
       </div>
     </div>
+  );
+}
+
+// One filter, as a native select dressed like the app's pills.
+//
+// ——— Why a <select> and not the listbox next door ———
+//
+// LanguagePicker is a hand-built listbox and it earns that: it is one control,
+// it shows a globe and a language name, and it lives in a header where its
+// exact shape matters. These are three controls in a row on a phone that may
+// be 320px wide, and what they need is the platform's own picker — the iOS
+// wheel, the Android sheet, the desktop menu — with keyboard support,
+// type-ahead, and a screen-reader contract nobody has to write or verify.
+//
+// The cost is the arrow, which cannot be styled: appearance-none removes the
+// platform's and the one drawn here is a background image, so it is a chevron
+// in a CSS gradient rather than the app's own SVG. That is the whole of what
+// is given up.
+//
+// ——— The label is the All option ———
+//
+// There is no "Position:" caption beside the control, because the All option
+// is the caption: a filter resting on "All positions" says both what it
+// filters and that it is not filtering. A separate label would be the same
+// word twice on a row that has to hold three of these.
+function Facet({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  /** What the control reads when nothing is chosen, and its accessible name. */
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  // ——— Drawn even when it cannot narrow anything ———
+  //
+  // The first cut hid a facet with fewer than two options, on the reasoning
+  // that a filter offering one value is a control that does nothing. That is
+  // true of Location today and it hid it, which left a board with one filter on
+  // it — and it is not true in general: Type has one option, Full time, and
+  // choosing it takes four rows down to one, because a row can have no type at
+  // all. The option count was never the question.
+  //
+  // So the three are always drawn, and the only thing that removes one is
+  // having nothing to offer at all. A board whose controls appear and vanish as
+  // the shop opens counters is a board that looks different every few months
+  // for reasons nobody reading it can see.
+  if (options.length === 0) return null;
+  const on = value !== "";
+  return (
+    // The chevron is a sibling, not a background image.
+    //
+    // It was `background-position: right 14px`, which is a physical edge, and
+    // Persian caught it: under RTL the padding moved to the left (pe-8 is
+    // logical) and the arrow stayed on the right, so it sat on the first
+    // character with a gap behind it. There is no logical keyword for
+    // background-position, so the arrow comes out of the background and
+    // becomes an element that can be placed with `end-3`.
+    //
+    // pointer-events-none, so the whole control including the arrow opens the
+    // platform's picker rather than the arrow swallowing the tap.
+    <span className={`relative inline-flex max-w-[46vw] ${on ? "text-on-ink" : "text-muted"}`}>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`cb-press h-9 w-full cursor-pointer appearance-none truncate rounded-full border bg-clip-padding ps-3.5 pe-9 text-[13px] leading-none text-current outline-none transition-colors focus-visible:border-ink ${
+          on ? "border-ink bg-ink" : "border-line-soft bg-page hover:text-ink"
+        }`}
+      >
+        <option value="">{label}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <svg
+        width="10"
+        height="7"
+        viewBox="0 0 10 7"
+        fill="none"
+        aria-hidden
+        className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2"
+      >
+        <path
+          d="M1 1.5 5 5.5l4-4"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }
 
