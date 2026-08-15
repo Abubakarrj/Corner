@@ -709,6 +709,7 @@ export const fa: Table = {
   "careers.positionsNote": "کاری را که برایش درخواست می‌دهید انتخاب کنید.",
   "careers.perHour": "ساعتی {amount}",
   "careers.perYear": "سالانه {amount}",
+  "careers.applyNow": "درخواست بدهید",
   "careers.roleCount": "{count} موقعیت",
   "careers.roleCountOne": "۱ موقعیت",
   "careers.allPositions": "همهٔ موقعیت‌ها",

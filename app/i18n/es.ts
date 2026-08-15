@@ -663,6 +663,7 @@ export const es: Table = {
   "careers.positionsNote": "Elige el puesto al que te presentas.",
   "careers.perHour": "{amount} por hora",
   "careers.perYear": "{amount} al año",
+  "careers.applyNow": "Solicitar",
   "careers.roleCount": "{count} puestos",
   "careers.roleCountOne": "1 puesto",
   "careers.allPositions": "Todos los puestos",

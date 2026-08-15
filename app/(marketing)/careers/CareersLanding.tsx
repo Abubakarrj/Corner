@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import LanguagePicker from "../../ui/LanguagePicker";
@@ -9,7 +8,6 @@ import { useLocale, useT, type StringKey } from "../../i18n";
 import { POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
 import { TERMS, formatPay, shiftLine, type ResolvedPay } from "./pay";
-import { TEAM_PHOTOS } from "./teamPhotos";
 
 // The careers page: what the shop is, what it hires for, and a way in.
 //
@@ -30,12 +28,12 @@ import { TEAM_PHOTOS } from "./teamPhotos";
 // The upside is there is nothing to maintain. Nothing here can be out of date,
 // because nothing here is a date.
 //
-// ——— Nothing invented ———
+// ——— And only that ———
 //
-// The two paragraphs about the shop are about.p1 and about.p2, already written
-// and already translated into all ten languages. about.p3 and p4 are not here:
-// they thank the reader for buying breakfast, which is the wrong thing to say
-// to somebody who wants to make it.
+// It carried two paragraphs of the shop's story for a while, and a strip for
+// photographs of the team. Both are gone: this is a board, and the story is
+// one tap away on About Us, which sits on the front door beside the link that
+// reaches this page.
 
 const POSITION_NOTE: Record<PositionId, StringKey> = {
   counter: "careers.posCounterNote",
@@ -100,7 +98,7 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
     // bg-page rather than a literal, so night follows: the token is white in
     // light and the app's near-black in dark.
     <div className="min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
-      <div className="mx-auto max-w-[34rem] px-5 pb-20 pt-6 sm:pt-10">
+      <div className="mx-auto max-w-[40rem] px-5 pb-16 pt-5 sm:pt-8">
         <div className="mb-7 flex items-center justify-between gap-3">
           <Link
             href="/"
@@ -150,14 +148,23 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             Corner Bagel" with a list of open roles under it, a line announcing
             that the shop is hiring is the page's own title said again in
             smaller letters. */}
+        {/* ——— A step down, everywhere ———
+
+            The page read as though the browser were zoomed in: a 30/38 title
+            over a 24/28 heading over 19px rows, in a 34rem column. Those are
+            magazine sizes, and this is a table of four jobs. Everything comes
+            down a step — 24/30, 17/19, 16/17 — the column widens to 40rem so
+            the rows are lines rather than paragraphs, and the row padding
+            tightens from 20px to 16px. The whole board now lands in about the
+            height the first two rows used to take. */}
         <header>
           <h1
-            className="m-0 text-[30px] font-medium leading-[1.08] tracking-[-0.03em] text-ink sm:text-[38px]"
+            className="m-0 text-[24px] font-medium leading-[1.12] tracking-[-0.02em] text-ink sm:text-[30px]"
             style={{ fontFamily: DISPLAY_FONT }}
           >
             {t("careers.title")}
           </h1>
-          <p className="m-0 mt-2.5 max-w-[30em] text-[15px] leading-[1.55] text-muted">
+          <p className="m-0 mt-2 max-w-[34em] text-[14px] leading-[1.55] text-muted">
             {t("careers.lede")}
           </p>
         </header>
@@ -210,8 +217,8 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             wrapped underneath them and sat flush left. On the heading's line it
             is on the far edge at every width, and it is still the last thing
             before the list it counts. */}
-        <div className="mt-11 flex items-baseline justify-between gap-3">
-          <h2 className="m-0 text-[24px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[28px]">
+        <div className="mt-9 flex items-baseline justify-between gap-3">
+          <h2 className="m-0 text-[17px] font-medium leading-[1.2] tracking-[-0.01em] text-ink sm:text-[19px]">
             {t("careers.openRoles")}
           </h2>
           <p className="m-0 shrink-0 text-[11px] tabular-nums text-faint">
@@ -285,12 +292,14 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             if (!label) return null;
             const terms = TERMS[opening.role];
             // The wage, on its own, in the price column.
-            const rate = opening.pay
-              ? t(opening.pay.per === "hour" ? "careers.perHour" : "careers.perYear", {
-                  amount: formatPay(opening.pay, locale),
-                })
-              : null;
-            // Everything else about the job, as one quiet line.
+            // Everything known about the job, as one quiet line.
+            //
+            // The wage used to be a column of its own, right-aligned like a
+            // price. It has moved in here, first, because the column it stood
+            // in now says Apply now — and a rate is a fact about the job
+            // rather than the thing to do with it. It is still the first fact
+            // on the line, which is where somebody working out whether the
+            // shift covers the bus fare looks.
             //
             // These were chips, on the reasoning that a fact wearing the same
             // shape on every row lets the eye compare it — which is true of a
@@ -300,6 +309,13 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             // go back to a sentence-shaped line, in a fixed order, and a row
             // with two of them next to a row with none is unremarkable.
             const facts: string[] = oneShop === null ? [opening.location] : [];
+            if (opening.pay) {
+              facts.push(
+                t(opening.pay.per === "hour" ? "careers.perHour" : "careers.perYear", {
+                  amount: formatPay(opening.pay, locale),
+                }),
+              );
+            }
             for (const type of terms?.hours ?? []) {
               facts.push(t(type === "full" ? "careers.typeFull" : "careers.typePart"));
             }
@@ -316,14 +332,14 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                   // rather than stopping exactly on the text. The rule above
                   // stays the column's width, which is what keeps it reading
                   // as a list and not as a table with cells.
-                  className="cb-press group -mx-3 block cursor-pointer rounded-xl px-3 py-5 transition-colors hover:bg-raise"
+                  className="cb-press group -mx-3 block cursor-pointer rounded-xl px-3 py-4 transition-colors hover:bg-raise"
                 >
                   <span className="flex items-baseline gap-3">
                     {/* font-medium: the names were the only headings on the
                         page set at the body's weight, so at 19px they read as
                         large text rather than as titles. */}
                     <span
-                      className="min-w-0 flex-1 text-[19px] font-medium leading-[1.25] text-ink sm:text-[21px]"
+                      className="min-w-0 flex-1 text-[16px] font-medium leading-[1.3] text-ink sm:text-[17px]"
                       style={{ fontFamily: DISPLAY_FONT }}
                     >
                       {t(label)}
@@ -333,11 +349,24 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                         </span>
                       ) : null}
                     </span>
-                    {/* tabular-nums, so three matching rates line up digit for
-                        digit down the column instead of nearly doing. */}
-                    {rate ? (
-                      <span className="shrink-0 text-[14px] tabular-nums text-ink">{rate}</span>
-                    ) : null}
+                    {/* ——— Apply now, where the rate used to be ———
+
+                        The row has always been the link; what it lacked was a
+                        word saying so. Every reference board ends its row with
+                        one, and the wage sitting there instead meant the only
+                        thing at the end of the row was a number — which reads
+                        as a fact, not as a way in. Three of them said the same
+                        number, too.
+
+                        Not a filled button. The whole row is already the tap
+                        target, so a button inside it would be a second control
+                        for the same act, and four of them stacked down a short
+                        page is a lot of paint for a list of four. It is the
+                        row's own words, in ink, next to the arrow that was
+                        already there. */}
+                    <span className="shrink-0 text-[12px] text-ink">
+                      {t("careers.applyNow")}
+                    </span>
                     {/* ——— The arrow sits at the edge, not after the name ———
 
                         It was inline, right behind the last word, which is the
@@ -348,12 +377,11 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
 
                         At the row's edge it cannot be orphaned by any
                         language, and it gives every row the same right-hand
-                        stop — including Manager, which has no rate. It is the
-                        only affordance left now that the box has gone, which
-                        is why it moves under the pointer. */}
+                        stop. It follows Apply now, which is what it is the
+                        arrow for, and it moves under the pointer. */}
                     <svg
-                      width="13"
-                      height="13"
+                      width="12"
+                      height="12"
                       viewBox="0 0 14 14"
                       fill="none"
                       aria-hidden
@@ -368,11 +396,11 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                       />
                     </svg>
                   </span>
-                  <span className="mt-2 block max-w-[34em] text-[14px] leading-[1.5] text-muted">
+                  <span className="mt-1 block max-w-[38em] text-[13px] leading-[1.5] text-muted">
                     {t(POSITION_NOTE[opening.role])}
                   </span>
                   {facts.length > 0 ? (
-                    <span className="mt-1.5 block text-[12px] leading-[1.5] text-quiet">
+                    <span className="mt-1 block text-[12px] leading-[1.5] text-quiet">
                       {facts.join(" · ")}
                     </span>
                   ) : null}
@@ -387,7 +415,7 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             have started with, which is why the rule is on the <ul> and not on
             the first row. */}
         {shown.length === 0 ? (
-          <p className="m-0 border-t border-line py-8 text-[15px] leading-[1.55] text-muted">
+          <p className="m-0 border-t border-line py-7 text-[14px] leading-[1.55] text-muted">
             {t("careers.noMatches")}
           </p>
         ) : null}
@@ -397,31 +425,30 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
 
             Under the list's last rule with room to breathe, so it reads as the
             way out of the list rather than as a fifth thing in it. */}
-        <p className="m-0 mt-6 text-[14px] leading-[1.55] text-muted">
+        <p className="m-0 mt-5 text-[13px] leading-[1.55] text-muted">
           <Link href="/careers/apply" className="underline underline-offset-2 hover:text-ink">
             {t("careers.applyAnyway")}
           </Link>
         </p>
 
-        {/* Matching "Open roles" above — the two are the same kind of thing,
-            and the eyebrow at the top is the only line dressed differently. */}
-        <h2 className="m-0 mb-4 mt-16 text-[26px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[30px]">
-          {t("careers.aboutHeading")}
-        </h2>
-        {/* 15/1.7 in a 34em measure, which is running copy rather than the
-            14/1.65 caption these were set at. Two paragraphs are the whole of
-            what this page says about the shop; they can be read like prose. */}
-        <div className="max-w-[34em] text-[15px] leading-[1.7] text-body">
-          <p className="m-0">{t("about.p1")}</p>
-          <p className="m-0 mt-3.5">{t("about.p2")}</p>
-        </div>
+        {/* ——— No "About the shop" ———
 
-        {/* Under the words now, not above them. A photograph of the shop is
-            the evidence for the paragraph, and it reads as evidence when it
-            follows the claim. */}
-        <TeamPhotos />
+            Two paragraphs of the shop's story used to sit here, under a
+            heading, with the photo strip after them. They are gone at the
+            shop's request, and the page is better for it: this is a board, and
+            the story is one tap away on About Us, which is on the front door
+            next to the link that reaches this page. Saying it twice made the
+            board the shorter half of its own page.
 
-        <footer className="mt-14 border-t border-line pt-5">
+            app/(marketing)/about is where that copy lives and it is untouched.
+            The photo strip went with the section — teamPhotos.ts is deleted
+            rather than left as a mechanism with nothing to render into. */}
+
+        {/* mt-10, not mt-14. That gap was measured against the two paragraphs
+            of shop copy that used to end the page; with those gone it was a
+            screen's worth of nothing between the last thing to read and the
+            small print. */}
+        <footer className="mt-10 border-t border-line pt-5">
           <p className="m-0 text-[11px] leading-[1.7] text-quiet">{t("careers.eeo")}</p>
           <p className="m-0 mt-2.5 text-[11px] leading-[1.7] text-quiet">
             {t("careers.privacyNote")}{" "}
@@ -546,55 +573,3 @@ function Facet({
   );
 }
 
-// The photographs, or nothing at all.
-//
-// No heading over them and no caption under them: a picture of the shop on a
-// page headed "Work at Corner Bagel" needs no label saying it is a picture of
-// the shop.
-//
-// Two columns, one shape, and the last one spans both when the count is odd.
-// That single rule is tidy at every count — one photo is a full-width band,
-// two sit side by side, three are a pair over a band, four are a block — and
-// it never leaves the hole that a mixed portrait-and-landscape grid does,
-// because a row whose items are different heights is a row with a gap under
-// the short one. The price is that a portrait photo gets cropped, which is a
-// better trade than a page with a bite out of it.
-function TeamPhotos() {
-  const photos = TEAM_PHOTOS;
-  if (photos.length === 0) return null;
-
-  return (
-    <div className="mt-9 grid grid-cols-2 gap-2.5">
-      {photos.map((photo, index) => {
-        const band = index === photos.length - 1 && photos.length % 2 === 1;
-        return (
-          <div
-            key={photo.src}
-            // A fixed aspect and object-cover, so a photo at the wrong ratio is
-            // cropped rather than allowed to shove the page around. Everything
-            // below the strip stays where it was.
-            className={`relative overflow-hidden rounded-2xl bg-raise ${
-              band ? "col-span-2 aspect-[16/9]" : "aspect-[4/3]"
-            }`}
-          >
-            <Image
-              src={photo.src}
-              alt={photo.alt}
-              fill
-              className="object-cover"
-              // The strip is at the top of the page, so these are what somebody
-              // is waiting on. Inside a 34rem column a half-width tile is about
-              // 260px on a phone; the hint stops the browser fetching a 1200px
-              // file for a 260px hole.
-              sizes={
-                band
-                  ? "(max-width: 34rem) 100vw, 34rem"
-                  : "(max-width: 34rem) 50vw, 17rem"
-              }
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
-}

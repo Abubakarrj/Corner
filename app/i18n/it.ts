@@ -712,6 +712,7 @@ export const it: Table = {
   "careers.positionsNote": "Scegli quello per cui ti candidi.",
   "careers.perHour": "{amount} all'ora",
   "careers.perYear": "{amount} all'anno",
+  "careers.applyNow": "Candidati",
   "careers.roleCount": "{count} posizioni",
   "careers.roleCountOne": "1 posizione",
   "careers.allPositions": "Tutte le posizioni",

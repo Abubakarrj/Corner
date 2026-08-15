@@ -756,6 +756,7 @@ export const en = {
   "careers.positionsNote": "Pick the one you're applying for.",
   "careers.perHour": "{amount} an hour",
   "careers.perYear": "{amount} a year",
+  "careers.applyNow": "Apply now",
   "careers.roleCount": "{count} roles",
   "careers.roleCountOne": "1 role",
   "careers.allPositions": "All positions",
