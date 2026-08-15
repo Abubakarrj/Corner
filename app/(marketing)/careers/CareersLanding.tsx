@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import LanguagePicker from "../../ui/LanguagePicker";
-import { DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
+import { CONTROL_PILL, DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useT, type StringKey } from "../../i18n";
 import { POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
@@ -201,23 +201,24 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             treatment as a form field's caption. On a page whose entire purpose
             is the list underneath it, that is the timidest thing on screen:
             the section that matters most was the one set smallest. */}
-        {/* The heading and how many there are, on one line.
+        {/* The heading, and how many there are at the far end of the same
+            line — where the catalog's toolbar puts "27 items".
 
-            Every one of the references puts a count beside the list's name —
-            "250 job results", "Showing results (921)" — and it is the one
-            piece of furniture a board genuinely needs that this page did not
-            have: it says how much there is before you scroll, and once a
-            filter is on it is the only thing that reports what the filter
-            did. Counted against what is shown, not against what exists. */}
-        <div className="mt-11 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            Not on the filter row itself, which is where the catalog keeps it.
+            The catalog's toolbar carries two controls; this one carries three,
+            and at 390px they take the whole width, so a count sharing that row
+            wrapped underneath them and sat flush left. On the heading's line it
+            is on the far edge at every width, and it is still the last thing
+            before the list it counts. */}
+        <div className="mt-11 flex items-baseline justify-between gap-3">
           <h2 className="m-0 text-[24px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[28px]">
             {t("careers.openRoles")}
           </h2>
-          <span className="rounded-full border border-line-soft px-2.5 py-1 text-[12px] leading-none tabular-nums text-muted">
+          <p className="m-0 shrink-0 text-[11px] tabular-nums text-faint">
             {shown.length === 1
               ? t("careers.roleCountOne")
               : t("careers.roleCount", { count: shown.length })}
-          </span>
+          </p>
         </div>
 
         {/* ——— The three filters ———
@@ -238,7 +239,18 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             Every option comes from the openings themselves, so a facet can
             never offer a filter that returns nothing: add a shop to
             openings.ts and it appears here, remove it and it goes. */}
-        <div className="mt-5 flex flex-wrap gap-2">
+        {/* ——— The shop's own toolbar, on the careers board ———
+
+            Same row the catalog runs under its category tabs: the controls at
+            the start, how many there are at the far end, 11px and quiet. The
+            filters wear CONTROL_PILL, which is the sort control's shell — one
+            constant, so the height and the radius of a pill on this page and a
+            pill on /shop cannot drift apart. It is the same product; a filter
+            should not be a different object depending on which page it is on.
+
+            The count is on the heading's line rather than at the end of this
+            one; see the note there for why. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <Facet
             label={t("careers.allPositions")}
             value={role}
@@ -484,13 +496,26 @@ function Facet({
     //
     // pointer-events-none, so the whole control including the arrow opens the
     // platform's picker rather than the arrow swallowing the tap.
-    <span className={`relative inline-flex max-w-[46vw] ${on ? "text-on-ink" : "text-muted"}`}>
+    // CONTROL_PILL is the shop's sort control, shared rather than copied: h-8,
+    // rounded-full, an 11px label and the soft border. Height and radius cannot
+    // drift between this board and the catalog because there is one constant
+    // for both.
+    //
+    // The chevron is a sibling, not a background image. It was
+    // `background-position: right 14px`, which is a physical edge, and Persian
+    // caught it: under RTL the padding moved to the leading side (pe- is
+    // logical) and the arrow stayed on the right, sitting on the first
+    // character. There is no logical keyword for background-position, so the
+    // arrow comes out of the background and becomes an element placed with
+    // `end-3`. pointer-events-none, so a tap on it still opens the platform's
+    // picker rather than being swallowed.
+    <span className={`relative inline-flex max-w-[46vw] ${on ? "text-on-ink" : "text-ink"}`}>
       <select
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`cb-press h-9 w-full cursor-pointer appearance-none truncate rounded-full border bg-clip-padding ps-3.5 pe-9 text-[13px] leading-none text-current outline-none transition-colors focus-visible:border-ink ${
-          on ? "border-ink bg-ink" : "border-line-soft bg-page hover:text-ink"
+        className={`${CONTROL_PILL} w-full cursor-pointer appearance-none truncate ps-3 pe-7 text-current outline-none transition-colors focus-visible:border-ink ${
+          on ? "border-ink bg-ink" : "hover:border-ink"
         }`}
       >
         <option value="">{label}</option>
@@ -500,18 +525,19 @@ function Facet({
           </option>
         ))}
       </select>
+      {/* The catalog's own chevron: 9x6, 1.4 stroke. */}
       <svg
-        width="10"
-        height="7"
-        viewBox="0 0 10 7"
+        width="9"
+        height="6"
+        viewBox="0 0 10 6"
         fill="none"
         aria-hidden
-        className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2"
       >
         <path
-          d="M1 1.5 5 5.5l4-4"
+          d="M1 1l4 4 4-4"
           stroke="currentColor"
-          strokeWidth="1.5"
+          strokeWidth="1.4"
           strokeLinecap="round"
           strokeLinejoin="round"
         />

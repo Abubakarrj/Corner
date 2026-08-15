@@ -697,7 +697,7 @@ export default function ApplicationForm({
             <>
               <StepHead title={t("careers.secYou")} />
               <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-3">
+                <Pair>
                   <Field
                     label={t("careers.firstName")}
                     value={application.firstName}
@@ -712,7 +712,7 @@ export default function ApplicationForm({
                     error={problem("careers.errLastName")}
                     autoComplete="family-name"
                   />
-                </div>
+                </Pair>
                 <Field
                   label={t("careers.email")}
                   type="email"
@@ -734,7 +734,7 @@ export default function ApplicationForm({
                 {/* City and state, never a street address. Knowing the commute is
                     plausible is the whole reason to ask; the rest would be
                     personal data held for nothing. */}
-                <div className="grid grid-cols-[2fr_1fr] gap-3">
+                <Pair columns="grid-cols-[2fr_1fr]">
                   <Field
                     label={t("careers.city")}
                     value={application.city}
@@ -749,7 +749,7 @@ export default function ApplicationForm({
                     error={problem("careers.errState")}
                     autoComplete="address-level1"
                   />
-                </div>
+                </Pair>
               </div>
             </>
           ) : null}
@@ -812,7 +812,7 @@ export default function ApplicationForm({
                       value={row.role}
                       onChange={(value) => update({ ...row, role: value })}
                     />
-                    <div className="grid grid-cols-2 gap-3">
+                    <Pair>
                       <Field
                         label={t("careers.from")}
                         value={row.from}
@@ -823,7 +823,7 @@ export default function ApplicationForm({
                         value={row.to}
                         onChange={(value) => update({ ...row, to: value })}
                       />
-                    </div>
+                    </Pair>
                   </div>
                 )}
               />
@@ -843,7 +843,7 @@ export default function ApplicationForm({
                       value={row.school}
                       onChange={(value) => update({ ...row, school: value })}
                     />
-                    <div className="grid grid-cols-[2fr_1fr] gap-3">
+                    <Pair columns="grid-cols-[2fr_1fr]">
                       <Field
                         label={t("careers.focus")}
                         value={row.focus}
@@ -855,7 +855,7 @@ export default function ApplicationForm({
                         value={row.finished}
                         onChange={(value) => update({ ...row, finished: value })}
                       />
-                    </div>
+                    </Pair>
                   </div>
                 )}
               />
@@ -1088,6 +1088,29 @@ function Legend({ children, first }: { children: React.ReactNode; first?: boolea
   );
 }
 
+// Two fields side by side, sharing one set of rows.
+//
+// The row template is what makes the subgrid in Field mean anything: without
+// three rows here there is nothing for a cell to inherit, and each field falls
+// back to stacking on its own. gap-y-0 on purpose — the space between a label,
+// its input and its message is set by their own margins, and a row gap here
+// would add to them.
+function Pair({
+  columns = "grid-cols-2",
+  children,
+}: {
+  /** The template, for a pair that is not two equal halves. City is wider
+      than State. */
+  columns?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`grid ${columns} gap-x-3 gap-y-0 [grid-template-rows:auto_auto_auto]`}>
+      {children}
+    </div>
+  );
+}
+
 function Problem({ children }: { children: React.ReactNode }) {
   if (!children) return null;
   return (
@@ -1161,10 +1184,29 @@ function Field({
   // the label instead keeps both inputs on the same line, which is the
   // thing the eye actually reads the row by.
   return (
-    <div className="flex h-full flex-col">
+    // ——— Three rows, shared with whatever is beside it ———
+    //
+    // The bug this fixes: in a two-up row, an error under one field pushed the
+    // *other* field's input down. Both cells stretch to the taller of the two,
+    // and the label carried `flex-1` so it would absorb the difference — which
+    // is right when the difference is a label wrapping to two lines, and wrong
+    // when it is a sentence in red under the neighbour's input. The extra
+    // height went in between the label and the input, so a field with nothing
+    // wrong with it sat half an inch lower than the one that did.
+    //
+    // Label, input and message are three rows now, and a paired field takes
+    // its rows from the row above it (see Pair). Every label lands in row one,
+    // every input in row two, every message in row three, and each row is as
+    // tall as the taller side needs — so a wrapping label still moves both
+    // inputs together, and an error only ever grows the row underneath them.
+    //
+    // Outside a Pair this is a plain grid: `subgrid` with no parent rows to
+    // inherit computes to `none`, the span is meaningless to a non-grid
+    // parent, and the three children stack exactly as the flex column did.
+    <div className="grid [grid-row:span_3] [grid-template-rows:subgrid]">
       <label
         htmlFor={id}
-        className="mb-1.5 flex flex-1 items-baseline gap-2 text-[12px] text-muted"
+        className="mb-1.5 flex items-baseline gap-2 text-[12px] text-muted"
       >
         <span className="min-w-0 flex-1">{label}</span>
         {optional ? (
