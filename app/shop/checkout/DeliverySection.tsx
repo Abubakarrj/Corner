@@ -58,6 +58,7 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
     courierNote,
     setCourierNote,
     fulfillment,
+    totals,
   } = checkout;
 
   // Whether this destination carries a point the customer placed, rather than
@@ -223,14 +224,35 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
 
         {/* The fee, on the screen that is about the delivery, rather than only
             inside a collapsed summary. It is the number somebody wants before
-            they agree to any of the above. */}
+            they agree to any of the above.
+            Which means it has to say the same thing the summary says. Reading
+            quote.feeCents straight, it went on charging $10.99 for a delivery
+            the summary two sections down had already waived, and the number a
+            customer sees while agreeing to the terms of the drop-off is not
+            the one to be wrong about. `totals` is the answer totalsFor()
+            already worked out, not a second opinion formed here. */}
         <div className="flex items-center justify-between gap-3 border-t border-line-faint px-4 py-3">
           <span className="flex items-center gap-1.5 text-[13px] text-muted">
             {t("checkout.delivery")}
             <DeliveryFeeInfo miles={quote?.miles} feeCents={quote?.feeCents} />
           </span>
-          <span className="text-[14px] tabular-nums text-ink">
-            {quote ? formatPrice(quote.feeCents) : quoting ? t("delivery.pricing") : "—"}
+          <span className="flex items-baseline gap-1.5 text-[14px] tabular-nums text-ink">
+            {quote ? (
+              totals.deliveryWaived ? (
+                <>
+                  <span className="text-[13px] text-quiet line-through">
+                    {formatPrice(totals.deliveryQuotedCents)}
+                  </span>
+                  <span>{t("checkout.deliveryWaived")}</span>
+                </>
+              ) : (
+                formatPrice(totals.deliveryCents)
+              )
+            ) : quoting ? (
+              t("delivery.pricing")
+            ) : (
+              "—"
+            )}
           </span>
         </div>
       </div>
