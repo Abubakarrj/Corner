@@ -84,18 +84,21 @@ export default function AboutMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((was) => !was)}
-        // whitespace-nowrap, no truncate: the label is the whole control, and
-        // "About U…" is worse than a chip that takes its own line. The strip
-        // wraps instead. See the marketing home page.
-        className={`cb-press inline-flex h-7 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full border px-2.5 text-[11px] font-medium leading-none transition-colors hover:text-ink ${ring} ${
+        // The label is the whole control, the way the language pill's is.
+        //
+        // No chevron: tapping shows the two options, and a caret announcing
+        // that a menu exists is one more thing to draw and read on a chip
+        // whose job is to be quiet. aria-haspopup tells anything that needs
+        // telling.
+        //
+        // whitespace-nowrap and no truncate, for the same reason: "About U…"
+        // is worse than a chip that takes its own line, so the strip wraps
+        // instead. See the marketing home page.
+        className={`cb-press inline-flex h-7 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border px-2.5 text-[11px] font-medium leading-none transition-colors hover:text-ink ${ring} ${
           shell === "page" ? "text-quiet" : "text-muted"
         }`}
       >
         {t("about.aboutUs")}
-        {/* The chevron carries what the globe carries next door: that this
-            opens. "About Us" already says what it is, so the icon's job here
-            is the affordance rather than the subject. */}
-        <ChevronIcon open={open} />
       </button>
 
       {/* Always mounted — a menu that unmounts on close cannot animate one —
@@ -124,26 +127,5 @@ export default function AboutMenu({
         ))}
       </ul>
     </div>
-  );
-}
-
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="9"
-      height="6"
-      viewBox="0 0 10 6"
-      fill="none"
-      aria-hidden
-      className={`shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-    >
-      <path
-        d="M1 1l4 4 4-4"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
