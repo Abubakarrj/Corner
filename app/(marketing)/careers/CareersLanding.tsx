@@ -105,31 +105,63 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           <LanguagePicker shell="page" />
         </div>
 
-        {/* ——— One eyebrow, not three ———
+        {/* ——— The top of the page, centred, with the mark on it ———
 
-            "WE'RE HIRING", "OPEN ROLES" and "ABOUT THE SHOP" were all set the
-            same way: 11px, uppercase, letterspaced, in a column that is only
-            about a screen and a half long. A device used three times in that
-            space stops marking anything — it just becomes the texture of the
-            page. This is the one that earns it, because it is the only line
-            that says what kind of page you have landed on. The other two are
-            labels on a list and a paragraph, and they are set as labels. */}
-        <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
-          {t("careers.eyebrow")}
-        </p>
-        {/* Bigger, and considerably. It was 30px over a 15px lede, which is
-            not a hierarchy so much as two sizes of the same thing — and this
-            page has no photograph and no illustration, so the title is the
-            only thing on it that can carry a top of a page. */}
-        <h1
-          className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[44px]"
-          style={{ fontFamily: DISPLAY_FONT }}
-        >
-          {t("careers.title")}
-        </h1>
-        <p className="m-0 mt-3.5 max-w-[26em] text-[16px] leading-[1.5] text-muted">
-          {t("careers.lede")}
-        </p>
+            Three passes at this were all type, and type was not what was
+            missing. The page was a white column of left-aligned Helvetica with
+            no image, no colour and nothing of the shop in it — the map has red
+            pins, the shop has cream and olive, the front door has the mark,
+            and the one page whose job is to make somebody want to work here
+            had none of it. It could have belonged to any company.
+
+            So: the shop's signature at the top, the hand-lettered CORNER BAGEL
+            in its red. Not the bagel glyph — that was the first attempt and it
+            was wrong twice over. The mark is wheat, not red, so filling the
+            path with the brand colour was not the shop's bagel at all; and the
+            hole in it is a small subpath sized to be seen against the pin's
+            red ground, so on white at 54px the whole thing read as a red blob
+            with a nick in it. The wordmark is the mark that survives being
+            printed on its own, which is what a signature is for.
+
+            Same file the front door uses, so the two pages open the same way.
+            The title under it then reads as the name of the page rather than
+            as the name of the shop, which is the arrangement every careers
+            page has: the company's mark, and then what this page is.
+
+            And centred. The whole page was flush left at one indent with the
+            type stepping quietly down, which is why it read as a wall: nothing
+            in it changed shape. A centred cover over a left-aligned list gives
+            the page two movements instead of one, and it is what /about does a
+            few doors down. */}
+        <header className="flex flex-col items-center pt-2 text-center">
+          <Image
+            src="/logo.svg"
+            // Decorative. The shop's name is in the heading below it, and a
+            // screen reader hearing "Corner Bagel, Work at Corner Bagel" is
+            // being told the same thing twice.
+            alt=""
+            width={8369}
+            height={3233}
+            unoptimized
+            priority
+            className="h-auto w-[150px] sm:w-[180px]"
+          />
+
+          <p className="m-0 mt-7 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
+            {t("careers.eyebrow")}
+          </p>
+          {/* Bigger, and considerably. It was 30px over a 15px lede, which is
+              not a hierarchy so much as two sizes of the same thing. */}
+          <h1
+            className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[46px]"
+            style={{ fontFamily: DISPLAY_FONT }}
+          >
+            {t("careers.title")}
+          </h1>
+          <p className="m-0 mt-3.5 max-w-[24em] text-[16px] leading-[1.55] text-muted">
+            {t("careers.lede")}
+          </p>
+        </header>
 
         {/* ——— The jobs, then the pitch ———
 
