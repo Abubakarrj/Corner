@@ -564,7 +564,12 @@ export default function ApplicationForm({
             {t("common.back")}
           </button>
 
-          <LanguagePicker />
+          {/* shell="page", because this page is white now. The default
+              dresses the pill in bg-surface, which is the warm off-white
+              made to sit on cream — on white it reads as a faintly beige
+              chip against the ground rather than as part of it. Same call
+              the marketing home makes, for the same reason. */}
+          <LanguagePicker shell="page" />
         </div>
 
         {/* ——— Masthead ———

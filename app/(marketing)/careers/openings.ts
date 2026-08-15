@@ -62,10 +62,10 @@ export type Opening = {
 export const NEW_FOR_DAYS = 30;
 
 export const OPENINGS: Opening[] = [
-  { role: "counter", location: "Koreatown" },
-  { role: "kitchen", location: "Koreatown" },
-  { role: "shift-lead", location: "Koreatown" },
-  { role: "manager", location: "Koreatown" },
+  { role: "counter", location: "Koreantown" },
+  { role: "kitchen", location: "Koreantown" },
+  { role: "shift-lead", location: "Koreantown" },
+  { role: "manager", location: "Koreantown" },
 ];
 
 /** Whether a job still counts as new, as of `now`.

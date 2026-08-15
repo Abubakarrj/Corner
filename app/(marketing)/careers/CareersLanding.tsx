@@ -97,7 +97,12 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             </svg>
             {t("nav.home")}
           </Link>
-          <LanguagePicker />
+          {/* shell="page", because this page is white now. The default
+              dresses the pill in bg-surface, which is the warm off-white
+              made to sit on cream — on white it reads as a faintly beige
+              chip against the ground rather than as part of it. Same call
+              the marketing home makes, for the same reason. */}
+          <LanguagePicker shell="page" />
         </div>
 
         {/* ——— One eyebrow, not three ———
@@ -159,14 +164,28 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             a card with a piece missing. In a price column, three matching
             numbers are a rate — that is what a rate looks like on a menu — and
             a blank fourth reads as a price not given, which is the truth. */}
-        <div className="mt-9 flex items-baseline justify-between gap-3 border-b border-ink pb-2.5">
-          <h2 className="m-0 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
-            {t("careers.openRoles")}
-          </h2>
-          {oneShop ? <span className="text-[12px] text-quiet">{oneShop}</span> : null}
-        </div>
+        {/* ——— A heading, not a label ———
 
-        <ul className="m-0 list-none p-0">
+            "Open roles" was 11px, uppercase, letterspaced and grey — the same
+            treatment as a form field's caption. On a page whose entire purpose
+            is the list underneath it, that is the timidest thing on screen:
+            the section that matters most was the one set smallest.
+
+            So it is a heading now, at 26/30, in the same weight as the title
+            above it. Size does the separating rather than weight, which is how
+            the rest of this app is set. The shop's name goes underneath as a
+            quiet line rather than beside it, because it is a note about the
+            list and not half of its name. */}
+        <h2 className="m-0 mt-14 text-[26px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[30px]">
+          {t("careers.openRoles")}
+        </h2>
+        {oneShop ? (
+          <p className="m-0 mt-1.5 text-[14px] leading-[1.5] text-muted">{oneShop}</p>
+        ) : null}
+
+        {/* The heavy rule is the list's own top edge now that the heading has
+            stopped needing one under it. */}
+        <ul className="m-0 mt-5 list-none border-t border-ink p-0">
           {openings.map((opening) => {
             const label = titleOf(opening.role);
             if (!label) return null;
@@ -206,8 +225,11 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                   className="cb-press group -mx-3 block cursor-pointer rounded-xl px-3 py-5 transition-colors hover:bg-raise"
                 >
                   <span className="flex items-baseline gap-3">
+                    {/* font-medium: the names were the only headings on the
+                        page set at the body's weight, so at 19px they read as
+                        large text rather than as titles. */}
                     <span
-                      className="min-w-0 flex-1 text-[19px] leading-[1.25] text-ink sm:text-[21px]"
+                      className="min-w-0 flex-1 text-[19px] font-medium leading-[1.25] text-ink sm:text-[21px]"
                       style={{ fontFamily: DISPLAY_FONT }}
                     >
                       {t(label)}
@@ -277,10 +299,9 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           </Link>
         </p>
 
-        {/* Set as a label, matching "Open roles" above — the two are the same
-            kind of thing, and the eyebrow at the top is the only line dressed
-            differently. */}
-        <h2 className="m-0 mb-3.5 mt-14 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
+        {/* Matching "Open roles" above — the two are the same kind of thing,
+            and the eyebrow at the top is the only line dressed differently. */}
+        <h2 className="m-0 mb-4 mt-16 text-[26px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[30px]">
           {t("careers.aboutHeading")}
         </h2>
         {/* 15/1.7 in a 34em measure, which is running copy rather than the

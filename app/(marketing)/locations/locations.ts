@@ -72,7 +72,15 @@ export type StoreLocation = {
 // draw a reasonable map when there is no key, and they are both.
 export const KOREATOWN: StoreLocation = {
   id: "koreatown",
-  name: "Koreatown",
+  // The shop's own spelling, set by the owner. The neighbourhood is
+  // conventionally "Koreatown"; this is what the counter calls itself, and a
+  // shop gets to name itself. "koreatown" is in the aliases below so a search
+  // for the usual spelling still finds it.
+  //
+  // The id stays `koreatown` on purpose. It is written into stored
+  // fulfillments, order records and the OPENINGS rows, so changing it would
+  // orphan every one of them; only the display name moves.
+  name: "Koreantown",
   kind: "shop",
   address: "3064 W 8th St",
   city: "Los Angeles, CA 90005",
@@ -84,6 +92,9 @@ export const KOREATOWN: StoreLocation = {
     "k town",
     "k-town",
     "kt",
+    // The neighbourhood's usual spelling, which is not the shop's. Anybody
+    // typing it means this counter.
+    "koreatown",
     "korea town",
     "korean town",
     "la",
