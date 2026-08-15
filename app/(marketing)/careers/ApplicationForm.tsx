@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { Button, ButtonLink } from "../../ui/Button";
 import Confetti from "../../ui/Confetti";
-import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
+import { DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useServerText, useT, type StringKey } from "../../i18n";
 import {
   ANSWER_MAX,
@@ -21,8 +21,6 @@ import {
   type PositionId,
 } from "./application";
 import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from "./draft";
-
-const { cream } = PALETTE;
 
 // The job application.
 //
@@ -511,7 +509,9 @@ export default function ApplicationForm({
   );
 
   return (
-    <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
+    // White in light, near-black in dark. Same ground as the careers page
+    // this arrived from, for the reason written there.
+    <div className="min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
       <div ref={topRef} className="mx-auto max-w-[34rem] px-5 pb-20 pt-6 sm:pt-10">
         {/* ——— The way out ———
             The Back button in the action row moves between steps; it does not
@@ -1005,8 +1005,8 @@ function Sent({ email }: { email: string }) {
     // the poppers sit below the card and the confetti rises past it and falls
     // the full height, which is the effect the component was written for.
     <div
-      className="relative flex min-h-dvh items-center justify-center px-5"
-      style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
+      className="relative flex min-h-dvh items-center justify-center bg-page px-5"
+      style={{ fontFamily: SHOP_FONT }}
     >
       {/* Nothing at all under prefers-reduced-motion — the component checks.
           The tick and the wording carry the moment on their own. */}
@@ -1177,7 +1177,11 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
         className={`w-full rounded-xl border px-3.5 py-3 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
-          onSurface ? "bg-cream" : "bg-surface"
+          // On a card, the field sinks to the page colour; on the page, it
+          // lifts to the card colour. Either way it is one step away from
+          // whatever it is sitting on. It used to sink to cream, which was a
+          // warm tint on a warm ground and is now a warm tint on a white one.
+          onSurface ? "bg-page" : "bg-surface"
         } ${error ? "border-brand-red" : "border-line-soft"}`}
       />
       <Problem>{error}</Problem>

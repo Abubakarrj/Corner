@@ -3,14 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import LanguagePicker from "../../ui/LanguagePicker";
-import { DISPLAY_FONT, PALETTE, SHOP_FONT } from "../../shop/shopControls";
+import { DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useT, type StringKey } from "../../i18n";
 import { POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
 import { TERMS, formatPay, shiftLine, type ResolvedPay } from "./pay";
 import { TEAM_PHOTOS } from "./teamPhotos";
-
-const { cream } = PALETTE;
 
 // The careers page: what the shop is, what it hires for, and a way in.
 //
@@ -65,7 +63,18 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
   const oneShop = shops.length === 1 ? shops[0] : null;
 
   return (
-    <div className="min-h-dvh" style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
+    // ——— White, not cream ———
+    //
+    // This ran on the shop's cream, which is the ground /shop and /gift use to
+    // say "you are inside the ordering app now". Careers is not that. It is a
+    // page about the shop, and it sits with /about and the policies, which are
+    // the pages the marketing site keeps deliberately white.
+    //
+    // bg-page rather than a literal, so night follows: the token is white in
+    // light and the app's near-black in dark. The role cards keep bg-surface
+    // and their hairline, which is what still tells them apart from the ground
+    // now that the ground is no longer tinted.
+    <div className="min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
       <div className="mx-auto max-w-[34rem] px-5 pb-20 pt-6 sm:pt-10">
         <div className="mb-7 flex items-center justify-between gap-3">
           <Link
