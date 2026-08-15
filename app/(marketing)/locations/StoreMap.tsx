@@ -307,12 +307,21 @@ export default function StoreMap({
   // nothing in it — a frame answering a question that had just been thrown
   // away. Each tab now starts where the finder itself starts.
   //
+  // The dot goes too, and that is the whole rule: a tab change resets the map.
+  // It kept the dot at first, on the reasoning that where you are standing is
+  // true whichever tab is open. What that missed is that the dot is delivery's
+  // answer, and carrying it onto Pickup left a blue dot on a screen that had
+  // never asked where anybody was — so Pickup after Delivery did not look like
+  // Pickup. Delivery draws its own again a moment later; the other two land
+  // exactly as they do from a cold start.
+  //
   // "Search area" goes with it, without being told to: `moved` is a comparison
   // against the mode the framing was changed under, and this one is new.
   useEffect(() => {
     if (!ready) return;
     quiet();
     engineRef.current?.home();
+    engineRef.current?.setYou(null);
   }, [mode, ready]);
 
   // ——— mode: delivery opens on you ———
@@ -333,9 +342,9 @@ export default function StoreMap({
   // location that we could not find them is answering a question they did not
   // ask. Without a dot the tab is exactly what it was before.
   //
-  // The dot survives a switch to another tab. It is a true thing about the map
-  // rather than a delivery ornament, and clearing it would also clear one the
-  // visitor had asked for with the locate button.
+  // Runs after the reset above, which has just cleared any dot: leaving this
+  // tab takes it away, and coming back puts it down again from a fix the
+  // browser has usually still got cached.
   useEffect(() => {
     if (!ready || mode !== "delivery") return;
     let cancelled = false;
