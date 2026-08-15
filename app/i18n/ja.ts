@@ -124,8 +124,6 @@ export const ja: Table = {
   "shop.takingYouToMap":
     "店舗の選択、ケータリングのご相談、配達先の設定のため地図へ移動します。移動しない場合は下のボタンをお使いください。",
   "shop.chooseWhereGoing": "お届け先を選ぶ",
-  "shop.giftProgress": "無料の{gift}まであと{amount}",
-  "shop.giftEarned": "無料の{gift}を獲得しました",
 
   "product.allergens": "アレルギー物質",
   "product.contains": "{list}を含みます。",
@@ -782,4 +780,7 @@ export const ja: Table = {
   "chat.rileyRefused": "それについてはお手伝いできません、すみません。ご注文のことでしたら {phone} までお電話ください。",
   "chat.rileyLostThread": "話の流れを見失ってしまいました、すみません。もう一度お聞かせいただけますか。",
   "chat.rileyTooLong": "思ったより時間がかかってしまいました。もう一度お聞かせいただけますか。",
+  "shop.freeDeliveryProgress": "あと{amount}で配達料無料",
+  "shop.freeDeliveryEarned": "配達料は当店が持ちます",
+  "checkout.deliveryWaived": "無料",
 };

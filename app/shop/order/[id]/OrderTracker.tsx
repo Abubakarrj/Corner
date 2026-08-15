@@ -347,14 +347,21 @@ function Receipt({
       <div className="mt-4 border-t pt-3" style={{ borderColor: border }}>
         <Line label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
         <Line label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
-        {bill.deliveryCents > 0 ? (
+        {/* On the quoted fee, so a waived delivery still shows its line and
+            the receipt says what the shop covered. */}
+        {bill.deliveryQuotedCents > 0 ? (
           <Line
             label={t("checkout.delivery")}
-            amount={formatPrice(bill.deliveryCents)}
+            amount={
+              bill.deliveryWaived
+                ? t("checkout.deliveryWaived")
+                : formatPrice(bill.deliveryCents)
+            }
+            was={bill.deliveryWaived ? formatPrice(bill.deliveryQuotedCents) : undefined}
             after={
               <>
                 <UberDirectMark className="text-[11px]" />
-                <DeliveryFeeInfo feeCents={bill.deliveryCents} />
+                <DeliveryFeeInfo feeCents={bill.deliveryQuotedCents} />
               </>
             }
           />
@@ -365,7 +372,10 @@ function Receipt({
         </div>
       </div>
       <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
-        {bill.deliveryCents > 0 ? t("order.payCourier") : t("order.payAtWindow")}
+        {/* Whether this is a delivery at all, not whether it was charged for.
+            Keyed on the charge, a waived order said "pay at the window" about
+            a bag going into a car. */}
+        {bill.deliveryQuotedCents > 0 ? t("order.payCourier") : t("order.payAtWindow")}
       </p>
 
       {/* Uber's own tracking page. Linked rather than embedded, and rather
@@ -390,11 +400,15 @@ function Receipt({
 function Line({
   label,
   amount,
+  was,
   strong,
   after,
 }: {
   label: string;
   amount: string;
+  /** What it would have cost, struck through. See Money in
+   *  CheckoutSections.tsx, which does the same on the checkout's summary. */
+  was?: string;
   strong?: boolean;
   after?: React.ReactNode;
 }) {
@@ -409,6 +423,11 @@ function Line({
         <span className="truncate">{label}</span>
         {after}
       </span>
+      {was ? (
+        <span className="ms-auto text-[12px] tabular-nums line-through" style={{ color: muted }}>
+          {was}
+        </span>
+      ) : null}
       <span
         className={strong ? "text-[15px] font-medium" : "text-[13px]"}
         style={{ color: ink }}

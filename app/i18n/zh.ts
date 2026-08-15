@@ -126,8 +126,6 @@ export const zh: Table = {
   "shop.takingYouToMap":
     "正带你去地图，选择门店、安排餐饮服务或设置配送地址。如果没有跳转，下方按钮也可以。",
   "shop.chooseWhereGoing": "选择送达地点",
-  "shop.giftProgress": "再消费 {amount} 即可获得免费{gift}",
-  "shop.giftEarned": "你已获得免费{gift}",
 
   "product.allergens": "过敏原",
   "product.contains": "含{list}。",
@@ -781,4 +779,7 @@ export const zh: Table = {
   "chat.rileyRefused": "这个我帮不上忙，抱歉。如果是订单的事，请拨打 {phone}。",
   "chat.rileyLostThread": "我这边断了思路，抱歉。可以再问我一次吗？",
   "chat.rileyTooLong": "花的时间比预期久。可以再问我一次吗？",
+  "shop.freeDeliveryProgress": "再买 {amount} 免配送费",
+  "shop.freeDeliveryEarned": "配送费我们请客",
+  "checkout.deliveryWaived": "已免",
 };

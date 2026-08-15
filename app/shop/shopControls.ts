@@ -74,7 +74,7 @@ export const PALETTE = {
   sky: "var(--cb-sky)",
   skySoft: "var(--cb-sky-soft)",
   skyInk: "var(--cb-sky-ink)",
-  // Reward and highlight: the keychain being earned, a tag on something new.
+  // Reward and highlight: the free-delivery bar filling, a tag on something new.
   sun: "var(--cb-sun)",
   sunSoft: "var(--cb-sun-soft)",
   sunInk: "var(--cb-sun-ink)",

@@ -80,7 +80,13 @@ type Order = {
   phone: string;
   items: OrderItem[];
   subtotalCents: number;
+  // What the customer paid for the courier, and what the courier cost. They
+  // differ when the order cleared the free-delivery threshold: Uber is booked
+  // and billed at the quote either way, and the shop absorbs it. The record
+  // keeps both so that difference is visible rather than showing up as a zero
+  // nobody can reconcile against the Uber invoice.
   deliveryCents: number;
+  deliveryQuotedCents: number;
   tipCents: number;
   totalCents: number;
   curbside: boolean;
@@ -390,6 +396,7 @@ export async function POST(request: Request) {
     items,
     subtotalCents,
     deliveryCents: totals.deliveryCents,
+    deliveryQuotedCents: totals.deliveryQuotedCents,
     tipCents: totals.tipCents,
     totalCents: totals.totalCents,
     curbside: (body as { curbside?: unknown })?.curbside === true,

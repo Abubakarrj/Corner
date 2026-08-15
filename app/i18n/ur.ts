@@ -127,8 +127,6 @@ export const ur: Table = {
   "shop.takingYouToMap":
     "آپ کو نقشے پر لے جا رہے ہیں تاکہ اسٹور چنیں، کیٹرنگ کا بندوبست کریں یا ڈیلیوری کا پتہ دیں۔ اگر ایسا نہ ہو تو نیچے والا بٹن بھی یہی کرتا ہے۔",
   "shop.chooseWhereGoing": "منزل منتخب کریں",
-  "shop.giftProgress": "مفت {gift} کے لیے {amount} باقی ہیں",
-  "shop.giftEarned": "آپ نے مفت {gift} حاصل کر لیا",
 
   "product.allergens": "الرجی والے اجزاء",
   "product.contains": "اس میں {list} شامل ہے۔",
@@ -786,4 +784,7 @@ export const ur: Table = {
   "chat.rileyRefused": "اس میں میں مدد نہیں کر سکتی، معذرت۔ اگر آرڈر کے بارے میں ہے تو {phone} پر کال کریں۔",
   "chat.rileyLostThread": "بات کا سلسلہ ٹوٹ گیا، معذرت۔ دوبارہ پوچھ لیں؟",
   "chat.rileyTooLong": "اس میں ضرورت سے زیادہ وقت لگ گیا۔ دوبارہ پوچھ لیں؟",
+  "shop.freeDeliveryProgress": "مفت ڈیلیوری کے لیے {amount} اور",
+  "shop.freeDeliveryEarned": "ڈیلیوری ہماری طرف سے",
+  "checkout.deliveryWaived": "معاف",
 };

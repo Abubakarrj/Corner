@@ -125,17 +125,22 @@ export default function PurchaseComplete({
           <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-line-soft bg-surface p-4 text-left">
             <Money label={t("common.subtotal")} amount={formatPrice(bill.subtotalCents)} />
             <Money label={t("checkout.tax")} amount={formatPrice(bill.taxCents)} />
-            {bill.deliveryCents > 0 ? (
+            {bill.deliveryQuotedCents > 0 ? (
               // The receipt carries no distance — the order record keeps what
               // was charged, not how far it went — so the explainer opens
               // without the "your address" line and shows the rate card alone.
               <Money
                 label={t("checkout.delivery")}
-                amount={formatPrice(bill.deliveryCents)}
+                amount={
+                  bill.deliveryWaived
+                    ? t("checkout.deliveryWaived")
+                    : formatPrice(bill.deliveryCents)
+                }
+                was={bill.deliveryWaived ? formatPrice(bill.deliveryQuotedCents) : undefined}
                 after={
                   <>
                     <UberDirectMark className="text-[11px] text-quiet" />
-                    <DeliveryFeeInfo feeCents={bill.deliveryCents} />
+                    <DeliveryFeeInfo feeCents={bill.deliveryQuotedCents} />
                   </>
                 }
               />

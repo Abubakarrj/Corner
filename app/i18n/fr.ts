@@ -130,8 +130,6 @@ export const fr: Table = {
   "shop.takingYouToMap":
     "Direction la carte pour choisir une boutique, organiser un traiteur ou indiquer une adresse de livraison. Le bouton ci-dessous fait la même chose, si ce n'est pas le cas.",
   "shop.chooseWhereGoing": "Choisissez la destination",
-  "shop.giftProgress": "Encore {amount} et le {gift} est offert",
-  "shop.giftEarned": "Vous avez gagné un {gift} offert",
 
   // ——— A product ———
   "product.allergens": "Allergènes",
@@ -838,4 +836,7 @@ export const fr: Table = {
   "chat.rileyRefused": "Sur ce point je ne peux pas aider, désolée. Si c'est au sujet d'une commande, appelez la boutique au {phone}.",
   "chat.rileyLostThread": "J'ai perdu le fil, désolée. Vous me redemandez ?",
   "chat.rileyTooLong": "Ça a pris plus de temps que prévu. Vous me redemandez ?",
+  "shop.freeDeliveryProgress": "Plus que {amount} pour la livraison offerte",
+  "shop.freeDeliveryEarned": "La livraison est pour nous",
+  "checkout.deliveryWaived": "Offerte",
 };

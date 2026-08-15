@@ -138,8 +138,6 @@ export const fa: Table = {
   "shop.takingYouToMap":
     "شما را به نقشه می‌بریم تا شعبه‌ای انتخاب کنید، پذیرایی ترتیب دهید یا نشانی ارسال بگذارید. دکمهٔ پایین هم همین کار را می‌کند، اگر خودش نرفت.",
   "shop.chooseWhereGoing": "مقصد را انتخاب کنید",
-  "shop.giftProgress": "تا یک {gift} رایگان {amount} فاصله دارید",
-  "shop.giftEarned": "یک {gift} رایگان به دست آوردید",
 
   // ——— A product ———
   "product.allergens": "حساسیت‌زاها",
@@ -835,4 +833,7 @@ export const fa: Table = {
   "chat.rileyRefused": "با این یکی نمی‌توانم کمک کنم، ببخشید. اگر دربارهٔ سفارش است، با {phone} تماس بگیرید.",
   "chat.rileyLostThread": "رشتهٔ کلام از دستم رفت، ببخشید. دوباره می‌پرسید؟",
   "chat.rileyTooLong": "بیش از حد طول کشید. دوباره می‌پرسید؟",
+  "shop.freeDeliveryProgress": "{amount} تا ارسال رایگان مانده",
+  "shop.freeDeliveryEarned": "ارسال مهمان ما",
+  "checkout.deliveryWaived": "رایگان شد",
 };

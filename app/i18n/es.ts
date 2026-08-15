@@ -126,8 +126,6 @@ export const es: Table = {
   "shop.takingYouToMap":
     "Te llevamos al mapa para elegir una tienda, organizar catering o poner una dirección de entrega. El botón de abajo hace lo mismo, por si no ocurre.",
   "shop.chooseWhereGoing": "Elige a dónde va",
-  "shop.giftProgress": "Te faltan {amount} para un {gift} gratis",
-  "shop.giftEarned": "Has ganado un {gift} gratis",
 
   "product.allergens": "Alérgenos",
   "product.contains": "Contiene {list}.",
@@ -789,4 +787,7 @@ export const es: Table = {
   "chat.rileyRefused": "Con eso no puedo ayudarte, lo siento. Si es sobre un pedido, llama a la tienda al {phone}.",
   "chat.rileyLostThread": "Se me ha ido el hilo, perdona. ¿Me lo preguntas otra vez?",
   "chat.rileyTooLong": "Eso ha tardado más de la cuenta. ¿Me lo preguntas otra vez?",
+  "shop.freeDeliveryProgress": "Te faltan {amount} para el envío gratis",
+  "shop.freeDeliveryEarned": "El envío corre por nuestra cuenta",
+  "checkout.deliveryWaived": "Exento",
 };

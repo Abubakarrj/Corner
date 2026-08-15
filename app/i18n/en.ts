@@ -139,8 +139,8 @@ export const en = {
   "shop.takingYouToMap":
     "Taking you to the map to pick a shop, arrange catering, or set a delivery address. The button below does the same, if it doesn't.",
   "shop.chooseWhereGoing": "Choose where it's going",
-  "shop.giftProgress": "You're {amount} away from a free {gift}",
-  "shop.giftEarned": "You've earned a free {gift}",
+  "shop.freeDeliveryProgress": "You're {amount} away from free delivery",
+  "shop.freeDeliveryEarned": "Delivery is on us",
 
   // ——— A product ———
   "product.allergens": "Allergens",
@@ -227,6 +227,7 @@ export const en = {
   "checkout.curbside": "Curbside",
   "checkout.utensils": "Utensils",
   "checkout.delivery": "Delivery",
+  "checkout.deliveryWaived": "Waived",
   "checkout.tip": "Tip",
   "checkout.tax": "Tax",
   "checkout.placeOrder": "Place order",

@@ -16,8 +16,6 @@ import {
 import {
   CATEGORIES,
   formatPrice,
-  GIFT_NAME,
-  GIFT_THRESHOLD_CENTS,
   PRODUCTS,
   SPREAD_GROUP,
   BAGEL_GROUP,
@@ -29,6 +27,7 @@ import {
   getProduct,
   possibleAllergens,
 } from "../../shop/products";
+import { FREE_DELIVERY_OVER_CENTS } from "../../shop/money";
 
 // Riley's briefing, in three parts.
 //
@@ -151,7 +150,11 @@ ${renderChoices()}
 
 ${renderSoldOut()}
 
-Orders over ${formatPrice(GIFT_THRESHOLD_CENTS)} come with a complimentary ${GIFT_NAME}.
+Delivery is free on orders over ${formatPrice(FREE_DELIVERY_OVER_CENTS)} of food,
+before tax. Under that it is Uber's quote for their address. This is worth
+mentioning to somebody who is close to it and ordering delivery, once, as a
+fact rather than a push: "you're a couple of dollars off free delivery" is
+useful, saying it twice is a sales pitch.
 
 Those are the prices. Not "around", not "about". Those, and no others. There
 is no item that isn't on this list.

@@ -124,8 +124,6 @@ export const ko: Table = {
   "shop.takingYouToMap":
     "매장 선택, 케이터링 문의, 배달 주소 설정을 위해 지도로 이동합니다. 이동되지 않으면 아래 버튼을 눌러 주세요.",
   "shop.chooseWhereGoing": "받을 곳 선택",
-  "shop.giftProgress": "{gift} 무료까지 {amount} 남았습니다",
-  "shop.giftEarned": "{gift}을 무료로 받으셨습니다",
 
   "product.allergens": "알레르기 유발 성분",
   "product.contains": "{list} 함유.",
@@ -783,4 +781,7 @@ export const ko: Table = {
   "chat.rileyRefused": "그건 제가 도와드릴 수 없어요, 죄송합니다. 주문에 관한 일이면 {phone}으로 전화해 주세요.",
   "chat.rileyLostThread": "흐름을 놓쳤어요, 죄송합니다. 다시 물어봐 주시겠어요?",
   "chat.rileyTooLong": "생각보다 오래 걸렸네요. 다시 물어봐 주시겠어요?",
+  "shop.freeDeliveryProgress": "{amount}만 더 담으면 배달비 무료",
+  "shop.freeDeliveryEarned": "배달비는 저희가 냅니다",
+  "checkout.deliveryWaived": "면제",
 };

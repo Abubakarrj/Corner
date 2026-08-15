@@ -69,17 +69,33 @@ export default function OrderSummary({ checkout }: { checkout: Checkout }) {
       <div className="mt-3 border-t border-line pt-2">
         <Money label={t("common.subtotal")} amount={formatPrice(subtotalCents)} />
         <Money label={t("checkout.tax")} amount={formatPrice(totals.taxCents)} />
-        {totals.deliveryCents > 0 ? (
+        {/* Keyed on the *quoted* fee, not the charged one. Waived, the charge
+            is zero and gating on that would make the row disappear at exactly
+            the moment it has something worth saying. */}
+        {totals.deliveryQuotedCents > 0 ? (
           // Who is driving, and a way to ask why it costs that. This is the
           // line on a food bill people assume is padded; naming the courier
           // and showing their rate card is how it stops reading that way.
+          //
+          // The (i) keeps the real quote either way: the rate card is about
+          // what the trip costs, which is unchanged by who is paying for it.
           <Money
             label={t("checkout.delivery")}
-            amount={formatPrice(totals.deliveryCents)}
+            amount={
+              totals.deliveryWaived
+                ? t("checkout.deliveryWaived")
+                : formatPrice(totals.deliveryCents)
+            }
+            was={
+              totals.deliveryWaived ? formatPrice(totals.deliveryQuotedCents) : undefined
+            }
             after={
               <>
                 <UberDirectMark className="text-[11px] text-quiet" />
-                <DeliveryFeeInfo miles={checkout.quote?.miles} feeCents={totals.deliveryCents} />
+                <DeliveryFeeInfo
+                  miles={checkout.quote?.miles}
+                  feeCents={totals.deliveryQuotedCents}
+                />
               </>
             }
           />

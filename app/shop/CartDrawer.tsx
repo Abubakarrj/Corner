@@ -5,13 +5,14 @@ import { useT } from "../i18n";
 import { useMenu } from "../i18n/menu";
 import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
-import GiftProgressBar from "./GiftProgressBar";
+import FreeDeliveryBar from "./FreeDeliveryBar";
 import CrossSellStrip from "./CrossSellStrip";
 import { useCart, useCartRows, MAX_PER_LINE } from "./CartContext";
 import OptionPicker from "./OptionPicker";
 import { formatPrice, getCrossSellProducts } from "./products";
 import { Button, ButtonLink } from "../ui/Button";
 import { DISPLAY_FONT } from "./shopControls";
+import { useFulfillment } from "../fulfillment";
 
 function CloseIcon() {
   return (
@@ -62,6 +63,7 @@ export default function CartDrawer({
 }) {
   const t = useT();
   const menu = useMenu();
+  const fulfillment = useFulfillment();
   const { lines, setQuantity, removeItem, setLineOptions, subtotalCents, itemCount } =
     useCart();
 
@@ -111,7 +113,11 @@ export default function CartDrawer({
         </div>
       ) : (
         <>
-          <GiftProgressBar subtotalCents={subtotalCents} />
+          {/* Only where there is a fee to waive. On pickup this bar would be
+              counting toward nothing. */}
+          {fulfillment?.mode === "delivery" ? (
+            <FreeDeliveryBar subtotalCents={subtotalCents} />
+          ) : null}
 
           {/* min-h-0 is what makes this the scroller. `flex-1` alone leaves
               min-height: auto, which refuses to shrink below the height of

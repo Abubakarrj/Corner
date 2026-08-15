@@ -1086,23 +1086,17 @@ export function getProduct(slug: string): Product | undefined {
   return PRODUCTS.find((product) => product.slug === slug);
 }
 
-// Spend this much and a Corner keychain goes in the bag. Replaces the
-// free-shipping bar that used to sit here, which had two problems: there is
-// no shipping-rate table to base a threshold on, and most orders are picked
-// up, where "free shipping" is a reward for a cost that was never coming.
+// ——— The $40 reward used to be a keychain ———
 //
-// A keychain applies to every kind of order and costs the same to give
-// whichever way the bag leaves.
+// GIFT_THRESHOLD_CENTS and GIFT_NAME lived here, and past $40 the basket bar
+// told the customer a Corner Keychain was theirs. Nothing in the system ever
+// put one in a bag: the note that stood here admitted the kitchen was expected
+// to remember, which is a promise made on a screen and kept, or not, by a
+// person with their hands full.
 //
-// NOTE: nothing adds the keychain to the order yet. The bar tells the
-// customer they've earned it and the kitchen is expected to drop one in —
-// which is fine for a counter, and won't be once orders are fulfilled by a
-// system rather than a person. When that day comes, the keychain becomes a
-// zero-price line the basket appends past this threshold.
-export const GIFT_THRESHOLD_CENTS = 4000;
-// Capital K: it's the name of a thing the shop gives out, not a description
-// of a keychain that happens to be ours.
-export const GIFT_NAME = "Corner Keychain";
+// The same threshold now waives the delivery fee, which the customer can see
+// on the bill and the shop can account for. See FREE_DELIVERY_OVER_CENTS in
+// app/shop/money.ts, where a rule about money belongs.
 
 // Picks products for the basket drawer's cross-sell strip: whatever isn't
 // already in the basket, tagged items ("New"/"Bestseller") first since

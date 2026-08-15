@@ -26,6 +26,32 @@ export const TAX_RATE = 0.0975;
 // The tip presets, matching the ones the counter's own checkout offers.
 export const TIP_PRESETS = [0.22, 0.2, 0.15] as const;
 
+// Spend this much on food and the shop pays the courier for you.
+//
+// ——— What "waived" means here, precisely ———
+//
+// The customer is not charged. Uber still is. The courier is booked at the
+// quoted price on the same quote id as always, and the difference comes out of
+// the shop's margin — which is the point of the offer, not a side effect of
+// it: a $10.99 fee on a $22 order is what makes somebody close the tab, and
+// the shop would rather sell $40 of food and absorb the trip.
+//
+// So nothing about the Uber call changes. What changes is one line on the
+// bill, and the order record keeps both numbers so the shop can see what it
+// absorbed rather than reading a zero and wondering where the trip went.
+//
+// ——— Measured on the food, after any discount ———
+//
+// Not on the total. Tax and tip are not "spending more with the shop", and a
+// threshold that counted the tip would be a threshold somebody can cross by
+// tipping, which is nobody's idea of a deal. After the discount for the same
+// reason the tax is: the number is what they actually spent.
+//
+// This replaces the free keychain that used to sit at the same $40. A gift
+// nothing in the system actually put in the bag, relying on the kitchen to
+// remember, against a fee the customer can see on the screen and feel.
+export const FREE_DELIVERY_OVER_CENTS = 4000;
+
 // Half-up on the cent, which is what a till does. Math.round() is half-up for
 // positives, but it's spelled out because "round the money" is the kind of
 // line somebody later replaces with a floor and wonders why totals drift.
@@ -47,7 +73,15 @@ export type OrderTotals = {
   subtotalCents: number;
   discountCents: number;
   taxCents: number;
+  /** What the customer is charged for delivery. Zero when it's waived. This
+   *  is the one that goes into the total. */
   deliveryCents: number;
+  /** What the courier quoted, waived or not. The shop pays this either way,
+   *  so it is what the receipt shows crossed out and what the order record
+   *  keeps. Zero on a pickup order. */
+  deliveryQuotedCents: number;
+  /** Whether the shop picked up the courier on this one. */
+  deliveryWaived: boolean;
   tipCents: number;
   totalCents: number;
 };
@@ -77,12 +111,23 @@ export function totalsFor({
   const taxed = subtotalCents - discount;
   const taxCents = taxFor(taxed);
   const tip = Math.max(tipCents, 0);
-  const delivery = Math.max(deliveryCents, 0);
+  const quoted = Math.max(deliveryCents, 0);
+
+  // The waiver is decided here and nowhere else, which is the whole reason it
+  // is in this file. The checkout's summary and the order endpoint's repricing
+  // both call this, so they cannot come to different answers about whether a
+  // basket cleared the threshold — and "shown one number, charged another" is
+  // the failure this module exists to make impossible.
+  const waived = quoted > 0 && taxed >= FREE_DELIVERY_OVER_CENTS;
+  const delivery = waived ? 0 : quoted;
+
   return {
     subtotalCents,
     discountCents: discount,
     taxCents,
     deliveryCents: delivery,
+    deliveryQuotedCents: quoted,
+    deliveryWaived: waived,
     tipCents: tip,
     totalCents: taxed + taxCents + delivery + tip,
   };

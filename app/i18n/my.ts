@@ -124,8 +124,6 @@ export const my: Table = {
   "shop.takingYouToMap":
     "ဆိုင်ရွေးရန်၊ ကေတာရင် စီစဉ်ရန် သို့မဟုတ် ပို့ဆောင်ရေး လိပ်စာ သတ်မှတ်ရန် မြေပုံသို့ ခေါ်ဆောင်နေပါသည်။ မရောက်ပါက အောက်ကခလုတ်ကလည်း အလားတူ လုပ်ပေးပါသည်။",
   "shop.chooseWhereGoing": "ပို့ရမည့်နေရာ ရွေးပါ",
-  "shop.giftProgress": "အခမဲ့ {gift} ရရန် {amount} လိုပါသေးသည်",
-  "shop.giftEarned": "အခမဲ့ {gift} ရရှိပါပြီ",
 
   "product.allergens": "ဓာတ်မတည့်နိုင်သော ပါဝင်ပစ္စည်းများ",
   "product.contains": "{list} ပါဝင်သည်။",
@@ -784,4 +782,7 @@ export const my: Table = {
   "chat.rileyRefused": "ဒါကိုတော့ ကူညီပေးလို့မရပါ၊ တောင်းပန်ပါတယ်။ အော်ဒါနဲ့ဆိုင်ရင် {phone} ကို ဖုန်းဆက်ပါ။",
   "chat.rileyLostThread": "အကြောင်းအရာ လွဲသွားပါတယ်၊ တောင်းပန်ပါတယ်။ ထပ်မေးပေးပါလား။",
   "chat.rileyTooLong": "မျှော်လင့်ထားတာထက် ကြာသွားပါတယ်။ ထပ်မေးပေးပါလား။",
+  "shop.freeDeliveryProgress": "အခမဲ့ပို့ဆောင်ရန် {amount} လိုပါသေးသည်",
+  "shop.freeDeliveryEarned": "ပို့ဆောင်ခ ကျွန်ုပ်တို့ ကျခံပါမည်",
+  "checkout.deliveryWaived": "ကင်းလွတ်",
 };

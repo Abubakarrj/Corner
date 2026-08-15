@@ -73,10 +73,17 @@ export type PlacedOrder = {
   // people's localStorage. Read them through orderTotals() below rather than
   // directly, which fills the gap instead of showing a blank.
   taxCents?: number;
-  // The courier's fee on a delivery order — Uber Direct's quote for that
-  // address, not a flat rate. Absent on pickup orders and on anything placed
-  // before delivery was priced.
+  // What the customer was charged for the courier. Zero on a delivery whose
+  // fee was waived, absent on pickup orders and on anything placed before
+  // delivery was priced.
   deliveryCents?: number;
+  // What the courier quoted, which the shop pays whoever it was billed to.
+  // Kept apart from the line above so a waived order records what was given
+  // away rather than a zero that looks like the trip was free.
+  //
+  // Absent on every order placed before free delivery existed, and on those
+  // the two were always the same number: see orderTotals().
+  deliveryQuotedCents?: number;
   tipCents?: number;
   totalCents?: number;
   // Toast's own id for this order, when it went to Toast. Kept because it is
@@ -143,16 +150,25 @@ export function orderTotals(order: PlacedOrder): {
   subtotalCents: number;
   taxCents: number;
   deliveryCents: number;
+  deliveryQuotedCents: number;
+  deliveryWaived: boolean;
   tipCents: number;
   totalCents: number;
 } {
   const taxCents = order.taxCents ?? taxFor(order.subtotalCents);
   const tipCents = order.tipCents ?? 0;
   const deliveryCents = order.deliveryCents ?? 0;
+  // An order from before the waiver existed was charged what it was quoted,
+  // so the fallback is the charge itself rather than a zero.
+  const deliveryQuotedCents = order.deliveryQuotedCents ?? deliveryCents;
   return {
     subtotalCents: order.subtotalCents,
     taxCents,
     deliveryCents,
+    deliveryQuotedCents,
+    // Derived, not stored. A boolean saved next to two numbers is a third
+    // thing that can disagree with them.
+    deliveryWaived: deliveryQuotedCents > 0 && deliveryCents === 0,
     tipCents,
     totalCents:
       order.totalCents ?? order.subtotalCents + taxCents + deliveryCents + tipCents,

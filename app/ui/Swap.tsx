@@ -58,9 +58,20 @@ export default function Swap({
   const characters = [...value];
   return (
     <span className={`cb-swap ${className}`}>
+      {/* ——— The value once, in one piece, for anything that reads ———
+
+          The group below is one element per character, because that is what
+          staggering them requires. To an assistive technology that is not a
+          price, it is six unrelated labels: "$46.50" is announced "dollar,
+          four, six, point, five, zero", on every total in the app.
+
+          So the plain string is here for the accessibility tree and the
+          animated copy is hidden from it. Nobody looking at the screen can
+          tell the difference; anybody listening gets a number. */}
+      <span className="sr-only">{value}</span>
       {/* The key is the whole value: change it and React throws the group
           away, which is what replays the animation. */}
-      <span key={value} className="t-digit-group is-animating">
+      <span key={value} aria-hidden className="t-digit-group is-animating">
         {characters.map((character, index) => (
           <span
             // Index is a safe key here only because the group is remounted

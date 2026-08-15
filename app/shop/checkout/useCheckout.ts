@@ -453,6 +453,7 @@ export function useCheckout(): Checkout {
         // out and calls the subtotal a total.
         taxCents: totals.taxCents,
         deliveryCents: totals.deliveryCents,
+        deliveryQuotedCents: totals.deliveryQuotedCents,
         tipCents: totals.tipCents,
         totalCents: totals.totalCents,
         // The mode itself, not the string key that names it: this record is
