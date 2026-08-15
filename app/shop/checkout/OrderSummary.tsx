@@ -86,9 +86,6 @@ export default function OrderSummary({ checkout }: { checkout: Checkout }) {
                 ? t("checkout.deliveryWaived")
                 : formatPrice(totals.deliveryCents)
             }
-            was={
-              totals.deliveryWaived ? formatPrice(totals.deliveryQuotedCents) : undefined
-            }
             after={
               <>
                 <UberDirectMark className="text-[11px] text-quiet" />

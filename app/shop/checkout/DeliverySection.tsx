@@ -236,23 +236,14 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
             {t("checkout.delivery")}
             <DeliveryFeeInfo miles={quote?.miles} feeCents={quote?.feeCents} />
           </span>
-          <span className="flex items-baseline gap-1.5 text-[14px] tabular-nums text-ink">
-            {quote ? (
-              totals.deliveryWaived ? (
-                <>
-                  <span className="text-[13px] text-quiet line-through">
-                    {formatPrice(totals.deliveryQuotedCents)}
-                  </span>
-                  <span>{t("checkout.deliveryWaived")}</span>
-                </>
-              ) : (
-                formatPrice(totals.deliveryCents)
-              )
-            ) : quoting ? (
-              t("delivery.pricing")
-            ) : (
-              "—"
-            )}
+          <span className="text-[14px] tabular-nums text-ink">
+            {quote
+              ? totals.deliveryWaived
+                ? t("checkout.deliveryWaived")
+                : formatPrice(totals.deliveryCents)
+              : quoting
+                ? t("delivery.pricing")
+                : "—"}
           </span>
         </div>
       </div>

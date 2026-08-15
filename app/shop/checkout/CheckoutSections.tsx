@@ -169,19 +169,12 @@ export function Disclosure({
 export function Money({
   label,
   amount,
-  was,
   strong,
   tone,
   after,
 }: {
   label: string;
   amount: string;
-  /** What this row would have cost, struck through beside what it does.
-   *  The delivery line uses it when the order cleared the free-delivery
-   *  threshold: "Waived" on its own is a nice thing to read and says nothing
-   *  about how much was saved, and the saving is the whole point of the
-   *  offer. */
-  was?: string;
   strong?: boolean;
   tone?: "credit";
   after?: React.ReactNode;
@@ -201,21 +194,16 @@ export function Money({
           quote arriving — and four numbers changing silently means none of
           them announces which one moved. See app/ui/Swap.tsx; it is 120ms and
           the new value is readable throughout. */}
-      <span className="flex shrink-0 items-baseline gap-1.5">
-        {was ? (
-          <span className="text-[13px] tabular-nums text-quiet line-through">{was}</span>
-        ) : null}
-        <Swap
-          value={amount}
-          className={
-            strong
-              ? "justify-items-end text-[15px] font-medium text-ink"
-              : tone === "credit"
-                ? "justify-items-end text-[14px] text-ink"
-                : "justify-items-end text-[14px] text-ink"
-          }
-        />
-      </span>
+      <Swap
+        value={amount}
+        className={
+          strong
+            ? "justify-items-end text-[15px] font-medium text-ink"
+            : tone === "credit"
+              ? "justify-items-end text-[14px] text-ink"
+              : "justify-items-end text-[14px] text-ink"
+        }
+      />
     </div>
   );
 }

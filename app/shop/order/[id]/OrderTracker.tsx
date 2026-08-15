@@ -357,7 +357,6 @@ function Receipt({
                 ? t("checkout.deliveryWaived")
                 : formatPrice(bill.deliveryCents)
             }
-            was={bill.deliveryWaived ? formatPrice(bill.deliveryQuotedCents) : undefined}
             after={
               <>
                 <UberDirectMark className="text-[11px]" />
@@ -400,15 +399,11 @@ function Receipt({
 function Line({
   label,
   amount,
-  was,
   strong,
   after,
 }: {
   label: string;
   amount: string;
-  /** What it would have cost, struck through. See Money in
-   *  CheckoutSections.tsx, which does the same on the checkout's summary. */
-  was?: string;
   strong?: boolean;
   after?: React.ReactNode;
 }) {
@@ -423,11 +418,6 @@ function Line({
         <span className="truncate">{label}</span>
         {after}
       </span>
-      {was ? (
-        <span className="ms-auto text-[12px] tabular-nums line-through" style={{ color: muted }}>
-          {was}
-        </span>
-      ) : null}
       <span
         className={strong ? "text-[15px] font-medium" : "text-[13px]"}
         style={{ color: ink }}
