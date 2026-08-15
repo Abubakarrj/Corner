@@ -660,6 +660,8 @@ export const ur: Table = {
   "careers.positionsNote": "جس کام کے لیے درخواست دے رہے ہیں وہ منتخب کریں۔",
   "careers.perHour": "{amount} فی گھنٹہ",
   "careers.perYear": "{amount} سالانہ",
+  "careers.roleCount": "{count} آسامیاں",
+  "careers.roleCountOne": "1 آسامی",
   "careers.allPositions": "تمام آسامیاں",
   "careers.allLocations": "تمام دکانیں",
   "careers.allTypes": "تمام اوقات",

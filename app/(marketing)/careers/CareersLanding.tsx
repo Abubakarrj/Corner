@@ -132,60 +132,32 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           <LanguagePicker shell="page" />
         </div>
 
-        {/* ——— The top of the page, centred, with the mark on it ———
+        {/* ——— The top of a board, not the top of a brand page ———
 
-            Three passes at this were all type, and type was not what was
-            missing. The page was a white column of left-aligned Helvetica with
-            no image, no colour and nothing of the shop in it — the map has red
-            pins, the shop has cream and olive, the front door has the mark,
-            and the one page whose job is to make somebody want to work here
-            had none of it. It could have belonged to any company.
+            This has been through a centred cover with the shop's wordmark on
+            it, and it is not that any more. A job board's header is a line
+            saying what the page is and a line saying what to do with it, and
+            then the jobs — which is what all three references do above their
+            list, and what "minimal and to the point" asks for.
 
-            So: the shop's signature at the top, the hand-lettered CORNER BAGEL
-            in its red. Not the bagel glyph — that was the first attempt and it
-            was wrong twice over. The mark is wheat, not red, so filling the
-            path with the brand colour was not the shop's bagel at all; and the
-            hole in it is a small subpath sized to be seen against the pin's
-            red ground, so on white at 54px the whole thing read as a red blob
-            with a nick in it. The wordmark is the mark that survives being
-            printed on its own, which is what a signature is for.
+            The mark is gone at the shop's request. Worth writing down why it
+            reads fine without one: this page is reached from About Us on the
+            front door and from a link the shop sends to somebody, so nobody
+            arrives here wondering whose jobs these are, and the title says the
+            name anyway. A logo would be the third time.
 
-            Same file the front door uses, so the two pages open the same way.
-            The title under it then reads as the name of the page rather than
-            as the name of the shop, which is the arrangement every careers
-            page has: the company's mark, and then what this page is.
-
-            And centred. The whole page was flush left at one indent with the
-            type stepping quietly down, which is why it read as a wall: nothing
-            in it changed shape. A centred cover over a left-aligned list gives
-            the page two movements instead of one, and it is what /about does a
-            few doors down. */}
-        <header className="flex flex-col items-center pt-2 text-center">
-          <Image
-            src="/logo.svg"
-            // Decorative. The shop's name is in the heading below it, and a
-            // screen reader hearing "Corner Bagel, Work at Corner Bagel" is
-            // being told the same thing twice.
-            alt=""
-            width={8369}
-            height={3233}
-            unoptimized
-            priority
-            className="h-auto w-[150px] sm:w-[180px]"
-          />
-
-          <p className="m-0 mt-7 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
-            {t("careers.eyebrow")}
-          </p>
-          {/* Bigger, and considerably. It was 30px over a 15px lede, which is
-              not a hierarchy so much as two sizes of the same thing. */}
+            The "We're hiring" eyebrow went with it. On a page headed "Work at
+            Corner Bagel" with a list of open roles under it, a line announcing
+            that the shop is hiring is the page's own title said again in
+            smaller letters. */}
+        <header>
           <h1
-            className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[46px]"
+            className="m-0 text-[30px] font-medium leading-[1.08] tracking-[-0.03em] text-ink sm:text-[38px]"
             style={{ fontFamily: DISPLAY_FONT }}
           >
             {t("careers.title")}
           </h1>
-          <p className="m-0 mt-3.5 max-w-[24em] text-[16px] leading-[1.55] text-muted">
+          <p className="m-0 mt-2.5 max-w-[30em] text-[15px] leading-[1.55] text-muted">
             {t("careers.lede")}
           </p>
         </header>
@@ -229,9 +201,24 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             treatment as a form field's caption. On a page whose entire purpose
             is the list underneath it, that is the timidest thing on screen:
             the section that matters most was the one set smallest. */}
-        <h2 className="m-0 mt-14 text-[26px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[30px]">
-          {t("careers.openRoles")}
-        </h2>
+        {/* The heading and how many there are, on one line.
+
+            Every one of the references puts a count beside the list's name —
+            "250 job results", "Showing results (921)" — and it is the one
+            piece of furniture a board genuinely needs that this page did not
+            have: it says how much there is before you scroll, and once a
+            filter is on it is the only thing that reports what the filter
+            did. Counted against what is shown, not against what exists. */}
+        <div className="mt-11 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 className="m-0 text-[24px] font-medium leading-[1.15] tracking-[-0.02em] text-ink sm:text-[28px]">
+            {t("careers.openRoles")}
+          </h2>
+          <span className="rounded-full border border-line-soft px-2.5 py-1 text-[12px] leading-none tabular-nums text-muted">
+            {shown.length === 1
+              ? t("careers.roleCountOne")
+              : t("careers.roleCount", { count: shown.length })}
+          </span>
+        </div>
 
         {/* ——— The three filters ———
 

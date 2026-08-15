@@ -656,6 +656,8 @@ export const ja: Table = {
   "careers.positionsNote": "応募する仕事を1つ選んでください。",
   "careers.perHour": "時給{amount}",
   "careers.perYear": "年収{amount}",
+  "careers.roleCount": "{count}件の仕事",
+  "careers.roleCountOne": "1件の仕事",
   "careers.allPositions": "すべての仕事",
   "careers.allLocations": "すべての店舗",
   "careers.allTypes": "すべての勤務形態",

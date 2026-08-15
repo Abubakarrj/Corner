@@ -655,6 +655,8 @@ export const zh: Table = {
   "careers.positionsNote": "选择你要应聘的岗位。",
   "careers.perHour": "每小时{amount}",
   "careers.perYear": "年薪{amount}",
+  "careers.roleCount": "{count} 个岗位",
+  "careers.roleCountOne": "1 个岗位",
   "careers.allPositions": "所有岗位",
   "careers.allLocations": "所有门店",
   "careers.allTypes": "所有工时",

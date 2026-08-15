@@ -658,6 +658,8 @@ export const my: Table = {
   "careers.positionsNote": "လျှောက်မယ့် အလုပ်တစ်ခု ရွေးပါ။",
   "careers.perHour": "တစ်နာရီ {amount}",
   "careers.perYear": "တစ်နှစ် {amount}",
+  "careers.roleCount": "အလုပ် {count} ခု",
+  "careers.roleCountOne": "အလုပ် ၁ ခု",
   "careers.allPositions": "အလုပ်အားလုံး",
   "careers.allLocations": "ဆိုင်အားလုံး",
   "careers.allTypes": "အချိန်အားလုံး",

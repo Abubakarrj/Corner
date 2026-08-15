@@ -657,6 +657,8 @@ export const ko: Table = {
   "careers.positionsNote": "지원할 자리를 하나 고르세요.",
   "careers.perHour": "시급 {amount}",
   "careers.perYear": "연봉 {amount}",
+  "careers.roleCount": "{count}개 자리",
+  "careers.roleCountOne": "1개 자리",
   "careers.allPositions": "모든 자리",
   "careers.allLocations": "모든 매장",
   "careers.allTypes": "모든 근무 형태",
