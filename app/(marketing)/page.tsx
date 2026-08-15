@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ThemeToggle from "../ui/ThemeToggle";
 import LanguagePicker from "../ui/LanguagePicker";
-import WorkWithUsChip from "../ui/WorkWithUsChip";
+import AboutMenu from "../ui/AboutMenu";
 import OrderStatusBar from "../shop/OrderStatusBar";
 import AboutMark from "./AboutMark";
 
@@ -112,23 +112,29 @@ export default function Home() {
         <AboutMark className="absolute left-[93%] top-[24%]" />
       </div>
 
-      {/* Language and appearance, in the corner opposite the privacy line, so
-          the chrome brackets the page rather than crowding it. Both are 28px
-          and sit on one row, which is what keeps them reading as one strip
-          rather than two widgets.
+      {/* About, language and appearance, in the corner opposite the privacy
+          line, so the chrome brackets the page rather than crowding it. All
+          three are 28px and sit on one row, which is what keeps them reading
+          as one strip rather than three widgets.
+
+          The first of them used to be a red "We Are Hiring!" chip, dressed
+          unlike its neighbours on purpose so a job opening would not read as
+          a third setting. It is a menu now, holding Our Story and Careers,
+          and the red went with the change: two pills that open a short list
+          should not look like different kinds of thing. See AboutMenu.
 
           `end-4` rather than `right-4`: under Urdu the document is mirrored,
           and this belongs in whichever corner is the far one. The safe-area
           inset keeps it out of the notch on an installed app. */}
       <div
-        // flex-wrap + justify-end: "We Are Hiring!" is a whole phrase, and in
+        // flex-wrap + justify-end: "About Us" is a whole phrase, and in
         // Burmese it is a long one. Rather than truncate it into nonsense or
         // let the strip push past the edge on a narrow phone, the row wraps
         // and the chip takes a second line — still in the corner, still tidy.
         className="absolute end-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap items-center justify-end gap-2"
         style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
       >
-        <WorkWithUsChip />
+        <AboutMenu />
         <LanguagePicker shell="page" />
         <ThemeToggle shell="page" />
       </div>

@@ -517,7 +517,6 @@ export const zh: Table = {
     "无论你是上班前买份早餐、和朋友喝杯咖啡，还是给家人带回一打贝果，我们都很荣幸你愿意把一天中的一小段时间交给我们。",
   "about.p4": "感谢你支持街坊小店。期待在街角再次见到你。",
   "about.speakToTeam": "如需与我们的同事通话：",
-  "about.workWithUs": "我们在招人！",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -782,4 +781,7 @@ export const zh: Table = {
   "shop.freeDeliveryProgress": "再买 {amount} 免配送费",
   "shop.freeDeliveryEarned": "配送费我们请客",
   "checkout.deliveryWaived": "已免",
+  "about.aboutUs": "关于我们",
+  "about.ourStory": "我们的故事",
+  "about.careers": "招聘",
 };

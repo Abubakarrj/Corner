@@ -518,7 +518,6 @@ export const ja: Table = {
   "about.p4":
     "街のお店を支えてくださりありがとうございます。すぐ角を曲がったところで、またお会いできるのを楽しみにしています。",
   "about.speakToTeam": "スタッフとお話しになりたい場合:",
-  "about.workWithUs": "スタッフ募集中！",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -783,4 +782,7 @@ export const ja: Table = {
   "shop.freeDeliveryProgress": "あと{amount}で配達料無料",
   "shop.freeDeliveryEarned": "配達料は当店が持ちます",
   "checkout.deliveryWaived": "無料",
+  "about.aboutUs": "私たちについて",
+  "about.ourStory": "私たちの物語",
+  "about.careers": "採用情報",
 };

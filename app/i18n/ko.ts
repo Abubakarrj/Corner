@@ -519,7 +519,6 @@ export const ko: Table = {
   "about.p4":
     "동네 가게를 응원해 주셔서 고맙습니다. 바로 코너에서 다시 뵙기를 기다리겠습니다.",
   "about.speakToTeam": "직원과 통화를 원하시면:",
-  "about.workWithUs": "채용 중입니다!",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -784,4 +783,7 @@ export const ko: Table = {
   "shop.freeDeliveryProgress": "{amount}만 더 담으면 배달비 무료",
   "shop.freeDeliveryEarned": "배달비는 저희가 냅니다",
   "checkout.deliveryWaived": "면제",
+  "about.aboutUs": "회사 소개",
+  "about.ourStory": "우리 이야기",
+  "about.careers": "채용",
 };

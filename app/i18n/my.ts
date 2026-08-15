@@ -520,7 +520,6 @@ export const my: Table = {
   "about.p4":
     "ရပ်ကွက်လုပ်ငန်းငယ်တစ်ခုကို ပံ့ပိုးပေးသည့်အတွက် ကျေးဇူးတင်ပါသည်။ လမ်းထောင့်မှာပဲ ပြန်လည် ကြိုဆိုရန် စောင့်မျှော်နေပါမည်။",
   "about.speakToTeam": "ကျွန်ုပ်တို့အဖွဲ့ဝင်တစ်ဦးနှင့် စကားပြောလိုပါက:",
-  "about.workWithUs": "ဝန်ထမ်း ခေါ်ယူနေပါသည်！",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -785,4 +784,7 @@ export const my: Table = {
   "shop.freeDeliveryProgress": "အခမဲ့ပို့ဆောင်ရန် {amount} လိုပါသေးသည်",
   "shop.freeDeliveryEarned": "ပို့ဆောင်ခ ကျွန်ုပ်တို့ ကျခံပါမည်",
   "checkout.deliveryWaived": "ကင်းလွတ်",
+  "about.aboutUs": "ကျွန်ုပ်တို့အကြောင်း",
+  "about.ourStory": "ကျွန်ုပ်တို့၏ ဇာတ်လမ်း",
+  "about.careers": "အလုပ်အကိုင်",
 };

@@ -524,7 +524,6 @@ export const es: Table = {
   "about.p4":
     "Gracias por apoyar a un negocio de barrio. Esperamos volver a verte, justo a la vuelta de la esquina.",
   "about.speakToTeam": "Para hablar con alguien de nuestro equipo:",
-  "about.workWithUs": "¡Estamos contratando!",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -790,4 +789,7 @@ export const es: Table = {
   "shop.freeDeliveryProgress": "Te faltan {amount} para el envío gratis",
   "shop.freeDeliveryEarned": "El envío corre por nuestra cuenta",
   "checkout.deliveryWaived": "Exento",
+  "about.aboutUs": "Sobre nosotros",
+  "about.ourStory": "Nuestra historia",
+  "about.careers": "Empleo",
 };

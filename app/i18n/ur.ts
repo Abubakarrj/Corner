@@ -522,7 +522,6 @@ export const ur: Table = {
   "about.p4":
     "محلے کے کاروبار کا ساتھ دینے کا شکریہ۔ ہم آپ کا دوبارہ خیرمقدم کرنے کے منتظر ہیں، بالکل کونے کے پاس۔",
   "about.speakToTeam": "ہماری ٹیم کے کسی فرد سے بات کرنے کے لیے:",
-  "about.workWithUs": "ہم بھرتی کر رہے ہیں!",
 
   "chat.name": "Riley",
   "chat.shop": "Corner Bagel",
@@ -787,4 +786,7 @@ export const ur: Table = {
   "shop.freeDeliveryProgress": "مفت ڈیلیوری کے لیے {amount} اور",
   "shop.freeDeliveryEarned": "ڈیلیوری ہماری طرف سے",
   "checkout.deliveryWaived": "معاف",
+  "about.aboutUs": "ہمارے بارے میں",
+  "about.ourStory": "ہماری کہانی",
+  "about.careers": "ملازمتیں",
 };

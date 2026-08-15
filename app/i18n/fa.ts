@@ -567,7 +567,6 @@ export const fa: Table = {
   "about.p4":
     "ممنون که از یک کسب‌وکار محلی حمایت می‌کنید. مشتاقانه منتظر دیدار دوبارهٔ شماییم، درست سر همین کوچه.",
   "about.speakToTeam": "برای صحبت با یکی از اعضای تیم ما:",
-  "about.workWithUs": "در حال استخدام هستیم!",
 
   // ——— Riley ———
   "chat.name": "رایلی",
@@ -836,4 +835,7 @@ export const fa: Table = {
   "shop.freeDeliveryProgress": "{amount} تا ارسال رایگان مانده",
   "shop.freeDeliveryEarned": "ارسال مهمان ما",
   "checkout.deliveryWaived": "رایگان شد",
+  "about.aboutUs": "دربارهٔ ما",
+  "about.ourStory": "داستان ما",
+  "about.careers": "فرصت‌های شغلی",
 };
