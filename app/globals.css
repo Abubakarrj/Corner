@@ -207,6 +207,18 @@
   --cb-on-red: #faf7ef;
   --cb-link: #062cb3;
   --cb-good-bg: #dfe8d2;
+  /* ——— A green that can be text, and a red ground to match ———
+   *
+   * The palette had a success *ground* and no success ink, and a red ink with
+   * no ground under it, so a control could say "yes" with a fill and "no" with
+   * a line and the two answers did not look like the same kind of answer.
+   *
+   * #2e7d46 measures 5.07:1 on white, which clears AA for 14px text; as a
+   * border it is well past the 3:1 a graphical object needs. #f9e3e4 is the
+   * red at the same lightness --cb-good-bg sits at, so an in-range field and
+   * an out-of-range field carry the same weight. */
+  --cb-good-ink: #2e7d46;
+  --cb-bad-bg: #f9e3e4;
 
   /* Shadow, so cards keep an edge in dark mode where a black shadow can't. */
   --cb-shadow: 0 0 0 0 transparent;
@@ -588,6 +600,10 @@
   --cb-on-red: #faf7ef;
   --cb-link: #a8bdff;
   --cb-good-bg: #2f4326;
+  /* Lifted the way the dark theme lifts every accent: 9.5:1 on the near-black
+     ground, next to --cb-red's #f08a90 at a comparable weight. */
+  --cb-good-ink: #6fcf97;
+  --cb-bad-bg: #3d2326;
 
   --cb-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 
@@ -671,6 +687,8 @@
   --cb-line-grey: rgba(0, 0, 0, 0.1);
 
   --cb-good-bg: #e2f7e8;
+  --cb-good-ink: #1f7a3d;
+  --cb-bad-bg: #fbe4e6;
   --cb-red: #c8232c;
   --cb-link: #2f6fe0;
 }
@@ -706,6 +724,8 @@
   --cb-line-grey: rgba(255, 255, 255, 0.1);
 
   --cb-good-bg: #173a26;
+  --cb-good-ink: #6fcf97;
+  --cb-bad-bg: #3a2124;
   /* The brand red is unreadable on a near-black ground; this is the same hue
      lifted until it clears AA, the same move the dark theme already makes. */
   --cb-red: #ff7b74;
@@ -810,6 +830,8 @@
   --color-on-red: var(--cb-on-red);
   --color-link: var(--cb-link);
   --color-good: var(--cb-good-bg);
+  --color-good-ink: var(--cb-good-ink);
+  --color-bad: var(--cb-bad-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --animate-logo-roll: rollLogo 5s linear both;

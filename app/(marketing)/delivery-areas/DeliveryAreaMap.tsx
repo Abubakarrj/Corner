@@ -59,6 +59,18 @@ export default function DeliveryAreaMap() {
   // clear before using is worse than an empty one.
   const [address, setAddress] = useState("");
   const [check, setCheck] = useState<Check>({ state: "idle" });
+
+  /** Typing is a new question, so the old answer goes.
+   *
+   *  This did not matter while the answer was a sentence underneath — a stale
+   *  line of text next to a half-typed address reads as stale. It matters now
+   *  that the answer is the colour of the field itself: editing under a green
+   *  border would leave the new address wearing the old address's verdict,
+   *  which is the one thing a colour must never do. */
+  function retype(next: string) {
+    setAddress(next);
+    if (check.state !== "idle") setCheck({ state: "idle" });
+  }
   const [hints, setHints] = useState<Suggestion[]>([]);
   // Set the moment a suggestion is taken, so choosing one does not
   // immediately ask Google what it thinks of the text it just wrote.
@@ -212,6 +224,10 @@ export default function DeliveryAreaMap() {
     }
   }
 
+  // True in range, false out of it, null while there is nothing to say. The
+  // field and the sentence both read this, so they cannot disagree.
+  const answer = check.state === "answered" ? check.inRange : null;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       {/* The map, or nothing. A grey box captioned "map unavailable" is worse
@@ -234,11 +250,28 @@ export default function DeliveryAreaMap() {
         <div className="relative min-w-0 flex-1">
           <input
             value={address}
-            onChange={(event) => setAddress(event.target.value)}
+            onChange={(event) => retype(event.target.value)}
             placeholder={t("deliveryArea.placeholder")}
             aria-label={t("deliveryArea.placeholder")}
             autoComplete="street-address"
-            className="w-full rounded-xl border border-line-soft bg-surface px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink"
+            // ——— The field is the answer ———
+            //
+            // Green inside the zone, red outside it, and the resting colours
+            // the rest of the time. The sentence underneath says the same
+            // thing in words and is what a screen reader gets — colour is the
+            // fast read, not the only one, because a red field and a green
+            // field are the same field to somebody who cannot tell them apart.
+            //
+            // focus:border-ink is dropped on an answered field on purpose. Ink
+            // on focus would repaint the verdict away the moment somebody
+            // tapped back into the box to read what they had typed.
+            className={`w-full rounded-xl border px-4 py-3 text-[16px] text-ink outline-none transition-colors placeholder:text-quieter ${
+              answer === null
+                ? "border-line-soft bg-surface focus:border-ink"
+                : answer
+                  ? "border-good-ink bg-good"
+                  : "border-brand-red bg-bad"
+            }`}
           />
           {/* Suggestions, over the Check button rather than pushing it down
               the page — a list that moves the control you are aiming at is a
@@ -252,7 +285,7 @@ export default function DeliveryAreaMap() {
                     onClick={() => {
                       const picked = [hint.primary, hint.secondary].filter(Boolean).join(", ");
                       settled.current = picked;
-                      setAddress(picked);
+                      retype(picked);
                       setHints([]);
                     }}
                     className="cb-press block w-full cursor-pointer px-4 py-3 text-left transition-colors hover:bg-raise"
@@ -284,9 +317,16 @@ export default function DeliveryAreaMap() {
           above it, and gives a distance nobody asked for to answer a yes or no
           question. Both were there because they were available, not because
           anybody needed them. */}
-      {check.state === "answered" ? (
-        <p className="m-0 text-[14px] leading-[1.5] text-ink">
-          {check.inRange ? t("deliveryArea.yes") : t("deliveryArea.no")}
+      {/* role="status", so the answer to something that took a round trip is
+          announced rather than only appearing. */}
+      {answer !== null ? (
+        <p
+          role="status"
+          className={`m-0 text-[14px] font-medium leading-[1.5] ${
+            answer ? "text-good-ink" : "text-brand-red"
+          }`}
+        >
+          {answer ? t("deliveryArea.yes") : t("deliveryArea.no")}
         </p>
       ) : null}
       {check.state === "unsure" ? (
