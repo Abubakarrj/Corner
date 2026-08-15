@@ -528,21 +528,34 @@ function Facet({
     // drift between this board and the catalog because there is one constant
     // for both.
     //
-    // The chevron is a sibling, not a background image. It was
-    // `background-position: right 14px`, which is a physical edge, and Persian
-    // caught it: under RTL the padding moved to the leading side (pe- is
-    // logical) and the arrow stayed on the right, sitting on the first
-    // character. There is no logical keyword for background-position, so the
-    // arrow comes out of the background and becomes an element placed with
-    // `end-3`. pointer-events-none, so a tap on it still opens the platform's
-    // picker rather than being swallowed.
-    <span className={`relative inline-flex max-w-[46vw] ${on ? "text-on-ink" : "text-ink"}`}>
+    // ——— The chosen pill is not inverted, and that is deliberate ———
+    //
+    // It was: ink fill, on-ink text. On a phone it came out as a solid black
+    // pill with a chevron and no words in it, and the reason is a limit of the
+    // platform rather than a mistake in the rule. iOS paints a closed
+    // <select>'s label from the *selected option*, not from the select, and an
+    // <option> takes the system's own text colour whatever the select says. So
+    // the label rendered near-black on a near-black fill while the chevron —
+    // a sibling SVG on the wrapper's colour — came out correctly light, which
+    // is exactly the half-broken look on the screenshot.
+    //
+    // Colouring the options is not the way out: the same colour would then be
+    // painted into the platform's picker sheet, which is light, and the list
+    // would go invisible instead of the pill.
+    //
+    // So the pill never inverts. Chosen is an ink border, a grey ground and a
+    // filled dot at the leading edge; the label is the theme's ordinary text
+    // colour in every state, which is the one thing iOS will always render.
+    // The dot is a sibling for the same reason the chevron is — nothing that
+    // has to be seen goes inside the select.
+    <span className="relative inline-flex max-w-[46vw] text-ink">
       <select
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`${CONTROL_PILL} w-full cursor-pointer appearance-none truncate ps-3 pe-7 text-current outline-none transition-colors focus-visible:border-ink ${
-          on ? "border-ink bg-ink" : "hover:border-ink"
+        // ps-7 when a dot is showing, so the label clears it.
+        className={`${CONTROL_PILL} w-full cursor-pointer appearance-none truncate pe-7 text-ink outline-none transition-colors focus-visible:border-ink ${
+          on ? "border-ink bg-raise ps-7 font-medium" : "bg-page ps-3 hover:border-ink"
         }`}
       >
         <option value="">{label}</option>
@@ -552,6 +565,12 @@ function Facet({
           </option>
         ))}
       </select>
+      {on ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute start-3 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-ink"
+        />
+      ) : null}
       {/* The catalog's own chevron: 9x6, 1.4 stroke. */}
       <svg
         width="9"
