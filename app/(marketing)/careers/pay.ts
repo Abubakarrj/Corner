@@ -95,22 +95,29 @@ export type RoleTerms = {
 // on MINIMUM_WAGE.hourly above. manager is salaried and waiting on a range.
 // shift-lead has no shifts here because none were given; a job with nothing
 // set simply shows no extra lines, which is the truth rather than a gap.
-// ——— "Full time" is the shop's statement, not an inference ———
+// ——— "Part time" is the shop's statement, not an inference ———
 //
 // Only kitchen carried `hours` at first, so the board listed one job with a
 // week attached and three without, and the Type filter could offer exactly one
-// option. The shop has since said these are full-time roles and they are
-// marked accordingly.
+// option. The shop has since said what these roles are, and they are marked
+// accordingly: part time, all four.
 //
 // Worth being plain about what that claim is. `hours` is printed on the card
 // and filtered on, so it is a promise to somebody deciding whether this job
-// pays their rent. If any of these is actually part time — counter runs two
-// six-hour windows, which is the one that reads either way — it is one word
-// here, and the card and the filter follow.
+// pays their rent — and part time is the reading a benefits question and an
+// hours question both hang off. Counter's two six-hour windows sit with it
+// comfortably. Kitchen's are eight hours and read either way, so if any of
+// these is really full time it is one word here, and the card and the filter
+// follow.
 //
-// It is not a claim about *exempt* status. Manager is the only salaried role,
-// and whether it is exempt turns on the salary and on how the time is actually
-// spent; see the note in that entry.
+// A role can hold both, as `["full", "part"]` — that is what to write when the
+// shop would take either, rather than picking one and hoping.
+//
+// None of this is a claim about *exempt* status. Manager is the only salaried
+// role, and whether it is exempt turns on the salary and on how the time is
+// actually spent; see the note in that entry. A part-time salaried manager
+// makes that question sharper, not softer: the exempt floor below is stated
+// for full-time work.
 export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
   counter: {
     pay: { kind: "minimum" },
@@ -118,7 +125,7 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
       { start: "06:00", end: "12:00" },
       { start: "10:00", end: "16:00" },
     ],
-    hours: ["full"],
+    hours: ["part"],
   },
   kitchen: {
     pay: { kind: "minimum" },
@@ -126,14 +133,14 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
       { start: "06:00", end: "14:00" },
       { start: "08:00", end: "16:00" },
     ],
-    hours: ["full"],
+    hours: ["part"],
   },
   "shift-lead": {
     pay: { kind: "minimum" },
-    hours: ["full"],
+    hours: ["part"],
   },
   manager: {
-    hours: ["full"],
+    hours: ["part"],
     // Salaried, and deliberately still unset — this is the one number here
     // that is a decision rather than a fact.
     //
