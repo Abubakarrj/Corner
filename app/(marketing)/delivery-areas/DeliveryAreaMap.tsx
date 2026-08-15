@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { loadMaps, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "../locations/locations";
 import { useResolvedTheme } from "../../theme";
-import { useFulfillment } from "../../fulfillment";
 import { useT } from "../../i18n";
 
 // The shaded map of where we deliver.
@@ -45,26 +44,20 @@ export default function DeliveryAreaMap() {
   const theme = useResolvedTheme();
   const holder = useRef<HTMLDivElement>(null);
   const [area, setArea] = useState<Area | null>(null);
-  // Prefilled with the address the basket is already going to, when there is
-  // one. Somebody who opens this from the (i) beside the delivery fee has
-  // typed their address once already, at the top of the checkout — asking
-  // them to type it again to find out whether we come there is asking a
-  // question we can see the answer to.
+  // Empty until somebody types something.
   //
-  // Editable, because the other reason to open this page is to ask about a
-  // *different* address: the office, a friend's place, somewhere you are
-  // thinking of having lunch. Prefilled is a starting point, not a lock.
+  // It used to arrive prefilled with the address the basket was already going
+  // to, on the reasoning that somebody opening this from the (i) beside the
+  // delivery fee had typed that address once already and should not be asked
+  // twice. The reasoning had the question backwards. Nobody opens "Where we
+  // deliver" to be told about the address they have already set and already
+  // ordered to. They open it to ask about a *different* one: the office, a
+  // friend's place, somewhere they are thinking of having lunch.
   //
-  // Derived rather than copied into state. The fulfillment store hydrates
-  // from localStorage after the first paint, so seeding useState with it
-  // captures the empty value and keeps it; syncing the two with an effect
-  // fixes that by making the component render itself twice on load. `typed`
-  // is null until somebody touches the field, and until then the store's own
-  // value is what shows — so a late arrival appears without either problem.
-  const fulfillment = useFulfillment();
-  const known = fulfillment?.mode === "delivery" ? fulfillment.address : "";
-  const [typed, setTyped] = useState<string | null>(null);
-  const address = typed ?? known;
+  // So the prefill answered the question nobody was asking, and charged for
+  // it: the field had to be cleared before it could be used, and a field you
+  // clear before using is worse than an empty one.
+  const [address, setAddress] = useState("");
   const [check, setCheck] = useState<Check>({ state: "idle" });
   const [hints, setHints] = useState<Suggestion[]>([]);
   // Set the moment a suggestion is taken, so choosing one does not
@@ -82,10 +75,7 @@ export default function DeliveryAreaMap() {
   // lands — a slow answer to "3545 W" arriving after the answer to
   // "3545 Wilshire" would overwrite good suggestions with stale ones.
   useEffect(() => {
-    // Only for text somebody actually entered. A prefilled address arrived
-    // from the checkout already resolved, and opening a suggestion list over
-    // it on load would cover the button and ask a question nobody asked.
-    const input = typed?.trim() ?? "";
+    const input = address.trim();
     if (input.length < 3 || input === settled.current) {
       setHints([]);
       return;
@@ -103,7 +93,7 @@ export default function DeliveryAreaMap() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [typed]);
+  }, [address]);
 
   useEffect(() => {
     let live = true;
@@ -244,7 +234,7 @@ export default function DeliveryAreaMap() {
         <div className="relative min-w-0 flex-1">
           <input
             value={address}
-            onChange={(event) => setTyped(event.target.value)}
+            onChange={(event) => setAddress(event.target.value)}
             placeholder={t("deliveryArea.placeholder")}
             aria-label={t("deliveryArea.placeholder")}
             autoComplete="street-address"
@@ -262,7 +252,7 @@ export default function DeliveryAreaMap() {
                     onClick={() => {
                       const picked = [hint.primary, hint.secondary].filter(Boolean).join(", ");
                       settled.current = picked;
-                      setTyped(picked);
+                      setAddress(picked);
                       setHints([]);
                     }}
                     className="cb-press block w-full cursor-pointer px-4 py-3 text-left transition-colors hover:bg-raise"

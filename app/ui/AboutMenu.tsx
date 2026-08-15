@@ -107,11 +107,23 @@ export default function AboutMenu({
         ref={menuRef}
         role="menu"
         inert={!open}
-        // Grows out of the corner of the chip it belongs to, and under RTL
-        // `end` is the left edge, so the origin follows the document.
-        data-origin="top-right"
+        // top-left is the .t-dropdown default, so no data-origin: the menu
+        // grows out of the chip's leading corner, the same one it is anchored
+        // to. Under RTL both flip together, `start` becoming the right edge.
+
         aria-label={t("about.aboutUs")}
-        className={`t-dropdown absolute end-0 top-[calc(100%+6px)] z-50 m-0 min-w-[168px] list-none overflow-hidden rounded-2xl border p-1 shadow-[0_10px_34px_rgba(0,0,0,0.18)] rtl:[transform-origin:top_left] ${ring}`}
+        // ——— start-0, not end-0 ———
+        //
+        // The language picker hangs its menu off the right, because it is the
+        // second of three chips and a menu growing rightward from there runs
+        // at the screen edge. This chip is the first of the three, so the room
+        // is on the other side: anchored right, the list opened backwards
+        // across the empty half of the header and away from the control that
+        // opened it.
+        //
+        // Logical, not physical. Under Urdu the whole document mirrors and
+        // `start` becomes the right edge, so the menu still opens inward.
+        className={`t-dropdown absolute start-0 top-[calc(100%+6px)] z-50 m-0 min-w-[168px] list-none overflow-hidden rounded-2xl border p-1 shadow-[0_10px_34px_rgba(0,0,0,0.18)] rtl:[transform-origin:top_right] ${ring}`}
       >
         {ENTRIES.map((entry) => (
           <li key={entry.href}>
