@@ -113,8 +113,10 @@ export type RoleTerms = {
 //
 // Manager holds only `["full"]`, and that is a real exclusion rather than an
 // omission: it is the one role the shop is not offering part time, so it drops
-// out of the board when somebody filters for part time. If that ever changes it
-// is one word here.
+// out of the board when somebody filters for part time. Not provisional, and
+// not waiting on anything — the shop's answer is that manager is full time,
+// always. Do not "tidy" this into `["full", "part"]` to make the four entries
+// match; the whole point of the field is that this one does not.
 //
 // None of this is a claim about *exempt* status. Manager is the only salaried
 // role, and whether it is exempt turns on the salary and on how the time is
