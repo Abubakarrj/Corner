@@ -697,6 +697,7 @@ export const es: Table = {
   "careers.dayShortSun": "Dom",
 
   "careers.typesNote": "La jornada que buscas.",
+  "careers.typesOne": "Este puesto se ofrece de una sola forma, así que ya está marcado.",
   "careers.typeFull": "Jornada completa",
   "careers.typePart": "Media jornada",
   "careers.typeEither": "Jornada completa o media jornada",

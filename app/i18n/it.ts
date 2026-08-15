@@ -746,6 +746,7 @@ export const it: Table = {
   "careers.dayShortSun": "Dom",
 
   "careers.typesNote": "L'orario che cerchi.",
+  "careers.typesOne": "Questo lavoro è offerto in un solo modo, quindi è già impostato.",
   "careers.typeFull": "Tempo pieno",
   "careers.typePart": "Part time",
   "careers.typeEither": "Tempo pieno o part time",

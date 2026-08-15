@@ -691,6 +691,7 @@ export const ko: Table = {
   "careers.dayShortSun": "일",
 
   "careers.typesNote": "원하는 근무 형태.",
+  "careers.typesOne": "이 직무는 한 가지 형태로만 채용하므로 이미 선택되어 있습니다.",
   "careers.typeFull": "풀타임",
   "careers.typePart": "파트타임",
   "careers.typeEither": "풀타임 또는 파트타임",

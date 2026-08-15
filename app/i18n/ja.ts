@@ -690,6 +690,7 @@ export const ja: Table = {
   "careers.dayShortSun": "日",
 
   "careers.typesNote": "希望する働き方。",
+  "careers.typesOne": "この仕事の勤務形態は一つだけなので、こちらで設定済みです。",
   "careers.typeFull": "フルタイム",
   "careers.typePart": "パートタイム",
   "careers.typeEither": "フルタイムまたはパートタイム",

@@ -689,6 +689,7 @@ export const zh: Table = {
   "careers.dayShortSun": "日",
 
   "careers.typesNote": "你想要的工作时长。",
+  "careers.typesOne": "这个职位只有一种工作时间，已为你选好。",
   "careers.typeFull": "全职",
   "careers.typePart": "兼职",
   "careers.typeEither": "全职或兼职",

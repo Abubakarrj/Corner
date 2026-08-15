@@ -16,6 +16,7 @@ import {
   MAX_REFERENCES,
   POSITIONS,
   applicationErrors,
+  hoursOffered,
   type Application,
   type DayId,
   type PositionId,
@@ -112,15 +113,43 @@ const DAY_SHORT: Record<DayId, StringKey> = {
 function fromLink(draft: Draft, role: PositionId | null, location: string | null): Draft {
   const setRole = role !== null && draft.application.role !== role;
   const setWhere = location !== null && draft.application.location !== location;
-  if (!setRole && !setWhere) return draft;
+  const withJob = setRole ? withRole(draft.application, role) : draft.application;
+  // Reconciled even when the role did not change, because the *terms* can have.
+  // A draft saved on Tuesday for a job that was open either way, picked up on
+  // Thursday after the shop made it full time, would otherwise arrive holding
+  // an answer the form no longer offers — invisible, unfixable, and submitted.
+  const settled = setRole ? withJob : withRole(withJob, withJob.role);
+  if (!setWhere && settled === draft.application) return draft;
   return {
     ...draft,
     application: {
-      ...draft.application,
-      role: setRole ? role : draft.application.role,
-      location: setWhere ? location : draft.application.location,
+      ...settled,
+      location: setWhere ? location : settled.location,
     },
   };
+}
+
+/** The application with a job on it, and the hours question kept honest.
+ *
+ *  Choosing a job is what decides which kinds of hours are on offer, so the two
+ *  answers cannot be set independently. Anything the new role does not offer is
+ *  dropped, and a role open exactly one way is answered rather than asked —
+ *  there is no choice to make, and a single button somebody has to press before
+ *  the form will accept them is a toll, not a question.
+ *
+ *  Returns the very same object when there is nothing to change, which is what
+ *  the identity comparisons deciding whether to write a draft rely on. */
+function withRole(application: Application, role: PositionId | ""): Application {
+  const offered = hoursOffered(role);
+  const kept =
+    offered.length === 1
+      ? offered
+      : application.employmentTypes.filter((id) => offered.includes(id));
+  const same =
+    application.role === role &&
+    kept.length === application.employmentTypes.length &&
+    kept.every((id, index) => id === application.employmentTypes[index]);
+  return same ? application : { ...application, role, employmentTypes: kept };
 }
 
 const POSITION_LABEL: Record<PositionId, StringKey> = {
@@ -189,6 +218,10 @@ export default function ApplicationForm({
   const arrivedWith = base.application.role === "" ? null : base.application.role;
   const where =
     base.application.location.trim() === "" ? null : base.application.location.trim();
+  // What the hours question is allowed to offer, read off the job currently on
+  // the application — `application` and not `base`, so pressing a different
+  // role changes the choices in the same breath rather than on the next load.
+  const offeredHours = hoursOffered(application.role);
   // Per step, so moving forward doesn't paint the next screen red before it
   // has been touched.
   const [tried, setTried] = useState<Set<number>>(new Set());
@@ -411,7 +444,10 @@ export default function ApplicationForm({
                 name="cb-role"
                 value={id}
                 checked={active}
-                onChange={() => set("role", id)}
+                // Not set("role", id): the job decides which kinds of hours
+                // are on offer, so the two answers move together or the form
+                // ends up holding one the shop is not offering.
+                onChange={() => setApplication(withRole(application, id))}
                 className="sr-only"
               />
               <Dot on={active} />
@@ -471,29 +507,54 @@ export default function ApplicationForm({
       </div>
       <Problem>{problem("careers.errDays")}</Problem>
 
+      {/* ——— Only the hours the job is actually offered on ———
+
+          This asked all three of everybody, so somebody could press Apply on a
+          job the shop offers part time and land on a question inviting them to
+          choose seasonal. The choices come from the role now, and seasonal
+          shows up when something is seasonal and not before.
+
+          A job open one way is stated rather than asked. There is no choice to
+          make, and a lone button somebody has to press before the form will
+          accept them is a toll rather than a question — withRole has already
+          filled the answer in, so the line below reports it. */}
       <p className="m-0 mb-2.5 mt-6 text-[12px] leading-[1.5] text-muted">
-        {t("careers.typesNote")}
+        {t(offeredHours.length === 1 ? "careers.typesOne" : "careers.typesNote")}
       </p>
-      <div className="grid grid-cols-3 gap-2">
-        {EMPLOYMENT_TYPES.map(({ id, label }) => {
-          const active = application.employmentTypes.includes(id);
-          return (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => toggle("employmentTypes", id)}
-              className={`cb-press cursor-pointer rounded-xl border px-2 py-3 text-[12px] leading-tight transition-colors ${
-                active
-                  ? "border-ink bg-ink text-on-ink"
-                  : "border-line-soft bg-surface text-ink hover:border-line-mute"
-              }`}
-            >
-              {t(label)}
-            </button>
-          );
-        })}
-      </div>
+      {offeredHours.length === 1 ? (
+        EMPLOYMENT_TYPES.filter(({ id }) => offeredHours.includes(id)).map(({ id, label }) => (
+          <p key={id} className="m-0 text-[14px] leading-[1.4] text-ink">
+            {t(label)}
+          </p>
+        ))
+      ) : (
+        // Sized to how many there are. Three across was the grid when there
+        // were always three; two choices in a three-column grid leave a hole
+        // where seasonal used to be.
+        <div className={`grid gap-2 ${offeredHours.length >= 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+          {EMPLOYMENT_TYPES.filter(({ id }) => offeredHours.includes(id)).map(({ id, label }) => {
+            const active = application.employmentTypes.includes(id);
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => toggle("employmentTypes", id)}
+                className={`cb-press cursor-pointer rounded-xl border px-2 py-3 text-[12px] leading-tight transition-colors ${
+                  active
+                    ? "border-ink bg-ink text-on-ink"
+                    : "border-line-soft bg-surface text-ink hover:border-line-mute"
+                }`}
+              >
+                {t(label)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {/* Outside the branch on purpose. The stated case fills its own answer in
+          and should never fail, and if it ever does the applicant needs to see
+          why rather than meeting a submit button that quietly will not go. */}
       <Problem>{problem("careers.errTypes")}</Problem>
 
       <div className="mt-6">

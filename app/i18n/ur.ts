@@ -694,6 +694,7 @@ export const ur: Table = {
   "careers.dayShortSun": "اتوار",
 
   "careers.typesNote": "آپ کو کس طرح کے اوقات چاہئیں۔",
+  "careers.typesOne": "یہ کام صرف ایک ہی طرح سے دستیاب ہے، اس لیے یہ پہلے سے منتخب ہے۔",
   "careers.typeFull": "کل وقتی",
   "careers.typePart": "جز وقتی",
   "careers.typeEither": "کل وقتی یا جز وقتی",

@@ -743,6 +743,7 @@ export const fa: Table = {
   "careers.dayShortSun": "یک",
 
   "careers.typesNote": "ساعت‌هایی که دنبالش هستید.",
+  "careers.typesOne": "این شغل فقط به یک شکل ارائه می‌شود، پس همین انتخاب شده است.",
   "careers.typeFull": "تمام‌وقت",
   "careers.typePart": "پاره‌وقت",
   "careers.typeEither": "تمام‌وقت یا پاره‌وقت",

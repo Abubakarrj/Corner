@@ -1,4 +1,4 @@
-import type { PositionId } from "./application";
+import type { EmploymentTypeId, PositionId } from "./application";
 
 // What each job pays, and when it can stop saying so.
 //
@@ -84,9 +84,12 @@ export type Shift = { start: string; end: string };
 export type RoleTerms = {
   pay?: Pay;
   shifts?: Shift[];
-  /** Matches the ids in EMPLOYMENT_TYPES, so the card reuses the strings the
-      form already has for "Full time" and "Part time". */
-  hours?: ("full" | "part")[];
+  /** The ids from EMPLOYMENT_TYPES, so the card reuses the strings the form
+      already has and the form can only offer what is written here.
+      Deliberately the whole vocabulary rather than just full and part: mark a
+      summer job `["seasonal"]` and the board filter and the form both pick it
+      up, with nothing else to edit. */
+  hours?: EmploymentTypeId[];
 };
 
 // ——— NOT YET SET ———
@@ -99,8 +102,8 @@ export type RoleTerms = {
 //
 // Only kitchen carried `hours` at first, so the board listed one job with a
 // week attached and three without, and the Type filter could offer exactly one
-// option. The shop has since said what these roles are: counter, kitchen and
-// shift-lead can be worked either way, and manager is full time.
+// option. The shop has since said what these roles are: counter and kitchen can
+// be worked either way, and shift-lead and manager are full time.
 //
 // Two entries mean *either*, not both at once. The card says so in one phrase —
 // "Full time or part time" — rather than printing the two as separate facts,
@@ -111,12 +114,19 @@ export type RoleTerms = {
 // who wants forty hours are both looking at these three jobs, and neither
 // should have to guess whether they are welcome.
 //
-// Manager holds only `["full"]`, and that is a real exclusion rather than an
-// omission: it is the one role the shop is not offering part time, so it drops
-// out of the board when somebody filters for part time. Not provisional, and
-// not waiting on anything — the shop's answer is that manager is full time,
-// always. Do not "tidy" this into `["full", "part"]` to make the four entries
-// match; the whole point of the field is that this one does not.
+// Shift-lead and manager hold only `["full"]`, and that is a real exclusion
+// rather than an omission: those are the two the shop is not offering part
+// time, so they drop out of the board when somebody filters for part time.
+// Manager especially is not provisional and not waiting on anything — the
+// shop's answer is that manager is full time, always. Do not "tidy" either into
+// `["full", "part"]` to make the four entries match; the whole point of the
+// field is that they do not all match.
+//
+// This is also what the application form asks from. It used to offer all three
+// kinds of hours to everybody, which is how somebody could press Apply on a job
+// the shop offers part time and then be asked to choose between full time and
+// seasonal. The form reads `hours` now, so a role open one way states it rather
+// than asking, and nothing is offered that the shop is not offering.
 //
 // None of this is a claim about *exempt* status. Manager is the only salaried
 // role, and whether it is exempt turns on the salary and on how the time is
@@ -142,7 +152,10 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
   },
   "shift-lead": {
     pay: { kind: "minimum" },
-    hours: ["full", "part"],
+    // Full time, with manager. Opening or closing is the shift somebody has to
+    // be there for end to end, so the job is the whole day by its nature and a
+    // half of it is a different job.
+    hours: ["full"],
   },
   manager: {
     hours: ["full"],

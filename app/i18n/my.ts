@@ -692,6 +692,7 @@ export const my: Table = {
   "careers.dayShortSun": "တနင်္ဂနွေ",
 
   "careers.typesNote": "လိုချင်တဲ့ အလုပ်ချိန်။",
+  "careers.typesOne": "ဤအလုပ်ကို တစ်မျိုးတည်းသာ ခန့်ပါသည်၊ ထို့ကြောင့် ရွေးပြီးသားဖြစ်သည်။",
   "careers.typeFull": "အချိန်ပြည့်",
   "careers.typePart": "အချိန်ပိုင်း",
   "careers.typeEither": "အချိန်ပြည့် သို့မဟုတ် အချိန်ပိုင်း",

@@ -794,6 +794,7 @@ export const en = {
   "careers.dayShortSun": "Sun",
 
   "careers.typesNote": "The hours you're looking for.",
+  "careers.typesOne": "This job is offered one way, so it's set for you.",
   "careers.typeFull": "Full time",
   "careers.typePart": "Part time",
   "careers.typeEither": "Full time or part time",

@@ -1,4 +1,8 @@
 import type { StringKey } from "../../i18n/en";
+// One direction only: this file reads the shop's terms, and pay.ts takes
+// nothing back but types, which are erased. Keep it that way — a value import
+// there would close the loop.
+import { TERMS } from "./pay";
 
 // What we ask somebody applying for a job, and what makes an application
 // valid.
@@ -87,6 +91,36 @@ export const EMPLOYMENT_TYPES = [
 ] as const satisfies readonly { id: string; label: StringKey }[];
 
 export type EmploymentTypeId = (typeof EMPLOYMENT_TYPES)[number]["id"];
+
+/** The kinds of hours a given role is actually open for.
+ *
+ *  The form used to offer all three to everybody, which is how somebody could
+ *  press Apply on a job the shop offers part time and then be asked to choose
+ *  between full time and seasonal. That is not a second question: the shop
+ *  already said which way each job can be worked, in pay.ts, and this reads
+ *  that statement back. Seasonal disappears on its own, because nothing is
+ *  seasonal — and reappears the day something is, with nothing here to edit.
+ *
+ *  Two fallbacks, both deliberate:
+ *
+ *  No role chosen yet, which is the "start an application and choose later"
+ *  path, gets the union of what every role offers — answerable before the job
+ *  is picked, and narrowing once it is.
+ *
+ *  A role with no `hours` written at all gets everything, which is the old
+ *  behaviour. A job the shop has not described yet should ask the applicant,
+ *  not hand them an empty required field.
+ *
+ *  Returned in EMPLOYMENT_TYPES order rather than the order pay.ts happens to
+ *  list them in, so the buttons cannot reorder themselves under an edit. */
+export function hoursOffered(role: PositionId | ""): EmploymentTypeId[] {
+  const every = EMPLOYMENT_TYPES.map((type) => type.id);
+  const offered =
+    role === ""
+      ? Object.values(TERMS).flatMap((terms) => terms?.hours ?? [])
+      : (TERMS[role]?.hours ?? []);
+  return offered.length === 0 ? every : every.filter((id) => offered.includes(id));
+}
 
 export const NOTES_MAX = 1500;
 export const ANSWER_MAX = 800;
