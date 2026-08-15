@@ -175,7 +175,44 @@ export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | n
  *  Deliverable shapes only, deduped by address, capped — a chooser with
  *  fifteen rows on it is not a chooser.
  */
-const NEARBY_LIMIT = 6;
+// ——— Two, not six ———
+//
+// Six was a list to read; two is a choice. This names a point the customer has
+// already fixed with the pin, so the only question left is which building it
+// should be called, and past the second-nearest door the answer is somewhere
+// else on the block. A long list also reads as uncertainty about a thing that
+// is not uncertain: the destination is the pin, whatever is picked here.
+const NEARBY_LIMIT = 2;
+
+// ——— How sure Google is about where a door is ———
+//
+// Every reverse-geocoded result carries a location_type, and the three that
+// survive isDeliverable() are not equally good:
+//
+//   ROOFTOP             the building itself, surveyed. This is a door.
+//   RANGE_INTERPOLATED  a guess, placed along the street line between two
+//                       known house numbers. It is a point on the road.
+//   GEOMETRIC_CENTER    the middle of a street segment or a polyline.
+//
+// Sorting purely by distance treated all three as the same kind of answer, and
+// that is the bug: an interpolated number sitting out on the centre line is
+// often *closer* to a pin than the rooftop of the building the pin is actually
+// inside — a rooftop is the middle of a parcel, and the parcel is set back
+// from the road. So the top result, which is the one selected for the
+// customer, could be a house number Google worked out by counting along the
+// kerb rather than the address that is there.
+//
+// Precision first, then distance inside a tier. A rooftop twenty metres away
+// beats an interpolation five metres away, because one of them is a building
+// and the other is arithmetic.
+const PRECISION = ["ROOFTOP", "RANGE_INTERPOLATED", "GEOMETRIC_CENTER"];
+
+function surenessOf(result: GeocodeResult): number {
+  const rank = PRECISION.indexOf(result.geometry?.location_type ?? "");
+  // Anything unrecognised sorts last rather than first. A location_type this
+  // does not know about is not a promotion.
+  return rank === -1 ? PRECISION.length : rank;
+}
 
 // The only shapes a courier can be sent to.
 //
@@ -222,19 +259,30 @@ export async function reverseCandidates(
   return results
     .filter(isDeliverable)
     .filter((result) => (result.types ?? []).some((type) => A_DOOR.has(type)))
-    .map((result) => toPlace(result, result.formatted_address ?? ""))
-    .filter((place): place is GeocodedPlace => place !== null)
-    .filter((place) => {
-      const id = place.address.toLowerCase();
+    // Carried as a pair rather than sorted twice: toPlace drops the
+    // location_type, and it is what the first sort key reads.
+    .map((result) => ({
+      place: toPlace(result, result.formatted_address ?? ""),
+      sureness: surenessOf(result),
+    }))
+    .filter(
+      (ranked): ranked is { place: GeocodedPlace; sureness: number } =>
+        ranked.place !== null,
+    )
+    .filter((ranked) => {
+      const id = ranked.place.address.toLowerCase();
       if (seen.has(id)) return false;
       seen.add(id);
       return true;
     })
     .sort(
       (a, b) =>
-        metresBetween(point, [a.lat, a.lng]) - metresBetween(point, [b.lat, b.lng]),
+        a.sureness - b.sureness ||
+        metresBetween(point, [a.place.lat, a.place.lng]) -
+          metresBetween(point, [b.place.lat, b.place.lng]),
     )
-    .slice(0, NEARBY_LIMIT);
+    .slice(0, NEARBY_LIMIT)
+    .map((ranked) => ranked.place);
 }
 
 // Turns text into one canonical place.
