@@ -71,9 +71,7 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
     // the pages the marketing site keeps deliberately white.
     //
     // bg-page rather than a literal, so night follows: the token is white in
-    // light and the app's near-black in dark. The role cards keep bg-surface
-    // and their hairline, which is what still tells them apart from the ground
-    // now that the ground is no longer tinted.
+    // light and the app's near-black in dark.
     <div className="min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
       <div className="mx-auto max-w-[34rem] px-5 pb-20 pt-6 sm:pt-10">
         <div className="mb-7 flex items-center justify-between gap-3">
@@ -102,16 +100,29 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           <LanguagePicker />
         </div>
 
+        {/* ——— One eyebrow, not three ———
+
+            "WE'RE HIRING", "OPEN ROLES" and "ABOUT THE SHOP" were all set the
+            same way: 11px, uppercase, letterspaced, in a column that is only
+            about a screen and a half long. A device used three times in that
+            space stops marking anything — it just becomes the texture of the
+            page. This is the one that earns it, because it is the only line
+            that says what kind of page you have landed on. The other two are
+            labels on a list and a paragraph, and they are set as labels. */}
         <p className="m-0 text-[11px] font-medium uppercase tracking-[0.16em] text-olive">
           {t("careers.eyebrow")}
         </p>
+        {/* Bigger, and considerably. It was 30px over a 15px lede, which is
+            not a hierarchy so much as two sizes of the same thing — and this
+            page has no photograph and no illustration, so the title is the
+            only thing on it that can carry a top of a page. */}
         <h1
-          className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
+          className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[44px]"
           style={{ fontFamily: DISPLAY_FONT }}
         >
           {t("careers.title")}
         </h1>
-        <p className="m-0 mt-3 max-w-[24em] text-[15px] leading-[1.55] text-muted">
+        <p className="m-0 mt-3.5 max-w-[26em] text-[16px] leading-[1.5] text-muted">
           {t("careers.lede")}
         </p>
 
@@ -127,138 +138,158 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             somebody wants first is what the jobs are, not what the shop is
             like. The shop is what they read second, once one of the jobs has
             caught them. */}
-        <h2 className="m-0 mb-3 mt-11 flex flex-wrap items-baseline gap-x-2 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
-          {t("careers.openRoles")}
-          {oneShop ? (
-            <span className="font-normal normal-case tracking-normal text-quiet">
-              {oneShop}
-            </span>
-          ) : null}
-        </h2>
+        {/* ——— A priced list, not four cards ———
 
-        <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+            It was four rounded boxes, each with a title, a line of copy, a row
+            of pill-shaped tags and a chevron. Every one of them the same
+            height, the same weight, the same shape. That is the arrangement
+            anything reaches for when it does not know what the content is, and
+            it showed: the page could have been about four SaaS plans.
+
+            This shop already makes a list of things with prices next to them
+            every day, and that is what a job list is. So: rules instead of
+            boxes, the name at a size worth reading, and the wage right-aligned
+            in the column where a price goes. The eye runs straight down the
+            numbers, which is what somebody deciding whether the shift covers
+            the bus fare actually came to do.
+
+            It also fixes the thing the tags were invented to hide. Three of
+            these pay the same and the fourth has no figure set, so as chips it
+            was the same pill repeated three times and then a gap that read as
+            a card with a piece missing. In a price column, three matching
+            numbers are a rate — that is what a rate looks like on a menu — and
+            a blank fourth reads as a price not given, which is the truth. */}
+        <div className="mt-9 flex items-baseline justify-between gap-3 border-b border-ink pb-2.5">
+          <h2 className="m-0 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
+            {t("careers.openRoles")}
+          </h2>
+          {oneShop ? <span className="text-[12px] text-quiet">{oneShop}</span> : null}
+        </div>
+
+        <ul className="m-0 list-none p-0">
           {openings.map((opening) => {
             const label = titleOf(opening.role);
             if (!label) return null;
             const terms = TERMS[opening.role];
-            // ——— Facts as chips, not as a sentence ———
-            //
-            // These were joined with middots into one line, and the rows came
-            // out ragged: Kitchen carried four facts, Manager none, so no two
-            // cards agreed on where anything sat and the column would not
-            // scan. Chips give every fact the same shape, so a card with one
-            // reads as deliberate rather than as a card missing three.
-            //
-            // A fixed order — where, then what it pays, then how much of a
-            // week, then which hours — so the eye can run down the list and
-            // compare the same thing in the same place. Nothing is invented
-            // to fill a slot: what isn't known isn't shown. See pay.ts.
-            const facts: string[] = oneShop === null ? [opening.location] : [];
-            if (opening.pay) {
-              facts.push(
-                t(opening.pay.per === "hour" ? "careers.perHour" : "careers.perYear", {
+            // The wage, on its own, in the price column.
+            const rate = opening.pay
+              ? t(opening.pay.per === "hour" ? "careers.perHour" : "careers.perYear", {
                   amount: formatPay(opening.pay, locale),
-                }),
-              );
-            }
+                })
+              : null;
+            // Everything else about the job, as one quiet line.
+            //
+            // These were chips, on the reasoning that a fact wearing the same
+            // shape on every row lets the eye compare it — which is true of a
+            // grid of boxes and stops being true here. Rows separated by a
+            // rule are allowed to be different heights; that is what a list
+            // is, as against a set of cards that have to agree. So the facts
+            // go back to a sentence-shaped line, in a fixed order, and a row
+            // with two of them next to a row with none is unremarkable.
+            const facts: string[] = oneShop === null ? [opening.location] : [];
             for (const type of terms?.hours ?? []) {
               facts.push(t(type === "full" ? "careers.typeFull" : "careers.typePart"));
             }
-            // The shift windows are not chips.
-            //
-            // First cut made them chips too and the rows went ragged again in
-            // a new way: Counter carried four and wrapped onto a second line,
-            // Manager carried one, and no two cards were the same height. Two
-            // time ranges is simply more text than a tag row can hold.
-            //
-            // Which is the rule, and it is worth stating: things that are the
-            // same on every card get the same treatment, and things that vary
-            // get a treatment where varying is expected. Where, what it pays
-            // and how much of a week are tags — short, comparable, one line.
-            // Which hours is detail, and detail goes on a line of its own,
-            // where one card having it and another not is unremarkable.
-            const shifts = (terms?.shifts ?? [])
-              .map((shift) => shiftLine(shift, locale))
-              .filter((line): line is string => line !== null);
+            for (const shift of terms?.shifts ?? []) {
+              const line = shiftLine(shift, locale);
+              if (line) facts.push(line);
+            }
             return (
-              <li key={`${opening.role}-${opening.location}`}>
+              <li key={`${opening.role}-${opening.location}`} className="border-b border-line">
                 <Link
                   href={`/careers/apply?role=${opening.role}&at=${encodeURIComponent(opening.location)}`}
-                  className="cb-press group flex cursor-pointer items-center gap-3 rounded-2xl border border-line-soft bg-surface p-4 transition-colors hover:border-ink"
+                  // -mx-3 px-3: the row's tap target and its hover wash run a
+                  // little wider than the column, so the wash has an edge
+                  // rather than stopping exactly on the text. The rule above
+                  // stays the column's width, which is what keeps it reading
+                  // as a list and not as a table with cells.
+                  className="cb-press group -mx-3 block cursor-pointer rounded-xl px-3 py-5 transition-colors hover:bg-raise"
                 >
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span
-                        className="text-[16px] leading-tight text-ink"
-                        style={{ fontFamily: DISPLAY_FONT }}
-                      >
-                        {t(label)}
-                      </span>
+                  <span className="flex items-baseline gap-3">
+                    <span
+                      className="min-w-0 flex-1 text-[19px] leading-[1.25] text-ink sm:text-[21px]"
+                      style={{ fontFamily: DISPLAY_FONT }}
+                    >
+                      {t(label)}
                       {opening.isNew ? (
-                        <span className="rounded-full bg-sun-soft px-2 py-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sun-ink">
+                        <span className="ms-2 inline-block whitespace-nowrap rounded-full bg-sun-soft px-2 py-[3px] align-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sun-ink">
                           {t("careers.new")}
                         </span>
                       ) : null}
                     </span>
-                    <span className="mt-1.5 block text-[13px] leading-[1.5] text-muted">
-                      {t(POSITION_NOTE[opening.role])}
-                    </span>
-                    <span className="mt-2.5 flex flex-wrap gap-1.5">
-                      {facts.map((fact) => (
-                        <span
-                          key={fact}
-                          className="rounded-full border border-line-soft px-2.5 py-1 text-[11px] leading-none text-muted"
-                        >
-                          {fact}
-                        </span>
-                      ))}
-                    </span>
-                    {shifts.length > 0 ? (
-                      <span className="mt-2 block text-[11px] leading-[1.5] text-quiet">
-                        {shifts.join(" · ")}
-                      </span>
+                    {/* tabular-nums, so three matching rates line up digit for
+                        digit down the column instead of nearly doing. */}
+                    {rate ? (
+                      <span className="shrink-0 text-[14px] tabular-nums text-ink">{rate}</span>
                     ) : null}
+                    {/* ——— The arrow sits at the edge, not after the name ———
+
+                        It was inline, right behind the last word, which is the
+                        prettier place for it in English and falls apart in
+                        Burmese: the role names wrap there, and a browser will
+                        break between the last cluster and an inline element,
+                        so the arrow ended up alone on a line of its own.
+
+                        At the row's edge it cannot be orphaned by any
+                        language, and it gives every row the same right-hand
+                        stop — including Manager, which has no rate. It is the
+                        only affordance left now that the box has gone, which
+                        is why it moves under the pointer. */}
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden
+                      className="shrink-0 translate-y-[1px] text-quiet transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
+                    >
+                      <path
+                        d="M5.5 2.5 10 7l-4.5 4.5"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </span>
-                  {/* A chevron rather than the word "Apply" on its own line.
-                      Four cards each ending in an identical "Apply →" is four
-                      lines saying what the whole card already does, and it is
-                      the line that made the rows tall and uneven. The card is
-                      the link; this is where a list row's arrow lives. */}
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 14 14"
-                    fill="none"
-                    aria-hidden
-                    className="shrink-0 text-quiet transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100"
-                  >
-                    <path
-                      d="M5.5 2.5 10 7l-4.5 4.5"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <span className="mt-2 block max-w-[34em] text-[14px] leading-[1.5] text-muted">
+                    {t(POSITION_NOTE[opening.role])}
+                  </span>
+                  {facts.length > 0 ? (
+                    <span className="mt-1.5 block text-[12px] leading-[1.5] text-quiet">
+                      {facts.join(" · ")}
+                    </span>
+                  ) : null}
                 </Link>
               </li>
             );
           })}
         </ul>
 
-        {/* For somebody who would rather not decide on a card. The form asks
-            which job when nothing else has. */}
-        <p className="m-0 mt-4 text-[13px] leading-[1.55] text-muted">
-          <Link href="/careers/apply" className="underline hover:text-ink">
+        {/* For somebody who would rather not pick a row. The form asks which
+            job when nothing else has.
+
+            Under the list's last rule with room to breathe, so it reads as the
+            way out of the list rather than as a fifth thing in it. */}
+        <p className="m-0 mt-6 text-[14px] leading-[1.55] text-muted">
+          <Link href="/careers/apply" className="underline underline-offset-2 hover:text-ink">
             {t("careers.applyAnyway")}
           </Link>
         </p>
 
-        <h2 className="m-0 mb-3 mt-14 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
+        {/* Set as a label, matching "Open roles" above — the two are the same
+            kind of thing, and the eyebrow at the top is the only line dressed
+            differently. */}
+        <h2 className="m-0 mb-3.5 mt-14 text-[11px] font-medium uppercase tracking-[0.1em] text-quiet">
           {t("careers.aboutHeading")}
         </h2>
-        <p className="m-0 text-[14px] leading-[1.65] text-ink">{t("about.p1")}</p>
-        <p className="m-0 mt-3 text-[14px] leading-[1.65] text-ink">{t("about.p2")}</p>
+        {/* 15/1.7 in a 34em measure, which is running copy rather than the
+            14/1.65 caption these were set at. Two paragraphs are the whole of
+            what this page says about the shop; they can be read like prose. */}
+        <div className="max-w-[34em] text-[15px] leading-[1.7] text-body">
+          <p className="m-0">{t("about.p1")}</p>
+          <p className="m-0 mt-3.5">{t("about.p2")}</p>
+        </div>
 
         {/* Under the words now, not above them. A photograph of the shop is
             the evidence for the paragraph, and it reads as evidence when it

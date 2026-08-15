@@ -583,7 +583,7 @@ export default function ApplicationForm({
               {t("careers.applyingFor")}
             </p>
             <h1
-              className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
+              className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[44px]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               {t(POSITION_LABEL[arrivedWith])}
@@ -603,7 +603,7 @@ export default function ApplicationForm({
               {t("careers.eyebrow")}
             </p>
             <h1
-              className="m-0 mt-2.5 text-[30px] font-medium leading-[1.1] tracking-[-0.02em] text-ink sm:text-[36px]"
+              className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[44px]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               {t("careers.title")}
