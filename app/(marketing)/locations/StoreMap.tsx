@@ -594,6 +594,7 @@ export default function StoreMap({
 
       <LocationSheet
         location={detailsFor}
+        queue={mode !== "catering"}
         onClose={() => setDetailsFor(null)}
         onOrder={(location) => {
           setDetailsFor(null);

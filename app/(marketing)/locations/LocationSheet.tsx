@@ -11,7 +11,7 @@ import { OPEN_HOUR, clockLabel, closeHour } from "../../shopFacts";
 import KitchenLoad from "./KitchenLoad";
 import type { StoreLocation } from "./locations";
 
-const { ink, muted, controlBorder, olive } = PALETTE;
+const { ink, muted, controlBorder } = PALETTE;
 
 // Everything about one shop, on a sheet.
 //
@@ -109,10 +109,14 @@ function PhoneIcon() {
 
 export default function LocationSheet({
   location,
+  queue = true,
   onClose,
   onOrder,
 }: {
   location: StoreLocation | null;
+  /** Whether "orders ahead" belongs on this sheet. False under catering: see
+   *  the note where KitchenLoad is rendered. */
+  queue?: boolean;
   onClose: () => void;
   onOrder: (location: StoreLocation) => void;
 }) {
@@ -142,9 +146,16 @@ export default function LocationSheet({
           second one put two crosses in the same corner. The heading is padded
           clear of it rather than sharing the row. */}
       <div className="pe-10">
+        {/* Ink, not the brand green.
+            The shop's name is the heading of this sheet, and a heading is text
+            — colouring it olive made the one word somebody opened the sheet to
+            read the only word on the screen not set like text, and it did not
+            match the same name on the card that opens the sheet, which has
+            always been ink. Olive is for the marks that say Corner Bagel: the
+            pins, the eyebrow on the careers page. */}
         <h2
           className="m-0 text-[26px] font-medium leading-[1.15] tracking-[-0.01em]"
-          style={{ color: olive }}
+          style={{ color: ink }}
         >
           {location.name}
         </h2>
@@ -189,8 +200,14 @@ export default function LocationSheet({
           their thumb already on the button — putting it above would push the
           button down the sheet to make room for a line most people will read
           once and never again. It renders nothing when the shop is shut or
-          when the count cannot be trusted. */}
-      <KitchenLoad />
+          when the count cannot be trusted.
+
+          And nothing at all under catering. "No orders ahead" answers "should
+          I order now or in twenty minutes", which is a bagel-counter question:
+          a catering enquiry is a tray for a date, arranged in a conversation,
+          and how many breakfast orders are on the rail this minute has nothing
+          to do with it. */}
+      {queue ? <KitchenLoad /> : null}
     </Modal>
   );
 }
