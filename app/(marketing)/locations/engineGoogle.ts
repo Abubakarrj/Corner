@@ -26,21 +26,66 @@ import {
 // is no swapping it for a smaller pill, and nothing may be drawn over it. The
 // card rail in StoreMap.tsx sits clear of it for that reason.
 
-// The "you are here" dot: a white ring around a blue disc, with a soft outer
-// glow so it survives both a pale road and a dark basemap. Blue rather than
-// anything in the produce palette on purpose — this is the one mark on the
-// map that is not us, and every map anybody has ever used draws the reader
-// in blue.
+// The "you are here" dot's blue, shared with the accuracy halo below.
 const YOU_BLUE = "#1a73e8";
-const YOU_DOT =
-  "data:image/svg+xml;charset=UTF-8," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">' +
-      '<circle cx="9" cy="9" r="8" fill="#1a73e8" fill-opacity="0.18"/>' +
-      '<circle cx="9" cy="9" r="6" fill="#ffffff"/>' +
-      '<circle cx="9" cy="9" r="4.4" fill="#1a73e8"/>' +
-      "</svg>",
-  );
+
+// The dot itself is a DOM node on an overlay, not a marker icon.
+//
+// ——— Why it is not an icon any more ———
+//
+// It was a data-URI SVG on a google.maps.Marker: a white ring around a blue
+// disc with a soft glow. That is a picture, and a picture cannot pulse.
+//
+// The two obvious ways to make it move were both worse. An SVG with SMIL in it
+// animates inside a marker, and cannot see prefers-reduced-motion, so a reader
+// who has asked the whole system for less movement would get a throbbing dot
+// anyway. AdvancedMarkerElement takes real DOM and would have been the modern
+// answer, except that it needs a Map ID, and a Map ID makes Google ignore the
+// JS `styles` array — which is the entire palette of this map. Trading the
+// basemap's colours for an animated dot is not a trade.
+//
+// An OverlayView is the remaining door: it is how you put your own DOM on a
+// Google map with no Map ID, so the dot is CSS like everything else in the app
+// and honours the same motion preference the rest of it does. See .cb-you in
+// globals.css.
+//
+// Built lazily because OverlayView only exists once the library has loaded.
+function makeYouDot(maps: typeof google.maps) {
+  return class YouDot extends maps.OverlayView {
+    private node: HTMLDivElement | null = null;
+
+    constructor(private readonly at: google.maps.LatLngLiteral) {
+      super();
+    }
+
+    onAdd() {
+      const node = document.createElement("div");
+      node.className = "cb-you";
+      // Decorative: the map is not readable to a screen reader in the first
+      // place, and "where you are" is said in words by the locate button.
+      node.setAttribute("aria-hidden", "true");
+      node.innerHTML = '<span class="cb-you-pulse"></span><span class="cb-you-core"></span>';
+      this.node = node;
+      // overlayMouseTarget, which sits above the marker pane, because this
+      // used to be a marker with zIndex 1000 for a reason: a shop pin drawn on
+      // top of the reader hides the one thing that answers "where am I".
+      // Pointer events are off in the CSS, so the map still drags through it.
+      this.getPanes()?.overlayMouseTarget.appendChild(node);
+    }
+
+    draw() {
+      const point = this.getProjection()?.fromLatLngToDivPixel(new maps.LatLng(this.at));
+      if (!point || !this.node) return;
+      this.node.style.left = `${point.x}px`;
+      this.node.style.top = `${point.y}px`;
+    }
+
+    onRemove() {
+      this.node?.remove();
+      this.node = null;
+    }
+  };
+}
 
 export const createGoogleEngine: EngineFactory = async (holder, options) => {
   const maps = await loadMaps(options.language);
@@ -79,7 +124,10 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
   map.addListener("zoom_changed", options.onMoved);
 
   let entries: { id: string; kind: StoreLocation["kind"]; marker: google.maps.Marker }[] = [];
-  let you: google.maps.Marker | null = null;
+  // The class is built here rather than at module scope: OverlayView is a
+  // property of the loaded library, so it does not exist until `maps` does.
+  const YouDot = makeYouDot(maps);
+  let you: InstanceType<typeof YouDot> | null = null;
   let halo: google.maps.Circle | null = null;
   let selected: string | null = null;
 
@@ -158,19 +206,8 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
           map,
         });
       }
-      you = new google.maps.Marker({
-        position,
-        map,
-        clickable: false,
-        // Above the shop pins: it is where the reader is, and a shop sitting
-        // on top of it hides the one thing that answers "where am I".
-        zIndex: 1000,
-        icon: {
-          url: YOU_DOT,
-          scaledSize: new google.maps.Size(18, 18),
-          anchor: new google.maps.Point(9, 9),
-        },
-      });
+      you = new YouDot(position);
+      you.setMap(map);
     },
 
     panTo(point, zoom) {

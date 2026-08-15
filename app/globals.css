@@ -1079,6 +1079,84 @@ body {
   color: var(--cb-muted);
 }
 
+/* ——— "You are here", on the store map ———
+ *
+ * A blue disc in a white ring, with a slow pulse going out of it. Blue rather
+ * than anything in the produce palette because this is the one mark on the map
+ * that is not us, and every map anybody has ever used draws the reader in blue.
+ *
+ * ——— Why this is CSS and not an icon ———
+ *
+ * It was a data-URI SVG on a google.maps.Marker, which cannot pulse: an icon
+ * is a picture. The alternatives were an animated SVG, which cannot see the
+ * reader's motion preference, and AdvancedMarkerElement, which needs a Map ID
+ * and a Map ID turns off the JS `styles` array that carries this app's whole
+ * palette. So the dot is a DOM node on an OverlayView instead, which is the
+ * one way to put real CSS on a Google map without a Map ID. See
+ * engineGoogle.ts.
+ *
+ * Sized off the SVG it replaces: an 18px box, a 16px pulse, a 12px white ring
+ * and an 8.8px blue core. */
+.cb-you {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  /* The overlay positions this by its top-left, and the point it marks is the
+     middle. Half the box back, both ways. */
+  margin: -9px 0 0 -9px;
+  /* The map has to stay draggable through it. */
+  pointer-events: none;
+}
+
+.cb-you-pulse,
+.cb-you-core {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+.cb-you-pulse {
+  inset: 1px;
+  background: #1a73e8;
+  animation: cbYouPulse 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.cb-you-core {
+  inset: 3px;
+  background: #ffffff;
+  /* Keeps the white ring off a pale road without drawing a hard edge. */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
+.cb-you-core::after {
+  content: "";
+  position: absolute;
+  inset: 1.6px;
+  border-radius: 9999px;
+  background: #1a73e8;
+}
+
+@keyframes cbYouPulse {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.6);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
+/* The dot stays; only the pulse goes. Somebody who has asked for less motion
+   still needs to know where they are. */
+@media (prefers-reduced-motion: reduce) {
+  .cb-you-pulse {
+    animation: none;
+    opacity: 0.22;
+    transform: none;
+  }
+}
+
 /* ——— Swap: a value changing visibly ———
  *
  * See app/ui/Swap.tsx. The animation itself is transitions.dev's number
