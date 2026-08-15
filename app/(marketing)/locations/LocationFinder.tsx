@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { setFulfillment } from "../../fulfillment";
+import type { Fix } from "../../geolocate";
 import { useCapabilities } from "../../capabilities";
 import { BackIcon, CloseIcon, IconButtonLink } from "../../ui/IconButton";
 import CateringModal from "./CateringModal";
@@ -144,6 +145,11 @@ export default function LocationFinder() {
   const [pinning, setPinning] = useState<{
     start: [number, number];
     address: string;
+    /** The browser's own fix, when this step was opened from one. Carries how
+     *  sure the platform is, which is what sets the opening zoom and draws the
+     *  circle. Absent when the pin was opened from a typed address, where
+     *  there is no fix to be sure about. */
+    fix?: Fix;
   } | null>(null);
   const [locateNote, setLocateNote] = useState<
     "denied" | "unsupported" | "unavailable" | "coarse" | null
@@ -361,7 +367,8 @@ export default function LocationFinder() {
    *  and the pin are keyed off `searched`, so panning left the map over your
    *  street with nothing on it and the bar still asking you to search. Moving
    *  the camera is not answering the question. */
-  function locateHere(point: [number, number]): void | Promise<void> {
+  function locateHere(fix: Fix): void | Promise<void> {
+    const point = fix.point;
     setLocateNote(null);
     setToastDismissed(false);
 
@@ -383,7 +390,12 @@ export default function LocationFinder() {
     // good at "you are on this block", which is exactly what a starting frame
     // needs to be.
     if (mode === "delivery") {
-      setPinning({ start: point, address: "" });
+      // The fix rides along. A phone that is sure to within eight metres and a
+      // phone that is sure to within a kilometre are both "where you are", and
+      // the pin step is where that difference decides something: how close to
+      // open, and whether to draw the circle that says how much of the block
+      // this could be.
+      setPinning({ start: point, address: "", fix });
       return;
     }
 
@@ -512,6 +524,7 @@ export default function LocationFinder() {
             key={`${pinning.start[0]},${pinning.start[1]}`}
             start={pinning.start}
             startAddress={pinning.address}
+            startFix={pinning.fix}
             onConfirm={confirmPin}
             onCancel={() => setPinning(null)}
           />
@@ -664,13 +677,13 @@ export default function LocationFinder() {
         locations={results}
         mode={mode}
         onSearchArea={setBounds}
-        onLocate={(point, coarse) => {
+        onLocate={(fix) => {
           // The search runs either way — a rough fix still puts the map on
           // the right part of the city, and refusing to use it would throw
           // away the answer to tell somebody about a settings toggle.
-          locateHere(point);
-          setLocateNote(coarse ? "coarse" : null);
-          if (coarse) setToastDismissed(false);
+          locateHere(fix);
+          setLocateNote(fix.coarse ? "coarse" : null);
+          if (fix.coarse) setToastDismissed(false);
         }}
         onLocateFailed={(why) => {
           setLocateNote(why);

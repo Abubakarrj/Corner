@@ -8,7 +8,7 @@ import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations"
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
 import { useLocale, useT } from "../../i18n";
-import { locateMe, type LocateFailure } from "../../geolocate";
+import { locateMe, type Fix, type LocateFailure } from "../../geolocate";
 import { localeById } from "../../localeScript";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
@@ -107,16 +107,22 @@ export default function StoreMap({
   // needs the fact itself, deriving the button from it beats being told twice.
   mode: "pickup" | "delivery" | "catering";
   onSearchArea: (bounds: MapBounds) => void;
-  /** A position from the browser. The finder treats it as a search — see
-   *  locateHere() there — rather than as a camera move. */
-  /** `coarse` when the platform's own accuracy radius is too wide to name a
-   *  building — iOS with Precise Location off, or a cell-tower fallback. */
-  //
-  //  May return a promise. Delivery mode turns the position into an address
-  //  before it has anything to show, and the button keeps spinning until it
-  //  does — a control that goes idle before its work is finished invites a
-  //  second press.
-  onLocate?: (point: [number, number], coarse: boolean) => void | Promise<void>;
+  /** The browser's answer, whole. The finder treats it as a search — see
+   *  locateHere() there — rather than as a camera move.
+   *
+   *  The fix rather than its point, because the platform tells us how sure it
+   *  is and that is worth more than the coordinates alone: iOS fuses GPS, wifi
+   *  and cell into one number, and `accuracyMeters` is the whole of what it
+   *  will say about its own working. Delivery carries it into the pin step,
+   *  which opens tighter on a good fix and wider on a vague one and draws the
+   *  circle either way. Passing `point` and a `coarse` boolean threw the
+   *  radius away at the one screen that could use it.
+   *
+   *  May return a promise. Delivery turns the position into a pin step before
+   *  it has anything to show, and the button keeps spinning until it does — a
+   *  control that goes idle before its work is finished invites a second
+   *  press. */
+  onLocate?: (fix: Fix) => void | Promise<void>;
   /** Refused, unavailable, or timed out. All three are the same thing to
    *  somebody looking at the screen: tell them, and say what to do instead. */
   onLocateFailed?: (why: LocateFailure) => void;
@@ -448,7 +454,7 @@ export default function StoreMap({
               // which is why granting the permission felt like nothing.
               engineRef.current?.setYou(result.fix.point, result.fix.accuracyMeters);
               try {
-                await onLocate?.(result.fix.point, result.fix.coarse);
+                await onLocate?.(result.fix);
               } finally {
                 setLocating(false);
               }

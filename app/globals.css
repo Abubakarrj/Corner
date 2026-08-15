@@ -712,6 +712,53 @@
   --cb-link: #7fb0ff;
 }
 
+/* ——— A page with no tint in it ———
+ *
+ * The shop's palette is warm all the way down, and it should be: cream ground,
+ * a surface a half-step off it, and rules in #ddd6c2 so a border on cream
+ * reads as a border rather than as a wire. Every one of those is a tan, and
+ * that is invisible on cream and obvious on white.
+ *
+ * Careers is white. It came out with warm fills on every field, a tan hairline
+ * around every control, and a beige wash under a hovered row — not one wrong
+ * decision, just the shop's palette used somewhere it was not made for.
+ *
+ * So the grounds and the rules go neutral inside this class, the way the chat
+ * panel above does it: redefine the tokens, and every component written
+ * against bg-surface, border-line-soft and the rest comes along without a
+ * second copy of any of it. Nothing else moves — ink, muted, olive, the brand
+ * red and the highlight yellow are the shop's and stay the shop's.
+ *
+ * --cb-page is deliberately not restated. It is already white in light and the
+ * app's near-black in dark, and it is the one token this page was right about
+ * from the start. */
+.cb-plain {
+  --cb-surface: #fafafa;
+  --cb-raise: #f2f2f2;
+  --cb-tile: #ededed;
+
+  /* The rules, walked to the same lightness as the tans they replace so the
+     page keeps its weight and loses only the hue. #ddd6c2 sits at about 85%
+     luminance; #d6d6d6 is the grey at the same place. */
+  --cb-line: #e6e6e6;
+  --cb-line-soft: #d6d6d6;
+  --cb-line-faint: #f0f0f0;
+  --cb-line-grey: #e6e6e6;
+  --cb-line-mute: #b8b8b8;
+}
+
+:root[data-theme="dark"] .cb-plain {
+  --cb-surface: #232322;
+  --cb-raise: #2c2c2b;
+  --cb-tile: #2c2c2b;
+
+  --cb-line: #343433;
+  --cb-line-soft: #464644;
+  --cb-line-faint: #2a2a29;
+  --cb-line-grey: #343433;
+  --cb-line-mute: #5c5c5a;
+}
+
 @theme inline {
   --color-page: var(--cb-page);
   --color-cream: var(--cb-cream);

@@ -97,7 +97,7 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
     //
     // bg-page rather than a literal, so night follows: the token is white in
     // light and the app's near-black in dark.
-    <div className="min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
+    <div className="cb-plain min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
       <div className="mx-auto max-w-[40rem] px-5 pb-16 pt-5 sm:pt-8">
         <div className="mb-7 flex items-center justify-between gap-3">
           <Link

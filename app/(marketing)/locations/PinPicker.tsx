@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadMaps } from "../../googleMapsPublic";
-import { locateMe } from "../../geolocate";
+import { locateMe, type Fix } from "../../geolocate";
 import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { Button } from "../../ui/Button";
@@ -100,9 +100,23 @@ function metresBetween(a: [number, number], b: [number, number]): number {
   return Math.sqrt(dLat * dLat + x * x) * R;
 }
 
+
+/** The zoom a fix of this quality has earned.
+ *
+ *  18 is door level. A coarse fix — iOS with Precise Location off, or a
+ *  tower fallback — gets a wider frame rather than a false close-up: zooming
+ *  to 18 on a kilometre-wide answer shows one roof with great confidence and
+ *  no reason for it. Between the two, the radius decides, because a 90m fix
+ *  is neither a doorway nor a district. */
+function zoomFor(fix: Fix): number {
+  if (fix.coarse) return 15;
+  return fix.accuracyMeters <= 30 ? 18 : 17;
+}
+
 export default function PinPicker({
   start,
   startAddress,
+  startFix,
   onConfirm,
   onCancel,
 }: {
@@ -110,6 +124,25 @@ export default function PinPicker({
   start: [number, number];
   /** What that starting point was called, so the label is not blank on open. */
   startAddress?: string;
+  /** ——— The platform's own answer about where the phone is ———
+   *
+   *  Present when this screen was opened by pressing "Use my location" rather
+   *  than by resolving a typed address. It carries the accuracy radius, which
+   *  is the one thing iOS will tell us about its own working: Core Location
+   *  fuses GPS, wifi, cell and the motion coprocessor into a single number, and
+   *  that number is a far better guide to how much to trust the starting point
+   *  than the coordinates are on their own.
+   *
+   *  Two things read it. The opening zoom, so a fix good to eight metres opens
+   *  on the doorway and a fix good to a kilometre opens on the neighbourhood
+   *  rather than showing one roof with unearned confidence. And the circle,
+   *  which draws the radius the phone claimed so the size of the question is
+   *  visible rather than described.
+   *
+   *  It was being collected and thrown away: the finder measured all of this,
+   *  handed over the coordinates, and this screen opened at a fixed zoom 18
+   *  with nothing on it. */
+  startFix?: Fix;
   onConfirm: (result: PinResult) => void;
   onCancel: () => void;
 }) {
@@ -119,6 +152,7 @@ export default function PinPicker({
   const holderRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const youRef = useRef<google.maps.Marker | null>(null);
+  const haloRef = useRef<google.maps.Circle | null>(null);
   const centreRef = useRef<[number, number]>(start);
   const askedAtRef = useRef<[number, number] | null>(null);
   // The theme at the moment the map is built. A ref because the mount effect
@@ -237,6 +271,57 @@ export default function PinPicker({
       });
   }
 
+  /** Where the phone thinks it is, and how sure it is about that.
+   *
+   *  A dot for the position and a circle for the radius, so the fix and the
+   *  pin are visibly two different things and the size of the doubt is on
+   *  screen rather than in a sentence. The circle is in metres, so it grows
+   *  and shrinks with the map exactly as the uncertainty it stands for does.
+   *
+   *  Skipped under 40m, where the circle would be smaller than the dot and
+   *  draw as a smudge around it — a fix that good does not need its
+   *  uncertainty illustrated. Same threshold the finder's map uses. */
+  function showMe(fix: Fix) {
+    const map = mapRef.current;
+    const maps = window.google?.maps;
+    if (!map || !maps) return;
+    const position = { lat: fix.point[0], lng: fix.point[1] };
+
+    youRef.current?.setMap(null);
+    haloRef.current?.setMap(null);
+    haloRef.current = null;
+
+    if (fix.accuracyMeters > 40) {
+      haloRef.current = new maps.Circle({
+        map,
+        center: position,
+        radius: fix.accuracyMeters,
+        strokeColor: "#1a73e8",
+        strokeOpacity: 0.35,
+        strokeWeight: 1,
+        fillColor: "#1a73e8",
+        fillOpacity: 0.12,
+        clickable: false,
+        zIndex: 0,
+      });
+    }
+
+    youRef.current = new maps.Marker({
+      map,
+      position,
+      clickable: false,
+      zIndex: 1,
+      icon: {
+        path: maps.SymbolPath.CIRCLE,
+        scale: 6,
+        fillColor: "#1a73e8",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      },
+    });
+  }
+
   // ——— The map ———
   //
   // Mounted once. The language is a bootstrap parameter for the whole library
@@ -265,7 +350,12 @@ export default function PinPicker({
         // 18 is door-level: individual buildings, driveways, which side of the
         // street. Opening lower would be asking somebody to be precise about
         // something they cannot see yet.
-        zoom: 18,
+        //
+        // Unless the phone has said how sure it is, in which case it decides:
+        // see zoomFor. A typed address has no fix and keeps the 18, which is
+        // right — a geocoded address is a building, and the question is which
+        // door of it.
+        zoom: startFix ? zoomFor(startFix) : 18,
         disableDefaultUI: true,
         gestureHandling: "greedy",
         clickableIcons: false,
@@ -287,6 +377,13 @@ export default function PinPicker({
       });
       mapRef.current = map;
       setMapState("ready");
+
+      // The dot goes down with the map when this screen was opened from a
+      // fix. Without it the pin sits over the visitor's roof with nothing
+      // saying so, and pressing the locate button — which does exactly what
+      // has already been done — is the only way to find out the phone was ever
+      // asked.
+      if (startFix) showMe(startFix);
 
       listeners = [
         // Two events, two jobs. `bounds_changed` fires continuously while the
@@ -345,30 +442,8 @@ export default function PinPicker({
       const map = mapRef.current;
       if (!map) return;
       map.panTo({ lat: result.fix.point[0], lng: result.fix.point[1] });
-      // A coarse fix — iOS with Precise Location off, or a tower fallback —
-      // gets a wider frame rather than a false close-up. Zooming to 18 on a
-      // kilometre-wide answer would show one roof with great confidence and no
-      // reason for it.
-      map.setZoom(result.fix.coarse ? 15 : 18);
-
-      const maps = window.google?.maps;
-      if (!maps) return;
-      // The blue dot, so the fix and the pin are visibly two different things.
-      youRef.current?.setMap(null);
-      youRef.current = new maps.Marker({
-        map,
-        position: { lat: result.fix.point[0], lng: result.fix.point[1] },
-        clickable: false,
-        zIndex: 1,
-        icon: {
-          path: maps.SymbolPath.CIRCLE,
-          scale: 6,
-          fillColor: "#1a73e8",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-        },
-      });
+      map.setZoom(zoomFor(result.fix));
+      showMe(result.fix);
     });
   }
 

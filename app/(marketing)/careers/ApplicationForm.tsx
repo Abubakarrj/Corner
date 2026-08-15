@@ -511,8 +511,8 @@ export default function ApplicationForm({
   return (
     // White in light, near-black in dark. Same ground as the careers page
     // this arrived from, for the reason written there.
-    <div className="min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
-      <div ref={topRef} className="mx-auto max-w-[34rem] px-5 pb-20 pt-6 sm:pt-10">
+    <div className="cb-plain min-h-dvh bg-page" style={{ fontFamily: SHOP_FONT }}>
+      <div ref={topRef} className="mx-auto max-w-[40rem] px-5 pb-16 pt-5 sm:pt-8">
         {/* ——— The way out ———
             The Back button in the action row moves between steps; it does not
             leave, and it isn't there on the first one. Without this there was
@@ -588,7 +588,7 @@ export default function ApplicationForm({
               {t("careers.applyingFor")}
             </p>
             <h1
-              className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[44px]"
+              className="m-0 mt-2 text-[24px] font-medium leading-[1.12] tracking-[-0.02em] text-ink sm:text-[30px]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               {t(POSITION_LABEL[arrivedWith])}
@@ -599,7 +599,7 @@ export default function ApplicationForm({
                 spot in the form. Back, at the top of the page, still goes to
                 the list for anybody who wants to see it. */}
             {where ? (
-              <p className="m-0 mt-3 text-[15px] leading-[1.55] text-ink">{where}</p>
+              <p className="m-0 mt-1.5 text-[14px] leading-[1.5] text-muted">{where}</p>
             ) : null}
           </>
         ) : (
@@ -608,12 +608,12 @@ export default function ApplicationForm({
               {t("careers.eyebrow")}
             </p>
             <h1
-              className="m-0 mt-3 text-[34px] font-medium leading-[1.04] tracking-[-0.03em] text-ink sm:text-[44px]"
+              className="m-0 mt-2 text-[24px] font-medium leading-[1.12] tracking-[-0.02em] text-ink sm:text-[30px]"
               style={{ fontFamily: DISPLAY_FONT }}
             >
               {t("careers.title")}
             </h1>
-            <p className="m-0 mt-3 max-w-[24em] text-[15px] leading-[1.55] text-muted">
+            <p className="m-0 mt-2 max-w-[34em] text-[14px] leading-[1.55] text-muted">
               {t("careers.lede")}
             </p>
           </>
@@ -1010,7 +1010,7 @@ function Sent({ email }: { email: string }) {
     // the poppers sit below the card and the confetti rises past it and falls
     // the full height, which is the effect the component was written for.
     <div
-      className="relative flex min-h-dvh items-center justify-center bg-page px-5"
+      className="cb-plain relative flex min-h-dvh items-center justify-center bg-page px-5"
       style={{ fontFamily: SHOP_FONT }}
     >
       {/* Nothing at all under prefers-reduced-motion — the component checks.
@@ -1058,11 +1058,21 @@ function Sent({ email }: { email: string }) {
 
 // ——— Pieces ———
 
+// ——— Sized with the board, not against it ———
+//
+// The form ran a step larger than the list that leads into it: a 34/44 title
+// over a 20px step heading, in a 34rem column, which is why tapping a role
+// felt like the page had zoomed. It takes the board's scale now — same column,
+// same 24/30 title, headings at 17/19 — so the two screens read as one thing.
+//
+// The inputs stay at 16px and nothing here changes that. Below 16px iOS zooms
+// the viewport the moment a field takes focus, and a form that jumps when you
+// tap it is worse than a form set slightly large.
 function StepHead({ title, note }: { title: string; note?: string }) {
   return (
-    <div className="mb-5">
+    <div className="mb-4">
       <h2
-        className="m-0 text-[20px] font-medium leading-tight tracking-[-0.01em] text-ink"
+        className="m-0 text-[17px] font-medium leading-tight tracking-[-0.01em] text-ink sm:text-[19px]"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         {title}
@@ -1114,7 +1124,7 @@ function Pair({
 function Problem({ children }: { children: React.ReactNode }) {
   if (!children) return null;
   return (
-    <p role="alert" className="m-0 mt-2 text-[12px] text-brand-red">
+    <p role="alert" className="m-0 mt-1.5 text-[11px] text-brand-red">
       {children}
     </p>
   );
@@ -1206,7 +1216,7 @@ function Field({
     <div className="grid [grid-row:span_3] [grid-template-rows:subgrid]">
       <label
         htmlFor={id}
-        className="mb-1.5 flex items-baseline gap-2 text-[12px] text-muted"
+        className="mb-1 flex items-baseline gap-2 text-[11px] text-muted"
       >
         <span className="min-w-0 flex-1">{label}</span>
         {optional ? (
@@ -1223,7 +1233,7 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
-        className={`w-full rounded-xl border px-3.5 py-3 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
+        className={`w-full rounded-xl border px-3 py-2.5 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
           // On a card, the field sinks to the page colour; on the page, it
           // lifts to the card colour. Either way it is one step away from
           // whatever it is sitting on. It used to sink to cream, which was a
