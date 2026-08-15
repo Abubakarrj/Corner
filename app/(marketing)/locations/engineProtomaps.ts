@@ -246,6 +246,19 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
       });
     },
 
+    home() {
+      // The same rectangle the map was constructed with, refitted rather than
+      // flown to a remembered centre: the framing depends on the holder's
+      // shape, and the holder is a flex child that changes height.
+      map.fitBounds(
+        [
+          [options.initialBounds.west, options.initialBounds.south],
+          [options.initialBounds.east, options.initialBounds.north],
+        ],
+        { animate: false },
+      );
+    },
+
     getZoom() {
       return map.getZoom();
     },

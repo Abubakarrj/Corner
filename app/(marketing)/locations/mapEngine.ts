@@ -54,6 +54,13 @@ export type MapEngine = {
   // toggle.
   setYou(point: [number, number] | null, accuracyMeters?: number): void;
   panTo(point: [number, number], zoom?: number): void;
+  // Back to the framing the map was built with — the whole lower 48.
+  //
+  // Switching mode clears the search, and with it every pin. Without this the
+  // camera stayed at street zoom over a shop that is no longer drawn, so
+  // tapping Delivery after a pickup search landed on a blank neighbourhood
+  // instead of the country view the finder opens on.
+  home(): void;
   getZoom(): number;
   setZoom(zoom: number): void;
   getBounds(): MapBounds | null;

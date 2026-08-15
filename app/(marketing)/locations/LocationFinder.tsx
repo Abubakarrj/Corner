@@ -297,6 +297,13 @@ export default function LocationFinder() {
     router.push("/shop");
   }
 
+  // Switching tabs is asking a different question, so every answer to the old
+  // one goes: the search, the framing it produced, the results rail.
+  //
+  // Pickup and catering are the same act here and take the same reset;
+  // delivery differs only in that the map puts the visitor's own dot down
+  // once it is on screen, which is StoreMap's business rather than this
+  // function's. See the "mode" effects there.
   function changeMode(next: Mode) {
     setMode(next);
     setCateringFor(null);
@@ -305,6 +312,10 @@ export default function LocationFinder() {
     setSearched(null);
     setQuery("");
     setToastDismissed(false);
+    // A locate that failed under one tab is not news under the next one. It
+    // used to survive the switch, so refusing the permission under Delivery
+    // left "we couldn't get your location" sitting over the Catering map.
+    setLocateNote(null);
   }
 
   // A place picked out of the results, for pickup and catering.
@@ -651,7 +662,7 @@ export default function LocationFinder() {
       <StoreMap
         key={locale}
         locations={results}
-        showSearchArea={mode !== "delivery"}
+        mode={mode}
         onSearchArea={setBounds}
         onLocate={(point, coarse) => {
           // The search runs either way — a rough fix still puts the map on

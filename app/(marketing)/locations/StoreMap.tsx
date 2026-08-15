@@ -86,7 +86,7 @@ const CHROME =
 
 export default function StoreMap({
   locations,
-  showSearchArea,
+  mode,
   onSearchArea,
   onLocate,
   onLocateFailed,
@@ -97,9 +97,15 @@ export default function StoreMap({
   // together, so this is one list: empty until something has been asked, and
   // the finder opens on a map with nothing on it.
   locations: StoreLocation[];
-  // Delivery has no "search this area", there is nothing to search until an
-  // address is entered, so the button is the caller's decision, not ours.
-  showSearchArea: boolean;
+  // Which question the finder is asking. Two of the three are the same
+  // question — pickup and catering both ask where *we* are, and the map treats
+  // them identically — and delivery asks where *you* are, which is the only
+  // thing below that reads this. See the two effects marked "mode".
+  //
+  // It used to arrive as a `showSearchArea` boolean, decided by the caller.
+  // That was a policy prop carrying half of one fact, and now that the map
+  // needs the fact itself, deriving the button from it beats being told twice.
+  mode: "pickup" | "delivery" | "catering";
   onSearchArea: (bounds: MapBounds) => void;
   /** A position from the browser. The finder treats it as a search — see
    *  locateHere() there — rather than as a camera move. */
@@ -134,9 +140,17 @@ export default function StoreMap({
   const holderRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<MapEngine | null>(null);
   const [ready, setReady] = useState(false);
-  // Shown only once the visitor has actually moved the map. Offering to
-  // re-search an area nobody has changed is noise.
-  const [moved, setMoved] = useState(false);
+  // Which mode's framing the visitor has changed, if any.
+  //
+  // A boolean once, which was the same fact minus the thing that expires it.
+  // "Search area" is only worth offering over an area somebody has chosen to
+  // look at, and switching tabs refits the map to the whole country (see the
+  // mode effect below) — so a flag set under Pickup left the button hanging
+  // over Catering's untouched map. Storing the mode instead means the answer
+  // is compared rather than reset, which is also what keeps it out of an
+  // effect.
+  const [movedIn, setMovedIn] = useState<string | null>(null);
+  const moved = movedIn === mode;
   // Which card the rail is centred on, for the dots and for panning the map
   // to match. Derived from scroll position rather than driving it, so the
   // finger stays in charge.
@@ -153,6 +167,18 @@ export default function StoreMap({
   const [detailsFor, setDetailsFor] = useState<StoreLocation | null>(null);
   const railRef = useRef<HTMLDivElement>(null);
   const settle = useRef<number | undefined>(undefined);
+  // Until when a camera move is ours rather than a finger's.
+  //
+  // `moved` is meant to say "the visitor has changed the framing", and it is
+  // what puts "Search area" on screen. But Google fires zoom_changed for a
+  // programmatic setZoom exactly as it does for a pinch, so flying to a
+  // searched shop — or refitting the country view below — raised the button
+  // over a map nobody had touched. A short window after each of our own moves
+  // is the difference between the two the API doesn't report.
+  const ours = useRef(0);
+  const quiet = () => {
+    ours.current = Date.now() + 900;
+  };
 
   // The latest onChoose, without it being a dependency of the map's lifecycle.
   // Marker listeners are attached once; re-creating the map because a parent
@@ -161,6 +187,13 @@ export default function StoreMap({
   useEffect(() => {
     chooseRef.current = onChoose;
   }, [onChoose]);
+
+  // Same reason: onMoved is handed to the engine once, at build time, and has
+  // to report which mode was on screen when the finger moved the map.
+  const modeRef = useRef(mode);
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   // Create once.
   useEffect(() => {
@@ -199,7 +232,10 @@ export default function StoreMap({
           north: INITIAL_BOUNDS[1][0],
           east: INITIAL_BOUNDS[1][1],
         },
-        onMoved: () => setMoved(true),
+        onMoved: () => {
+          if (Date.now() < ours.current) return;
+          setMovedIn(modeRef.current);
+        },
         language,
       });
       if (cancelled || !engine) {
@@ -256,11 +292,61 @@ export default function StoreMap({
   // both would race, and the finger would lose.
   useEffect(() => {
     if (!ready || !focus) return;
+    quiet();
     engineRef.current?.panTo(focus.at, focus.zoom ?? 12);
     if (!focus.openId) return;
     const index = locations.findIndex((location) => location.id === focus.openId);
     if (index >= 0) scrollRailTo(railRef.current, index);
   }, [focus, ready, locations]);
+
+  // ——— mode: every tab opens on the country view ———
+  //
+  // Changing mode clears the search, and clearing the search takes every pin
+  // off the map. The camera did not follow: search a shop under Pickup, tap
+  // Delivery, and you were left at street zoom over a neighbourhood with
+  // nothing in it — a frame answering a question that had just been thrown
+  // away. Each tab now starts where the finder itself starts.
+  //
+  // "Search area" goes with it, without being told to: `moved` is a comparison
+  // against the mode the framing was changed under, and this one is new.
+  useEffect(() => {
+    if (!ready) return;
+    quiet();
+    engineRef.current?.home();
+  }, [mode, ready]);
+
+  // ——— mode: delivery opens on you ———
+  //
+  // Pickup and catering are questions about our counters, and they wait to be
+  // asked — a map of the country, and a field. Delivery is a question about
+  // the visitor's own doorstep, and the one fact it always needs is where that
+  // is. Making them press a button to put themselves on a map that is entirely
+  // about them was a step with no decision in it.
+  //
+  // So the dot is drawn and nothing else happens: no camera move, no search,
+  // no pin step. The framing stays the whole lower 48 — the same screen the
+  // tab has always opened on, now with the reader on it.
+  //
+  // Failure is silent, deliberately. Every other locate outcome on this screen
+  // gets a sentence in the toast because somebody pressed a button and is owed
+  // an answer; nobody pressed this one, and telling a visitor who has denied
+  // location that we could not find them is answering a question they did not
+  // ask. Without a dot the tab is exactly what it was before.
+  //
+  // The dot survives a switch to another tab. It is a true thing about the map
+  // rather than a delivery ornament, and clearing it would also clear one the
+  // visitor had asked for with the locate button.
+  useEffect(() => {
+    if (!ready || mode !== "delivery") return;
+    let cancelled = false;
+    void locateMe().then((result) => {
+      if (cancelled || !result.ok) return;
+      engineRef.current?.setYou(result.fix.point, result.fix.accuracyMeters);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, ready]);
 
   const onRailScroll = useCallback(() => {
     const rail = railRef.current;
@@ -279,6 +365,7 @@ export default function StoreMap({
       const location = locations[index];
       if (!location) return;
       setCardIndex(index);
+      quiet();
       engineRef.current?.panTo(location.position);
     }, 120);
   }, [locations]);
@@ -311,7 +398,9 @@ export default function StoreMap({
       {/* Chrome over the map. pointer-events-none on the layer so panning
           still works everywhere the buttons aren't. */}
       <div className="pointer-events-none absolute inset-0 z-[500]">
-        {showSearchArea && moved ? (
+        {/* Delivery has nothing to search here: the question is an address,
+            and the answer is not a rectangle of our shops. */}
+        {mode !== "delivery" && moved ? (
           <button
             type="button"
             onClick={() => {

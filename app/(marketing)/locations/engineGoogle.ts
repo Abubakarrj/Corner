@@ -113,12 +113,16 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
     styles: MAP_STYLE[options.theme],
   });
 
-  map.fitBounds({
+  // Kept, because home() below frames on exactly this rectangle. fitBounds
+  // rather than a centre and a zoom: the framing has to answer to how tall the
+  // holder is, and on a phone in landscape that is a different zoom.
+  const opening = {
     south: options.initialBounds.south,
     west: options.initialBounds.west,
     north: options.initialBounds.north,
     east: options.initialBounds.east,
-  });
+  };
+  map.fitBounds(opening);
 
   map.addListener("dragend", options.onMoved);
   map.addListener("zoom_changed", options.onMoved);
@@ -213,6 +217,10 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
     panTo(point, zoom) {
       map.panTo({ lat: point[0], lng: point[1] });
       if (typeof zoom === "number") map.setZoom(zoom);
+    },
+
+    home() {
+      map.fitBounds(opening);
     },
 
     getZoom() {
