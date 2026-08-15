@@ -95,29 +95,32 @@ export type RoleTerms = {
 // on MINIMUM_WAGE.hourly above. manager is salaried and waiting on a range.
 // shift-lead has no shifts here because none were given; a job with nothing
 // set simply shows no extra lines, which is the truth rather than a gap.
-// ——— "Part time" is the shop's statement, not an inference ———
+// ——— Hours are the shop's statement, not an inference ———
 //
 // Only kitchen carried `hours` at first, so the board listed one job with a
 // week attached and three without, and the Type filter could offer exactly one
-// option. The shop has since said what these roles are, and they are marked
-// accordingly: part time, all four.
+// option. The shop has since said what these roles are: counter, kitchen and
+// shift-lead can be worked either way, and manager is full time.
 //
-// Worth being plain about what that claim is. `hours` is printed on the card
-// and filtered on, so it is a promise to somebody deciding whether this job
-// pays their rent — and part time is the reading a benefits question and an
-// hours question both hang off. Counter's two six-hour windows sit with it
-// comfortably. Kitchen's are eight hours and read either way, so if any of
-// these is really full time it is one word here, and the card and the filter
-// follow.
+// Two entries mean *either*, not both at once. The card says so in one phrase —
+// "Full time or part time" — rather than printing the two as separate facts,
+// which on a line already reading "$18.42 an hour · … · 6 AM–12 PM" would look
+// like a contradiction instead of a choice. The filter reads it as either too,
+// so a role open both ways is found under whichever the applicant picks. That
+// is the point of the field: somebody who can only work mornings and somebody
+// who wants forty hours are both looking at these three jobs, and neither
+// should have to guess whether they are welcome.
 //
-// A role can hold both, as `["full", "part"]` — that is what to write when the
-// shop would take either, rather than picking one and hoping.
+// Manager holds only `["full"]`, and that is a real exclusion rather than an
+// omission: it is the one role the shop is not offering part time, so it drops
+// out of the board when somebody filters for part time. If that ever changes it
+// is one word here.
 //
 // None of this is a claim about *exempt* status. Manager is the only salaried
 // role, and whether it is exempt turns on the salary and on how the time is
-// actually spent; see the note in that entry. A part-time salaried manager
-// makes that question sharper, not softer: the exempt floor below is stated
-// for full-time work.
+// actually spent; see the note in that entry. Full time is the assumption the
+// $70,304 floor there is stated under, which is one more reason manager is not
+// on the part-time list.
 export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
   counter: {
     pay: { kind: "minimum" },
@@ -125,7 +128,7 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
       { start: "06:00", end: "12:00" },
       { start: "10:00", end: "16:00" },
     ],
-    hours: ["part"],
+    hours: ["full", "part"],
   },
   kitchen: {
     pay: { kind: "minimum" },
@@ -133,14 +136,14 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
       { start: "06:00", end: "14:00" },
       { start: "08:00", end: "16:00" },
     ],
-    hours: ["part"],
+    hours: ["full", "part"],
   },
   "shift-lead": {
     pay: { kind: "minimum" },
-    hours: ["part"],
+    hours: ["full", "part"],
   },
   manager: {
-    hours: ["part"],
+    hours: ["full"],
     // Salaried, and deliberately still unset — this is the one number here
     // that is a decision rather than a fact.
     //

@@ -691,6 +691,7 @@ export const zh: Table = {
   "careers.typesNote": "你想要的工作时长。",
   "careers.typeFull": "全职",
   "careers.typePart": "兼职",
+  "careers.typeEither": "全职或兼职",
   "careers.typeSeasonal": "季节性",
 
   "careers.earliestStart": "最早可以上班的日期",

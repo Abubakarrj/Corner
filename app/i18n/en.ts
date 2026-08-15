@@ -796,6 +796,7 @@ export const en = {
   "careers.typesNote": "The hours you're looking for.",
   "careers.typeFull": "Full time",
   "careers.typePart": "Part time",
+  "careers.typeEither": "Full time or part time",
   "careers.typeSeasonal": "Seasonal",
 
   "careers.earliestStart": "Earliest day you could start",

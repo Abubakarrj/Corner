@@ -693,6 +693,7 @@ export const ko: Table = {
   "careers.typesNote": "원하는 근무 형태.",
   "careers.typeFull": "풀타임",
   "careers.typePart": "파트타임",
+  "careers.typeEither": "풀타임 또는 파트타임",
   "careers.typeSeasonal": "시즌 근무",
 
   "careers.earliestStart": "가장 빨리 시작할 수 있는 날",

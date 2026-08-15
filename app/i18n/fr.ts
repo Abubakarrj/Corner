@@ -748,6 +748,7 @@ export const fr: Table = {
   "careers.typesNote": "Le rythme que vous cherchez.",
   "careers.typeFull": "Temps plein",
   "careers.typePart": "Temps partiel",
+  "careers.typeEither": "Temps plein ou temps partiel",
   "careers.typeSeasonal": "Saisonnier",
 
   "careers.earliestStart": "Premier jour où vous pourriez commencer",

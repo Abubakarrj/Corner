@@ -692,6 +692,7 @@ export const ja: Table = {
   "careers.typesNote": "希望する働き方。",
   "careers.typeFull": "フルタイム",
   "careers.typePart": "パートタイム",
+  "careers.typeEither": "フルタイムまたはパートタイム",
   "careers.typeSeasonal": "季節限定",
 
   "careers.earliestStart": "いちばん早く始められる日",

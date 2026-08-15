@@ -694,6 +694,7 @@ export const my: Table = {
   "careers.typesNote": "လိုချင်တဲ့ အလုပ်ချိန်။",
   "careers.typeFull": "အချိန်ပြည့်",
   "careers.typePart": "အချိန်ပိုင်း",
+  "careers.typeEither": "အချိန်ပြည့် သို့မဟုတ် အချိန်ပိုင်း",
   "careers.typeSeasonal": "ရာသီအလိုက်",
 
   "careers.earliestStart": "အစောဆုံး စတင်နိုင်မယ့် နေ့",

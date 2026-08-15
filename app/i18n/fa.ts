@@ -745,6 +745,7 @@ export const fa: Table = {
   "careers.typesNote": "ساعت‌هایی که دنبالش هستید.",
   "careers.typeFull": "تمام‌وقت",
   "careers.typePart": "پاره‌وقت",
+  "careers.typeEither": "تمام‌وقت یا پاره‌وقت",
   "careers.typeSeasonal": "فصلی",
 
   "careers.earliestStart": "زودترین روزی که می‌توانید شروع کنید",

@@ -696,6 +696,7 @@ export const ur: Table = {
   "careers.typesNote": "آپ کو کس طرح کے اوقات چاہئیں۔",
   "careers.typeFull": "کل وقتی",
   "careers.typePart": "جز وقتی",
+  "careers.typeEither": "کل وقتی یا جز وقتی",
   "careers.typeSeasonal": "موسمی",
 
   "careers.earliestStart": "سب سے پہلے کس دن شروع کر سکتے ہیں",

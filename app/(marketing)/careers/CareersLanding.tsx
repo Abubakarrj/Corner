@@ -5,7 +5,7 @@ import { useState } from "react";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { CONTROL_PILL, DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useT, type StringKey } from "../../i18n";
-import { POSITIONS, type PositionId } from "./application";
+import { EMPLOYMENT_TYPES, POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
 import { TERMS, formatPay, shiftLine, type ResolvedPay } from "./pay";
 
@@ -68,8 +68,17 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
   const unique = <T,>(values: T[]) => [...new Set(values)];
   const roleOptions = unique(openings.map((opening) => opening.role));
   const placeOptions = unique(openings.map((opening) => opening.location));
+  // Hours are the one facet with a canonical order of its own: full before
+  // part, the way the application form lists them. The others take the order
+  // the shop wrote them in, which is the only order they have. Sorted against
+  // EMPLOYMENT_TYPES rather than left in whatever order the first role that
+  // mentions them happens to use, so editing pay.ts cannot reshuffle a filter.
   const hourOptions = unique(
     openings.flatMap((opening) => TERMS[opening.role]?.hours ?? []),
+  ).sort(
+    (a, b) =>
+      EMPLOYMENT_TYPES.findIndex((type) => type.id === a) -
+      EMPLOYMENT_TYPES.findIndex((type) => type.id === b),
   );
 
   const shown = openings.filter(
@@ -316,9 +325,14 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                 }),
               );
             }
-            for (const type of terms?.hours ?? []) {
-              facts.push(t(type === "full" ? "careers.typeFull" : "careers.typePart"));
-            }
+            // A role open both ways says so once. Pushing "Full time" and
+            // "Part time" as two facts onto a line that already reads
+            // "$18.42 an hour · … · 6 AM–12 PM" makes them look like two
+            // claims about the same job rather than a choice between them.
+            const hoursHeld = terms?.hours ?? [];
+            if (hoursHeld.length > 1) facts.push(t("careers.typeEither"));
+            else if (hoursHeld[0])
+              facts.push(t(hoursHeld[0] === "full" ? "careers.typeFull" : "careers.typePart"));
             for (const shift of terms?.shifts ?? []) {
               const line = shiftLine(shift, locale);
               if (line) facts.push(line);
