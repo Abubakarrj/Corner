@@ -53,13 +53,12 @@ export type StoreLocation = {
 
 // The shop, and the kitchen every delivery leaves from.
 //
-// The city is inferred, not given: the address was supplied as "3064 W 8th
-// Street" with no city, and W 8th Street runs through Los Angeles's
-// Koreatown — which matches both the location's name and the +1 213 number
-// the drop-list welcome email links to. An earlier pass had this pin in
-// Manhattan on the same reasoning about "Korean Town", which was wrong.
-//
-// The street number was confirmed by the shop as 3064 rather than 3076.
+// 650 S Catalina St, Los Angeles, CA 90005 — given by the shop with the city
+// and the ZIP, which is how an address should arrive. It replaces 3064 W 8th
+// St, a few blocks south, which the shop moved off; anything still saying W
+// 8th St anywhere in this codebase is stale and should be corrected rather
+// than worked around. Same neighbourhood, same ZIP, same city sales-tax rate,
+// so nothing downstream of the address changes except the address.
 //
 // The coordinates are approximate — the block, not the doorway — and they are
 // now the fallback rather than the answer. app/storePlaces.ts resolves this
@@ -82,10 +81,14 @@ export const KOREATOWN: StoreLocation = {
   // orphan every one of them; only the display name moves.
   name: "Koreantown",
   kind: "shop",
-  address: "3064 W 8th St",
+  address: "650 S Catalina St",
   city: "Los Angeles, CA 90005",
   hours: SHOP_HOURS,
-  position: [34.0578, -118.296],
+  // Catalina St just south of Wilshire. Close enough to bias the lookup in
+  // storePlaces.ts onto the right block, which is all this pair has to do —
+  // and inside the half-mile drift guard there, so a good geocode is accepted
+  // rather than refused.
+  position: [34.0612, -118.2933],
   catering: true,
   aliases: [
     "ktown",
@@ -104,9 +107,11 @@ export const KOREATOWN: StoreLocation = {
     "90020",
     "wilshire center",
     "mid wilshire",
-    "8th street",
-    "8th st",
-    "w 8th",
+    "catalina",
+    "catalina street",
+    "catalina st",
+    "s catalina",
+    "wilshire",
     "downtown la",
     "dtla",
   ],

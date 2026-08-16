@@ -34,7 +34,7 @@ if (!key) {
 }
 
 // The shop, so the questions are the ones the app actually asks.
-const SHOP = [34.0578, -118.296];
+const SHOP = [34.0612, -118.2933];
 const NEARBY = [34.0522, -118.2437];
 
 const results = [];
@@ -47,7 +47,7 @@ function record(api, ok, detail) {
 // ——— Geocoding API ———
 try {
   const params = new URLSearchParams({
-    address: "3064 W 8th St, Los Angeles, CA",
+    address: "650 S Catalina St, Los Angeles, CA",
     key,
     components: "country:US",
   });
@@ -107,7 +107,7 @@ try {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
     body: JSON.stringify({
-      input: "3064 W 8th",
+      input: "650 S Catalina",
       includedPrimaryTypes: ["street_address", "premise", "subpremise"],
       includedRegionCodes: ["us"],
       locationBias: { circle: { center: { latitude: SHOP[0], longitude: SHOP[1] }, radius: 20000 } },
@@ -140,7 +140,7 @@ try {
 // typed pair is the block, the resolved one is the door.
 try {
   const params = new URLSearchParams({
-    address: "3064 W 8th St, Los Angeles, CA 90005",
+    address: "650 S Catalina St, Los Angeles, CA 90005",
     key,
     components: "country:US",
   });

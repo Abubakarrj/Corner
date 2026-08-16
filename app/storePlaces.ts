@@ -22,10 +22,10 @@ import {
 //   the pickup point handed to the courier            (api/shop-order)
 //
 // A courier collecting from the middle of the block instead of the counter is
-// a real minute of somebody walking up and down W 8th Street with a bag, and
-// a radius measured from the wrong end of a block quietly moves the boundary
-// for everyone near it. "Roughly right" stops being good enough the moment a
-// number leaves the building.
+// a real minute of somebody walking up and down S Catalina Street with a bag,
+// and a radius measured from the wrong end of a block quietly moves the
+// boundary for everyone near it. "Roughly right" stops being good enough the
+// moment a number leaves the building.
 //
 // So the address is the source of truth and the coordinates are derived from
 // it, the way round they should have been: one Geocoding call per process,
@@ -56,11 +56,11 @@ export type StorePlace = {
 //
 // The typed coordinates are wrong by a block, so a correction should be tens
 // of metres. Half a mile is far more slack than a correction needs and far
-// less than a mistake takes: geocoding "3064 W 8th St" against a bad component
-// filter has already been observed in this codebase returning the centroid of
-// the United States, and the guard in googleMaps.ts that catches that one
-// works on result *types*. This catches the same class of failure by distance,
-// which needs no taxonomy to be right about.
+// less than a mistake takes: geocoding the shop's street address against a bad
+// component filter has already been observed in this codebase returning the
+// centroid of the United States, and the guard in googleMaps.ts that catches
+// that one works on result *types*. This catches the same class of failure by
+// distance, which needs no taxonomy to be right about.
 //
 // Refusing means keeping the typed pair, which is the answer we already ship.
 // There is no version of this where a surprising lookup silently relocates the

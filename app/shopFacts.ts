@@ -68,16 +68,15 @@ export const PREP_MINUTES = 12;
 // a Monday off.
 export const OPEN_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
-export const SHOP_ADDRESS = "3064 W 8th St";
+export const SHOP_ADDRESS = "650 S Catalina St";
 export const SHOP_CITY = "Los Angeles, CA 90005";
 export const SHOP_EMAIL = "cornerbagel@publicentity.co";
 
 // The same address broken into fields, and the number a courier calls when
 // they're outside. A courier dispatch API wants the parts, not the sentence:
-// "3064 W 8th St" on its own is ambiguous in a country with a W 8th St in
-// most of its cities, and a free-text address is where a delivery ends up in
-// the wrong Los Angeles. Derived from the two lines above so they can't
-// drift apart.
+// "650 S Catalina St" on its own names no city, and a free-text address is
+// where a delivery ends up in the wrong Los Angeles. Derived from the two
+// lines above so they can't drift apart.
 export const SHOP_ADDRESS_PARTS = {
   street: SHOP_ADDRESS,
   city: "Los Angeles",

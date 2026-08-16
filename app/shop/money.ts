@@ -6,10 +6,10 @@
 // there is one rounding rule, here, and both the client's summary and the
 // server's repricing call the same functions.
 
-// The combined sales tax rate at 3064 W 8th Street: 9.75%. That is California's
-// 7.25% statewide rate (6.00% state, 1.25% local) plus 2.50% of Los Angeles
-// County district taxes. Prepared food is taxable in California whether it's
-// eaten in or taken away, so this applies to the whole order.
+// The combined sales tax rate at 650 S Catalina Street: 9.75%. That is
+// California's 7.25% statewide rate (6.00% state, 1.25% local) plus 2.50% of
+// Los Angeles County district taxes. Prepared food is taxable in California
+// whether it's eaten in or taken away, so this applies to the whole order.
 //
 // It was 9.5% here until Measure A took effect on 1 April 2025, replacing
 // Measure H's quarter cent with a half cent. A stale rate is not a display bug:
