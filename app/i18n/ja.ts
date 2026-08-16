@@ -661,7 +661,6 @@ export const ja: Table = {
   "careers.jdLocation": "勤務地",
   "careers.jdReportsTo": "報告先",
   "careers.jdClassification": "雇用区分",
-  "careers.jdDownload": "PDFをダウンロード",
   "careers.jdRead": "職務内容の全文",
   "careers.applyNow": "応募する",
   "careers.roleCount": "{count}件の仕事",

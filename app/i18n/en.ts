@@ -766,7 +766,6 @@ export const en = {
   "careers.jdLocation": "Location",
   "careers.jdReportsTo": "Reports to",
   "careers.jdClassification": "Classification",
-  "careers.jdDownload": "Download PDF",
   "careers.jdRead": "Full job description",
   "careers.jdFoodCard": "A food handler card, or willing to get one before your first shift",
   "careers.jdCounterSummary": "You're the first person anybody sees. Take the order, run the register, and learn the regulars by what they order.",

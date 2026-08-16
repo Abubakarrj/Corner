@@ -1246,15 +1246,10 @@ function Dot({ on }: { on: boolean }) {
  *  front of a form — the page's job is to be filled in, and the first thing on
  *  it was homework.
  *
- *  So the same content is a document now. /api/jd/[role] builds it from the
- *  same DESCRIPTIONS and TERMS the board reads, so there is still exactly one
- *  copy of it, and somebody who wants the detail gets something they can keep
- *  rather than something they have to scroll past.
- *
  *  ——— A page, not the PDF, and the same tab ———
  *
- *  This linked straight to /api/jd/[role] with target="_blank", which works in
- *  a browser and traps somebody in the installed app: the manifest is
+ *  This linked straight to a PDF with target="_blank", which works in a
+ *  browser and traps somebody in the installed app: the manifest is
  *  `display: standalone`, so a new window has no address bar, no tabs and no
  *  back gesture out of a document viewer. It was a one way trip.
  *

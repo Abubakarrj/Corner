@@ -167,25 +167,17 @@ export default function JobDescriptionView({
           ) : null}
         </div>
 
-        {/* Apply, and the PDF.
-            Apply is the button because it is what the page is for. The PDF is
-            a quiet link beside it: `download` rather than a new tab, so the
-            installed app hands the file to the system instead of navigating a
-            chrome-less window to a document with no way out — which is the
-            bug this page was built to fix. */}
-        <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line pt-6">
+        {/* Apply, and nothing beside it.
+            A "Download PDF" link sat here while the description was a document
+            first and a page second. The page is the description now, so the
+            download offered a second copy of what somebody had just finished
+            reading, next to the one thing the page is for. */}
+        <div className="mt-9 border-t border-line pt-6">
           <a
             href={`/careers/apply?role=${role}`}
             className={`${CONTROL_PILL} inline-flex h-11 cursor-pointer items-center bg-ink px-5 text-[14px] font-medium text-on-ink transition-opacity hover:opacity-90`}
           >
             {t("careers.applyNow")}
-          </a>
-          <a
-            href={`/api/jd/${role}`}
-            download
-            className="cursor-pointer text-[13px] text-muted underline underline-offset-2 hover:text-ink"
-          >
-            {t("careers.jdDownload")}
           </a>
         </div>
       </div>

@@ -661,7 +661,6 @@ export const zh: Table = {
   "careers.jdLocation": "地点",
   "careers.jdReportsTo": "汇报对象",
   "careers.jdClassification": "用工类别",
-  "careers.jdDownload": "下载 PDF",
   "careers.jdRead": "完整职位说明",
   "careers.applyNow": "立即申请",
   "careers.roleCount": "{count} 个岗位",

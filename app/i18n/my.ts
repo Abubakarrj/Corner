@@ -663,7 +663,6 @@ export const my: Table = {
   "careers.jdLocation": "တည်နေရာ",
   "careers.jdReportsTo": "အစီရင်ခံရမည့်သူ",
   "careers.jdClassification": "အလုပ်အမျိုးအစား",
-  "careers.jdDownload": "PDF ဒေါင်းလုဒ်",
   "careers.jdRead": "အလုပ်ဖော်ပြချက် အပြည့်အစုံ",
   "careers.applyNow": "လျှောက်ရန်",
   "careers.roleCount": "အလုပ် {count} ခု",

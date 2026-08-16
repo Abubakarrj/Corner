@@ -713,7 +713,6 @@ export const fa: Table = {
   "careers.jdLocation": "محل",
   "careers.jdReportsTo": "گزارش به",
   "careers.jdClassification": "طبقه‌بندی",
-  "careers.jdDownload": "دانلود PDF",
   "careers.jdRead": "شرح کامل شغل",
   "careers.applyNow": "درخواست بدهید",
   "careers.roleCount": "{count} موقعیت",

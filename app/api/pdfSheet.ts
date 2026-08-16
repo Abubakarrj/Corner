@@ -7,10 +7,10 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 // that can draw more than Latin-1, and a cursor that knows when to turn over.
 //
 // Split out of applicationPdf.ts when the job descriptions needed printing
-// too. The two documents have nothing in common as documents — one is a form
-// somebody filled in, the other is a posting the shop wrote — but they are
-// both a stack of headings and wrapped paragraphs on the same paper, and a
-// second copy of this layout would drift from the first in a month.
+// too. That second document is gone, so this has one caller again, and it
+// stays split anyway: the page mechanics and the application's own layout are
+// different jobs, and the file that draws a form is easier to read without a
+// wrapping engine in the middle of it.
 //
 // ——— The font, and what it can't draw ———
 //

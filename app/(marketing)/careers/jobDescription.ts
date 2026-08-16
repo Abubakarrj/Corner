@@ -15,11 +15,15 @@ import type { PositionId } from "./application";
 // job description. That is better than a broken page and worse than a Spanish
 // one, and it is written here so nobody has to work out which.
 //
-// ——— One source, two renderings ———
+// ——— One source, one rendering ———
 //
-// /careers/jd/[role] draws this as a page, /api/jd/[role] draws it as a PDF.
-// Neither owns the text. The board's own one-line blurbs are elsewhere
-// (openings.ts) and are deliberately not repeated here.
+// /careers/jd/[role] draws this as a page. There was a PDF of it too, at
+// /api/jd/[role], and it went when the page took over: a download beside the
+// description offered a second copy of what somebody had just read. The
+// renderer is in git if the shop ever wants a document to hand out.
+//
+// The board's own one-line blurbs are elsewhere (openings.ts) and are
+// deliberately not repeated here.
 
 /** The shop, said once at the top of every description. */
 export const SHOP_BLURB =

@@ -14,10 +14,6 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/shop-chat": ["./app/api/shop-chat/riley-guide.md"],
     "/api/apply": ["./app/api/apply/DejaVuSans.ttf"],
-    // The job-description PDFs read the same font file. Tracing is per route,
-    // so this needs its own entry: without it the endpoint works locally,
-    // where the whole repo is on disk, and 500s on the server.
-    "/api/jd/[role]": ["./app/api/apply/DejaVuSans.ttf"],
   },
   async redirects() {
     return [

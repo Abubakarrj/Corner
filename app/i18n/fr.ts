@@ -716,7 +716,6 @@ export const fr: Table = {
   "careers.jdLocation": "Lieu",
   "careers.jdReportsTo": "Rattaché à",
   "careers.jdClassification": "Classification",
-  "careers.jdDownload": "Télécharger le PDF",
   "careers.jdRead": "Description complète du poste",
   "careers.applyNow": "Postuler",
   "careers.roleCount": "{count} postes",

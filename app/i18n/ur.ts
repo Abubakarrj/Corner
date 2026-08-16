@@ -665,7 +665,6 @@ export const ur: Table = {
   "careers.jdLocation": "مقام",
   "careers.jdReportsTo": "رپورٹنگ",
   "careers.jdClassification": "درجہ بندی",
-  "careers.jdDownload": "PDF ڈاؤن لوڈ کریں",
   "careers.jdRead": "کام کی مکمل تفصیل",
   "careers.applyNow": "ابھی درخواست دیں",
   "careers.roleCount": "{count} آسامیاں",

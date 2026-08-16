@@ -716,7 +716,6 @@ export const it: Table = {
   "careers.jdLocation": "Sede",
   "careers.jdReportsTo": "Riporta a",
   "careers.jdClassification": "Classificazione",
-  "careers.jdDownload": "Scarica il PDF",
   "careers.jdRead": "Descrizione completa del lavoro",
   "careers.applyNow": "Candidati",
   "careers.roleCount": "{count} posizioni",

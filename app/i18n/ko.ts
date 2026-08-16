@@ -662,7 +662,6 @@ export const ko: Table = {
   "careers.jdLocation": "근무지",
   "careers.jdReportsTo": "보고 대상",
   "careers.jdClassification": "고용 구분",
-  "careers.jdDownload": "PDF 내려받기",
   "careers.jdRead": "전체 직무 설명",
   "careers.applyNow": "지원하기",
   "careers.roleCount": "{count}개 자리",
