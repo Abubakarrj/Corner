@@ -404,7 +404,7 @@ export const fa: Table = {
   "pin.checking": "در حال خواندن نقشه…",
   "pin.nudgeHint": "برای جابه‌جایی پین نقشه را بکشید. برای دقت بیشتر بزرگ‌نمایی کنید.",
   "pin.outOfRange": "این نقطه بیرون از محدودهٔ ارسال ماست.",
-  "pin.outOfRangeMiles": "این نقطه {miles} مایل دورتر است. ما تا ۱۰ مایل ارسال می‌کنیم.",
+  "pin.outOfRangeMiles": "این نقطه {miles} مایل دورتر است. ما تا {radius} مایل ارسال می‌کنیم.",
   "pin.confirm": "همین‌جا تحویل بده",
   "pin.adjust": "جابه‌جایی پین",
   "pin.pinned": "روی نقشه مشخص شد",

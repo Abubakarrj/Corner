@@ -404,7 +404,7 @@ export const it: Table = {
   "pin.checking": "Lettura della mappa…",
   "pin.nudgeHint": "Trascina la mappa per spostare il segnaposto. Ingrandisci per essere preciso.",
   "pin.outOfRange": "È fuori dalla zona in cui consegniamo.",
-  "pin.outOfRangeMiles": "È a {miles} miglia. Consegniamo entro 10.",
+  "pin.outOfRangeMiles": "È a {miles} miglia. Consegniamo entro {radius}.",
   "pin.confirm": "Consegna qui",
   "pin.adjust": "Sposta il segnaposto",
   "pin.pinned": "Segnato sulla mappa",

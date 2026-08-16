@@ -416,7 +416,7 @@ export const en = {
   "pin.checking": "Reading the map…",
   "pin.nudgeHint": "Drag the map to move the pin. Zoom in to be exact.",
   "pin.outOfRange": "That is outside where we deliver.",
-  "pin.outOfRangeMiles": "That is {miles} miles out. We deliver within 10.",
+  "pin.outOfRangeMiles": "That is {miles} miles out. We deliver within {radius}.",
   "pin.confirm": "Deliver here",
   "pin.adjust": "Adjust pin",
   "pin.pinned": "Pinned on the map",

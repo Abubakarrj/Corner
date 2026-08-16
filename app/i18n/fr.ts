@@ -404,7 +404,7 @@ export const fr: Table = {
   "pin.checking": "Lecture de la carte…",
   "pin.nudgeHint": "Faites glisser la carte pour déplacer le repère. Zoomez pour être précis.",
   "pin.outOfRange": "C’est en dehors de notre zone de livraison.",
-  "pin.outOfRangeMiles": "C’est à {miles} miles. Nous livrons jusqu’à 10.",
+  "pin.outOfRangeMiles": "C’est à {miles} miles. Nous livrons jusqu’à {radius}.",
   "pin.confirm": "Livrer ici",
   "pin.adjust": "Ajuster le repère",
   "pin.pinned": "Repéré sur la carte",

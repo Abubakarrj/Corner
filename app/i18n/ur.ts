@@ -371,7 +371,7 @@ export const ur: Table = {
   "pin.checking": "نقشہ پڑھا جا رہا ہے…",
   "pin.nudgeHint": "پن ہلانے کے لیے نقشہ کھینچیں۔ درست جگہ کے لیے زوم کریں۔",
   "pin.outOfRange": "یہ ہمارے ڈلیوری علاقے سے باہر ہے۔",
-  "pin.outOfRangeMiles": "یہ {miles} میل دور ہے۔ ہم 10 میل تک ڈلیور کرتے ہیں۔",
+  "pin.outOfRangeMiles": "یہ {miles} میل دور ہے۔ ہم {radius} میل تک ڈلیور کرتے ہیں۔",
   "pin.confirm": "یہاں ڈلیور کریں",
   "pin.adjust": "پن درست کریں",
   "pin.pinned": "نقشے پر نشان لگ گیا",

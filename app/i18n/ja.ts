@@ -367,7 +367,7 @@ export const ja: Table = {
   "pin.checking": "地図を確認中…",
   "pin.nudgeHint": "地図をドラッグするとピンが動きます。拡大すると正確になります。",
   "pin.outOfRange": "配達エリアの外です。",
-  "pin.outOfRangeMiles": "{miles}マイル先です。配達は10マイル以内です。",
+  "pin.outOfRangeMiles": "{miles}マイル先です。配達は{radius}マイル以内です。",
   "pin.confirm": "ここに届ける",
   "pin.adjust": "ピンを調整",
   "pin.pinned": "地図で指定済み",

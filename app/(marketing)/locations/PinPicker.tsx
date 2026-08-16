@@ -10,7 +10,7 @@ import { pinDataUri } from "./mapEngine";
 import { PIN_STYLE } from "./mapStyle";
 import { useResolvedTheme } from "../../theme";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
-import { DELIVERY_ORIGIN } from "./locations";
+import { DELIVERY_ORIGIN, DELIVERY_RADIUS_MILES } from "./locations";
 
 // Where the courier actually goes, placed by the person who lives there.
 //
@@ -670,7 +670,14 @@ export default function PinPicker({
         ) : outOfRange ? (
           <p role="alert" className="m-0 mt-2 text-[13px] leading-[1.5] text-brand-red">
             {lookup.miles !== null
-              ? t("pin.outOfRangeMiles", { miles: lookup.miles.toFixed(1) })
+              ? t("pin.outOfRangeMiles", {
+                  miles: lookup.miles.toFixed(1),
+                  // The rule, not the number ten. This sentence had "10"
+                  // written into it in all ten languages, so changing the
+                  // radius would have left every locale quoting the old one
+                  // at the exact moment somebody was being refused by the new.
+                  radius: DELIVERY_RADIUS_MILES,
+                })
               : t("pin.outOfRange")}
           </p>
         ) : mapState === "unavailable" ? (

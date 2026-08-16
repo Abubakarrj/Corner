@@ -1,6 +1,7 @@
 import {
   DELIVERY_RADIUS_MILES,
   addressParts,
+  milesBetween,
 } from "../../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../../googleMaps";
 import { PREP_MINUTES } from "../../../shopFacts";
@@ -85,10 +86,28 @@ export async function POST(request: Request) {
   const from = pickup.position;
 
   const drive = await driveBetween(from, [place.lat, place.lng]);
-  if (drive && drive.miles > DELIVERY_RADIUS_MILES) {
+
+  // ——— The rule still applies when Routes cannot answer ———
+  //
+  // This used to read `if (drive && ...)`, so a routing failure did not widen
+  // the radius here — it removed it. Every address went straight to Uber, and
+  // the shop's own ten-mile rule stopped existing for as long as Routes was
+  // down, on the one endpoint that decides whether an order can be placed.
+  //
+  // The straight line is a lower bound: a road route is never shorter than it.
+  // So an address measuring more than ten miles as the crow flies is more than
+  // ten road miles out, certainly, and refusing it cannot be wrong. It reads
+  // short, which means the fallback lets some genuinely-out-of-range addresses
+  // through — the same generous direction /api/geo errs in, and the same
+  // reason: the courier quote below is the harder gate, and a routing outage
+  // should not stop somebody two blocks away ordering breakfast.
+  const miles = drive?.miles ?? milesBetween(from, [place.lat, place.lng]);
+  if (miles > DELIVERY_RADIUS_MILES) {
     return Response.json(
       {
-        error: `That address is ${drive.miles.toFixed(1)} driving miles out; we deliver within ${DELIVERY_RADIUS_MILES}.`,
+        error: drive
+          ? `That address is ${miles.toFixed(1)} driving miles out; we deliver within ${DELIVERY_RADIUS_MILES}.`
+          : `That address is more than ${DELIVERY_RADIUS_MILES} miles out.`,
         outOfRange: true,
       },
       { status: 422 },

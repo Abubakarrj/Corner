@@ -638,14 +638,40 @@ export async function driveMatrixMiles(
       distanceMeters?: unknown;
       condition?: unknown;
     };
-    const index = element.destinationIndex;
-    if (typeof index !== "number" || index < 0 || index >= miles.length) continue;
+    // ——— An absent index is zero, not an absent element ———
+    //
+    // Routes is a proto3 API served over REST, and proto3's JSON mapping omits
+    // a field that holds its default. `destinationIndex: 0` is a zero, so the
+    // element describing the *first* destination can arrive carrying no index
+    // at all — the same bytes on the wire as "field not set".
+    //
+    // Reading that as "no index, skip it" drops destination 0 on every call,
+    // which is a silence rather than a failure: the array comes back the right
+    // length with a null in the first slot, and the only caller treats null as
+    // unreachable. In the delivery-area contour that is one bearing out of
+    // forty-eight pulled all the way in to the shop, on a published map of
+    // where we deliver.
+    //
+    // Whether Google omits it in practice is a question about their
+    // serializer, and it is not the question worth relying on: absent means
+    // zero under the spec either way, so reading it that way is correct
+    // against both behaviours. scripts/check-maps.mjs asks the live API which
+    // one it does.
+    const given = element.destinationIndex;
+    // Absent is zero; present-but-not-a-number is a response shape we do not
+    // understand, and guessing at one of those is how a distance ends up
+    // filed under the wrong address.
+    if (given !== undefined && typeof given !== "number") continue;
+    const index = given ?? 0;
+    if (!Number.isInteger(index) || index < 0 || index >= miles.length) continue;
     if (element.condition !== "ROUTE_EXISTS") continue;
-    // Zero is a legitimate distance and `|| 0` would swallow it, so the type
-    // check is explicit. A pair with no distance despite ROUTE_EXISTS stays
-    // null rather than becoming a zero-mile trip.
-    if (typeof element.distanceMeters !== "number") continue;
-    miles[index] = element.distanceMeters / 1609.344;
+    // Same rule, same reason: a route that exists and is zero metres long
+    // reports no distanceMeters. Zero is a real answer here — it is what a
+    // destination on the shop's own doorstep measures — and dropping it to
+    // null would call the nearest possible address unreachable.
+    const metres = element.distanceMeters;
+    if (metres !== undefined && typeof metres !== "number") continue;
+    miles[index] = (metres ?? 0) / 1609.344;
   }
   return miles;
 }

@@ -368,7 +368,7 @@ export const zh: Table = {
   "pin.checking": "正在读取地图…",
   "pin.nudgeHint": "拖动地图即可移动定位点，放大可以更精确。",
   "pin.outOfRange": "这里不在我们的配送范围内。",
-  "pin.outOfRangeMiles": "这里在 {miles} 英里外，我们只送 10 英里以内。",
+  "pin.outOfRangeMiles": "这里在 {miles} 英里外，我们只送 {radius} 英里以内。",
   "pin.confirm": "送到这里",
   "pin.adjust": "调整定位点",
   "pin.pinned": "已在地图上标记",

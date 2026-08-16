@@ -368,7 +368,7 @@ export const ko: Table = {
   "pin.checking": "지도 확인 중…",
   "pin.nudgeHint": "지도를 끌어 핀을 옮기세요. 확대하면 더 정확해집니다.",
   "pin.outOfRange": "배달 가능 지역 밖입니다.",
-  "pin.outOfRangeMiles": "{miles}마일 떨어져 있습니다. 배달은 10마일까지 가능합니다.",
+  "pin.outOfRangeMiles": "{miles}마일 떨어져 있습니다. 배달은 {radius}마일까지 가능합니다.",
   "pin.confirm": "여기로 배달",
   "pin.adjust": "핀 조정",
   "pin.pinned": "지도에 표시됨",

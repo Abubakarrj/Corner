@@ -171,6 +171,165 @@ try {
   record("Shop position", false, `request failed: ${error.message}`);
 }
 
+// ——— The distance from the counter to a doorway ———
+//
+// The number every delivery decision is made on: /api/geo accepts or refuses
+// an address by it, /api/delivery/quote refuses on it again, and the fee
+// explainer picks a rate band with it. "Routes answered" above does not say it
+// is *right* — a metre read as a mile answers just as cheerfully.
+//
+// So these check the answer against things that are true regardless of what
+// the real distance is, which is what makes them checks rather than a second
+// guess:
+//
+//   a road route is never shorter than the straight line
+//   in a street grid it is rarely more than twice it
+//   somewhere around the corner is under a mile
+//   the far side of the county is outside a ten-mile rule
+//
+// Any of those failing means a unit, a field or an origin is wrong, and it
+// does not need anybody to know the true mileage to say so.
+function straightLineMiles([lat1, lon1], [lat2, lon2]) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 3958.8 * Math.asin(Math.sqrt(a));
+}
+
+async function roadMiles(from, to) {
+  const point = ([lat, lng]) => ({ location: { latLng: { latitude: lat, longitude: lng } } });
+  const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": key,
+      "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
+    },
+    body: JSON.stringify({
+      origin: point(from),
+      destination: point(to),
+      travelMode: "DRIVE",
+      routingPreference: "TRAFFIC_UNAWARE",
+      units: "IMPERIAL",
+    }),
+  });
+  const body = await response.json();
+  const metres = body.routes?.[0]?.distanceMeters;
+  // Same conversion app/googleMaps.ts does. Written out rather than imported
+  // because this script runs against a deployment's key without a build.
+  return typeof metres === "number" ? metres / 1609.344 : null;
+}
+
+// A block east, downtown, and the pier. Coordinates rather than addresses so
+// this measures routing and not geocoding — the geocode is checked above, and
+// mixing the two makes a failure ambiguous.
+const AROUND_THE_CORNER = [34.0612, -118.2915];
+const PIER = [34.0086, -118.4977];
+const RADIUS_MILES = 10;
+
+try {
+  const [corner, downtown, pier] = await Promise.all([
+    roadMiles(SHOP, AROUND_THE_CORNER),
+    roadMiles(SHOP, NEARBY),
+    roadMiles(SHOP, PIER),
+  ]);
+
+  if (corner === null || downtown === null || pier === null) {
+    record("Delivery distance", false, "Routes did not return a distance for one of the three");
+  } else {
+    const line = straightLineMiles(SHOP, NEARBY);
+    const ratio = downtown / line;
+    const sane =
+      downtown >= line &&
+      ratio < 2 &&
+      corner < 1 &&
+      pier > RADIUS_MILES;
+    record(
+      "Delivery distance",
+      sane,
+      `around the corner ${corner.toFixed(2)} mi · downtown ${downtown.toFixed(1)} mi ` +
+        `road vs ${line.toFixed(1)} straight (${ratio.toFixed(2)}x) · pier ${pier.toFixed(1)} mi` +
+        (sane
+          ? ""
+          : downtown < line
+            ? " — road shorter than the straight line, which is impossible: check the units"
+            : corner >= 1
+              ? " — a block away measures over a mile: check the origin in locations.ts"
+              : pier <= RADIUS_MILES
+                ? " — Santa Monica measures inside the radius: check the origin"
+                : " — road is more than twice the straight line, which is odd for this grid"),
+    );
+  }
+} catch (error) {
+  record("Delivery distance", false, `request failed: ${error.message}`);
+}
+
+// ——— Route Matrix, and the index it may not send ———
+//
+// The delivery-area map is measured with computeRouteMatrix, and elements come
+// back in an arbitrary order, so each one is filed by its destinationIndex.
+// Routes is proto3 over REST, and proto3's JSON mapping omits a field holding
+// its default — which would mean the element for destination 0 arrives with no
+// index on it at all.
+//
+// app/googleMaps.ts reads an absent index as zero, which is correct under the
+// spec whichever way Google serialises it. This says which way that is, and
+// checks that both destinations come back either way — a dropped destination
+// is a notch in the published delivery boundary and nothing else.
+try {
+  const waypoint = ([lat, lng]) => ({
+    waypoint: { location: { latLng: { latitude: lat, longitude: lng } } },
+  });
+  const response = await fetch(
+    "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,condition",
+      },
+      body: JSON.stringify({
+        origins: [waypoint(SHOP)],
+        destinations: [waypoint(NEARBY), waypoint(AROUND_THE_CORNER)],
+        travelMode: "DRIVE",
+        routingPreference: "TRAFFIC_UNAWARE",
+        units: "IMPERIAL",
+      }),
+    },
+  );
+  const body = await response.json();
+  if (!Array.isArray(body)) {
+    record(
+      "Route Matrix",
+      false,
+      `${response.status}: ${body?.error?.message ?? JSON.stringify(body).slice(0, 160)}`,
+    );
+  } else {
+    // The same read app/googleMaps.ts does, so this fails where the app would.
+    const miles = [null, null];
+    for (const element of body) {
+      const index = element.destinationIndex ?? 0;
+      if (element.condition !== "ROUTE_EXISTS") continue;
+      miles[index] = (element.distanceMeters ?? 0) / 1609.344;
+    }
+    const first = body.find((element) => (element.destinationIndex ?? 0) === 0);
+    const spellsZero = first !== undefined && "destinationIndex" in first;
+    record(
+      "Route Matrix",
+      miles[0] !== null && miles[1] !== null,
+      `${body.length} elements, destination 0 ` +
+        (spellsZero ? "carries its index" : "omits its index (absent means 0)") +
+        ` · ${miles.map((m) => (m === null ? "none" : `${m.toFixed(1)} mi`)).join(", ")}`,
+    );
+  }
+} catch (error) {
+  record("Route Matrix", false, `request failed: ${error.message}`);
+}
+
 // ——— Maps JavaScript API ———
 //
 // Not checkable from here, and saying so is better than a green tick that

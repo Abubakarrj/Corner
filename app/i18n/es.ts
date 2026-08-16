@@ -372,7 +372,7 @@ export const es: Table = {
   "pin.checking": "Leyendo el mapa…",
   "pin.nudgeHint": "Arrastra el mapa para mover el pin. Amplía para afinar.",
   "pin.outOfRange": "Eso queda fuera de nuestra zona de reparto.",
-  "pin.outOfRangeMiles": "Eso está a {miles} millas. Repartimos hasta 10.",
+  "pin.outOfRangeMiles": "Eso está a {miles} millas. Repartimos hasta {radius}.",
   "pin.confirm": "Entregar aquí",
   "pin.adjust": "Ajustar el pin",
   "pin.pinned": "Marcado en el mapa",
