@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useServerText, useT } from "./i18n";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { hasConsented, subscribeConsentChanged } from "./CookieConsent";
+import { isReturning, noteVisit } from "./visits";
 
 // The drop-list signup modal. It lives in the root layout so it can appear over
 // any page, blurring whatever is behind it.
@@ -15,6 +16,23 @@ import { hasConsented, subscribeConsentChanged } from "./CookieConsent";
 // the next attempt grows (COOLDOWN_SCHEDULE_DAYS), so it presses harder early
 // and backs off for a visitor who keeps saying no, rather than nagging every
 // visit forever.
+//
+// ——— Never on a first visit ———
+//
+// It used to open fifteen seconds into somebody's very first look at the
+// site. That is the worst moment it could pick. They do not know what the
+// shop is yet, so the ask has nothing behind it: an email given at eleven
+// seconds converts badly and the addresses are worse. It is also the exact
+// pattern Google demotes on mobile search, and search arrivals are mostly
+// first-timers, so the visit most likely to be penalised was the one being
+// interrupted.
+//
+// Somebody who comes back has told us something. That is who this asks now,
+// and because they have, it can afford to ask more often: see the schedule
+// below. Fewer people see it, and the ones who do are the ones worth asking.
+//
+// A visit is a session rather than a page load, so wandering the site does not
+// promote a first-timer to a regular. See visits.ts.
 const STORAGE_KEY = "cb-drop-list-v2";
 
 type StoredState = {
@@ -26,9 +44,19 @@ type StoredState = {
 };
 
 // Days to wait before showing again, indexed by how many times it's already
-// been turned down. Grows, then holds at the last value — 3 days, a week, two
-// weeks, then a month forever after, rather than escalating without end.
-const COOLDOWN_SCHEDULE_DAYS = [3, 7, 14, 30];
+// been turned down. Grows, then holds at the last value, rather than
+// escalating without end.
+//
+// Shorter than it was — it ran 3, 7, 14, 30 — because the audience changed.
+// That schedule was written for a modal that opened on somebody's first ever
+// visit, where backing off hard was the only way not to be a nuisance. This
+// one only ever meets a returning visitor, so a day between the first ask and
+// the second is a fair thing to spend on somebody who has come back, and it
+// settles at a week rather than a month.
+//
+// The floor of one day is doing real work: it is what stops two visits in an
+// afternoon becoming two pop-ups.
+const COOLDOWN_SCHEDULE_DAYS = [1, 2, 4, 7];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function cooldownMsFor(count: number): number {
@@ -211,6 +239,22 @@ export default function DropListModal() {
     // below, so dismissing the banner re-runs this effect and starts the
     // clock then instead.
     if (!consented) return;
+
+    // First visit, no ask. Checked before the stored state so the very first
+    // look is quiet whatever else is on the device.
+    //
+    // noteVisit() first, and not because this is where visits are counted.
+    // VisitLog does that in the root layout, but React runs a child's effects
+    // before its parent's siblings, and this component is inside {children}.
+    // So on a returning load this effect ran while the stored count still said
+    // 1, read "first visit", and returned — every time. The modal was
+    // permanently one visit behind, which is the sort of bug that looks like
+    // "it just never shows".
+    //
+    // The call is idempotent: it only promotes a visit when the gap says so,
+    // so asking twice on one load changes nothing.
+    noteVisit();
+    if (!isReturning()) return;
 
     const state = readStoredState();
     if (state?.outcome === "joined" || state?.outcome === "already") {
