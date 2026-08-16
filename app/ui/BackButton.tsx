@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useT } from "../i18n";
-import { canGoBack } from "../navigationDepth";
+import { canGoBack, replacingEntry } from "../navigationDepth";
 
 // The way out.
 //
@@ -40,9 +40,19 @@ export default function BackButton({
       // Decided at the press, not at render: canGoBack() is browser-only
       // knowledge, and a component that rendered differently depending on it
       // would disagree with the server's markup on the first paint.
+      // replace, not push, when there is nowhere of ours behind. The entry
+      // being left is either a dead end — a shared link, a cold launch — or
+      // one the app has finished with, and neither is worth keeping between
+      // the visitor and where they are going. Pushing left the spent screen
+      // one press behind the fresh one, which is the whole bug: order placed,
+      // press back, land in the checkout you have already completed.
       onClick={() => {
-        if (canGoBack()) router.back();
-        else router.push(fallback);
+        if (canGoBack()) {
+          router.back();
+          return;
+        }
+        replacingEntry();
+        router.replace(fallback);
       }}
       className={`cb-press flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center text-ink transition-opacity hover:opacity-70 ${className}`}
     >

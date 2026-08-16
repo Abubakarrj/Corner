@@ -16,6 +16,7 @@ import { pushOrder, recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
 import { BRAND_LABEL } from "./card";
 import { completed, refused } from "../../haptics";
+import { closeFunnel } from "../../navigationDepth";
 import type { Tender } from "./PaymentSection";
 import type { CartRow } from "../CartContext";
 
@@ -493,6 +494,14 @@ export function useCheckout(): Checkout {
 
       setPlaced(record);
       setStatus("placed");
+      // ——— The way back stops here ———
+      //
+      // Everything behind this point is the funnel that produced the order,
+      // and the app has just emptied the basket those screens were about.
+      // Without this, tracking an order and pressing back landed in the
+      // checkout you had already completed, one press from a cart with
+      // nothing in it. See navigationDepth.
+      closeFunnel();
       // The once-a-visit one. Kept for this and nothing else, so it keeps
       // meaning "that worked" rather than becoming background noise.
       completed();
