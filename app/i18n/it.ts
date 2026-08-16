@@ -127,8 +127,7 @@ export const it: Table = {
   "shop.closed": "Chiuso",
   "shop.change": "Cambia",
   "shop.whereSending": "Dove lo mandiamo?",
-  "shop.takingYouToMap":
-    "Ti portiamo alla mappa per scegliere un negozio, organizzare il catering o indicare un indirizzo di consegna. Il pulsante qui sotto fa lo stesso, se non succede.",
+  "shop.takingYouToMap": "Ti portiamo alla mappa. Usa il pulsante qui sotto se non succede nulla.",
   "shop.chooseWhereGoing": "Scegli dove va",
 
   // ——— A product ———
@@ -318,8 +317,7 @@ export const it: Table = {
     "Uber calcola il tuo indirizzo nel momento in cui ordini, quindi è quello che paghi. Meteo e traffico possono spostarlo.",
 
   "order.notFound": "Non troviamo quell'ordine.",
-  "order.keptOnDevice":
-    "Accedi e i tuoi ordini ti seguono. Senza accesso restano sul dispositivo da cui sono stati fatti, quindi uno fatto da un altro telefono non comparirà qui.",
+  "order.keptOnDevice": "Senza accesso, gli ordini restano sul dispositivo da cui sono partiti. Accedi e ti seguono.",
   "order.callShop": "Chiama il negozio",
   "order.somethingWrong": "Qualcosa non va con questo ordine?",
   "order.followCourier": "Segui il corriere",
@@ -386,7 +384,7 @@ export const it: Table = {
   "rewards.title": "Premi",
   "rewards.signInBody": "I punti stanno con il tuo account. Accedi per vederli.",
   "rewards.unavailable": "Al momento non riusciamo a leggere i tuoi punti. Non si è perso nulla, riprova tra poco.",
-  "rewards.lead": "Punti su ogni ordine e un codice socio tutto tuo. {points} punti per ogni dollaro speso.",
+  "rewards.lead": "{points} punti per ogni dollaro, e un codice socio tuo.",
   "rewards.earnTitle": "Accumula su ogni ordine",
   "rewards.earnBody": "{points} punti per dollaro, contati sul cibo prima di tasse, mancia e consegna.",
   "rewards.keepTitle": "I punti restano tuoi",
@@ -538,15 +536,13 @@ export const it: Table = {
 
   // ——— Catering ———
   "catering.title": "Catering",
-  "catering.body":
-    "Dicci la data, quante persone e più o meno cosa hai in mente, e torniamo da te con una proposta e un prezzo.",
+  "catering.body": "Dicci la data, quante persone e cosa ti serve. Ti mandiamo un piano e un prezzo.",
   "catering.emailUs": "Scrivici per il catering",
   "catering.replyTime": "Di solito rispondiamo in giornata.",
 
   // ——— About ———
   "catering.heading": "Il catering, proprio dietro l'angolo",
-  "catering.blurb":
-    "Bagel, creme spalmabili e panini per le mattine in ufficio, le riunioni, le feste e tutto quello che c'è in mezzo.",
+  "catering.blurb": "Bagel, creme e panini, per gruppi.",
   "catering.request": "Richiedi il catering",
   "catering.emailBody":
     "Buongiorno,\n\nvorrei fare un ordine di catering.\n\nQuante persone:\nPer quando:\nRitiro o consegna:\nCose da evitare (allergie, senza maiale, vegetariano):\n\nGrazie.",
@@ -559,14 +555,8 @@ export const it: Table = {
   "footer.privacy": "Informativa sulla privacy",
 
   "about.tagline": "Proprio dietro l'angolo",
-  "about.p1":
-    "Corner Bagel è nato dall'idea che i posti di quartiere migliori siano semplici, curati e fatti per far parte della vita di tutti i giorni. Mettiamo insieme bagel a lievitazione naturale bolliti in pentola, creme spalmabili fatte in casa, ingredienti scelti con attenzione e un'ospitalità sincera, per un cibo che sazia senza complicarsi.",
-  "about.p2":
-    "Il nostro menu è volutamente essenziale. Invece di offrire tutto, preferiamo fare poche cose in modo eccezionale. Ogni bagel, ogni panino e ogni crema è preparato con cura, per un pasto che sa insieme di familiare e di memorabile.",
-  "about.p3":
-    "Che tu passi per la colazione prima del lavoro, incontri un amico davanti a un caffè o porti a casa una dozzina di bagel per la famiglia, ci fa onore che tu abbia scelto di passare con noi un piccolo pezzo della tua giornata.",
-  "about.p4":
-    "Grazie per sostenere un'attività di quartiere. Non vediamo l'ora di riaverti qui, proprio dietro l'angolo.",
+  "about.p1": "Bagel a fermentazione naturale, bolliti in caldaia. Creme fatte in casa e ingredienti scelti con cura.",
+  "about.p2": "Un menu corto, fatto bene.",
   "about.speakToTeam": "Per parlare con qualcuno del nostro team:",
 
   // ——— Riley ———
@@ -717,7 +707,7 @@ export const it: Table = {
   "careers.perYear": "{amount} all'anno",
   "careers.perHourTips": "{amount} all'ora più le mance",
   "careers.jdDoing": "Cosa faresti",
-  "careers.jdRead": "Leggi la descrizione completa del lavoro (PDF)",
+  "careers.jdRead": "Descrizione completa del lavoro",
   "careers.jdLooking": "Chi cerchiamo",
   "careers.applyNow": "Candidati",
   "careers.roleCount": "{count} posizioni",
@@ -797,14 +787,13 @@ export const it: Table = {
   "careers.submit": "Invia la candidatura",
   "careers.sending": "Invio…",
   "careers.sentTitle": "Grazie per la candidatura",
-  "careers.sentBody": "La tua candidatura è arrivata. Se ci sembra adatta, ti scriviamo a {contact} entro una settimana circa.",
+  "careers.sentBody": "Se sei in linea, ti scriviamo a {contact} entro circa una settimana.",
   "careers.sentDone": "Torna a Corner Bagel",
   "careers.sentAgain": "Inviane un'altra",
 
   "careers.eeo":
     "Corner Bagel è un posto di lavoro equo e a pari opportunità. Assumiamo le persone per quello che sanno fare, per come si presentano e per come trattano gli altri. Ogni candidatura è valutata con la stessa equità, a prescindere da etnia, religione, età, disabilità, nazionalità, genere, orientamento sessuale, stato civile, servizio militare o qualsiasi altra condizione tutelata dalla legge.",
-  "careers.privacyNote":
-    "La tua candidatura è privata e viene usata solo per le assunzioni. Il modulo richiede circa cinque minuti e a noi non arriva niente finché non lo invii; fino ad allora una bozza resta su questo dispositivo così puoi riprenderla.",
+  "careers.privacyNote": "La tua candidatura è privata e serve solo per le assunzioni. Nulla viene inviato finché non la mandi, e fino ad allora la bozza resta su questo dispositivo.",
 
   "careers.errFirstName": "Scrivi il tuo nome.",
   "careers.errLastName": "Scrivi il tuo cognome.",

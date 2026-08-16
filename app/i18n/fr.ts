@@ -127,8 +127,7 @@ export const fr: Table = {
   "shop.closed": "Fermé",
   "shop.change": "Modifier",
   "shop.whereSending": "Où l'envoyons-nous ?",
-  "shop.takingYouToMap":
-    "Direction la carte pour choisir une boutique, organiser un traiteur ou indiquer une adresse de livraison. Le bouton ci-dessous fait la même chose, si ce n'est pas le cas.",
+  "shop.takingYouToMap": "Direction la carte. Utilisez le bouton ci-dessous s'il ne se passe rien.",
   "shop.chooseWhereGoing": "Choisissez la destination",
 
   // ——— A product ———
@@ -318,8 +317,7 @@ export const fr: Table = {
     "Uber chiffre votre adresse au moment de la commande, c'est donc ce que vous payez. La météo et le trafic peuvent le faire varier.",
 
   "order.notFound": "Nous ne trouvons pas cette commande.",
-  "order.keptOnDevice":
-    "Connectez-vous et vos commandes vous suivent. Déconnecté, elles restent sur l'appareil depuis lequel elles ont été passées : une commande faite sur un autre téléphone n'apparaîtra pas ici.",
+  "order.keptOnDevice": "Déconnecté, les commandes restent sur l'appareil d'origine. Connectez-vous et elles vous suivent.",
   "order.callShop": "Appeler la boutique",
   "order.somethingWrong": "Un souci avec cette commande ?",
   "order.followCourier": "Suivre le coursier",
@@ -386,7 +384,7 @@ export const fr: Table = {
   "rewards.title": "Récompenses",
   "rewards.signInBody": "Vos points sont liés à votre compte. Connectez-vous pour les voir.",
   "rewards.unavailable": "Impossible de consulter vos points pour l’instant. Rien n’est perdu, réessayez dans un moment.",
-  "rewards.lead": "Des points à chaque commande et un code membre à vous. {points} points par dollar dépensé.",
+  "rewards.lead": "{points} points par dollar, et votre propre code membre.",
   "rewards.earnTitle": "Cumulez à chaque commande",
   "rewards.earnBody": "{points} points par dollar, comptés sur les plats avant taxes, pourboire et livraison.",
   "rewards.keepTitle": "Vos points restent les vôtres",
@@ -538,15 +536,13 @@ export const fr: Table = {
 
   // ——— Catering ———
   "catering.title": "Traiteur",
-  "catering.body":
-    "Dites-nous la date, le nombre de personnes et à peu près ce que vous imaginez, et nous revenons vers vous avec une proposition et un prix.",
+  "catering.body": "Dites-nous la date, le nombre de personnes et ce qu'il vous faut. Nous envoyons un plan et un prix.",
   "catering.emailUs": "Nous écrire au sujet du traiteur",
   "catering.replyTime": "Nous répondons généralement le jour même.",
 
   // ——— About ———
   "catering.heading": "Le traiteur, juste au coin de la rue",
-  "catering.blurb":
-    "Bagels, tartinades et sandwichs pour les matins au bureau, les réunions, les fêtes et tout ce qu'il y a entre les deux.",
+  "catering.blurb": "Bagels, tartinades et sandwichs, pour les groupes.",
   "catering.request": "Demander un devis",
   "catering.emailBody":
     "Bonjour,\n\nJe souhaite passer une commande traiteur.\n\nNombre de personnes :\nPour quand :\nRetrait ou livraison :\nÀ éviter (allergies, sans porc, végétarien) :\n\nMerci.",
@@ -559,14 +555,8 @@ export const fr: Table = {
   "footer.privacy": "Politique de confidentialité",
 
   "about.tagline": "Juste au coin de la rue",
-  "about.p1":
-    "Corner Bagel est né de l'idée que les meilleures adresses de quartier sont simples, réfléchies et faites pour le quotidien. Nous réunissons des bagels à fermentation naturelle pochés au chaudron, des tartinades maison, des ingrédients choisis avec soin et un accueil sincère, pour une cuisine qui rassasie sans se compliquer.",
-  "about.p2":
-    "Notre menu est volontairement resserré. Plutôt que de tout proposer, nous préférons faire quelques choses exceptionnellement bien. Chaque bagel, chaque sandwich et chaque tartinade est préparé avec attention, pour un repas à la fois familier et mémorable.",
-  "about.p3":
-    "Que vous preniez un petit-déjeuner avant le travail, que vous retrouviez un ami autour d'un café ou que vous rapportiez une douzaine de bagels à la maison, nous sommes honorés que vous passiez un petit moment de votre journée avec nous.",
-  "about.p4":
-    "Merci de soutenir un commerce de quartier. Nous avons hâte de vous revoir, juste au coin de la rue.",
+  "about.p1": "Bagels à fermentation naturelle, pochés au chaudron. Tartinades maison et ingrédients choisis avec soin.",
+  "about.p2": "Une carte courte, bien faite.",
   "about.speakToTeam": "Pour parler à quelqu'un de notre équipe :",
 
   // ——— Riley ———
@@ -717,7 +707,7 @@ export const fr: Table = {
   "careers.perYear": "{amount} par an",
   "careers.perHourTips": "{amount} de l'heure plus les pourboires",
   "careers.jdDoing": "Ce que vous feriez",
-  "careers.jdRead": "Lire la description complète du poste (PDF)",
+  "careers.jdRead": "Description complète du poste",
   "careers.jdLooking": "Ce que nous cherchons",
   "careers.applyNow": "Postuler",
   "careers.roleCount": "{count} postes",
@@ -797,14 +787,13 @@ export const fr: Table = {
   "careers.submit": "Envoyer la candidature",
   "careers.sending": "Envoi…",
   "careers.sentTitle": "Merci d'avoir postulé",
-  "careers.sentBody": "On a bien votre candidature. Si ça colle, on vous écrit à {contact} d'ici une semaine environ.",
+  "careers.sentBody": "Si le profil correspond, nous vous écrivons à {contact} sous une semaine environ.",
   "careers.sentDone": "Retour à Corner Bagel",
   "careers.sentAgain": "En envoyer une autre",
 
   "careers.eeo":
     "Corner Bagel est un lieu de travail juste et à égalité des chances. Nous recrutons les gens pour ce qu'ils savent faire, la façon dont ils se présentent et la façon dont ils traitent les autres. Chaque candidature est examinée équitablement, sans considération d'origine, de religion, d'âge, de handicap, de nationalité, de genre, d'orientation sexuelle, de situation familiale, de statut d'ancien combattant, ni d'aucun autre statut protégé par la loi.",
-  "careers.privacyNote":
-    "Votre candidature est confidentielle et sert uniquement au recrutement. Le formulaire prend environ cinq minutes et rien ne nous parvient tant que vous ne l'avez pas envoyé ; d'ici là, un brouillon est conservé sur cet appareil pour que vous puissiez y revenir.",
+  "careers.privacyNote": "Votre candidature est privée et sert uniquement au recrutement. Rien n'est envoyé avant que vous ne la soumettiez, et le brouillon reste sur cet appareil.",
 
   "careers.errFirstName": "Indiquez votre prénom.",
   "careers.errLastName": "Indiquez votre nom.",

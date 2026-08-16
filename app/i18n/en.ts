@@ -136,8 +136,7 @@ export const en = {
   "shop.closed": "Closed",
   "shop.change": "Change",
   "shop.whereSending": "Where are we sending this?",
-  "shop.takingYouToMap":
-    "Taking you to the map to pick a shop, arrange catering, or set a delivery address. The button below does the same, if it doesn't.",
+  "shop.takingYouToMap": "Taking you to the map. Use the button below if nothing happens.",
   "shop.chooseWhereGoing": "Choose where it's going",
   "shop.freeDeliveryProgress": "You're {amount} away from free delivery",
   "shop.freeDeliveryEarned": "Delivery is on us",
@@ -332,8 +331,7 @@ export const en = {
     "Uber prices your address at the moment you order, so this is what you pay. Weather and traffic can move it.",
 
   "order.notFound": "We can't find that order.",
-  "order.keptOnDevice":
-    "Sign in and your orders follow you. Signed out, they're kept on the device they were placed from, so one placed on another phone won't show here.",
+  "order.keptOnDevice": "Signed out, orders stay on the device they were placed from. Sign in and they follow you.",
   "order.callShop": "Call the shop",
   "order.somethingWrong": "Something wrong with this order?",
   "order.followCourier": "Follow the courier",
@@ -398,7 +396,7 @@ export const en = {
   "rewards.title": "Rewards",
   "rewards.signInBody": "Points live with your account. Sign in to see yours.",
   "rewards.unavailable": "We can’t reach your points right now. Nothing has been lost — try again in a moment.",
-  "rewards.lead": "Points on every order, and a member code of your own. {points} points for every dollar you spend.",
+  "rewards.lead": "{points} points for every dollar, and a member code of your own.",
   "rewards.earnTitle": "Earn on every order",
   "rewards.earnBody": "{points} points per dollar, counted on the food before tax, tip and delivery.",
   "rewards.keepTitle": "Your points stay yours",
@@ -543,14 +541,13 @@ export const en = {
 
   // ——— Catering ———
   "catering.title": "Catering",
-  "catering.body":
-    "Tell us the date, the headcount and roughly what you have in mind, and we'll come back with a plan and a price.",
+  "catering.body": "Tell us the date, the headcount and what you need. We'll send a plan and a price.",
   "catering.emailUs": "Email us about catering",
   "catering.replyTime": "We usually reply the same day.",
 
   // ——— About ———
   "catering.heading": "Catering, Right Around the Corner",
-  "catering.blurb": "Bagels, spreads, and sandwiches for office mornings, meetings, celebrations, and everything in between.",
+  "catering.blurb": "Bagels, spreads and sandwiches, for groups.",
   "catering.request": "Request Catering",
   "catering.emailBody": "Hello,\n\nI'd like to place a catering order.\n\nHow many people:\nWhen for:\nPickup or delivery:\nAnything to avoid (allergies, no pork, vegetarian):\n\nThank you.",
   "catering.minimum": "Catering packages start at 10 guests.",
@@ -562,14 +559,8 @@ export const en = {
   "footer.privacy": "Privacy Policy",
 
   "about.tagline": "Right Around The Corner",
-  "about.p1":
-    "Corner Bagel was created with the belief that the best neighborhood places are simple, thoughtful, and made to be part of everyday life. We bring together naturally fermented, kettle-boiled bagels, house-made spreads, carefully sourced ingredients, and genuine hospitality to create food that's satisfying without being complicated.",
-  "about.p2":
-    "Our menu is intentionally focused. Rather than offering everything, we choose to do a handful of things exceptionally well. Every bagel, sandwich, and spread is prepared with care so you can enjoy a meal that feels both familiar and memorable.",
-  "about.p3":
-    "Whether you're grabbing breakfast before work, meeting a friend over coffee, or bringing a dozen bagels home to your family, we're honored that you chose to spend a small part of your day with us.",
-  "about.p4":
-    "Thank you for supporting a neighborhood business. We look forward to welcoming you back, right around the corner.",
+  "about.p1": "Naturally fermented, kettle-boiled bagels. House-made spreads and carefully sourced ingredients.",
+  "about.p2": "A short menu, done properly.",
   "about.speakToTeam": "To speak with a member of our team:",
   "about.aboutUs": "About Us",
   "about.ourStory": "Our Story",
@@ -766,7 +757,7 @@ export const en = {
   // falls back key by key, so these read in English on a page that is
   // otherwise translated. See the note at the top of jobDescription.ts.
   "careers.jdDoing": "What you'd be doing",
-  "careers.jdRead": "Read the full job description (PDF)",
+  "careers.jdRead": "Full job description",
   "careers.jdLooking": "What we're looking for",
   "careers.jdFoodCard": "A food handler card, or willing to get one before your first shift",
   "careers.jdCounterSummary": "You're the first person anybody sees. Take the order, run the register, and learn the regulars by what they order.",
@@ -886,14 +877,13 @@ export const en = {
   "careers.submit": "Send application",
   "careers.sending": "Sending…",
   "careers.sentTitle": "Thanks for applying",
-  "careers.sentBody": "Your application is with us. If it looks like a fit, we'll be in touch at {contact} within about a week.",
+  "careers.sentBody": "If it looks like a fit, we'll be in touch at {contact} within about a week.",
   "careers.sentDone": "Back to Corner Bagel",
   "careers.sentAgain": "Send another",
 
   "careers.eeo":
     "Corner Bagel is a fair and equal opportunity workplace. We hire people for what they can do, how they show up, and how they treat others. Everyone is considered fairly, regardless of race, religion, age, disability, national origin, gender, sexual orientation, marital status, veteran status, or any other status protected by law.",
-  "careers.privacyNote":
-    "Your application is private and used only for hiring purposes. The form takes about five minutes to complete, and nothing is sent to us until you submit it — until then a draft is kept on this device so you can come back to it.",
+  "careers.privacyNote": "Your application is private and used only for hiring. Nothing is sent until you submit it, and a draft stays on this device until then.",
 
   "careers.errFirstName": "Add your first name.",
   "careers.errLastName": "Add your last name.",

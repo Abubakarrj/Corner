@@ -121,8 +121,7 @@ export const ko: Table = {
   "shop.closed": "영업 종료",
   "shop.change": "변경",
   "shop.whereSending": "어디로 보낼까요?",
-  "shop.takingYouToMap":
-    "매장 선택, 케이터링 문의, 배달 주소 설정을 위해 지도로 이동합니다. 이동되지 않으면 아래 버튼을 눌러 주세요.",
+  "shop.takingYouToMap": "지도로 이동합니다. 아무 일도 없으면 아래 버튼을 누르세요.",
   "shop.chooseWhereGoing": "받을 곳 선택",
 
   "product.allergens": "알레르기 유발 성분",
@@ -285,8 +284,7 @@ export const ko: Table = {
     "Uber가 주문 시점에 주소를 기준으로 계산하므로 이 금액을 그대로 내시게 됩니다. 날씨와 교통에 따라 달라질 수 있습니다.",
 
   "order.notFound": "해당 주문을 찾을 수 없습니다.",
-  "order.keptOnDevice":
-    "로그인하시면 주문이 따라옵니다. 로그인하지 않으면 주문한 기기에만 저장되므로, 다른 기기에서 한 주문은 여기에 표시되지 않습니다.",
+  "order.keptOnDevice": "로그아웃 상태에서는 주문한 기기에 주문이 남습니다. 로그인하면 따라옵니다.",
   "order.callShop": "매장에 전화하기",
   "order.somethingWrong": "이 주문에 문제가 있나요?",
   "order.followCourier": "배달원 위치 보기",
@@ -350,7 +348,7 @@ export const ko: Table = {
   "rewards.title": "리워드",
   "rewards.signInBody": "포인트는 계정에 쌓입니다. 로그인하면 볼 수 있어요.",
   "rewards.unavailable": "지금은 포인트를 불러올 수 없어요. 없어진 건 없으니 잠시 후 다시 시도해 주세요.",
-  "rewards.lead": "주문할 때마다 포인트가 쌓이고, 나만의 회원 코드도 생깁니다. 1달러당 {points}포인트.",
+  "rewards.lead": "1달러당 {points}포인트, 그리고 나만의 멤버 코드.",
   "rewards.earnTitle": "주문마다 적립",
   "rewards.earnBody": "1달러당 {points}포인트. 세금·팁·배달비를 제외한 음식 금액 기준입니다.",
   "rewards.keepTitle": "포인트는 그대로",
@@ -492,13 +490,12 @@ export const ko: Table = {
   "gift.errConfirmMismatch": "일치하지 않습니다.",
 
   "catering.title": "케이터링",
-  "catering.body":
-    "날짜, 인원, 그리고 생각하고 계신 내용을 알려 주시면 계획과 가격을 알려 드리겠습니다.",
+  "catering.body": "날짜와 인원, 필요한 것을 알려주세요. 구성과 가격을 보내드립니다.",
   "catering.emailUs": "케이터링 문의하기",
   "catering.replyTime": "보통 당일에 답장드립니다.",
 
   "catering.heading": "코너에서 만나는 케이터링",
-  "catering.blurb": "사무실 아침, 회의, 축하 자리, 그 사이 어떤 자리든 어울리는 베이글과 스프레드, 샌드위치입니다.",
+  "catering.blurb": "베이글, 스프레드, 샌드위치. 단체용으로.",
   "catering.request": "케이터링 문의",
   "catering.emailBody": "안녕하세요,\n\n케이터링 주문을 하고 싶습니다.\n\n인원수:\n희망 일시:\n픽업 또는 배달:\n피해야 할 것 (알레르기, 돼지고기 제외, 채식):\n\n감사합니다.",
   "catering.minimum": "케이터링은 10인분부터 가능합니다.",
@@ -510,14 +507,8 @@ export const ko: Table = {
   "footer.privacy": "개인정보 처리방침",
 
   "about.tagline": "바로 코너에서",
-  "about.p1":
-    "Corner Bagel은 가장 좋은 동네 가게란 단순하고, 사려 깊고, 일상의 일부가 되는 곳이라는 믿음에서 시작했습니다. 자연 발효해 솥에 삶은 베이글, 직접 만든 스프레드, 정성껏 고른 재료, 그리고 진심 어린 환대를 더해 복잡하지 않으면서도 든든한 음식을 만듭니다.",
-  "about.p2":
-    "메뉴는 일부러 좁게 유지합니다. 모든 것을 갖추기보다 몇 가지를 아주 잘하는 쪽을 택했습니다. 베이글도, 샌드위치도, 스프레드도 하나하나 정성껏 준비해 익숙하면서도 기억에 남는 한 끼가 되도록 합니다.",
-  "about.p3":
-    "출근 전 아침을 사 가시든, 친구와 커피를 나누시든, 가족을 위해 베이글 한 다스를 사 가시든, 하루의 작은 시간을 저희와 보내 주셔서 감사합니다.",
-  "about.p4":
-    "동네 가게를 응원해 주셔서 고맙습니다. 바로 코너에서 다시 뵙기를 기다리겠습니다.",
+  "about.p1": "자연 발효해 가마솥에 삶은 베이글. 직접 만든 스프레드와 신중히 고른 재료.",
+  "about.p2": "짧은 메뉴를, 제대로.",
   "about.speakToTeam": "직원과 통화를 원하시면:",
 
   "chat.name": "Riley",
@@ -662,7 +653,7 @@ export const ko: Table = {
   "careers.perYear": "연봉 {amount}",
   "careers.perHourTips": "시급 {amount} + 팁",
   "careers.jdDoing": "하게 될 일",
-  "careers.jdRead": "전체 직무 설명 보기 (PDF)",
+  "careers.jdRead": "전체 직무 설명",
   "careers.jdLooking": "이런 분을 찾습니다",
   "careers.applyNow": "지원하기",
   "careers.roleCount": "{count}개 자리",
@@ -742,14 +733,13 @@ export const ko: Table = {
   "careers.submit": "지원서 보내기",
   "careers.sending": "보내는 중…",
   "careers.sentTitle": "지원해 주셔서 감사합니다",
-  "careers.sentBody": "지원서를 잘 받았습니다. 맞는 자리가 있으면 일주일 안쯤에 {contact}(으)로 연락드릴게요.",
+  "careers.sentBody": "잘 맞으면 약 일주일 안에 {contact}으로 연락드리겠습니다.",
   "careers.sentDone": "Corner Bagel로 돌아가기",
   "careers.sentAgain": "하나 더 보내기",
 
   "careers.eeo":
     "Corner Bagel은 공정하고 평등한 기회를 보장하는 일터입니다. 저희는 할 수 있는 일, 일하는 태도, 사람을 대하는 방식을 보고 채용합니다. 인종, 종교, 나이, 장애, 출신 국가, 성별, 성적 지향, 혼인 여부, 병역 사항, 그 밖에 법으로 보호되는 어떤 사유와도 관계없이 모든 지원자를 공정하게 심사합니다.",
-  "careers.privacyNote":
-    "지원서는 비공개이며 채용 목적으로만 사용됩니다. 작성에는 5분쯤 걸리고, 제출하기 전까지는 저희에게 아무것도 전송되지 않습니다. 그때까지는 이 기기에 임시 저장되어 이어서 작성하실 수 있습니다.",
+  "careers.privacyNote": "지원서는 비공개이며 채용에만 사용합니다. 제출하기 전에는 아무것도 전송되지 않고, 그때까지 임시 저장본은 이 기기에 남습니다.",
 
   "careers.errFirstName": "이름을 입력해 주세요.",
   "careers.errLastName": "성을 입력해 주세요.",

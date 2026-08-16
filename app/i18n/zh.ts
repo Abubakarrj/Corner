@@ -123,8 +123,7 @@ export const zh: Table = {
   "shop.closed": "已打烊",
   "shop.change": "更改",
   "shop.whereSending": "要送到哪里？",
-  "shop.takingYouToMap":
-    "正带你去地图，选择门店、安排餐饮服务或设置配送地址。如果没有跳转，下方按钮也可以。",
+  "shop.takingYouToMap": "正在前往地图。如果没有反应，请用下面的按钮。",
   "shop.chooseWhereGoing": "选择送达地点",
 
   "product.allergens": "过敏原",
@@ -286,8 +285,7 @@ export const zh: Table = {
   "deliveryFee.quotedFresh": "Uber 在你下单那一刻按地址报价，所以这就是你付的钱。天气和路况可能会让它变动。",
 
   "order.notFound": "找不到该订单。",
-  "order.keptOnDevice":
-    "登录后订单会跟着你走。未登录时，订单只保存在下单的那台设备上，用别的手机下的单不会显示在这里。",
+  "order.keptOnDevice": "未登录时，订单保存在下单的设备上。登录后订单会跟着你。",
   "order.callShop": "致电门店",
   "order.somethingWrong": "这份订单有问题吗？",
   "order.followCourier": "追踪配送员",
@@ -350,7 +348,7 @@ export const zh: Table = {
   "rewards.title": "奖励",
   "rewards.signInBody": "积分跟着你的账号走。登录后即可查看。",
   "rewards.unavailable": "现在读不到你的积分。东西没丢，稍后再试一次。",
-  "rewards.lead": "每单都攒积分，还有一个属于你的会员码。每消费 1 美元得 {points} 积分。",
+  "rewards.lead": "每消费一美元得{points}积分，还有专属会员码。",
   "rewards.earnTitle": "每单都积分",
   "rewards.earnBody": "每 1 美元 {points} 积分，按税前、不含小费和配送费的餐食金额计算。",
   "rewards.keepTitle": "积分一直是你的",
@@ -492,12 +490,12 @@ export const zh: Table = {
   "gift.errConfirmMismatch": "两次填写不一致。",
 
   "catering.title": "餐饮服务",
-  "catering.body": "告诉我们日期、人数和大致想法，我们会带着方案和报价回复你。",
+  "catering.body": "告诉我们日期、人数和需求，我们会给出方案和报价。",
   "catering.emailUs": "发邮件咨询餐饮服务",
   "catering.replyTime": "我们通常当天回复。",
 
   "catering.heading": "街角的餐饮服务",
-  "catering.blurb": "贝果、抹酱和三明治，适合办公室的早晨、会议、庆祝，以及这之间的一切场合。",
+  "catering.blurb": "贝果、抹酱和三明治，适合多人。",
   "catering.request": "申请餐饮服务",
   "catering.emailBody": "你好，\n\n我想订一份餐饮外送。\n\n人数：\n时间：\n自取还是配送：\n需要避开的（过敏、不吃猪肉、素食）：\n\n谢谢。",
   "catering.minimum": "餐饮套餐从 10 人起订。",
@@ -509,13 +507,8 @@ export const zh: Table = {
   "footer.privacy": "隐私政策",
 
   "about.tagline": "就在街角",
-  "about.p1":
-    "Corner Bagel 的初衷很简单：最好的街坊小店应该朴素、用心，并且成为日常生活的一部分。我们把自然发酵、锅煮的贝果，自制抹酱，精心挑选的食材，以及真诚的待客之道结合在一起，做出既满足又不复杂的食物。",
-  "about.p2":
-    "我们的菜单刻意做得很精。与其什么都有，不如把少数几样做到极好。每一份贝果、三明治和抹酱都用心准备，让你吃到既熟悉又难忘的一餐。",
-  "about.p3":
-    "无论你是上班前买份早餐、和朋友喝杯咖啡，还是给家人带回一打贝果，我们都很荣幸你愿意把一天中的一小段时间交给我们。",
-  "about.p4": "感谢你支持街坊小店。期待在街角再次见到你。",
+  "about.p1": "自然发酵、水煮的贝果。自制抹酱，用心挑选的食材。",
+  "about.p2": "菜单不长，做到位。",
   "about.speakToTeam": "如需与我们的同事通话：",
 
   "chat.name": "Riley",
@@ -660,7 +653,7 @@ export const zh: Table = {
   "careers.perYear": "年薪{amount}",
   "careers.perHourTips": "每小时{amount}外加小费",
   "careers.jdDoing": "你会做什么",
-  "careers.jdRead": "阅读完整的职位说明（PDF）",
+  "careers.jdRead": "完整职位说明",
   "careers.jdLooking": "我们在找什么样的人",
   "careers.applyNow": "立即申请",
   "careers.roleCount": "{count} 个岗位",
@@ -740,14 +733,13 @@ export const zh: Table = {
   "careers.submit": "提交申请",
   "careers.sending": "提交中…",
   "careers.sentTitle": "感谢你的申请",
-  "careers.sentBody": "我们已经收到你的申请。如果合适，大约一周内会写信到 {contact}。",
+  "careers.sentBody": "如果合适，我们会在一周左右通过{contact}联系你。",
   "careers.sentDone": "返回 Corner Bagel",
   "careers.sentAgain": "再提交一份",
 
   "careers.eeo":
     "Corner Bagel 是一个公平、机会均等的工作场所。我们看的是你能做什么、以什么状态来上班、怎么对待别人。无论种族、宗教、年龄、身体状况、原籍国、性别、性取向、婚姻状况、退伍军人身份，或法律保护的任何其他身份，每一位申请人都会得到同样公平的考虑。",
-  "careers.privacyNote":
-    "你的申请是私密的，只用于招聘。填完大约需要五分钟，在你提交之前不会有任何内容发给我们；在那之前草稿会存在这台设备上，方便你回来接着填。",
+  "careers.privacyNote": "你的申请是私密的，只用于招聘。提交前不会发送任何内容，草稿会留在这台设备上。",
 
   "careers.errFirstName": "请填写你的名。",
   "careers.errLastName": "请填写你的姓。",

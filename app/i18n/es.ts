@@ -123,8 +123,7 @@ export const es: Table = {
   "shop.closed": "Cerrado",
   "shop.change": "Cambiar",
   "shop.whereSending": "¿A dónde lo enviamos?",
-  "shop.takingYouToMap":
-    "Te llevamos al mapa para elegir una tienda, organizar catering o poner una dirección de entrega. El botón de abajo hace lo mismo, por si no ocurre.",
+  "shop.takingYouToMap": "Te llevamos al mapa. Usa el botón de abajo si no pasa nada.",
   "shop.chooseWhereGoing": "Elige a dónde va",
 
   "product.allergens": "Alérgenos",
@@ -288,8 +287,7 @@ export const es: Table = {
     "Uber calcula tu dirección en el momento de pedir, así que esto es lo que pagas. El clima y el tráfico pueden moverlo.",
 
   "order.notFound": "No encontramos ese pedido.",
-  "order.keptOnDevice":
-    "Inicia sesión y tus pedidos te siguen. Sin sesión, se guardan en el dispositivo desde el que se hicieron, así que uno hecho en otro teléfono no aparecerá aquí.",
+  "order.keptOnDevice": "Sin sesión, los pedidos quedan en el dispositivo desde el que se hicieron. Inicia sesión y te siguen.",
   "order.callShop": "Llama a la tienda",
   "order.somethingWrong": "¿Algo va mal con este pedido?",
   "order.followCourier": "Seguir al repartidor",
@@ -354,7 +352,7 @@ export const es: Table = {
   "rewards.title": "Recompensas",
   "rewards.signInBody": "Tus puntos van con tu cuenta. Inicia sesión para verlos.",
   "rewards.unavailable": "Ahora mismo no podemos consultar tus puntos. No se ha perdido nada; inténtalo de nuevo en un momento.",
-  "rewards.lead": "Puntos en cada pedido y un código de socio para ti. {points} puntos por cada dólar que gastes.",
+  "rewards.lead": "{points} puntos por cada dólar, y un código de socio propio.",
   "rewards.earnTitle": "Acumula en cada pedido",
   "rewards.earnBody": "{points} puntos por dólar, contados sobre la comida antes de impuestos, propina y entrega.",
   "rewards.keepTitle": "Tus puntos son tuyos",
@@ -497,13 +495,12 @@ export const es: Table = {
   "gift.errConfirmMismatch": "No coinciden.",
 
   "catering.title": "Catering",
-  "catering.body":
-    "Dinos la fecha, cuánta gente y más o menos lo que tienes en mente, y te respondemos con un plan y un precio.",
+  "catering.body": "Dinos la fecha, cuántas personas y qué necesitas. Te enviamos un plan y un precio.",
   "catering.emailUs": "Escríbenos sobre catering",
   "catering.replyTime": "Solemos responder el mismo día.",
 
   "catering.heading": "Catering, a la vuelta de la esquina",
-  "catering.blurb": "Bagels, untables y sándwiches para mañanas de oficina, reuniones, celebraciones y todo lo que hay en medio.",
+  "catering.blurb": "Bagels, untables y sándwiches, para grupos.",
   "catering.request": "Solicitar catering",
   "catering.emailBody": "Hola:\n\nMe gustaría hacer un pedido de catering.\n\nCuántas personas:\nPara cuándo:\nRecogida o entrega:\nAlgo que evitar (alergias, sin cerdo, vegetariano):\n\nGracias.",
   "catering.minimum": "Los paquetes de catering empiezan en 10 personas.",
@@ -515,14 +512,8 @@ export const es: Table = {
   "footer.privacy": "Política de privacidad",
 
   "about.tagline": "Justo a la vuelta de la esquina",
-  "about.p1":
-    "Corner Bagel nació con la idea de que los mejores sitios de barrio son sencillos, cuidados y hechos para formar parte del día a día. Juntamos bagels de fermentación natural hervidos en olla, untables de casa, ingredientes elegidos con cuidado y hospitalidad de verdad para hacer comida que satisface sin complicarse.",
-  "about.p2":
-    "Nuestro menú es deliberadamente corto. En vez de ofrecerlo todo, preferimos hacer unas pocas cosas excepcionalmente bien. Cada bagel, sándwich y untable se prepara con cuidado para que disfrutes de una comida que resulta familiar y memorable a la vez.",
-  "about.p3":
-    "Ya sea que pases a desayunar antes del trabajo, quedes con alguien a tomar café o te lleves una docena de bagels a casa, nos honra que pases un ratito de tu día con nosotros.",
-  "about.p4":
-    "Gracias por apoyar a un negocio de barrio. Esperamos volver a verte, justo a la vuelta de la esquina.",
+  "about.p1": "Bagels de fermentación natural, hervidos en caldera. Untables caseros e ingredientes elegidos con cuidado.",
+  "about.p2": "Un menú corto, bien hecho.",
   "about.speakToTeam": "Para hablar con alguien de nuestro equipo:",
 
   "chat.name": "Riley",
@@ -668,7 +659,7 @@ export const es: Table = {
   "careers.perYear": "{amount} al año",
   "careers.perHourTips": "{amount} por hora más propinas",
   "careers.jdDoing": "Lo que harías",
-  "careers.jdRead": "Lee la descripción completa del puesto (PDF)",
+  "careers.jdRead": "Descripción completa del puesto",
   "careers.jdLooking": "Lo que buscamos",
   "careers.applyNow": "Solicitar",
   "careers.roleCount": "{count} puestos",
@@ -748,14 +739,13 @@ export const es: Table = {
   "careers.submit": "Enviar solicitud",
   "careers.sending": "Enviando…",
   "careers.sentTitle": "Gracias por postularte",
-  "careers.sentBody": "Tu solicitud ya está con nosotros. Si encaja, te escribiremos a {contact} en una semana más o menos.",
+  "careers.sentBody": "Si encaja, te escribimos a {contact} en una semana aproximadamente.",
   "careers.sentDone": "Volver a Corner Bagel",
   "careers.sentAgain": "Enviar otra",
 
   "careers.eeo":
     "Corner Bagel es un lugar de trabajo justo y de igualdad de oportunidades. Contratamos a la gente por lo que sabe hacer, por cómo se presenta y por cómo trata a los demás. Todo el mundo recibe la misma consideración, sin importar su raza, religión, edad, discapacidad, nacionalidad, género, orientación sexual, estado civil, condición de veterano ni cualquier otra condición protegida por la ley.",
-  "careers.privacyNote":
-    "Tu solicitud es privada y se usa únicamente con fines de contratación. El formulario se completa en unos cinco minutos y no nos llega nada hasta que lo envías; hasta entonces se guarda un borrador en este dispositivo para que puedas retomarlo.",
+  "careers.privacyNote": "Tu solicitud es privada y se usa solo para contratar. No se envía nada hasta que la mandes, y hasta entonces el borrador queda en este dispositivo.",
 
   "careers.errFirstName": "Escribe tu nombre.",
   "careers.errLastName": "Escribe tus apellidos.",

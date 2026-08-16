@@ -121,8 +121,7 @@ export const ja: Table = {
   "shop.closed": "閉店",
   "shop.change": "変更",
   "shop.whereSending": "どちらへお届けしますか？",
-  "shop.takingYouToMap":
-    "店舗の選択、ケータリングのご相談、配達先の設定のため地図へ移動します。移動しない場合は下のボタンをお使いください。",
+  "shop.takingYouToMap": "地図へ移動します。動かない場合は下のボタンをどうぞ。",
   "shop.chooseWhereGoing": "お届け先を選ぶ",
 
   "product.allergens": "アレルギー物質",
@@ -284,8 +283,7 @@ export const ja: Table = {
   "deliveryFee.quotedFresh": "Uber がご注文の時点でご住所の料金を出すので、これがお支払い額です。天候や渋滞で変わることがあります。",
 
   "order.notFound": "そのご注文が見つかりません。",
-  "order.keptOnDevice":
-    "サインインするとご注文が引き継がれます。サインインしていない場合は注文した端末にのみ保存されるため、別の端末からのご注文はここには表示されません。",
+  "order.keptOnDevice": "サインアウト中は、注文した端末に注文が残ります。サインインすれば引き継がれます。",
   "order.callShop": "店舗に電話",
   "order.somethingWrong": "このご注文に何か問題がありますか？",
   "order.followCourier": "配達員を追跡",
@@ -349,7 +347,7 @@ export const ja: Table = {
   "rewards.title": "リワード",
   "rewards.signInBody": "ポイントはアカウントにたまります。サインインすると見られます。",
   "rewards.unavailable": "今はポイントを読み出せません。消えたわけではないので、少ししてからもう一度お試しください。",
-  "rewards.lead": "ご注文ごとにポイント、そしてあなた専用の会員コード。1ドルごとに{points}ポイント。",
+  "rewards.lead": "1ドルごとに{points}ポイント、そして自分専用のメンバーコード。",
   "rewards.earnTitle": "ご注文ごとにたまる",
   "rewards.earnBody": "1ドルごとに{points}ポイント。税・チップ・配達料を除いた商品代金が対象です。",
   "rewards.keepTitle": "ポイントはそのまま",
@@ -491,13 +489,12 @@ export const ja: Table = {
   "gift.errConfirmMismatch": "一致しません。",
 
   "catering.title": "ケータリング",
-  "catering.body":
-    "日付、人数、だいたいのご希望をお知らせください。プランとお見積りをお返しします。",
+  "catering.body": "日付、人数、ご希望をお知らせください。プランと価格をお送りします。",
   "catering.emailUs": "ケータリングについて問い合わせる",
   "catering.replyTime": "通常は当日中にご返信します。",
 
   "catering.heading": "ケータリング、すぐ角のお店から",
-  "catering.blurb": "オフィスの朝、会議、お祝い、その間のどんな場面にも合うベーグル、スプレッド、サンドイッチ。",
+  "catering.blurb": "ベーグル、スプレッド、サンドイッチ。大人数向けに。",
   "catering.request": "ケータリングを依頼",
   "catering.emailBody": "こんにちは。\n\nケータリングをお願いしたいです。\n\n人数:\n希望日時:\n受け取りまたは配達:\n避けたいもの（アレルギー、豚肉なし、ベジタリアン）:\n\nよろしくお願いいたします。",
   "catering.minimum": "ケータリングは10名様から承ります。",
@@ -509,14 +506,8 @@ export const ja: Table = {
   "footer.privacy": "プライバシーポリシー",
 
   "about.tagline": "すぐ角を曲がったところに",
-  "about.p1":
-    "Corner Bagelは、いちばん良い街のお店とは、素朴で、心がこもっていて、毎日の暮らしの一部になるものだという考えから生まれました。自然発酵させて釜ゆでしたベーグル、自家製スプレッド、丁寧に選んだ食材、そして心からのもてなしを合わせ、複雑ではないのに満たされる食事をお出ししています。",
-  "about.p2":
-    "メニューはあえて絞っています。何でも揃えるのではなく、いくつかのことをとびきり上手にやることを選びました。ベーグルもサンドイッチもスプレッドも一つひとつ丁寧に作り、親しみがあり記憶に残る一皿になるようにしています。",
-  "about.p3":
-    "仕事前の朝食でも、友人とのコーヒーでも、家族へのベーグル1ダースでも、一日のほんの一部を私たちと過ごしてくださることを光栄に思います。",
-  "about.p4":
-    "街のお店を支えてくださりありがとうございます。すぐ角を曲がったところで、またお会いできるのを楽しみにしています。",
+  "about.p1": "自然発酵させ、釜ゆでしたベーグル。自家製スプレッドと厳選した素材。",
+  "about.p2": "短いメニューを、きちんと。",
   "about.speakToTeam": "スタッフとお話しになりたい場合:",
 
   "chat.name": "Riley",
@@ -661,7 +652,7 @@ export const ja: Table = {
   "careers.perYear": "年収{amount}",
   "careers.perHourTips": "時給{amount}＋チップ",
   "careers.jdDoing": "仕事の内容",
-  "careers.jdRead": "職務内容の全文を読む（PDF）",
+  "careers.jdRead": "職務内容の全文",
   "careers.jdLooking": "求める人物像",
   "careers.applyNow": "応募する",
   "careers.roleCount": "{count}件の仕事",
@@ -741,14 +732,13 @@ export const ja: Table = {
   "careers.submit": "応募を送信",
   "careers.sending": "送信中…",
   "careers.sentTitle": "ご応募ありがとうございます",
-  "careers.sentBody": "応募内容をお預かりしました。ご縁がありそうなら、1週間ほどで {contact} にご連絡します。",
+  "careers.sentBody": "ご縁がありましたら、1週間ほどで{contact}にご連絡します。",
   "careers.sentDone": "Corner Bagel に戻る",
   "careers.sentAgain": "もう一件送る",
 
   "careers.eeo":
     "Corner Bagel は公正で機会均等な職場です。何ができるか、どう仕事に向き合うか、人にどう接するかで採用します。人種、宗教、年齢、障害、出身国、性別、性的指向、婚姻状況、兵役の有無、その他法律で保護されるいかなる事由にもかかわらず、すべての方を公平に検討します。",
-  "careers.privacyNote":
-    "ご応募の内容は非公開で、採用の目的にのみ使用します。入力は5分ほどで終わり、送信するまで当店には何も届きません。それまでは下書きがこの端末に保存され、続きから再開できます。",
+  "careers.privacyNote": "応募内容は非公開で、採用にのみ使います。送信するまで何も届かず、それまで下書きはこの端末に残ります。",
 
   "careers.errFirstName": "名を入力してください。",
   "careers.errLastName": "姓を入力してください。",
