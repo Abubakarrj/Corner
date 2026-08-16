@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useLocale, useT, type StringKey } from "../../../i18n";
 import { useMenu } from "../../../i18n/menu";
 import { localeById } from "../../../localeScript";
@@ -96,13 +95,21 @@ export default function OrderTracker({ id }: { id: string }) {
 
   return (
     <div className="cb-rise mx-auto max-w-2xl px-5 py-6 sm:px-6 sm:py-8">
-      <Link
-        href="/shop"
-        className="inline-block cursor-pointer text-[13px] underline"
-        style={{ color: muted }}
-      >
-        ← {t("common.backToMenu")}
-      </Link>
+      {/* The "← Back to the menu" link that used to sit here is gone, for the
+          same reason it went from the product page: the header above carries a
+          back control on every shop page, and this put a second one within a
+          hundred pixels of it — under a status strip that already offers TRACK
+          ORDER, on a screen whose whole job is to be glanceable.
+
+          It also went somewhere slightly wrong. It always meant the catalog,
+          so arriving here from the basket or from a push notification and
+          pressing it threw away wherever you actually were. The header's goes
+          back where you came from, and up a level only when there is nothing
+          of ours behind. See BackButton.
+
+          The not-found branch above keeps its button, and that is not the same
+          thing: there is no content on that screen to go back *from*, so the
+          button is the only action rather than a second way to do one. */}
 
       {/* The stage, and the sentence under it, on 04-text-states-swap.md.
           Both change while somebody is looking at this page — a webhook lands,
