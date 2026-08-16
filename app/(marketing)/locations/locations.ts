@@ -25,6 +25,26 @@ export type StoreLocation = {
   hours: string;
   // [latitude, longitude]
   position: [number, number];
+  // ——— The counter, when the geocoder cannot find it ———
+  //
+  // `position` is a hint and the geocoded address is the answer (see
+  // storePlaces.ts). This is the third option, and it outranks both: a
+  // coordinate somebody stood at the pickup door and read off a map.
+  //
+  // It exists because a rooftop geocode is the middle of a parcel, and a
+  // parcel is not a doorway. On a corner unit, a shop inside a larger
+  // building, or anywhere the counter faces a different street from the
+  // registered address, Google's pin and the place a courier walks to are
+  // tens of metres and one wrong turn apart. That error is not one bad trip:
+  // the pickup is the same doorway on every delivery, so it is a constant
+  // added to every quote and every ETA the shop ever gives.
+  //
+  // Unset for Koreatown, because nobody has stood there with a phone yet, and
+  // an invented pair would be worse than the geocode it replaced. To set it:
+  // drop a pin on the actual door in Google Maps, copy the coordinates, and
+  // put them here. Nothing is geocoded for a shop that has one, so it is also
+  // the way to pin a shop the geocoder gets wrong.
+  door?: [number, number];
   // The other things people call this place. A shop's official name is
   // rarely what someone types: "Koreatown" gets typed "ktown", "k town" and
   // "kt", and plenty of people search the neighbourhood by the ZIP or by

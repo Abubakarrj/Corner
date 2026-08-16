@@ -91,6 +91,22 @@ export async function storePlace(location: StoreLocation): Promise<StorePlace> {
   const hit = resolved.get(location.id);
   if (hit) return hit;
 
+  // A surveyed door beats a geocode, and there is nothing to look up.
+  //
+  // The geocoder's best answer is a rooftop, which is the middle of a parcel;
+  // `door` is somebody having stood at the counter. Nothing Google could say
+  // would improve on that, so this returns before the call rather than after
+  // it, and it is `exact` in the strongest sense the field has.
+  if (location.door) {
+    const surveyed: StorePlace = {
+      position: location.door,
+      address: fullAddress(location),
+      exact: true,
+    };
+    resolved.set(location.id, surveyed);
+    return surveyed;
+  }
+
   // Biased to the pair we already have. It is right to within a block, which
   // makes it the best possible hint for the one lookup that has to land on
   // that same block.

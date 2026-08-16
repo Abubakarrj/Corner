@@ -1,7 +1,4 @@
-import {
-  DELIVERY_RADIUS_MILES,
-  milesBetween,
-} from "../../(marketing)/locations/locations";
+import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
 import {
   driveBetween,
   geocode,
@@ -25,10 +22,12 @@ import { deliveryOrigin } from "../../storePlaces";
 //      range is an authorization decision, "will we send a courier here", so
 //      it gets made on numbers we fetched.
 //
-//   2. The distance is a driving distance from the shop, via the Routes API.
-//      The straight line is still here as a fallback, but it is a worse
-//      answer: on a street grid five miles as the crow flies can be nine
-//      miles of driving, and the courier is not a crow.
+//   2. The distance is a driving distance from the shop, via the Routes API,
+//      or it is not a distance at all. There used to be a straight-line
+//      fallback and it is gone: on this grid five miles as the crow flies is
+//      most of nine miles of driving, and the courier is not a crow. A rule
+//      measured with the wrong instrument is not a lenient rule, it is a
+//      different one nobody agreed to.
 //
 // `suggest` is here too, as the fallback for when the Maps library couldn't
 // load in the browser.
@@ -128,11 +127,7 @@ export async function POST(request: Request) {
       reverseCandidates([lat, lng]),
       driveBetween(origin, [lat, lng]),
     ]);
-    // Same fallback as the resolve path below, and the same caveat: a straight
-    // line reads short, so while Routes is down the radius is quietly wider
-    // than it says. The courier quote is the real gate.
-    const miles = drive?.miles ?? milesBetween(origin, [lat, lng]);
-
+    // No road answer, no verdict. See the note on the resolve path below.
     return Response.json({
       // The whole list, nearest first, because the picker offers it. One
       // point in Koreatown has a building on every side of it and the tower
@@ -144,9 +139,10 @@ export async function POST(request: Request) {
       address: places[0]?.address ?? "",
       lat,
       lng,
-      miles,
-      measuredBy: drive ? "road" : "straight-line",
-      inRange: miles <= DELIVERY_RADIUS_MILES,
+      known: drive !== null,
+      miles: drive ? drive.miles : null,
+      measuredBy: drive ? "road" : null,
+      inRange: drive ? drive.miles <= DELIVERY_RADIUS_MILES : true,
       radiusMiles: DELIVERY_RADIUS_MILES,
     });
   }
@@ -163,7 +159,9 @@ export async function POST(request: Request) {
   // the text path is for a deployment where the browser library never loaded
   // and there was no id to carry.
   const place =
-    (placeId ? await geocodePlaceId(placeId) : null) ??
+    (placeId
+      ? await geocodePlaceId(placeId, { requireDoorstep: kind === "address" })
+      : null) ??
     (query
       ? await geocode(query, await deliveryOrigin(), { allowCoarse: kind === "region" })
       : null);
@@ -201,24 +199,26 @@ export async function POST(request: Request) {
   // storePlaces.ts.
   const origin = await deliveryOrigin([place.lat, place.lng]);
   const drive = await driveBetween(origin, [place.lat, place.lng]);
-  // Falling back to the straight line rather than refusing: a routing failure
-  // shouldn't stop somebody ordering. It reads short, so the radius is the
-  // generous end of the truth — which is the right way to be wrong here, since
-  // the courier quote later is the real gate on whether a delivery happens.
-  const miles = drive?.miles ?? milesBetween(origin, [place.lat, place.lng]);
 
+  // ——— No road answer, no verdict ———
+  //
+  // This used to fall back to the straight line and decide range on it. That
+  // is the one substitution a delivery radius must not accept: a straight line
+  // is not a shorter road, it is a different measurement, and in this grid it
+  // reads about a third short. A rule of ten road miles enforced against it is
+  // a rule of roughly thirteen, applied silently, to the addresses closest to
+  // the edge — the exact population it exists to decide.
+  //
+  // So when Routes cannot answer, nothing here claims a distance. `known` says
+  // we could not measure and `miles` is null rather than a number in the wrong
+  // unit of truth. Range defers to the checkout, which asks Uber, and Uber is
+  // doing its own deliverability calculation rather than reading ours. That is
+  // the same choice /api/delivery-area already makes, in the same words.
   if (!drive) {
-    // Loud, because the fallback is invisible from the outside and it moves the
-    // boundary. A straight line reads shorter than the road, so while Routes is
-    // failing the eight-mile radius is quietly larger than eight miles: an
-    // address nine road miles out measures about seven in a straight line and
-    // is accepted. Nothing breaks — the courier quote is the real gate, and it
-    // refuses what it cannot serve — but the shop should know its radius is not
-    // the number it set. googleMaps.ts logged the reason a moment ago.
     console.warn(
-      `[geo] no road distance for "${place.address}" — using straight-line` +
-        ` (${miles.toFixed(1)} mi). The delivery radius is wider than` +
-        ` ${DELIVERY_RADIUS_MILES} miles until Routes answers again.`,
+      `[geo] no road distance for ${JSON.stringify(place.address)}. Range is` +
+        ` deferred to the courier quote until Routes answers again.` +
+        ` googleMaps.ts logged the reason.`,
     );
   }
 
@@ -226,13 +226,14 @@ export async function POST(request: Request) {
     address: place.address,
     lat: place.lat,
     lng: place.lng,
-    miles,
+    // Whether anything was measured at all. The copy that quoted a figure
+    // called it "driving miles" whether or not anything had driven anywhere,
+    // and that is how a dead Routes call passed for a working one for weeks.
+    known: drive !== null,
+    miles: drive ? drive.miles : null,
     minutes: drive?.minutes ?? null,
-    // Which ruler was used. The copy that quoted a figure called it "driving
-    // miles" whether or not anything had driven anywhere, and that is how a
-    // dead Routes call passed for a working one for weeks.
-    measuredBy: drive ? "road" : "straight-line",
-    inRange: miles <= DELIVERY_RADIUS_MILES,
+    measuredBy: drive ? "road" : null,
+    inRange: drive ? drive.miles <= DELIVERY_RADIUS_MILES : true,
     radiusMiles: DELIVERY_RADIUS_MILES,
   });
 }

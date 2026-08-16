@@ -99,6 +99,59 @@ function isDeliverable(result: GeocodeResult): boolean {
   return result.geometry?.location_type !== "APPROXIMATE";
 }
 
+// ——— A place with an area, rather than a doorstep ———
+//
+// isDeliverable() above catches the coarse shapes by their geometry, and it
+// misses two that a courier still cannot be sent to, because Google reports
+// them as GEOMETRIC_CENTER rather than APPROXIMATE:
+//
+//   route          "Wilshire Blvd" with no number. The middle of a street.
+//   intersection   "Wilshire and Vermont". A corner, not a door.
+//
+// Both are real points and both pass every existing filter, so a delivery
+// could be measured to, quoted for and dispatched to the centre of a street.
+// The distance would be honest arithmetic about the wrong place — which is the
+// failure that leaves no trace anywhere until a courier is standing in traffic
+// with a bag.
+//
+// Matched by prefix as well as by name, because Google numbers these:
+// sublocality_level_1, administrative_area_level_3, postal_code_suffix. A new
+// level appearing is a new way to name a region, and it should be refused by
+// the same rule as the ones we know about.
+const AREA_SHAPED = new Set([
+  "route",
+  "intersection",
+  "locality",
+  "neighborhood",
+  "postal_town",
+  "colloquial_area",
+  "natural_feature",
+  "archipelago",
+  "continent",
+]);
+
+function isAreaShaped(type: string): boolean {
+  return (
+    AREA_SHAPED.has(type) ||
+    type.startsWith("administrative_area_level_") ||
+    type.startsWith("sublocality") ||
+    type.startsWith("postal_code")
+  );
+}
+
+/** Somewhere a bag can be handed over.
+ *
+ *  What every delivery destination has to be. Deliberately stricter than
+ *  isDeliverable(), and deliberately a deny-list rather than the allow-list
+ *  reverseCandidates() uses: that one asks Google for three specific
+ *  result_types and checks it obliged, while this reads whatever a person
+ *  typed, and there are more legitimate names for a doorway — an establishment,
+ *  a subpremise, a plus code — than there are ways to name a region. */
+function isDoorstep(result: GeocodeResult): boolean {
+  if (!isDeliverable(result)) return false;
+  return !(result.types ?? []).some(isAreaShaped);
+}
+
 function toPlace(result: GeocodeResult | undefined, fallbackName: string): GeocodedPlace | null {
   const lat = result?.geometry?.location?.lat;
   const lng = result?.geometry?.location?.lng;
@@ -136,7 +189,17 @@ function resultsOf(body: GeocodeBody, what: string): GeocodeResult[] | null {
 // coordinates: an id is a name we hand to Google ourselves, and the position
 // still comes back from our own server call, which is the part that matters.
 
-export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | null> {
+export async function geocodePlaceId(
+  placeId: string,
+  // Whether this id has to name somewhere a courier can hand a bag over.
+  //
+  // Off by default because pickup and catering resolve ids too, and a town is
+  // a fine answer there. On for delivery, as belt to the autocomplete's
+  // braces: the browser asks for address-shaped predictions, but the id
+  // arrives from the browser and the range check is not a decision to make on
+  // the browser's word about what it asked for.
+  { requireDoorstep = false }: { requireDoorstep?: boolean } = {},
+): Promise<GeocodedPlace | null> {
   const key = googleMapsKey();
   if (!key) return null;
 
@@ -148,7 +211,17 @@ export async function geocodePlaceId(placeId: string): Promise<GeocodedPlace | n
   if (!response.ok) return null;
 
   const results = resultsOf((await response.json()) as GeocodeBody, "place_id");
-  return results ? toPlace(results[0], placeId) : null;
+  if (!results) return null;
+  const first = results[0];
+  if (requireDoorstep && (!first || !isDoorstep(first))) {
+    console.warn(
+      `[maps] place id ${JSON.stringify(placeId)} resolves to ` +
+        `${JSON.stringify(first?.formatted_address ?? "nothing")} ` +
+        `(${(first?.types ?? []).join(",")}), which is an area rather than a doorstep.`,
+    );
+    return null;
+  }
+  return toPlace(first, placeId);
 }
 
 /** Addresses near a pair of coordinates, nearest first.
@@ -360,7 +433,10 @@ export async function geocode(
   const results = resultsOf((await response.json()) as GeocodeBody, "address");
   if (!results) return null;
 
-  const usable = allowCoarse ? results[0] : results.find(isDeliverable);
+  // allowCoarse is the finder's pickup and catering search, where "Los Angeles"
+  // is the answer and the worst it does is point a map. Everything else is
+  // choosing where to send a courier, and gets the doorstep rule.
+  const usable = allowCoarse ? results[0] : results.find(isDoorstep);
   if (!usable) {
     if (results.length > 0) {
       // Worth a line in the log. This is the shape of a typo, and it is also
@@ -463,6 +539,55 @@ function explainRoutes(status: number, detail: string): string {
   return "unexpected.";
 }
 
+// ——— Somewhere to stop, not somewhere to pass ———
+//
+// A bare coordinate tells Routes where, and nothing about what happens there.
+// Routes then snaps it to the nearest road, and "nearest" can be the service
+// alley behind a building, the far carriageway of a divided boulevard, or the
+// access road into a parking structure. Any of those is a real route to a real
+// piece of tarmac near the address, and the distance it reports is honest
+// arithmetic about a place the courier is not going.
+//
+// Two flags on the waypoint say what it actually is:
+//
+//   vehicleStopover  somebody is stopping here, so route to where a vehicle
+//                    can stop rather than to the nearest centre line
+//   sideOfRoad       and to this side of it, which is the difference between
+//                    a kerbside handover and a U-turn at the next lights
+//
+// Both matter more at the pickup than the dropoff, because the pickup is the
+// same doorway on every single delivery: half a block of error there is not
+// one wrong trip, it is a constant added to every quote the shop ever gives.
+//
+// ——— Why this can turn itself off ———
+//
+// These are request fields, and a request field that a deployment's Routes
+// version does not accept is a 400 — which would take out every distance in
+// the app, not degrade one. So the first 400 seen with them on flips them off
+// for the process, retries once plain, and says so. Being unable to verify
+// this against the live API from a sandbox is exactly the situation that
+// deserves a fallback rather than a confident constant.
+let stopoverSupported = true;
+
+function stop([lat, lng]: [number, number]): Record<string, unknown> {
+  const location = { latLng: { latitude: lat, longitude: lng } };
+  return stopoverSupported
+    ? { location, vehicleStopover: true, sideOfRoad: true }
+    : { location };
+}
+
+function dropStopover(what: string, detail: string): boolean {
+  if (!stopoverSupported) return false;
+  stopoverSupported = false;
+  console.warn(
+    `[maps] ${what} rejected the vehicleStopover/sideOfRoad waypoint flags` +
+      ` (400). Retrying without them, and leaving them off for this process.` +
+      ` Distances stay correct; they may now route to the nearest road rather` +
+      ` than to a spot a courier can stop at. ${detail.slice(0, 200)}`,
+  );
+  return true;
+}
+
 // Driving distance and time between two points, via the Routes API.
 //
 // Routes wants a field mask: it returns nothing you didn't ask for, and asking
@@ -486,29 +611,32 @@ export async function routeBetween(
     };
   }
 
-  const point = ([lat, lng]: [number, number]) => ({
-    location: { latLng: { latitude: lat, longitude: lng } },
-  });
+  const send = () =>
+    fetch(ROUTES_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
+      },
+      body: JSON.stringify({
+        origin: stop(origin),
+        destination: stop(destination),
+        travelMode: "DRIVE",
+        // Live traffic would be more accurate and costs more per call. The
+        // courier quote is the number that actually decides a delivery; this one
+        // only has to answer "is this roughly within range".
+        routingPreference: "TRAFFIC_UNAWARE",
+        units: "IMPERIAL",
+      }),
+      next: { revalidate: 60 },
+    });
 
-  const response = await fetch(ROUTES_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": key,
-      "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
-    },
-    body: JSON.stringify({
-      origin: point(origin),
-      destination: point(destination),
-      travelMode: "DRIVE",
-      // Live traffic would be more accurate and costs more per call. The
-      // courier quote is the number that actually decides a delivery; this one
-      // only has to answer "is this roughly within range".
-      routingPreference: "TRAFFIC_UNAWARE",
-      units: "IMPERIAL",
-    }),
-    next: { revalidate: 60 },
-  });
+  let response = await send();
+  if (response.status === 400 && stopoverSupported) {
+    const detail = await response.text().catch(() => "");
+    if (dropStopover("Routes", detail)) response = await send();
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
@@ -590,34 +718,42 @@ export async function driveMatrixMiles(
   const key = googleMapsKey();
   if (!key || destinations.length === 0) return null;
 
-  const waypoint = ([lat, lng]: [number, number]) => ({
-    waypoint: { location: { latLng: { latitude: lat, longitude: lng } } },
-  });
+  // The same stopover semantics as routeBetween, for the same reason: the
+  // origin here is the shop's counter on every one of the several hundred
+  // measurements the boundary is drawn from.
+  const waypoint = (point: [number, number]) => ({ waypoint: stop(point) });
 
-  const response = await fetch(MATRIX_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": key,
-      // `condition` is not optional here the way a field mask usually is: an
-      // unreachable pair comes back with no distanceMeters at all, and
-      // without the condition there is no way to tell that from zero.
-      "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,condition",
-    },
-    body: JSON.stringify({
-      origins: [waypoint(origin)],
-      destinations: destinations.map(waypoint),
-      travelMode: "DRIVE",
-      // Same reasoning as routeBetween: this decides whether an address is in
-      // range at all, and live traffic costs more to tell us something a
-      // radius does not depend on.
-      routingPreference: "TRAFFIC_UNAWARE",
-      units: "IMPERIAL",
-    }),
-    // Whatever calls this does its own caching, and it caches the finished
-    // shape rather than the pieces.
-    cache: "no-store",
-  });
+  const send = () =>
+    fetch(MATRIX_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        // `condition` is not optional here the way a field mask usually is: an
+        // unreachable pair comes back with no distanceMeters at all, and
+        // without the condition there is no way to tell that from zero.
+        "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,condition",
+      },
+      body: JSON.stringify({
+        origins: [waypoint(origin)],
+        destinations: destinations.map(waypoint),
+        travelMode: "DRIVE",
+        // Same reasoning as routeBetween: this decides whether an address is in
+        // range at all, and live traffic costs more to tell us something a
+        // radius does not depend on.
+        routingPreference: "TRAFFIC_UNAWARE",
+        units: "IMPERIAL",
+      }),
+      // Whatever calls this does its own caching, and it caches the finished
+      // shape rather than the pieces.
+      cache: "no-store",
+    });
+
+  let response = await send();
+  if (response.status === 400 && stopoverSupported) {
+    const detail = await response.text().catch(() => "");
+    if (dropStopover("Route Matrix", detail)) response = await send();
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");

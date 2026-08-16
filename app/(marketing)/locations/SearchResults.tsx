@@ -17,7 +17,7 @@ export type ResolvedPlace = {
   // Driving miles from the shop, and the drive itself in minutes: the Routes
   // API's answer, measured on the server. `minutes` is null only when the
   // routing call failed and `miles` fell back to the straight line.
-  miles: number;
+  miles: number | null;
   minutes: number | null;
   inRange: boolean;
   radiusMiles: number;

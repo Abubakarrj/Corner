@@ -37,6 +37,18 @@ if (!key) {
 const SHOP = [34.0612, -118.2933];
 const NEARBY = [34.0522, -118.2437];
 
+// The waypoint shape app/googleMaps.ts sends: a stop a vehicle can make, on
+// this side of the road, rather than a bare point Routes snaps to the nearest
+// centre line. Written out here rather than imported because this script runs
+// against a deployment's key without a build — but it has to stay the same
+// shape, because a Routes version that rejects these flags would 400 every
+// distance in the app and this is where that gets caught.
+const stop = ([lat, lng]) => ({
+  location: { latLng: { latitude: lat, longitude: lng } },
+  vehicleStopover: true,
+  sideOfRoad: true,
+});
+
 const results = [];
 
 function record(api, ok, detail) {
@@ -69,7 +81,6 @@ try {
 
 // ——— Routes API ———
 try {
-  const point = ([lat, lng]) => ({ location: { latLng: { latitude: lat, longitude: lng } } });
   const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
     method: "POST",
     headers: {
@@ -78,8 +89,8 @@ try {
       "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
     },
     body: JSON.stringify({
-      origin: point(SHOP),
-      destination: point(NEARBY),
+      origin: stop(SHOP),
+      destination: stop(NEARBY),
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_UNAWARE",
       units: "IMPERIAL",
@@ -91,8 +102,14 @@ try {
     "Routes API",
     response.ok && typeof route?.distanceMeters === "number",
     route
-      ? `${(route.distanceMeters / 1609.344).toFixed(1)} mi, ${route.duration}`
-      : `${response.status}: ${body.error?.message ?? JSON.stringify(body).slice(0, 160)}`,
+      ? `${(route.distanceMeters / 1609.344).toFixed(1)} mi, ${route.duration}` +
+        " (with vehicleStopover + sideOfRoad)"
+      : `${response.status}: ${body.error?.message ?? JSON.stringify(body).slice(0, 160)}` +
+        (response.status === 400
+          ? " — if this names vehicleStopover or sideOfRoad, this Routes version" +
+            " does not take them. The app drops them and retries, so distances" +
+            " keep working; they just stop preferring a spot a courier can stop at."
+          : ""),
   );
 } catch (error) {
   record("Routes API", false, `request failed: ${error.message}`);
@@ -137,7 +154,14 @@ try {
 // relocate the shop. That refusal is invisible in production — the map keeps
 // working, on the old approximate pair — so this is where you find out it
 // happened. A drift under about 0.05 miles is the correction working: the
-// typed pair is the block, the resolved one is the door.
+// typed pair is the block, the resolved one is the parcel.
+//
+// The parcel is not the doorway, and the coordinates printed below are how you
+// tell. Open them in Google Maps and look at where they land: if that is the
+// middle of a building rather than the counter a courier walks to, read the
+// door's own coordinates off the map and set `door` on the location in
+// locations.ts. That wins over this lookup outright, because the pickup is the
+// same doorway on every delivery and an error in it is added to every quote.
 try {
   const params = new URLSearchParams({
     address: "650 S Catalina St, Los Angeles, CA 90005",
@@ -200,7 +224,6 @@ function straightLineMiles([lat1, lon1], [lat2, lon2]) {
 }
 
 async function roadMiles(from, to) {
-  const point = ([lat, lng]) => ({ location: { latLng: { latitude: lat, longitude: lng } } });
   const response = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
     method: "POST",
     headers: {
@@ -209,8 +232,8 @@ async function roadMiles(from, to) {
       "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
     },
     body: JSON.stringify({
-      origin: point(from),
-      destination: point(to),
+      origin: stop(from),
+      destination: stop(to),
       travelMode: "DRIVE",
       routingPreference: "TRAFFIC_UNAWARE",
       units: "IMPERIAL",
@@ -280,9 +303,7 @@ try {
 // checks that both destinations come back either way — a dropped destination
 // is a notch in the published delivery boundary and nothing else.
 try {
-  const waypoint = ([lat, lng]) => ({
-    waypoint: { location: { latLng: { latitude: lat, longitude: lng } } },
-  });
+  const waypoint = (point) => ({ waypoint: stop(point) });
   const response = await fetch(
     "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix",
     {

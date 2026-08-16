@@ -1,7 +1,6 @@
 import {
   DELIVERY_RADIUS_MILES,
   addressParts,
-  milesBetween,
 } from "../../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../../googleMaps";
 import { PREP_MINUTES } from "../../../shopFacts";
@@ -87,30 +86,33 @@ export async function POST(request: Request) {
 
   const drive = await driveBetween(from, [place.lat, place.lng]);
 
-  // ——— The rule still applies when Routes cannot answer ———
+  // ——— Road miles or no verdict ———
   //
-  // This used to read `if (drive && ...)`, so a routing failure did not widen
-  // the radius here — it removed it. Every address went straight to Uber, and
-  // the shop's own ten-mile rule stopped existing for as long as Routes was
-  // down, on the one endpoint that decides whether an order can be placed.
+  // The shop's rule is ten *driving* miles, so it is enforced on a driving
+  // distance or it is not enforced. A straight-line stand-in was tried here
+  // and taken out again: it reads about a third short in this grid, so a
+  // ten-mile rule applied to it is a thirteen-mile rule, applied silently,
+  // exactly to the addresses near the edge.
   //
-  // The straight line is a lower bound: a road route is never shorter than it.
-  // So an address measuring more than ten miles as the crow flies is more than
-  // ten road miles out, certainly, and refusing it cannot be wrong. It reads
-  // short, which means the fallback lets some genuinely-out-of-range addresses
-  // through — the same generous direction /api/geo errs in, and the same
-  // reason: the courier quote below is the harder gate, and a routing outage
-  // should not stop somebody two blocks away ordering breakfast.
-  const miles = drive?.miles ?? milesBetween(from, [place.lat, place.lng]);
-  if (miles > DELIVERY_RADIUS_MILES) {
+  // When Routes cannot answer, this falls through to Uber rather than
+  // guessing. Uber runs its own deliverability calculation between the two
+  // points and declines what it will not carry, which is a real gate rather
+  // than arithmetic we would be inventing — and it is the gate that decides
+  // whether a delivery actually happens.
+  if (drive && drive.miles > DELIVERY_RADIUS_MILES) {
     return Response.json(
       {
-        error: drive
-          ? `That address is ${miles.toFixed(1)} driving miles out; we deliver within ${DELIVERY_RADIUS_MILES}.`
-          : `That address is more than ${DELIVERY_RADIUS_MILES} miles out.`,
+        error: `That address is ${drive.miles.toFixed(1)} driving miles out; we deliver within ${DELIVERY_RADIUS_MILES}.`,
         outOfRange: true,
       },
       { status: 422 },
+    );
+  }
+  if (!drive) {
+    console.warn(
+      `[delivery] no road distance for ${JSON.stringify(place.address)}.` +
+        ` The ${DELIVERY_RADIUS_MILES}-mile rule is not being applied to this` +
+        ` order; Uber's own deliverability check is the only gate on it.`,
     );
   }
 
@@ -155,13 +157,14 @@ export async function POST(request: Request) {
     // delivery line. Uber prices by distance band, so showing the distance is
     // what lets somebody check the fee rather than take it on faith.
     //
-    // Road miles or nothing. driveBetween() returns null when Routes is
-    // unreachable, and /api/geo falls back to a straight line there — that
-    // fallback is fine for a radius check, which only has to be generous, and
-    // wrong here. A straight line is always shorter than the drive, so it
-    // would light up a cheaper band than the one the customer was charged and
-    // make our own arithmetic look padded. No number beats a misleading one:
-    // the modal drops the distance line and shows the rate card alone.
+    // Road miles or nothing, and null is a real answer: driveBetween() returns
+    // it whenever Routes is unreachable, and there is no substitute worth
+    // printing. Uber picked its band from its own measurement of this trip, so
+    // a number of ours that came from anywhere but a road route would light up
+    // a band the customer was not charged for and make the shop's arithmetic
+    // look padded on the one screen built to show it isn't. No number beats a
+    // misleading one: the modal drops the distance line and shows the rate
+    // card alone.
     miles: drive ? Number(drive.miles.toFixed(1)) : null,
   });
 }

@@ -137,34 +137,6 @@ export type Quote = {
   expiresAt: string | null;
 };
 
-// ——— What else is in a quote ———
-//
-// An open question with a cheap answer, so this asks it rather than guessing.
-//
-// The checkout currently measures the trip twice: once with Google Routes, to
-// enforce the shop's own ten-mile rule and to label the fee, and once here,
-// where Uber prices the same trip by its own distance bands. If Uber's answer
-// carries a distance, that is the better number for the label — it is the one
-// that picked the band the customer was charged for, so the fee explainer
-// would stop having to reconcile two rulers — and the Routes call at checkout
-// could go.
-//
-// Whether it does is not something to take on trust: the shape of a partner's
-// response is a fact about their deployment, not their docs. So the first
-// quote each process makes prints the field names it came back with. Names
-// only, never values: this line is a schema note, and a quote's values are
-// about somebody's delivery.
-//
-// Once. A line per checkout would be noise, and the shape does not change
-// between two quotes.
-let shapeLogged = false;
-
-function noteQuoteShape(body: Record<string, unknown>): void {
-  if (shapeLogged) return;
-  shapeLogged = true;
-  console.log(`[uber] quote fields: ${Object.keys(body).sort().join(", ")}`);
-}
-
 export type QuoteResult =
   | { ok: true; quote: Quote }
   // `reason` is for the log. `undeliverable` is the one the customer needs to
@@ -203,8 +175,6 @@ export async function quoteDelivery(input: {
       undeliverable: result.reason.includes("address_undeliverable"),
     };
   }
-
-  noteQuoteShape(result.body);
 
   const id = result.body.id;
   const fee = result.body.fee;
