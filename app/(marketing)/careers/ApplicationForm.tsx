@@ -22,6 +22,7 @@ import {
   type PositionId,
 } from "./application";
 import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from "./draft";
+import { DESCRIPTIONS } from "./jobDescription";
 import { codeFor, matchStates } from "./states";
 import { suggestAddresses } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "../locations/locations";
@@ -757,6 +758,22 @@ export default function ApplicationForm({
             className="absolute left-[-9999px] h-0 w-0 opacity-0"
           />
 
+          {/* ——— What the job is, before what your name is ———
+
+              Somebody who pressed Apply on a row that said four words about a
+              job should be able to read the job before typing anything, and
+              should not have to go back to a board that deliberately says very
+              little. So the description lives here, above the first field.
+
+              Step one only. By step two it has been read or skipped, and a
+              draft picked up on Thursday opens on its own step, so it is never
+              in the way twice.
+
+              Only when the job is known: an application that came in through
+              "choose later" has nothing to describe yet, and picking the role
+              happens on the next step. */}
+          {step === 0 && arrivedWith ? <Description role={arrivedWith} /> : null}
+
           {step === 0 ? (
             <>
               <StepHead title={t("careers.secYou")} />
@@ -1223,6 +1240,40 @@ function Dot({ on }: { on: boolean }) {
 // form needs it. `optional` marks the few fields that aren't required, since
 // on a form where most things are needed the absence of a mark reads as
 // "required" and the marked ones are the news.
+/** The job description, for the job being applied for.
+ *
+ *  Quiet on purpose. It is the longest block on a page whose job is to be
+ *  filled in, so it reads at the size of the form's own supporting text and
+ *  sits on the page rather than in a card — a bordered box here would compete
+ *  with the fields for the eye, and the fields are the thing to do. */
+function Description({ role }: { role: PositionId }) {
+  const t = useT();
+  const description = DESCRIPTIONS[role];
+  const list = (heading: StringKey, items: StringKey[]) => (
+    <>
+      <p className="m-0 mb-1.5 mt-4 text-[11px] uppercase tracking-[0.08em] text-quiet">
+        {t(heading)}
+      </p>
+      {/* ps-4, a logical property: the marker sits at the start of the line,
+          which is the right edge in Persian and Urdu. */}
+      <ul className="m-0 list-disc ps-4 text-[13px] leading-[1.6] text-muted">
+        {items.map((item) => (
+          <li key={item} className="mt-1 first:mt-0">
+            {t(item)}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+  return (
+    <section className="mb-7 border-b border-line pb-6">
+      <p className="m-0 text-[14px] leading-[1.6] text-ink">{t(description.summary)}</p>
+      {list("careers.jdDoing", description.doing)}
+      {list("careers.jdLooking", description.looking)}
+    </section>
+  );
+}
+
 type Choice = { id: string; primary: string; secondary?: string };
 
 /** A text field that offers what it knows as you type.

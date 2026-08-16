@@ -37,35 +37,38 @@ import type { EmploymentTypeId, PositionId } from "./application";
 //   one never switches off, which is why the page says so in words.
 //
 // "Pay scale" means the range the employer reasonably expects to pay. The
-// minimum wage is not a range; it is a floor. So a posting that says $18.42 an
-// hour and stops is thin even where a posting is required, and the fix when
-// the flag below flips is to write a real range into TERMS rather than to lean
-// on the floor.
+// minimum wage is not a range; it is a floor.
 //
-// The shop is under fifteen, so nothing is posted and the offer is made in
-// words instead. The numbers below stay maintained regardless — they are what
-// the answer is read off when somebody asks, and what goes back on the page
-// the day the flag flips.
+// The shop is under fifteen, so posting is a choice rather than a duty — and
+// the shop has chosen to post. Shift lead and manager carry real numbers now,
+// counter carries the local minimum plus tips, and the offer to give the scale
+// to anybody who asks stays on the page underneath, because that rule applies
+// at every size and is not satisfied by a number on a card.
 
 /** Whether a wage is printed on the board.
  *
- *  False because the shop is under fifteen employees, which is the line
- *  Labor Code 432.3(c) draws: at fifteen the pay scale must be in the posting,
- *  and below it the posting may stay quiet so long as the scale is given to
- *  anybody who asks. The page says it is, right under the roles.
+ *  True. It was false while the numbers were nothing but the local minimum,
+ *  because a floor printed as an offer is the most discouraging thing a job
+ *  board can say. Now that shift lead and manager carry real figures and the
+ *  hourly roles carry tips, the numbers are worth reading and they are posted.
  *
- *  Flip this the day the fifteenth person is hired and the pay line comes back
- *  on every card with nothing else to change. Two things to do first, though,
- *  because the law asks for a scale and not a floor:
+ *  At the shop's size this is a choice: Labor Code 432.3(c) makes a posted pay
+ *  scale mandatory at fifteen employees and leaves it optional below. Two
+ *  things change on the day the fifteenth person is hired, and neither is this
+ *  flag, which is already on:
  *
- *    - write a real range into TERMS for each job, rather than leaving three
- *      of them resolving to the bare minimum wage
- *    - check MINIMUM_WAGE is current, since it starts being published again
+ *    - counter and kitchen resolve to a single figure, and the law asks for a
+ *      scale. Write real ranges for them.
+ *    - MINIMUM_WAGE has to be current every July, which it has to be anyway
+ *      now that it is on the page.
+ *
+ *  Setting it to false again would take every number off the board in one
+ *  edit, which is the reason it is still a flag and not a deletion.
  *
  *  Not an environment variable. A headcount is not configuration — it is a
  *  fact about the shop that somebody should have to think about, in a diff,
  *  with this comment in front of them. */
-export const POSTS_PAY_SCALE = false;
+export const POSTS_PAY_SCALE = true;
 
 /** The local hourly minimum, and the day it took effect.
  *
@@ -115,6 +118,15 @@ export type Shift = { start: string; end: string };
 
 export type RoleTerms = {
   pay?: Pay;
+  /** Whether the rate above is joined by tips on the card.
+   *
+   *  Its own field rather than a number, because a tip average is a forecast
+   *  and a forecast printed next to a wage is read as a promise. "Plus tips"
+   *  is the true statement; "plus about $3 an hour" is one somebody can hold
+   *  the shop to on a slow February Tuesday. The reference job description
+   *  this was modelled on does quote a figure, and that is the one thing from
+   *  it deliberately not copied. */
+  tips?: boolean;
   shifts?: Shift[];
   /** The ids from EMPLOYMENT_TYPES, so the card reuses the strings the form
       already has and the form can only offer what is written here.
@@ -168,6 +180,7 @@ export type RoleTerms = {
 export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
   counter: {
     pay: { kind: "minimum" },
+    tips: true,
     shifts: [
       { start: "06:00", end: "12:00" },
       { start: "10:00", end: "16:00" },
@@ -183,7 +196,11 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
     hours: ["full", "part"],
   },
   "shift-lead": {
-    pay: { kind: "minimum" },
+    // $24, and not the minimum: running a shift is the job the shop pays over
+    // the floor for. A single figure rather than a range because that is what
+    // the shop said; see the note on POSTS_PAY_SCALE about ranges.
+    pay: { kind: "range", low: 24, high: 24, per: "hour" },
+    tips: true,
     // Full time, with manager. Opening or closing is the shift somebody has to
     // be there for end to end, so the job is the whole day by its nature and a
     // half of it is a different job.
@@ -191,27 +208,32 @@ export const TERMS: Partial<Record<PositionId, RoleTerms>> = {
   },
   manager: {
     hours: ["full"],
-    // Salaried, and deliberately still unset — this is the one number here
-    // that is a decision rather than a fact.
+    // $75,000 to $85,000, salaried. A real range, which is what a pay scale
+    // is, and the only entry here that is one.
     //
-    // The floor is not what comparable shops pay, it is the law. California
-    // requires a salaried exempt employee to earn twice the *state* minimum
-    // for full time, and the state minimum is $16.90 from January 1, 2026, so
-    // the threshold is $70,304 a year. Note "state": Los Angeles's higher
-    // local rate does not raise it.
+    // It clears the exempt floor, which is the thing that had to be checked
+    // before printing it. California requires a salaried exempt employee to
+    // earn twice the *state* minimum for full time; the state minimum is
+    // $16.90 from January 1, 2026, so the threshold is $70,304 a year. Note
+    // "state" — Los Angeles's higher local rate does not raise it. The bottom
+    // of this range sits about $4,700 above that line.
     //
-    // Which matters, because LA cafe-manager comps run about $57k at the 25th
-    // percentile — below the exempt floor. A salary in that band is not a
-    // cheaper manager, it is a non-exempt one owed overtime.
+    // Two things to watch, neither of them the number:
+    //
+    // The floor moves every January with the state minimum. A range whose low
+    // end is $75,000 has roughly four thousand dollars of headroom, which is
+    // two or three years of increases, not ten. When the state minimum passes
+    // $18.03 the low end stops being exempt.
     //
     // And salary is only half the test. Exempt executive status also needs
-    // more than half the time spent actually managing. A manager who works
-    // the line through the morning rush can fail that at any salary, which is
-    // the usual way a small food business gets this wrong.
-    //
-    // So: at or above $70,304 if the job is salaried and exempt. Below that,
-    // pay hourly with overtime and say so on the card — the type already
-    // supports { kind: "range", per: "hour" }.
+    // more than half the time spent actually managing. A manager who works the
+    // line through the morning rush can fail that at any salary, which is the
+    // usual way a small food business gets this wrong. If that is how the job
+    // really runs, it is non-exempt and owed overtime whatever this says.
+    pay: { kind: "range", low: 75000, high: 85000, per: "year" },
+    // No tips. Salaried, and a manager sharing a tip pool is a question with a
+    // real answer under Labor Code 351 rather than a detail: an owner or agent
+    // may not take any part of a tip, and a manager is often an agent.
   },
 };
 

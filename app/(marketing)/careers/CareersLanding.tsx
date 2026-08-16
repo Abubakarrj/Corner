@@ -320,11 +320,18 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             // with two of them next to a row with none is unremarkable.
             const facts: string[] = oneShop === null ? [opening.location] : [];
             if (opening.pay) {
-              facts.push(
-                t(opening.pay.per === "hour" ? "careers.perHour" : "careers.perYear", {
-                  amount: formatPay(opening.pay, locale),
-                }),
-              );
+              // Tips get their own phrasing rather than a suffix bolted on.
+              // "plus tips" appended to a translated sentence lands in the
+              // wrong place in half these languages — Japanese puts the rate
+              // after the noun, Persian reads the other way — so the whole
+              // line is one string per case.
+              const rate =
+                opening.pay.per === "year"
+                  ? "careers.perYear"
+                  : terms?.tips
+                    ? "careers.perHourTips"
+                    : "careers.perHour";
+              facts.push(t(rate, { amount: formatPay(opening.pay, locale) }));
             }
             // A role open both ways says so once. Pushing "Full time" and
             // "Part time" as two facts onto a line that already reads
