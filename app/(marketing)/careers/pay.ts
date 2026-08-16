@@ -26,14 +26,46 @@ import type { EmploymentTypeId, PositionId } from "./application";
 // is no feed to read this from; it is a two-minute edit once a year, and the
 // alternative is a number that rots.
 //
-// ——— One legal note, worth reading before setting these ———
+// ——— Whether a wage is printed at all: California Labor Code 432.3 ———
 //
-// California Labor Code section 432.3 wants a *pay scale* — the range the
-// employer reasonably expects to pay — in a job posting, for employers of
-// fifteen or more. "Minimum wage" is not a range. If the shop is over that
-// line, a single figure is thin, and the honest fix is to post a real range
-// rather than the floor. Separately, and whatever the headcount, the scale has
-// to be given to an applicant who asks.
+// Two rules, and they are not the same rule:
+//
+//   Fifteen or more employees — the pay scale goes in the job posting. Not
+//   optional, not on request. See POSTS_PAY_SCALE below.
+//
+//   Any size at all — the pay scale is given to an applicant who asks. That
+//   one never switches off, which is why the page says so in words.
+//
+// "Pay scale" means the range the employer reasonably expects to pay. The
+// minimum wage is not a range; it is a floor. So a posting that says $18.42 an
+// hour and stops is thin even where a posting is required, and the fix when
+// the flag below flips is to write a real range into TERMS rather than to lean
+// on the floor.
+//
+// The shop is under fifteen, so nothing is posted and the offer is made in
+// words instead. The numbers below stay maintained regardless — they are what
+// the answer is read off when somebody asks, and what goes back on the page
+// the day the flag flips.
+
+/** Whether a wage is printed on the board.
+ *
+ *  False because the shop is under fifteen employees, which is the line
+ *  Labor Code 432.3(c) draws: at fifteen the pay scale must be in the posting,
+ *  and below it the posting may stay quiet so long as the scale is given to
+ *  anybody who asks. The page says it is, right under the roles.
+ *
+ *  Flip this the day the fifteenth person is hired and the pay line comes back
+ *  on every card with nothing else to change. Two things to do first, though,
+ *  because the law asks for a scale and not a floor:
+ *
+ *    - write a real range into TERMS for each job, rather than leaving three
+ *      of them resolving to the bare minimum wage
+ *    - check MINIMUM_WAGE is current, since it starts being published again
+ *
+ *  Not an environment variable. A headcount is not configuration — it is a
+ *  fact about the shop that somebody should have to think about, in a diff,
+ *  with this comment in front of them. */
+export const POSTS_PAY_SCALE = false;
 
 /** The local hourly minimum, and the day it took effect.
  *

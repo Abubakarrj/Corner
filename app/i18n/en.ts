@@ -716,6 +716,9 @@ export const en = {
   "careers.apply": "Apply",
   "careers.new": "New",
   "careers.applyAnyway": "Not sure which? Start an application and choose later.",
+  "careers.payOnRequest": "The pay scale for any of these jobs is yours on request.",
+  "careers.payAsk": "Ask us",
+  "careers.paySubject": "Pay scale",
 
   // The four steps. Short, because they sit on a rail on a phone.
   "careers.stepYou": "You",
@@ -795,9 +798,9 @@ export const en = {
 
   "careers.typesNote": "The hours you're looking for.",
   "careers.typesOne": "This job is offered one way, so it's set for you.",
-  "careers.typeFull": "Full time",
-  "careers.typePart": "Part time",
-  "careers.typeEither": "Full time or part time",
+  "careers.typeFull": "Full Time",
+  "careers.typePart": "Part Time",
+  "careers.typeEither": "Full Time or Part Time",
   "careers.typeSeasonal": "Seasonal",
 
   "careers.earliestStart": "Earliest day you could start",

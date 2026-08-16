@@ -5,6 +5,7 @@ import { useState } from "react";
 import LanguagePicker from "../../ui/LanguagePicker";
 import { CONTROL_PILL, DISPLAY_FONT, SHOP_FONT } from "../../shop/shopControls";
 import { useLocale, useT, type StringKey } from "../../i18n";
+import { SHOP_EMAIL } from "../../shopFacts";
 import { EMPLOYMENT_TYPES, POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
 import { TERMS, formatPay, shiftLine, type ResolvedPay } from "./pay";
@@ -443,6 +444,37 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
           <Link href="/careers/apply" className="underline underline-offset-2 hover:text-ink">
             {t("careers.applyAnyway")}
           </Link>
+        </p>
+
+        {/* ——— What these jobs pay, on request ———
+
+            The rows used to open with "$18.42 an hour", which is the local
+            minimum and therefore a floor rather than an offer. Read as an
+            offer it is the most discouraging thing on the page, and it was the
+            first fact on every line.
+
+            California Labor Code 432.3 is why this is a sentence and not
+            simply a deletion. Two rules: a pay scale must be *posted* at
+            fifteen employees or more, and at any size it must be *given to an
+            applicant who asks*. The shop is under fifteen, so the posting is
+            quiet and the second rule is the one on the page — said plainly,
+            with an address attached, because an entitlement nobody is told
+            about is one nobody uses. POSTS_PAY_SCALE in pay.ts is the flag
+            that puts the number back when the first rule starts applying.
+
+            A real mailto rather than "contact us": the ask has to be one tap,
+            or the offer is decorative. */}
+        <p className="m-0 mt-2.5 text-[13px] leading-[1.55] text-muted">
+          {t("careers.payOnRequest")}{" "}
+          <a
+            href={`mailto:${SHOP_EMAIL}?subject=${encodeURIComponent(t("careers.paySubject"))}`}
+            // nowrap: a two-word link is exactly long enough to break after
+            // the first word, and "Ask / us" across two lines reads as a typo
+            // rather than as the thing to press. It moves whole or not at all.
+            className="whitespace-nowrap underline underline-offset-2 hover:text-ink"
+          >
+            {t("careers.payAsk")}
+          </a>
         </p>
 
         {/* ——— No "About the shop" ———
