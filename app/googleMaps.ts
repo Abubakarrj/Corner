@@ -214,6 +214,33 @@ function surenessOf(result: GeocodeResult): number {
   return rank === -1 ? PRECISION.length : rank;
 }
 
+// ——— Whether the label is one a courier can act on ———
+//
+// Google's own answers are not all in the same shape. Alongside
+// "3500 W 6th St, Los Angeles, CA 90020, USA" it will return records whose
+// formatted_address reads "United States, California, Los Angeles, 6th Ave
+// 3500": the same kind of place, written biggest-part-first, with the number
+// after the street and no postal code. That is a real Google result and not a
+// fault of ours, and it is still the wrong thing to hand a driver. It also
+// sorted first when it happened to be a rooftop, which is how it ended up
+// pre-selected under somebody's pin.
+//
+// So shape is the first sort key. A usable US label starts with a house
+// number and carries a five-digit ZIP; anything else is demoted rather than
+// dropped, because it is still a legitimate name for the point and somebody
+// who recognises it should be able to pick it.
+//
+// Deliberately not a parser. This asks two questions of the string that a
+// courier's own eye would ask, and gets them wrong in the safe direction: a
+// well-formed address that somehow lacks a ZIP loses a place in a list it is
+// still in.
+const US_SHAPED = /^\d+\s+\S/;
+const HAS_ZIP = /\b\d{5}(?:-\d{4})?\b/;
+
+function shapeOf(address: string): number {
+  return US_SHAPED.test(address.trim()) && HAS_ZIP.test(address) ? 0 : 1;
+}
+
 // The only shapes a courier can be sent to.
 //
 // `result_type` above asks Google for exactly these, and this checks that it
@@ -264,9 +291,10 @@ export async function reverseCandidates(
     .map((result) => ({
       place: toPlace(result, result.formatted_address ?? ""),
       sureness: surenessOf(result),
+      shape: shapeOf(result.formatted_address ?? ""),
     }))
     .filter(
-      (ranked): ranked is { place: GeocodedPlace; sureness: number } =>
+      (ranked): ranked is { place: GeocodedPlace; sureness: number; shape: number } =>
         ranked.place !== null,
     )
     .filter((ranked) => {
@@ -277,6 +305,9 @@ export async function reverseCandidates(
     })
     .sort(
       (a, b) =>
+        // Shape before precision: a rooftop nobody can read off a phone at a
+        // gate is worth less than a street address at the same corner.
+        a.shape - b.shape ||
         a.sureness - b.sureness ||
         metresBetween(point, [a.place.lat, a.place.lng]) -
           metresBetween(point, [b.place.lat, b.place.lng]),

@@ -3,7 +3,8 @@ import Link from "next/link";
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { warmKitchenLoad } from "./KitchenLoad";
 import { setFulfillment } from "../../fulfillment";
 import type { Fix } from "../../geolocate";
 import { useCapabilities } from "../../capabilities";
@@ -112,6 +113,16 @@ export default function LocationFinder() {
   // while still asking is telling somebody something about the shop that we do
   // not yet know — and it is the first thing they saw every time.
   const deliveryOff = mode === "delivery" && capabilitiesReady && !deliveryOn;
+  // Ask the kitchen how busy it is now, not when a sheet opens.
+  //
+  // The line under Order used to arrive a beat after the sheet did and push
+  // the button down. Started here, the answer is usually in hand before
+  // anybody taps a shop. Cached and shared, so this costs one request per
+  // page however many sheets get opened. See KitchenLoad.
+  useEffect(() => {
+    void warmKitchenLoad();
+  }, []);
+
   const [query, setQuery] = useState("");
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   // Where a searched city, state, or ZIP landed, for the map to fly to.
