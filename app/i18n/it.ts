@@ -555,8 +555,14 @@ export const it: Table = {
   "footer.privacy": "Informativa sulla privacy",
 
   "about.tagline": "Proprio dietro l'angolo",
-  "about.p1": "Bagel a fermentazione naturale, bolliti in caldaia. Creme fatte in casa e ingredienti scelti con cura.",
-  "about.p2": "Un menu corto, fatto bene.",
+  "about.p1":
+    "Corner Bagel è nato dall'idea che i posti di quartiere migliori siano semplici, curati e fatti per far parte della vita di tutti i giorni. Mettiamo insieme bagel a lievitazione naturale bolliti in pentola, creme spalmabili fatte in casa, ingredienti scelti con attenzione e un'ospitalità sincera, per un cibo che sazia senza complicarsi.",
+  "about.p2":
+    "Il nostro menu è volutamente essenziale. Invece di offrire tutto, preferiamo fare poche cose in modo eccezionale. Ogni bagel, ogni panino e ogni crema è preparato con cura, per un pasto che sa insieme di familiare e di memorabile.",
+  "about.p3":
+    "Che tu passi per la colazione prima del lavoro, incontri un amico davanti a un caffè o porti a casa una dozzina di bagel per la famiglia, ci fa onore che tu abbia scelto di passare con noi un piccolo pezzo della tua giornata.",
+  "about.p4":
+    "Grazie per sostenere un'attività di quartiere. Non vediamo l'ora di riaverti qui, proprio dietro l'angolo.",
   "about.speakToTeam": "Per parlare con qualcuno del nostro team:",
 
   // ——— Riley ———

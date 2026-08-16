@@ -512,8 +512,14 @@ export const es: Table = {
   "footer.privacy": "Política de privacidad",
 
   "about.tagline": "Justo a la vuelta de la esquina",
-  "about.p1": "Bagels de fermentación natural, hervidos en caldera. Untables caseros e ingredientes elegidos con cuidado.",
-  "about.p2": "Un menú corto, bien hecho.",
+  "about.p1":
+    "Corner Bagel nació con la idea de que los mejores sitios de barrio son sencillos, cuidados y hechos para formar parte del día a día. Juntamos bagels de fermentación natural hervidos en olla, untables de casa, ingredientes elegidos con cuidado y hospitalidad de verdad para hacer comida que satisface sin complicarse.",
+  "about.p2":
+    "Nuestro menú es deliberadamente corto. En vez de ofrecerlo todo, preferimos hacer unas pocas cosas excepcionalmente bien. Cada bagel, sándwich y untable se prepara con cuidado para que disfrutes de una comida que resulta familiar y memorable a la vez.",
+  "about.p3":
+    "Ya sea que pases a desayunar antes del trabajo, quedes con alguien a tomar café o te lleves una docena de bagels a casa, nos honra que pases un ratito de tu día con nosotros.",
+  "about.p4":
+    "Gracias por apoyar a un negocio de barrio. Esperamos volver a verte, justo a la vuelta de la esquina.",
   "about.speakToTeam": "Para hablar con alguien de nuestro equipo:",
 
   "chat.name": "Riley",

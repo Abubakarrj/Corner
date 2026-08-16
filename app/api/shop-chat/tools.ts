@@ -233,8 +233,11 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
       "Put menu items on screen as tappable cards, each with its price and an Add " +
       "button. Use this instead of listing items in your text: a card is one tap to " +
       "the basket and a paragraph is not. Call it alongside your reply whenever you " +
-      "mention two or more items, or recommend a specific one. Keep your text about " +
-      "*why*; let the cards carry the names and prices.",
+      "mention two or more items, recommend a specific one, or end your message " +
+      "inviting them to choose. Asking 'anything sound good?' without calling this " +
+      "asks somebody to react to nothing. Naming categories is not showing: " +
+      "'bagels, sandwiches and spreads' is four shelves, not four things to pick " +
+      "between. Keep your text about *why*; let the cards carry the names and prices.",
     input_schema: {
       type: "object",
       properties: {
@@ -253,8 +256,11 @@ export const RILEY_TOOLS: Anthropic.Beta.BetaToolUnion[] = [
       "Offer two or three short things they might say next, as tappable chips. Use " +
       "them for the obvious follow-ups. 'What's on it?', 'Add it', 'Something " +
       "without dairy', so answering is a tap. Write them as the visitor would say " +
-      "them, not as menu options. Skip them when you've asked a direct question that " +
-      "needs a real answer, like an address.",
+      "them, not as menu options. Reach for this whenever you would otherwise " +
+      "offer a direction in prose: 'want to hear what's popular?' is a question " +
+      "with a tappable answer, so make it one instead of asking permission. Skip " +
+      "them when you've asked a direct question that needs a real answer, like an " +
+      "address.",
     input_schema: {
       type: "object",
       properties: {

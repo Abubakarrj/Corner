@@ -559,8 +559,14 @@ export const en = {
   "footer.privacy": "Privacy Policy",
 
   "about.tagline": "Right Around The Corner",
-  "about.p1": "Naturally fermented, kettle-boiled bagels. House-made spreads and carefully sourced ingredients.",
-  "about.p2": "A short menu, done properly.",
+  "about.p1":
+    "Corner Bagel was created with the belief that the best neighborhood places are simple, thoughtful, and made to be part of everyday life. We bring together naturally fermented, kettle-boiled bagels, house-made spreads, carefully sourced ingredients, and genuine hospitality to create food that's satisfying without being complicated.",
+  "about.p2":
+    "Our menu is intentionally focused. Rather than offering everything, we choose to do a handful of things exceptionally well. Every bagel, sandwich, and spread is prepared with care so you can enjoy a meal that feels both familiar and memorable.",
+  "about.p3":
+    "Whether you're grabbing breakfast before work, meeting a friend over coffee, or bringing a dozen bagels home to your family, we're honored that you chose to spend a small part of your day with us.",
+  "about.p4":
+    "Thank you for supporting a neighborhood business. We look forward to welcoming you back, right around the corner.",
   "about.speakToTeam": "To speak with a member of our team:",
   "about.aboutUs": "About Us",
   "about.ourStory": "Our Story",

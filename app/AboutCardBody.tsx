@@ -58,15 +58,18 @@ export default function AboutCardBody() {
         {t("about.tagline")}
       </p>
 
-      {/* Two paragraphs, and they used to be four.
+      {/* ——— Four paragraphs, and they stay four ———
 
-          The third said "whether you're grabbing breakfast before work…
-          we're honored that you chose to spend a small part of your day with
-          us", and the fourth thanked the reader for supporting a neighborhood
-          business. Both were addressed to somebody already standing in the
-          shop, and neither told them anything. The two that remain say what
-          the bagels are and how long the menu is, which is what somebody opens
-          this card to find out. */}
+          These were cut to two once, under a sweep for narrative copy across
+          the app. That sweep was right about the rest of the app and wrong
+          here. This is the About card: narrative is not padding on a page
+          whose entire job is to say who the shop is, it is the content. A
+          sentence like "we're honored that you chose to spend a small part of
+          your day with us" would be filler above a form and is the point of
+          this card.
+
+          If something on this card ever needs shortening, shorten it for
+          being badly written, not for being a story. */}
       <p
         className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
@@ -74,10 +77,22 @@ export default function AboutCardBody() {
         {t("about.p1")}
       </p>
       <p
-        className="m-0 mx-auto mb-[2em] leading-[1.7] sm:leading-[1.8]"
+        className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
         style={bodyStyle}
       >
         {t("about.p2")}
+      </p>
+      <p
+        className="m-0 mx-auto mb-[1em] leading-[1.7] sm:leading-[1.8]"
+        style={bodyStyle}
+      >
+        {t("about.p3")}
+      </p>
+      <p
+        className="m-0 mx-auto mb-[2em] leading-[1.7] sm:leading-[1.8]"
+        style={bodyStyle}
+      >
+        {t("about.p4")}
       </p>
 
       <p className="m-0 mb-[0.3em] whitespace-nowrap">

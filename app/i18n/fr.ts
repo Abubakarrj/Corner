@@ -555,8 +555,14 @@ export const fr: Table = {
   "footer.privacy": "Politique de confidentialité",
 
   "about.tagline": "Juste au coin de la rue",
-  "about.p1": "Bagels à fermentation naturelle, pochés au chaudron. Tartinades maison et ingrédients choisis avec soin.",
-  "about.p2": "Une carte courte, bien faite.",
+  "about.p1":
+    "Corner Bagel est né de l'idée que les meilleures adresses de quartier sont simples, réfléchies et faites pour le quotidien. Nous réunissons des bagels à fermentation naturelle pochés au chaudron, des tartinades maison, des ingrédients choisis avec soin et un accueil sincère, pour une cuisine qui rassasie sans se compliquer.",
+  "about.p2":
+    "Notre menu est volontairement resserré. Plutôt que de tout proposer, nous préférons faire quelques choses exceptionnellement bien. Chaque bagel, chaque sandwich et chaque tartinade est préparé avec attention, pour un repas à la fois familier et mémorable.",
+  "about.p3":
+    "Que vous preniez un petit-déjeuner avant le travail, que vous retrouviez un ami autour d'un café ou que vous rapportiez une douzaine de bagels à la maison, nous sommes honorés que vous passiez un petit moment de votre journée avec nous.",
+  "about.p4":
+    "Merci de soutenir un commerce de quartier. Nous avons hâte de vous revoir, juste au coin de la rue.",
   "about.speakToTeam": "Pour parler à quelqu'un de notre équipe :",
 
   // ——— Riley ———
