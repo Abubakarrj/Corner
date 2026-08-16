@@ -668,6 +668,7 @@ export const es: Table = {
   "careers.perYear": "{amount} al año",
   "careers.perHourTips": "{amount} por hora más propinas",
   "careers.jdDoing": "Lo que harías",
+  "careers.jdRead": "Lee la descripción completa del puesto (PDF)",
   "careers.jdLooking": "Lo que buscamos",
   "careers.applyNow": "Solicitar",
   "careers.roleCount": "{count} puestos",

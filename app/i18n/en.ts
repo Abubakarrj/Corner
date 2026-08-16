@@ -766,6 +766,7 @@ export const en = {
   // falls back key by key, so these read in English on a page that is
   // otherwise translated. See the note at the top of jobDescription.ts.
   "careers.jdDoing": "What you'd be doing",
+  "careers.jdRead": "Read the full job description (PDF)",
   "careers.jdLooking": "What we're looking for",
   "careers.jdFoodCard": "A food handler card, or willing to get one before your first shift",
   "careers.jdCounterSummary": "You're the first person anybody sees. Take the order, run the register, and learn the regulars by what they order.",

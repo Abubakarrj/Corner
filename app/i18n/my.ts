@@ -663,6 +663,7 @@ export const my: Table = {
   "careers.perYear": "တစ်နှစ် {amount}",
   "careers.perHourTips": "တစ်နာရီ {amount} အပြင် အပ်ငွေ",
   "careers.jdDoing": "သင်လုပ်ရမည့်အလုပ်",
+  "careers.jdRead": "အလုပ်ဖော်ပြချက် အပြည့်အစုံ ဖတ်ရန် (PDF)",
   "careers.jdLooking": "ကျွန်ုပ်တို့ရှာနေသူ",
   "careers.applyNow": "လျှောက်ရန်",
   "careers.roleCount": "အလုပ် {count} ခု",

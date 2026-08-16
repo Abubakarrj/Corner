@@ -714,6 +714,7 @@ export const fa: Table = {
   "careers.perYear": "سالانه {amount}",
   "careers.perHourTips": "ساعتی {amount} به‌علاوهٔ انعام",
   "careers.jdDoing": "چه کاری انجام می‌دهید",
+  "careers.jdRead": "شرح کامل شغل را بخوانید (PDF)",
   "careers.jdLooking": "دنبال چه کسی هستیم",
   "careers.applyNow": "درخواست بدهید",
   "careers.roleCount": "{count} موقعیت",

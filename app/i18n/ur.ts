@@ -665,6 +665,7 @@ export const ur: Table = {
   "careers.perYear": "{amount} سالانہ",
   "careers.perHourTips": "{amount} فی گھنٹہ اور ٹپس",
   "careers.jdDoing": "آپ کیا کریں گے",
+  "careers.jdRead": "کام کی مکمل تفصیل پڑھیں (PDF)",
   "careers.jdLooking": "ہمیں کس کی تلاش ہے",
   "careers.applyNow": "ابھی درخواست دیں",
   "careers.roleCount": "{count} آسامیاں",

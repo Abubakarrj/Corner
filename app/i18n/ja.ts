@@ -661,6 +661,7 @@ export const ja: Table = {
   "careers.perYear": "年収{amount}",
   "careers.perHourTips": "時給{amount}＋チップ",
   "careers.jdDoing": "仕事の内容",
+  "careers.jdRead": "職務内容の全文を読む（PDF）",
   "careers.jdLooking": "求める人物像",
   "careers.applyNow": "応募する",
   "careers.roleCount": "{count}件の仕事",

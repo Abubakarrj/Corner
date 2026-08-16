@@ -662,6 +662,7 @@ export const ko: Table = {
   "careers.perYear": "연봉 {amount}",
   "careers.perHourTips": "시급 {amount} + 팁",
   "careers.jdDoing": "하게 될 일",
+  "careers.jdRead": "전체 직무 설명 보기 (PDF)",
   "careers.jdLooking": "이런 분을 찾습니다",
   "careers.applyNow": "지원하기",
   "careers.roleCount": "{count}개 자리",

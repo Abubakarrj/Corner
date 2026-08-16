@@ -22,7 +22,6 @@ import {
   type PositionId,
 } from "./application";
 import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from "./draft";
-import { DESCRIPTIONS } from "./jobDescription";
 import { codeFor, matchStates } from "./states";
 import { suggestAddresses } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "../locations/locations";
@@ -1240,37 +1239,34 @@ function Dot({ on }: { on: boolean }) {
 // form needs it. `optional` marks the few fields that aren't required, since
 // on a form where most things are needed the absence of a mark reads as
 // "required" and the marked ones are the news.
-/** The job description, for the job being applied for.
+/** A link to the job description, for the job being applied for.
  *
- *  Quiet on purpose. It is the longest block on a page whose job is to be
- *  filled in, so it reads at the size of the form's own supporting text and
- *  sits on the page rather than in a card — a bordered box here would compete
- *  with the fields for the eye, and the fields are the thing to do. */
+ *  This was the description itself: a summary, what you'd be doing, what we're
+ *  looking for, all inline. It read well and it was two screens of reading in
+ *  front of a form — the page's job is to be filled in, and the first thing on
+ *  it was homework.
+ *
+ *  So the same content is a document now. /api/jd/[role] builds it from the
+ *  same DESCRIPTIONS and TERMS the board reads, so there is still exactly one
+ *  copy of it, and somebody who wants the detail gets something they can keep
+ *  rather than something they have to scroll past.
+ *
+ *  target="_blank" because the alternative is navigating away from a form with
+ *  a half-finished draft in it. rel is the pair that goes with it: noopener so
+ *  the document cannot reach back into this tab, noreferrer for the same. */
 function Description({ role }: { role: PositionId }) {
   const t = useT();
-  const description = DESCRIPTIONS[role];
-  const list = (heading: StringKey, items: StringKey[]) => (
-    <>
-      <p className="m-0 mb-1.5 mt-4 text-[11px] uppercase tracking-[0.08em] text-quiet">
-        {t(heading)}
-      </p>
-      {/* ps-4, a logical property: the marker sits at the start of the line,
-          which is the right edge in Persian and Urdu. */}
-      <ul className="m-0 list-disc ps-4 text-[13px] leading-[1.6] text-muted">
-        {items.map((item) => (
-          <li key={item} className="mt-1 first:mt-0">
-            {t(item)}
-          </li>
-        ))}
-      </ul>
-    </>
-  );
   return (
-    <section className="mb-7 border-b border-line pb-6">
-      <p className="m-0 text-[14px] leading-[1.6] text-ink">{t(description.summary)}</p>
-      {list("careers.jdDoing", description.doing)}
-      {list("careers.jdLooking", description.looking)}
-    </section>
+    <p className="m-0 mb-7 border-b border-line pb-6 text-[13px] leading-[1.55] text-muted">
+      <a
+        href={`/api/jd/${role}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline underline-offset-2 hover:text-ink"
+      >
+        {t("careers.jdRead")}
+      </a>
+    </p>
   );
 }
 

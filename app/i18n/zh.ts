@@ -660,6 +660,7 @@ export const zh: Table = {
   "careers.perYear": "年薪{amount}",
   "careers.perHourTips": "每小时{amount}外加小费",
   "careers.jdDoing": "你会做什么",
+  "careers.jdRead": "阅读完整的职位说明（PDF）",
   "careers.jdLooking": "我们在找什么样的人",
   "careers.applyNow": "立即申请",
   "careers.roleCount": "{count} 个岗位",

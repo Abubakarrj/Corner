@@ -717,6 +717,7 @@ export const it: Table = {
   "careers.perYear": "{amount} all'anno",
   "careers.perHourTips": "{amount} all'ora più le mance",
   "careers.jdDoing": "Cosa faresti",
+  "careers.jdRead": "Leggi la descrizione completa del lavoro (PDF)",
   "careers.jdLooking": "Chi cerchiamo",
   "careers.applyNow": "Candidati",
   "careers.roleCount": "{count} posizioni",
