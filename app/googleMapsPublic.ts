@@ -18,6 +18,10 @@ export type Suggestion = { id: string; primary: string; secondary: string };
 const LAYERS = {
   address: ["street_address", "premise", "subpremise"],
   region: ["locality", "sublocality", "administrative_area_level_1", "postal_code"],
+  // Towns only. `region` would do for a City field except that it also matches
+  // states and ZIP codes, and a City box offering "California" or "90020" is a
+  // box that will be filled in wrong.
+  city: ["locality", "sublocality"],
 } as const;
 
 export type SuggestKind = keyof typeof LAYERS;

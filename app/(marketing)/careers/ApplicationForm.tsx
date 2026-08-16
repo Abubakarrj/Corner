@@ -22,6 +22,9 @@ import {
   type PositionId,
 } from "./application";
 import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from "./draft";
+import { codeFor, matchStates } from "./states";
+import { suggestAddresses } from "../../googleMapsPublic";
+import { DELIVERY_ORIGIN } from "../locations/locations";
 
 // The job application.
 //
@@ -796,19 +799,25 @@ export default function ApplicationForm({
                     plausible is the whole reason to ask; the rest would be
                     personal data held for nothing. */}
                 <Pair columns="grid-cols-[2fr_1fr]">
-                  <Field
-                    label={t("careers.city")}
+                  <CityBox
                     value={application.city}
-                    onChange={(value) => set("city", value)}
                     error={problem("careers.errCity")}
-                    autoComplete="address-level2"
+                    onType={(value) => set("city", value)}
+                    // One press fills both. The suggestion already carries the
+                    // state, so asking for it again asks somebody to type
+                    // something the form has just been told.
+                    onPick={(city, code) =>
+                      setApplication({
+                        ...application,
+                        city,
+                        state: code ?? application.state,
+                      })
+                    }
                   />
-                  <Field
-                    label={t("careers.state")}
+                  <StateBox
                     value={application.state}
-                    onChange={(value) => set("state", value)}
                     error={problem("careers.errState")}
-                    autoComplete="address-level1"
+                    onChange={(value) => set("state", value)}
                   />
                 </Pair>
               </div>
@@ -1214,6 +1223,307 @@ function Dot({ on }: { on: boolean }) {
 // form needs it. `optional` marks the few fields that aren't required, since
 // on a form where most things are needed the absence of a mark reads as
 // "required" and the marked ones are the news.
+type Choice = { id: string; primary: string; secondary?: string };
+
+/** A text field that offers what it knows as you type.
+ *
+ *  ——— Why a combobox and not a <select> ———
+ *
+ *  City cannot be a select: the list is every town in the country. State could
+ *  be, and fifty-one options in a platform picker is a wheel somebody spins
+ *  past Michigan four times. Typing two letters and pressing the row that
+ *  appears beats both, and it is what the address search on this site already
+ *  does — so this is the same interaction in a second place rather than a new
+ *  one to learn.
+ *
+ *  ——— Typing still wins ———
+ *
+ *  The list offers; it never insists. Whatever is in the box is the answer,
+ *  including something that matched nothing — the day somebody applies from a
+ *  town Google has not heard of, or from a state this file forgot, the form
+ *  takes it. A picker that refuses an answer it does not recognise is a form
+ *  that decides who is allowed to apply.
+ *
+ *  The caller owns the list, because the two sources could not be less alike:
+ *  State filters an array in memory, City asks Google over the network with a
+ *  debounce and an abort. This owns the popup, the keys and the dismissal. */
+function Suggest({
+  label,
+  value,
+  onChange,
+  onPick,
+  onSettle,
+  choices,
+  error,
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onPick: (choice: Choice) => void;
+  /** Leaving the box, for a caller that wants to tidy what was typed. */
+  onSettle?: () => void;
+  choices: Choice[];
+  error?: string | null;
+  autoComplete?: string;
+}) {
+  const id = useId();
+  const listId = `${id}-list`;
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Pointer down rather than click, and on the document: a tap that lands on
+  // the page behind the list should close it before whatever it hit reacts.
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open]);
+
+  const shown = open ? choices : [];
+
+  function take(choice: Choice) {
+    onPick(choice);
+    setOpen(false);
+    setActive(-1);
+  }
+
+  function onKeyDown(event: React.KeyboardEvent) {
+    if (event.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (shown.length === 0) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      setActive((current) => (current + step + shown.length) % shown.length);
+      return;
+    }
+    // Enter takes the highlighted row and nothing else. With none highlighted
+    // it falls through to the form, because somebody who typed a whole city
+    // and pressed Enter meant to move on, not to accept a guess they never
+    // looked at.
+    if (event.key === "Enter" && active >= 0) {
+      event.preventDefault();
+      take(shown[active]);
+    }
+  }
+
+  return (
+    <div className="grid min-w-0 [grid-row:span_3] [grid-template-rows:subgrid]">
+      <label htmlFor={id} className="mb-1 flex items-baseline gap-2 text-[11px] text-muted">
+        <span className="min-w-0 flex-1">{label}</span>
+      </label>
+      <div ref={rootRef} className="relative min-w-0">
+        <input
+          id={id}
+          type="text"
+          role="combobox"
+          aria-expanded={shown.length > 0}
+          aria-controls={listId}
+          aria-autocomplete="list"
+          aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(event) => {
+            onChange(event.target.value);
+            setOpen(true);
+            setActive(-1);
+          }}
+          onFocus={() => setOpen(true)}
+          // Leaving the field closes the list. Without this, tabbing on left a
+          // dropdown hanging over the fields below it, still offering answers
+          // for a box nobody is in — and with two of these side by side, both
+          // lists could be open at once over each other.
+          //
+          // Safe because a row is taken on mousedown with preventDefault, so
+          // pressing one never blurs the input in the first place.
+          onBlur={() => {
+            setOpen(false);
+            onSettle?.();
+          }}
+          onKeyDown={onKeyDown}
+          aria-invalid={error ? true : undefined}
+          className={fieldInput(error)}
+        />
+        {shown.length > 0 ? (
+          <ul
+            id={listId}
+            role="listbox"
+            // Anchored to the field's end edge and allowed to be wider than
+            // it. State is the narrow half of a 2fr/1fr row, and a list
+            // confined to that width truncated "Massachus…" — which is the one
+            // word somebody typing "ma" is trying to read. It grows toward the
+            // start of the line instead, capped so it stays on the screen.
+            className="absolute end-0 top-full z-20 m-0 mt-1 w-max min-w-full max-w-[min(18rem,78vw)] list-none overflow-hidden rounded-xl border border-line bg-surface p-0 shadow-lg"
+          >
+            {shown.map((choice, index) => (
+              <li key={choice.id} className="border-b border-line-faint last:border-b-0">
+                <button
+                  type="button"
+                  id={`${listId}-${index}`}
+                  role="option"
+                  aria-selected={index === active}
+                  // Mouse down, not click: click lands after blur, and blur
+                  // is what closes the list. Pressing a row would otherwise
+                  // dismiss the row being pressed.
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    take(choice);
+                  }}
+                  className={`cb-press block w-full cursor-pointer px-3 py-2.5 text-start transition-colors hover:bg-raise ${
+                    index === active ? "bg-raise" : ""
+                  }`}
+                >
+                  <span className="block truncate text-[14px] text-ink">{choice.primary}</span>
+                  {choice.secondary ? (
+                    <span className="block truncate text-[12px] text-muted">
+                      {choice.secondary}
+                    </span>
+                  ) : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      <Problem>{error}</Problem>
+    </div>
+  );
+}
+
+/** City, from Google's list of towns.
+ *
+ *  Picking one fills the state in as well. The suggestion's second line is
+ *  "CA, USA", so the code is already in hand and asking for it again is asking
+ *  somebody to type something the form was just told. */
+function CityBox({
+  value,
+  error,
+  onType,
+  onPick,
+}: {
+  value: string;
+  error?: string | null;
+  onType: (value: string) => void;
+  onPick: (city: string, stateCode: string | null) => void;
+}) {
+  const t = useT();
+  const [choices, setChoices] = useState<Choice[]>([]);
+  // Set the moment a suggestion is taken, so choosing one does not immediately
+  // ask Google what it thinks of the text it just wrote.
+  const settled = useRef("");
+
+  // Debounced, and the in-flight request is aborted as the next letter lands:
+  // a slow answer to "Los A" arriving after the answer to "Los Angeles" would
+  // overwrite good suggestions with stale ones. Same shape as the delivery
+  // area's field, deliberately.
+  useEffect(() => {
+    const input = value.trim();
+    if (input.length < 3 || input === settled.current) {
+      setChoices([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void suggestAddresses(input, "city", DELIVERY_ORIGIN.position, controller.signal)
+        .then((items) => setChoices(items))
+        // No key, no network, no Places: the box stays a plain text field and
+        // the form works exactly as it did. Suggestions are a convenience and
+        // never the only way to answer.
+        .catch(() => setChoices([]));
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [value]);
+
+  return (
+    <Suggest
+      label={t("careers.city")}
+      value={value}
+      error={error}
+      autoComplete="address-level2"
+      choices={choices}
+      onChange={onType}
+      onPick={(choice) => {
+        settled.current = choice.primary;
+        setChoices([]);
+        // "Los Angeles, CA, USA" — the state is the part that is two letters.
+        const code =
+          choice.secondary
+            ?.split(",")
+            .map((part) => codeFor(part))
+            .find((found): found is string => found !== null) ?? null;
+        onPick(choice.primary, code);
+      }}
+    />
+  );
+}
+
+/** State, from the fifty and DC. No network: the list has not changed since
+ *  1959 and is three kilobytes. */
+function StateBox({
+  value,
+  error,
+  onChange,
+}: {
+  value: string;
+  error?: string | null;
+  onChange: (value: string) => void;
+}) {
+  const t = useT();
+  const choices = matchStates(value).map((state) => ({
+    id: state.code,
+    primary: state.name,
+    secondary: state.code,
+  }));
+  return (
+    <Suggest
+      label={t("careers.state")}
+      value={value}
+      error={error}
+      autoComplete="address-level1"
+      choices={choices}
+      onChange={onChange}
+      onPick={(choice) => onChange(choice.id)}
+      // Typed "California" and moved on without pressing anything: store the
+      // code, which is what the box is for. Anything unrecognised is left
+      // exactly as typed — see the note on Suggest.
+      onSettle={() => {
+        const code = codeFor(value);
+        if (code && code !== value) onChange(code);
+      }}
+    />
+  );
+}
+
+/** One input's clothes, shared by Field and Suggest so the two cannot drift
+ *  apart. They sit next to each other in the same row — City is a Suggest and
+ *  Mobile number is a Field — and a border radius that differs by two pixels
+ *  between them is the sort of thing nobody can name and everybody sees.
+ *
+ *  min-w-0 is load-bearing rather than tidy. These live in grid cells, where
+ *  the automatic minimum size is the content's intrinsic width, and an
+ *  `<input type="date">` on iOS has an intrinsic width wider than a phone's
+ *  column. Without this the date field pushes its own cell past the edge of
+ *  the page and the right end of it is simply gone. */
+function fieldInput(error?: string | null, onSurface?: boolean): string {
+  return `w-full min-w-0 max-w-full rounded-xl border px-3 py-2.5 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
+    // On a card, the field sinks to the page colour; on the page, it lifts to
+    // the card colour. Either way it is one step away from whatever it is
+    // sitting on. It used to sink to cream, which was a warm tint on a warm
+    // ground and is now a warm tint on a white one.
+    onSurface ? "bg-page" : "bg-surface"
+  } ${error ? "border-brand-red" : "border-line-soft"}`;
+}
+
 function Field({
   label,
   value,
@@ -1274,7 +1584,7 @@ function Field({
     // Outside a Pair this is a plain grid: `subgrid` with no parent rows to
     // inherit computes to `none`, the span is meaningless to a non-grid
     // parent, and the three children stack exactly as the flex column did.
-    <div className="grid [grid-row:span_3] [grid-template-rows:subgrid]">
+    <div className="grid min-w-0 [grid-row:span_3] [grid-template-rows:subgrid]">
       <label
         htmlFor={id}
         className="mb-1 flex items-baseline gap-2 text-[11px] text-muted"
@@ -1294,13 +1604,7 @@ function Field({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={error ? true : undefined}
-        className={`w-full rounded-xl border px-3 py-2.5 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
-          // On a card, the field sinks to the page colour; on the page, it
-          // lifts to the card colour. Either way it is one step away from
-          // whatever it is sitting on. It used to sink to cream, which was a
-          // warm tint on a warm ground and is now a warm tint on a white one.
-          onSurface ? "bg-page" : "bg-surface"
-        } ${error ? "border-brand-red" : "border-line-soft"}`}
+        className={fieldInput(error, onSurface)}
       />
       <Problem>{error}</Problem>
     </div>

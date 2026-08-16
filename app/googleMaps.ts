@@ -633,6 +633,9 @@ export type Suggestion = {
 const TYPES = {
   address: ["street_address", "premise", "subpremise"],
   region: ["locality", "sublocality", "administrative_area_level_1", "postal_code"],
+  // Towns only, for the City box on the job application. See the note on the
+  // browser-side copy of this table.
+  city: ["locality", "sublocality"],
 } as const;
 
 export type SuggestKind = keyof typeof TYPES;

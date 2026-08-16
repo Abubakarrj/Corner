@@ -54,7 +54,8 @@ export async function POST(request: Request) {
   // deliver to; "region" is somewhere to point the map for pickup and
   // catering. They want different answers, and conflating them is what let a
   // country-shaped result through.
-  const kind = body?.kind === "region" ? "region" : "address";
+  const kind =
+    body?.kind === "region" ? "region" : body?.kind === "city" ? "city" : "address";
 
   if (body?.action === "suggest") {
     if (query.length < 3) return Response.json({ suggestions: [] });
