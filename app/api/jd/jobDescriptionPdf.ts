@@ -1,5 +1,10 @@
-import { POSITIONS, type PositionId } from "../../(marketing)/careers/application";
-import { DESCRIPTIONS } from "../../(marketing)/careers/jobDescription";
+import type { PositionId } from "../../(marketing)/careers/application";
+import {
+  DESCRIPTIONS,
+  HEADINGS,
+  JOB_LOCATION,
+  SHOP_BLURB,
+} from "../../(marketing)/careers/jobDescription";
 import {
   MINIMUM_WAGE,
   POSTS_PAY_SCALE,
@@ -13,31 +18,29 @@ import { MUTED, newSheet } from "../pdfSheet";
 
 // The printable job description, one per role.
 //
-// ——— Why a PDF and not a page ———
+// ——— The document, not the page ———
 //
-// The application used to open with the description inline, above the first
-// field, and that was two screens of reading in front of a form. This is the
-// same content as a document somebody can keep: mail it to themselves, show it
-// to whoever they are asking about the job, read it away from the shop's site.
-// The application page carries a link to it instead of the text.
+// /careers/jd/[role] is where somebody reads a description; this is the copy
+// they keep, print, or forward. It used to be the only rendering, linked
+// straight from the application, and inside the installed app that was a trap:
+// standalone display means a document viewer with no way back. The page fixed
+// that, and offers this behind a download link.
 //
-// ——— Built from the same source as the board ———
+// ——— Built from the same source as the page ———
 //
-// Nothing here is written twice. The bullets come from DESCRIPTIONS, the pay
-// and hours and shifts from TERMS, the titles from POSITIONS. Edit any of them
-// and the board, the form and this document all move together — which is the
-// whole point, because a job description that disagrees with the posting it
-// came from is worse than not having one.
+// Nothing here is written twice. The text is DESCRIPTIONS, the pay and hours
+// and shifts are TERMS. Edit either and the board, the page, the form and this
+// document all move together — which is the whole point, because a job
+// description that disagrees with the posting it came from is worse than not
+// having one.
 //
 // English, like the application PDF and for the same reason: it is a document
 // that gets printed and handed around, and the descriptions have no
-// translations yet in any case.
+// translations yet in any case. The headings here are the document's own
+// wording rather than the page's i18n keys, so the two match on an English
+// page and the PDF stays a single language.
 
 const t = (key: StringKey): string => en[key];
-
-const TITLE: Record<PositionId, StringKey> = Object.fromEntries(
-  POSITIONS.map((position) => [position.id, position.label]),
-) as Record<PositionId, StringKey>;
 
 /** What the job pays, as one line, or null when there is nothing to stand
  *  behind. The same three cases the board renders, in the same order, read off
@@ -64,7 +67,7 @@ export async function renderJobDescriptionPdf(
   const terms = TERMS[role];
 
   sheet.text("Corner Bagel", { size: 16 });
-  sheet.text(t(TITLE[role]), { size: 11, color: MUTED });
+  sheet.text(description.position, { size: 11, color: MUTED });
   sheet.gap(4);
 
   // The facts line, same order as the row on the board: what it pays, what
@@ -81,28 +84,44 @@ export async function renderJobDescriptionPdf(
   }
   if (facts.length > 0) sheet.text(facts.join("  ·  "), { size: 9, color: MUTED });
 
-  sheet.gap(10);
-  sheet.text(t(description.summary), { size: 11.5 });
+  sheet.gap(8);
+  for (const [label, value] of [
+    ["Location", JOB_LOCATION],
+    ["Reports to", description.reportsTo],
+    ["Classification", description.classification],
+  ]) {
+    sheet.text(`${label}:  ${value}`, { size: 9.5, color: MUTED });
+  }
 
-  const bullets = (heading: StringKey, items: StringKey[]) => {
-    sheet.heading(t(heading));
+  const paragraphs = (heading: string, body: string[]) => {
+    sheet.heading(heading);
+    for (const paragraph of body) sheet.value(paragraph);
+  };
+  const bullets = (heading: string, items: string[]) => {
+    sheet.heading(heading);
     for (const item of items) {
       // The dot and the text are drawn as one wrapped string rather than as a
       // glyph plus a hanging indent. pdf-lib has no list primitive, and a
       // second line that lines up under the bullet instead of under the words
       // is the sort of thing that reads as a broken document.
-      sheet.value(`•  ${t(item)}`);
+      sheet.value(`•  ${item}`);
     }
   };
-  bullets("careers.jdDoing", description.doing);
-  bullets("careers.jdLooking", description.looking);
 
-  // ——— The two standing statements ———
+  paragraphs(HEADINGS.about, [SHOP_BLURB]);
+  paragraphs(HEADINGS.role, description.role);
+  bullets(HEADINGS.doing, description.doing);
+  bullets(HEADINGS.looking, description.looking);
+  if (description.closing) {
+    paragraphs(description.closing.heading, description.closing.body);
+  }
+
+  // ——— The standing statement ———
   //
-  // Printed here because a PDF travels away from the page that carried them.
+  // Printed here because a PDF travels away from the page that carried it.
   // Somebody reading this in a folder a week later has the equal-opportunity
   // statement in front of them, which is where it belongs.
-  sheet.heading("Working at Corner Bagel");
+  sheet.heading("Equal opportunity");
   sheet.value(t("careers.eeo"));
   if (POSTS_PAY_SCALE && MINIMUM_WAGE.hourly !== null) {
     sheet.value(

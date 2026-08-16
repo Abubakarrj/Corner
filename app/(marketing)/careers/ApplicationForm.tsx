@@ -1251,21 +1251,24 @@ function Dot({ on }: { on: boolean }) {
  *  copy of it, and somebody who wants the detail gets something they can keep
  *  rather than something they have to scroll past.
  *
- *  target="_blank" because the alternative is navigating away from a form with
- *  a half-finished draft in it. rel is the pair that goes with it: noopener so
- *  the document cannot reach back into this tab, noreferrer for the same. */
+ *  ——— A page, not the PDF, and the same tab ———
+ *
+ *  This linked straight to /api/jd/[role] with target="_blank", which works in
+ *  a browser and traps somebody in the installed app: the manifest is
+ *  `display: standalone`, so a new window has no address bar, no tabs and no
+ *  back gesture out of a document viewer. It was a one way trip.
+ *
+ *  /careers/jd/[role] is the same text as a page, with the app's own back
+ *  control on it, and offers the PDF from there. Same tab, because the app's
+ *  back is what brings somebody here — and the draft is on the device, so
+ *  leaving this form and coming back loses nothing. */
 function Description({ role }: { role: PositionId }) {
   const t = useT();
   return (
     <p className="m-0 mb-7 border-b border-line pb-6 text-[13px] leading-[1.55] text-muted">
-      <a
-        href={`/api/jd/${role}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline underline-offset-2 hover:text-ink"
-      >
+      <Link href={`/careers/jd/${role}`} className="underline underline-offset-2 hover:text-ink">
         {t("careers.jdRead")}
-      </a>
+      </Link>
     </p>
   );
 }

@@ -26,12 +26,21 @@ import { hasTabBar } from "./(marketing)/TabBar";
 // 0.9 miles out" — sits at exactly the height this line floats at, and the
 // two overlapped into an unreadable smudge. It is a sheet with a close button
 // rather than a page somebody browses, and a sheet does not need a footer.
-const OWN_PRIVACY_LINK = ["/careers", "/careers/apply", "/delivery-areas"];
+//
+// Matched by prefix rather than exactly, which is what /careers/jd/[role]
+// showed up to prove: a job description is a page of continuous text a couple
+// of screens long, so this line printed straight through the middle of the
+// bullets. An exact list quietly stops covering a section the moment somebody
+// adds a route to it.
+const OWN_PRIVACY_LINK = ["/careers", "/delivery-areas"];
 
 export default function PrivacyFooterLink() {
   const t = useT();
   const pathname = usePathname();
-  if (hasTabBar(pathname) || OWN_PRIVACY_LINK.includes(pathname)) return null;
+  const covered = OWN_PRIVACY_LINK.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+  if (hasTabBar(pathname) || covered) return null;
 
   return (
     <div
