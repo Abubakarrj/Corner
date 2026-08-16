@@ -1,5 +1,7 @@
 import "server-only";
 
+import { milesBetween } from "./(marketing)/locations/locations";
+
 // Uber Direct — the courier behind delivery orders.
 //
 // Uber Direct is Uber Eats' delivery network sold without the marketplace:
@@ -205,7 +207,57 @@ export type Delivery = {
   // The page the customer watches the courier on. Uber runs it; there is no
   // point rebuilding a live map of somebody else's driver.
   trackingUrl: string | null;
+  /** Where Uber decided the two ends actually are, and what it calls them.
+   *
+   *  Uber does not report the mileage it priced, so there is no distance of
+   *  theirs to check ours against. It does report the two points, and that is
+   *  the more useful check anyway: a distance is only right if it was measured
+   *  between the places the courier is going. */
+  resolved: {
+    pickup: [number, number] | null;
+    dropoff: [number, number] | null;
+    pickupAddress: string | null;
+    dropoffAddress: string | null;
+  };
 };
+
+// How far Uber may move an end before it is worth a line in the log.
+//
+// Two numbers because the two ends are not the same kind of thing. A dropoff
+// is a different address every time and a courier reads the label as well as
+// the pin, so a small correction there is ordinary. The pickup is the same
+// doorway on every single delivery: if Uber puts it eighty metres from where
+// we measured, that is not one odd trip, it is every quote and every ETA the
+// shop gives, and it is the signal that locations.ts wants a `door`.
+const PICKUP_DRIFT_METRES = 40;
+const DROPOFF_DRIFT_METRES = 75;
+
+function point(value: unknown): [number, number] | null {
+  const place = value as { lat?: unknown; lng?: unknown } | null;
+  return typeof place?.lat === "number" && typeof place?.lng === "number"
+    ? [place.lat, place.lng]
+    : null;
+}
+
+function metresApart(a: [number, number], b: [number, number]): number {
+  return milesBetween(a, b) * 1609.344;
+}
+
+function noteDrift(
+  what: string,
+  sent: [number, number],
+  got: [number, number] | null,
+  limit: number,
+): void {
+  if (!got) return;
+  const drift = metresApart(sent, got);
+  if (drift <= limit) return;
+  console.warn(
+    `[uber] ${what} resolved ${drift.toFixed(0)}m from the point we sent` +
+      ` (${sent[0].toFixed(5)},${sent[1].toFixed(5)} → ${got[0].toFixed(5)},${got[1].toFixed(5)}).` +
+      ` The courier is going to Uber's point, and our distance was measured to ours.`,
+  );
+}
 
 export type CreateResult =
   | { ok: true; delivery: Delivery }
@@ -247,6 +299,28 @@ export async function createDelivery(input: {
   dropoffName: string;
   dropoffAddress: string;
   dropoffPhone: string;
+  // ——— ⚠️ The coordinates are not optional ———
+  //
+  // This call used to send the two addresses and nothing else, and the quote
+  // beside it sent points. So every delivery was priced between the places we
+  // measured and then *dispatched* to wherever Uber's own geocoder put two
+  // strings, which is not the same question and does not have to have the same
+  // answer. Uber's own example shows it: "285 Fulton St" comes back resolved
+  // to One World Trade Center.
+  //
+  // For the dropoff that threw away the pin. PinPicker exists because a point
+  // in Koreatown has a building on every side of it and the customer is the
+  // only one who knows which is theirs; sending the words and not the point
+  // handed that decision back to a geocoder at the last moment, after the
+  // customer had answered it and paid.
+  //
+  // For the pickup it threw away the counter — the geocoded address, or a
+  // surveyed `door` where a shop has one — and substituted a fresh lookup of
+  // the street address on every order.
+  pickupLat: number;
+  pickupLng: number;
+  dropoffLat: number;
+  dropoffLng: number;
   dropoffNote?: string;
   // What's in the bag. Uber shows this to the courier and uses it for the
   // undeliverable-return flow, so it's the real items and not "food".
@@ -264,9 +338,13 @@ export async function createDelivery(input: {
     pickup_name: input.pickupName,
     pickup_address: input.pickupAddress,
     pickup_phone_number: input.pickupPhone,
+    pickup_latitude: input.pickupLat,
+    pickup_longitude: input.pickupLng,
     dropoff_name: input.dropoffName,
     dropoff_address: input.dropoffAddress,
     dropoff_phone_number: input.dropoffPhone,
+    dropoff_latitude: input.dropoffLat,
+    dropoff_longitude: input.dropoffLng,
     ...(input.dropoffNote ? { dropoff_notes: input.dropoffNote.slice(0, 280) } : {}),
     manifest_items: input.items.map((item) => ({
       name: manifestName(item.name, item.options),
@@ -280,12 +358,31 @@ export async function createDelivery(input: {
 
   const id = result.body.id;
   if (typeof id !== "string") return { ok: false, reason: "delivery-malformed" };
+
+  // Uber echoes both ends back as it resolved them, and it does not always
+  // agree with what it was sent. That echo is the only cross-check available
+  // on a delivery: not "is our mileage the same as theirs", which cannot be
+  // asked, but the question underneath it — are the two of us talking about
+  // the same doorway.
+  const pickup = (result.body.pickup ?? null) as Record<string, unknown> | null;
+  const dropoff = (result.body.dropoff ?? null) as Record<string, unknown> | null;
+  const resolved = {
+    pickup: point(pickup?.location),
+    dropoff: point(dropoff?.location),
+    pickupAddress: text(pickup?.address),
+    dropoffAddress: text(dropoff?.address),
+  };
+
+  noteDrift("pickup", [input.pickupLat, input.pickupLng], resolved.pickup, PICKUP_DRIFT_METRES);
+  noteDrift("dropoff", [input.dropoffLat, input.dropoffLng], resolved.dropoff, DROPOFF_DRIFT_METRES);
+
   return {
     ok: true,
     delivery: {
       deliveryId: id,
       trackingUrl:
         typeof result.body.tracking_url === "string" ? result.body.tracking_url : null,
+      resolved,
     },
   };
 }

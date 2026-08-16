@@ -302,6 +302,10 @@ export async function POST(request: Request) {
   // and reused when the delivery is booked, so the two name the same shop —
   // re-deriving it at booking time would be two chances to pick differently.
   let pickupStore: StoreLocation | null = null;
+  // And where that counter is. Carried alongside the store rather than
+  // re-derived at booking time, so the point the quote was priced from is the
+  // point the courier is sent to.
+  let pickupPoint: [number, number] | null = null;
 
   // ——— What the driver is told ———
   //
@@ -345,6 +349,7 @@ export async function POST(request: Request) {
     );
     const origin = counter.position;
     pickupStore = store;
+    pickupPoint = origin;
 
     const fresh = await quoteDelivery({
       pickupAddress: structuredAddress(addressParts(store)),
@@ -519,7 +524,7 @@ export async function POST(request: Request) {
     deliveryId?: string;
     deliveryBooked?: boolean;
   }> {
-    if (!forDelivery || !deliveryQuoteId || !dropoff) return {};
+    if (!forDelivery || !deliveryQuoteId || !dropoff || !pickupPoint) return {};
 
     const [firstName, ...rest] = order.name.split(/\s+/);
     const booked = await createDelivery({
@@ -529,8 +534,16 @@ export async function POST(request: Request) {
         pickupStore ? addressParts(pickupStore) : SHOP_ADDRESS_PARTS,
       ),
       pickupPhone: SHOP_PHONE,
+      // The same two points the quote was priced between. Without them Uber
+      // geocodes the address strings itself and the courier goes wherever
+      // that lands, which is not necessarily where any of this was measured.
+      // See the note in uberDirect.ts.
+      pickupLat: pickupPoint[0],
+      pickupLng: pickupPoint[1],
       dropoffName: `${firstName ?? ""} ${rest.join(" ")}`.trim() || order.email,
       dropoffAddress: dropoff.address,
+      dropoffLat: dropoff.lat,
+      dropoffLng: dropoff.lng,
       // Uber calls this number when the courier is outside. Without one the
       // delivery can stall on the pavement, which is why the checkout asks
       // for a phone and why this falls back to the shop's line.
