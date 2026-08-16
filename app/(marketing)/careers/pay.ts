@@ -271,16 +271,22 @@ export function resolvePay(
 
 export type ResolvedPay = NonNullable<ReturnType<typeof resolvePay>>;
 
-/** The same numbers as money, in whatever language is on. Cents on an hourly
- *  rate because 17.28 and 17 are different wages; none on a salary, where they
- *  would be noise. */
+/** The same numbers as money, in whatever language is on.
+ *
+ *  Cents on an hourly rate *when there are any*. The rule used to force two
+ *  decimals, on the reasoning that 17.28 and 17 are different wages — which is
+ *  an argument against rounding, not an argument for "$24.00". A maximum of
+ *  two digits keeps 18.42 whole and lets 24 read as $24, which is how the shop
+ *  writes it and how anybody says it out loud.
+ *
+ *  None on a salary, where they would be noise. */
 export function formatPay(pay: ResolvedPay, locale: string): string {
   const cents = pay.per === "hour";
   const money = (value: number) =>
     new Intl.NumberFormat(locale, {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: cents ? 2 : 0,
+      minimumFractionDigits: 0,
       maximumFractionDigits: cents ? 2 : 0,
     }).format(value);
   return pay.low === pay.high ? money(pay.low) : `${money(pay.low)}–${money(pay.high)}`;

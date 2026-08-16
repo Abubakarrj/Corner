@@ -757,8 +757,8 @@ export const en = {
   "careers.state": "State",
 
   "careers.positionsNote": "Pick the one you're applying for.",
-  "careers.perHour": "{amount} an hour",
-  "careers.perYear": "{amount} a year",
+  "careers.perHour": "{amount}/hr",
+  "careers.perYear": "{amount}/yr",
 
   // ——— The job descriptions ———
   //
@@ -802,7 +802,7 @@ export const en = {
   "careers.jdManagerWant2": "Comfortable with the numbers: labour, waste, cost of goods",
   "careers.jdManagerWant3": "On the floor through the rush, not only in the office",
   "careers.jdManagerCert": "A Food Safety Manager certification, or willing to get one",
-  "careers.perHourTips": "{amount} an hour plus tips",
+  "careers.perHourTips": "{amount}/hr + Tips",
   "careers.applyNow": "Apply now",
   "careers.roleCount": "{count} roles",
   "careers.roleCountOne": "1 role",
