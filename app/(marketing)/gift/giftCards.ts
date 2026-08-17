@@ -68,17 +68,125 @@ export type Art =
   // fourth illustration.
   | {
       kind: "scene";
-      scene: "papel" | "delivery" | "shop";
+      scene: "papel" | "delivery" | "shop" | "shopClear" | "table" | "skyline" | "wreath";
       palette: Palette;
-      word: StringKey;
-      /** Lettering colour, and the strip along the foot. Kept out of the
-       *  palette because it answers to the art rather than being part of it:
-       *  the same palette reads over a pale panel and under a night sky. */
+      /** The greeting, on the cards that want one.
+       *
+       *  Optional, and most of them do not. A picture of breakfast is already
+       *  the sentence, and a wreath is the card you send when there is no
+       *  occasion to name — writing one across it makes the art a background
+       *  for a caption. The three that keep a word are the three where the
+       *  word is the point: a Valentine, a holiday, an offer to pay. */
+      word?: StringKey;
+      /** Lettering colour. Kept out of the palette because it answers to the
+       *  art rather than being part of it: the same palette reads over a pale
+       *  panel and under a night sky. */
       ink: string;
-      /** Where the word sits. A scene with its subject in the middle wants the
-       *  lettering above it; one with a horizon wants it across the top. */
-      wordAt: "top" | "middle";
+      /** The "Corner Bagel / GIFT CARD" strip along the foot, when the foot of
+       *  the picture is a different colour from where the word sits.
+       *
+       *  It defaulted to `ink` and only `ink`, which was fine until a scene had
+       *  a pale foot under a dark sky. The shop stands in snow and the skyline
+       *  ends in a road, both painted in the panel colour — so on the cards
+       *  whose lettering is that same pale colour, the strip was pale on pale
+       *  and the shop's name simply was not on the card. A word at the top of a
+       *  picture and a line at the bottom of it are over two different things,
+       *  and one colour cannot answer for both. */
+      footInk?: string;
+      /** Where the word sits, when there is one. A scene with its subject in
+       *  the middle wants the lettering above it; one with a horizon wants it
+       *  across the top. */
+      wordAt?: "top" | "middle";
     };
+
+type SceneName = Extract<Art, { kind: "scene" }>["scene"];
+
+/** What each scene paints along the foot of the card, and behind where a
+ *  greeting would sit.
+ *
+ *  ——— Why this has to be written down ———
+ *
+ *  Every card carries "Corner Bagel / GIFT CARD" along its foot, and some carry
+ *  a greeting over the picture. Both are HTML laid over the SVG, so from inside
+ *  a drawing they are invisible, and from inside this file a drawing is a name.
+ *  Nothing connected the two, and two cards shipped wrong: the holiday shop
+ *  wrote cream on its snow, and the congrats card wrote cream on cream paper —
+ *  so the card whose entire job is to say "congrats" said nothing at all. Both
+ *  read fine in the source. Both were only ever going to be caught by looking
+ *  at a picture, and were.
+ *
+ *  So the fact lives here as data and legibility() below turns it into an
+ *  answer. It is keyed off the scene union, so adding a drawing without saying
+ *  what colour its bottom is does not compile.
+ *
+ *  It has to be kept true by hand against GiftCardScenes.tsx. That is a real
+ *  cost and it is smaller than the alternative, which is sampling pixels out of
+ *  a rendered card: this catches the mistake in a couple of milliseconds with
+ *  no browser, and the thing it is checking is a decision somebody made rather
+ *  than an emergent property of the drawing. */
+export const SCENE_BACKDROP: Record<
+  SceneName,
+  { foot: (palette: Palette) => string; word: (palette: Palette) => string }
+> = {
+  // A sheet of pale paper across the middle, the ground showing below it.
+  papel: { foot: (p) => p.ground, word: (p) => p.panel },
+  // Sky above, a hedge along the bottom.
+  delivery: { foot: (p) => p.accentSoft, word: (p) => p.ground },
+  // Sky above, snow or pavement along the bottom — the panel colour either way.
+  shop: { foot: (p) => p.panel, word: (p) => p.ground },
+  shopClear: { foot: (p) => p.panel, word: (p) => p.ground },
+  // Tablecloth to the edges.
+  table: { foot: (p) => p.ground, word: (p) => p.ground },
+  // Sky above, road along the bottom.
+  skyline: { foot: (p) => p.panel, word: (p) => p.ground },
+  // Ground to the edges; the ring is drawn inside it.
+  wreath: { foot: (p) => p.ground, word: (p) => p.ground },
+};
+
+function channel(value: number): number {
+  const part = value / 255;
+  return part <= 0.03928 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4;
+}
+
+function luminance(hex: string): number {
+  const digits = hex.replace("#", "");
+  const full =
+    digits.length === 3
+      ? digits
+          .split("")
+          .map((digit) => digit + digit)
+          .join("")
+      : digits;
+  return (
+    0.2126 * channel(parseInt(full.slice(0, 2), 16)) +
+    0.7152 * channel(parseInt(full.slice(2, 4), 16)) +
+    0.0722 * channel(parseInt(full.slice(4, 6), 16))
+  );
+}
+
+/** How far apart two colours are, as the WCAG ratio: 1 is identical, 21 is
+ *  black on white. */
+export function contrast(a: string, b: string): number {
+  const first = luminance(a);
+  const second = luminance(b);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+/** How legible a card's lettering is against what the drawing puts behind it.
+ *
+ *  `word` is null on a card that carries no greeting, which is most of them.
+ *  Cards whose face is not a drawing are not measured here — a checker or a
+ *  wordmark card names both its ink and its ground in the same object, so
+ *  there is nothing for them to get out of step with. */
+export function legibility(card: GiftCard): { foot: number; word: number | null } | null {
+  if (card.art.kind !== "scene") return null;
+  const { scene, palette, ink, footInk, word } = card.art;
+  const backdrop = SCENE_BACKDROP[scene];
+  return {
+    foot: contrast(footInk ?? ink, backdrop.foot(palette)),
+    word: word ? contrast(ink, backdrop.word(palette)) : null,
+  };
+}
 
 export type GiftCard = {
   id: string;
@@ -121,6 +229,27 @@ const DUSK: Palette = {
   ground: "#243A6B", panel: "#F4EDE0", ink: "#1A2747",
   accent: "#E4693F", accentSoft: "#F2C438", crust: CRUST, seed: SESAME,
 };
+const SUNSET: Palette = {
+  ground: "#F2A03D", panel: "#FFF3DC", ink: "#3A2540",
+  accent: "#D8365B", accentSoft: "#7C4B8C", crust: CRUST, seed: SESAME,
+};
+const OLIVE_GROVE: Palette = {
+  ground: "#5E6B44", panel: "#F4EDE0", ink: "#2E3823",
+  accent: "#C4552F", accentSoft: "#9DB07A", crust: CRUST, seed: SESAME,
+};
+// The two accents are in the ground's own family on purpose. They were the
+// shared red and green every other palette here uses, and on a pink card that
+// is holly: the rose wreath came out as a Christmas wreath somebody had
+// recoloured the background of, and the rose table got a bright green napkin.
+// A palette is not a set of slots to fill with the house colours.
+const ROSE: Palette = {
+  ground: "#E9B7C4", panel: "#FFF6E2", ink: "#5A2A3B",
+  accent: "#C2415F", accentSoft: "#9C6C86", crust: CRUST, seed: SESAME,
+};
+const SLATE: Palette = {
+  ground: "#2C3A44", panel: "#F1ECE1", ink: "#1B252C",
+  accent: "#E4693F", accentSoft: "#6FA8A0", crust: CRUST, seed: SESAME,
+};
 
 export const GIFT_CARDS: GiftCard[] = [
   {
@@ -158,8 +287,10 @@ export const GIFT_CARDS: GiftCard[] = [
     label: "gift.artOnMe",
     categories: ["Just because", "Thanks"],
     art: {
+      // Dark greeting against the sky, pale foot against the hedge. The foot
+      // was the same navy as the greeting and came out at 2.5:1 on the green.
       kind: "scene", scene: "delivery", palette: MORNING,
-      word: "gift.wordOnMe", ink: "#26364A", wordAt: "top",
+      word: "gift.wordOnMe", ink: "#26364A", footInk: "#FFF6E2", wordAt: "top",
     },
   },
   {
@@ -176,8 +307,9 @@ export const GIFT_CARDS: GiftCard[] = [
     label: "gift.artHolidays",
     categories: ["Seasonal"],
     art: {
+      // Pale word against the night sky, dark foot against the snow.
       kind: "scene", scene: "shop", palette: WINTER,
-      word: "gift.wordHolidays", ink: "#F4EDE0", wordAt: "top",
+      word: "gift.wordHolidays", ink: "#F4EDE0", footInk: "#12403A", wordAt: "top",
     },
   },
   {
@@ -185,8 +317,70 @@ export const GIFT_CARDS: GiftCard[] = [
     label: "gift.artCongratsPapel",
     categories: ["Congrats", "Birthday"],
     art: {
+      // Dark, not pale. The papel scene is a sheet of cream paper across the
+      // whole card, so pale lettering on it was not lettering — this card
+      // shipped saying nothing where it says "congrats".
       kind: "scene", scene: "papel", palette: DUSK,
-      word: "gift.wordCongrats", ink: "#F4EDE0", wordAt: "top",
+      word: "gift.wordCongrats", ink: "#1A2747", footInk: "#F4EDE0", wordAt: "top",
+    },
+  },
+  {
+    id: "table-morning",
+    label: "gift.artTable",
+    categories: ["Just because", "Thanks", "Birthday"],
+    art: { kind: "scene", scene: "table", palette: MORNING, ink: "#26364A" },
+  },
+  {
+    id: "skyline-sunset",
+    label: "gift.artSkyline",
+    categories: ["Just because", "Congrats"],
+    art: { kind: "scene", scene: "skyline", palette: SUNSET, ink: "#3A2540" },
+  },
+  {
+    id: "wreath-olive",
+    label: "gift.artWreath",
+    categories: ["Just because", "Thanks", "Seasonal"],
+    art: { kind: "scene", scene: "wreath", palette: OLIVE_GROVE, ink: "#F4EDE0" },
+  },
+  {
+    id: "wreath-rose",
+    label: "gift.artWreathRose",
+    categories: ["Birthday", "Congrats", "Just because"],
+    art: { kind: "scene", scene: "wreath", palette: ROSE, ink: "#5A2A3B" },
+  },
+  {
+    id: "skyline-night",
+    label: "gift.artSkylineNight",
+    categories: ["Just because", "Congrats"],
+    art: { kind: "scene", scene: "skyline", palette: SLATE, ink: "#1B252C" },
+  },
+  {
+    id: "table-rose",
+    label: "gift.artTableRose",
+    categories: ["Thanks", "Just because"],
+    art: { kind: "scene", scene: "table", palette: ROSE, ink: "#5A2A3B" },
+  },
+  {
+    id: "shop-morning",
+    label: "gift.artShopMorning",
+    categories: ["Just because", "Thanks"],
+    art: { kind: "scene", scene: "shopClear", palette: MORNING, ink: "#26364A" },
+  },
+  {
+    id: "delivery-dusk",
+    label: "gift.artDeliveryDusk",
+    categories: ["Just because", "Birthday"],
+    art: { kind: "scene", scene: "delivery", palette: DUSK, ink: "#1A2747" },
+  },
+  {
+    id: "papel-olive",
+    label: "gift.artPapelOlive",
+    categories: ["Thanks", "Just because"],
+    art: {
+      // The paper is cream and the ground under it is olive, so the word and
+      // the foot are opposite colours. See footInk on the Art type.
+      kind: "scene", scene: "papel", palette: OLIVE_GROVE,
+      ink: "#2E3823", footInk: "#F4EDE0",
     },
   },
   {

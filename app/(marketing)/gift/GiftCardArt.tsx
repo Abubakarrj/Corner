@@ -2,7 +2,15 @@
 
 import { useT, type StringKey } from "../../i18n";
 import { CREAM, type Art } from "./giftCards";
-import { DeliveryScene, PapelScene, ShopScene, type Palette } from "./GiftCardScenes";
+import {
+  DeliveryScene,
+  PapelScene,
+  ShopScene,
+  SkylineScene,
+  TableScene,
+  WreathScene,
+  type Palette,
+} from "./GiftCardScenes";
 
 // Every card carries the wordmark and an outlined "GIFT CARD" badge, as in
 // the reference — that pairing is what makes a patterned rectangle read as a
@@ -117,6 +125,22 @@ function Wordmark({ ink, ground, word }: { ink: string; ground: string; word: St
 // eight different lengths in ten languages, and a <text> element would need a
 // font size per language or it would run off the card. Laid out as HTML it
 // wraps, balances and shrinks like every other piece of copy in the app.
+const SCENES = {
+  papel: PapelScene,
+  delivery: DeliveryScene,
+  shop: ShopScene,
+  // The same drawing with its weather off. A separate name rather than a
+  // separate prop on the card, so every entry in this map is still a component
+  // that takes a palette and nothing else, and giftCards.ts still picks a
+  // picture by naming one.
+  shopClear: (props: { palette: Palette }) => <ShopScene {...props} snow={false} />,
+  table: TableScene,
+  skyline: SkylineScene,
+  wreath: WreathScene,
+} as const;
+
+export type SceneName = keyof typeof SCENES;
+
 function Scene({
   scene,
   palette,
@@ -124,40 +148,52 @@ function Scene({
   ink,
   wordAt,
 }: {
-  scene: "papel" | "delivery" | "shop";
+  scene: SceneName;
   palette: Palette;
-  word: StringKey;
+  word?: StringKey;
   ink: string;
-  wordAt: "top" | "middle";
+  wordAt?: "top" | "middle";
 }) {
   const t = useT();
+  const Drawing = SCENES[scene];
   return (
     <div className="absolute inset-0">
-      {scene === "papel" ? <PapelScene palette={palette} /> : null}
-      {scene === "delivery" ? <DeliveryScene palette={palette} /> : null}
-      {scene === "shop" ? <ShopScene palette={palette} /> : null}
-      <div
-        className={
-          "pointer-events-none absolute inset-x-0 flex justify-center px-5 " +
-          (wordAt === "top" ? "top-[7%]" : "inset-y-0 items-center")
-        }
-      >
-        <span
-          className="text-balance text-center text-[15px] font-bold uppercase leading-[0.98] tracking-[-0.01em] sm:text-[18px]"
-          style={{ color: ink }}
+      <Drawing palette={palette} />
+      {word ? (
+        <div
+          className={
+            "pointer-events-none absolute inset-x-0 flex justify-center px-5 " +
+            (wordAt === "middle" ? "inset-y-0 items-center" : "top-[7%]")
+          }
         >
-          {t(word)}
-        </span>
-      </div>
+          <span
+            className="text-balance text-center text-[15px] font-bold uppercase leading-[0.98] tracking-[-0.01em] sm:text-[18px]"
+            style={{ color: ink }}
+          >
+            {t(word)}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 export default function GiftCardArt({ art }: { art: Art }) {
   const t = useT();
-  // The worded designs carry their message as the whole face, so the
-  // wordmark sits along the bottom rather than over the top of it.
-  const worded = art.kind === "checker" || art.kind === "wordmark" || art.kind === "scene";
+  // Whether the face is already occupied — by a message across it, or by a
+  // drawing. Either way the wordmark goes along the foot instead of a plate in
+  // the middle, which on a scene would be a caption over the picture and on a
+  // wordmark card would be a second piece of lettering under the first.
+  //
+  // A wordless scene is on this side of the line too. It has no message to sit
+  // clear of, but it has a picture, and the whole point of dropping the word
+  // was to let the picture be the card. The two lines along the bottom stay
+  // because they are what makes a drawing read as a gift card rather than as
+  // an illustration; that is the shop's name on it, not a caption.
+  const fullFace = art.kind === "checker" || art.kind === "wordmark" || art.kind === "scene";
+  // What the foot of the card is written in. Only a scene can differ, and only
+  // a scene whose bottom is a different colour from the rest of it.
+  const foot = (art.kind === "scene" ? art.footInk : undefined) ?? art.ink;
 
   return (
     <div className="absolute inset-0">
@@ -179,17 +215,17 @@ export default function GiftCardArt({ art }: { art: Art }) {
         />
       ) : null}
 
-      {worded ? (
+      {fullFace ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex items-center justify-center gap-2">
           <span
             className="text-[12px] font-bold leading-none tracking-[-0.01em]"
-            style={{ color: art.ink }}
+            style={{ color: foot }}
           >
             Corner Bagel
           </span>
           <span
             className="rounded-full border px-2 py-[3px] text-[8px] font-bold uppercase leading-none tracking-[0.14em]"
-            style={{ color: art.ink, borderColor: art.ink }}
+            style={{ color: foot, borderColor: foot }}
           >
             {t("gift.cardBadge")}
           </span>

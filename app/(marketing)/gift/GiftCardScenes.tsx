@@ -48,6 +48,13 @@ export type Palette = {
 
 const CARD = { w: 135, h: 100 };
 
+// The two colours that are not the palette's to choose. A bagel's crust is
+// already outside it, for the same reason: some things in these pictures are
+// the thing itself rather than a decorative surface, and a palette that gets a
+// vote on them produces a green bagel.
+const COFFEE = "#4A2E23";
+const CREMA = "#C8A27A";
+
 /** A bagel, seeded, at any size. The one motif this shop has that nobody else
  *  does, so it is in all three scenes rather than a generic ornament. */
 function Bagel({
@@ -188,37 +195,45 @@ export function PapelScene({ palette }: { palette: Palette }) {
       aria-hidden
     >
       <rect width={CARD.w} height={CARD.h} fill={ground} />
-      <path d={scallopPath(12, 10, 111, 80, 4.4)} fill={panel} />
+      {/* The paper stops short of the foot of the card. It used to run to
+          within four units of it, and the scalloped bottom edge ran straight
+          through the "Corner Bagel / GIFT CARD" strip that every card carries —
+          which cannot be seen from inside this SVG, because that strip is HTML
+          laid over it. Ending the paper at 84 leaves the strip a clean band of
+          ground colour to sit on. */}
+      <path d={scallopPath(12, 8, 111, 76, 4.4)} fill={panel} />
 
-      {/* Foliage, mirrored. Two sprigs and a rosette in each corner is enough
-          to read as a border without any of it being looked at closely. */}
-      {corners.map((corner, index) => (
-        <g key={index}>
-          <Sprig x={corner.x} y={corner.y} length={13} angle={index % 2 ? 38 : -38} fill={accent} />
-          <Sprig x={corner.x} y={corner.y} length={10} angle={index % 2 ? -18 : 18} fill={accentSoft} />
-          <Rosette x={corner.x} y={corner.y} r={5.2} petal={accentSoft} heart={ink} />
-        </g>
-      ))}
+      <g transform="translate(0 -3)">
+        {/* Foliage, mirrored. Two sprigs and a rosette in each corner is enough
+            to read as a border without any of it being looked at closely. */}
+        {corners.map((corner, index) => (
+          <g key={index}>
+            <Sprig x={corner.x} y={corner.y} length={13} angle={index % 2 ? 38 : -38} fill={accent} />
+            <Sprig x={corner.x} y={corner.y} length={10} angle={index % 2 ? -18 : 18} fill={accentSoft} />
+            <Rosette x={corner.x} y={corner.y} r={5.2} petal={accentSoft} heart={ink} />
+          </g>
+        ))}
 
-      {/* The centre: a heart between two bagels, which is the whole joke — the
-          shop's own object standing in for the two figures the reference had. */}
-      <path
-        d="M 67.5 62 C 60 55 55 51 55 46.5 C 55 43 57.6 41 60.4 41 C 62.7 41 65 42.4 67.5 45.6
-           C 70 42.4 72.3 41 74.6 41 C 77.4 41 80 43 80 46.5 C 80 51 75 55 67.5 62 Z"
-        fill={accent}
-      />
-      <Bagel x={47} y={52} r={11} crust={crust} seed={seed} hole={panel} />
-      <Bagel x={88} y={52} r={11} crust={crust} seed={seed} hole={panel} />
+        {/* The centre: a heart between two bagels, which is the whole joke — the
+            shop's own object standing in for the two figures the reference had. */}
+        <path
+          d="M 67.5 62 C 60 55 55 51 55 46.5 C 55 43 57.6 41 60.4 41 C 62.7 41 65 42.4 67.5 45.6
+             C 70 42.4 72.3 41 74.6 41 C 77.4 41 80 43 80 46.5 C 80 51 75 55 67.5 62 Z"
+          fill={accent}
+        />
+        <Bagel x={47} y={52} r={11} crust={crust} seed={seed} hole={panel} />
+        <Bagel x={88} y={52} r={11} crust={crust} seed={seed} hole={panel} />
 
-      {/* Drops, the papel-picado punch marks, in the gaps between the corner
-          sprigs rather than on top of them: at 22 and 113 they were landing
-          inside a rosette, which read as a smudge rather than as a cut. */}
-      {[45, 67.5, 90].map((x) => (
-        <path key={x} d={`M ${x} 74 l 2.2 3.9 a 2.5 2.5 0 1 1 -4.4 0 Z`} fill={accentSoft} />
-      ))}
-      {[45, 67.5, 90].map((x) => (
-        <circle key={x} cx={x} cy={26} r={1.9} fill={accent} />
-      ))}
+        {/* Drops, the papel-picado punch marks, in the gaps between the corner
+            sprigs rather than on top of them: at 22 and 113 they were landing
+            inside a rosette, which read as a smudge rather than as a cut. */}
+        {[45, 67.5, 90].map((x) => (
+          <path key={x} d={`M ${x} 74 l 2.2 3.9 a 2.5 2.5 0 1 1 -4.4 0 Z`} fill={accentSoft} />
+        ))}
+        {[45, 67.5, 90].map((x) => (
+          <circle key={x} cx={x} cy={26} r={1.9} fill={accent} />
+        ))}
+      </g>
     </svg>
   );
 }
@@ -310,7 +325,7 @@ export function DeliveryScene({ palette }: { palette: Palette }) {
 // The counter itself, under whatever weather the palette says. The awning
 // stripes and the hanging sign are the two things that make a rectangle read
 // as a shop, so both are drawn and nothing else is.
-export function ShopScene({ palette }: { palette: Palette }) {
+export function ShopScene({ palette, snow = true }: { palette: Palette; snow?: boolean }) {
   const { ground, panel, ink, accent, accentSoft, crust, seed } = palette;
   return (
     <svg
@@ -321,17 +336,24 @@ export function ShopScene({ palette }: { palette: Palette }) {
     >
       <rect width={CARD.w} height={CARD.h} fill={ground} />
 
-      {/* Weather. Small, irregular, and behind everything. */}
-      {Array.from({ length: 26 }, (_, index) => (
-        <circle
-          key={index}
-          cx={((index * 37) % 131) + 2}
-          cy={((index * 53) % 46) + 4}
-          r={index % 3 === 0 ? 1.5 : 1}
-          fill={panel}
-          opacity={0.75}
-        />
-      ))}
+      {/* Weather, and the one thing in these scenes a palette cannot decide.
+          A colourway can make a sky blue, and pale flecks in a blue sky are
+          still snow — so the second shop card, the one on a summer morning,
+          turns them off rather than recolouring them into something they are
+          not. The drift along the foot stays either way: under snow it is a
+          bank, under a clear sky it is the pavement. */}
+      {snow
+        ? Array.from({ length: 26 }, (_, index) => (
+            <circle
+              key={index}
+              cx={((index * 37) % 131) + 2}
+              cy={((index * 53) % 46) + 4}
+              r={index % 3 === 0 ? 1.5 : 1}
+              fill={panel}
+              opacity={0.75}
+            />
+          ))
+        : null}
 
       {/* The building. */}
       <rect x={22} y={34} width={91} height={50} fill={panel} />
@@ -377,6 +399,298 @@ export function ShopScene({ palette }: { palette: Palette }) {
             L 135 100 L 0 100 Z`}
         fill={panel}
       />
+    </svg>
+  );
+}
+
+// ——— The table ———
+//
+// Breakfast from above: a plate, a bagel halved and spread, a coffee beside
+// it. The only card that shows what is actually being given, which is why it
+// needs no greeting written across it — a plate of food is already the
+// sentence.
+export function TableScene({ palette }: { palette: Palette }) {
+  const { ground, panel, ink, accentSoft, crust, seed } = palette;
+  // ——— Two halves, apart and off the level ———
+  //
+  // They were drawn wide and side by side on the same line, and the crust rings
+  // overlapped: two rings of one size, level with each other, is a pair of
+  // spectacles, and nothing about the colour fixes that. Pulling them apart
+  // helped and was not enough — level and symmetric still reads as a pair of
+  // lenses. So one sits high and one low, which is how two halves land when
+  // somebody puts them down, and the shape stops being a face.
+  const half = (cx: number, cy: number, flip: number) => (
+    <g key={cx}>
+      {/* Cut side up: the crust ring, then the spread, then the crumb. */}
+      <circle cx={cx} cy={cy} r={10.5} fill={crust} />
+      <circle cx={cx} cy={cy} r={8} fill={panel} />
+      <circle cx={cx} cy={cy} r={2.4} fill={crust} />
+      {Array.from({ length: 8 }, (_, index) => {
+        const angle = (index / 8) * Math.PI * 2 + flip;
+        return (
+          <ellipse
+            key={index}
+            cx={cx + Math.cos(angle) * 9.3}
+            cy={cy + Math.sin(angle) * 9.3}
+            rx={1.2}
+            ry={0.8}
+            fill={seed}
+            transform={`rotate(${(index * 45 + flip * 30).toFixed(1)} ${cx + Math.cos(angle) * 9.3} ${cy + Math.sin(angle) * 9.3})`}
+          />
+        );
+      })}
+    </g>
+  );
+  return (
+    <svg
+      className="h-full w-full"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      <rect width={CARD.w} height={CARD.h} fill={ground} />
+
+      {/* The napkin, under everything, turned off square so the composition
+          has one line that is not horizontal.
+
+          It is wider than the plate on purpose. Drawn the same size, the plate
+          covered it and only two green corners showed, which reads as a mistake
+          rather than as a cloth. */}
+      <rect
+        x={12}
+        y={24}
+        width={80}
+        height={58}
+        rx={2}
+        fill={accentSoft}
+        transform="rotate(-7 52 53)"
+      />
+      <rect
+        x={17}
+        y={29}
+        width={70}
+        height={48}
+        rx={1}
+        fill="none"
+        stroke={panel}
+        strokeWidth={0.9}
+        opacity={0.5}
+        transform="rotate(-7 52 53)"
+      />
+
+      {/* The plate. Smaller than it was: at r=31 it stood on the napkin the way
+          a lid stands on a jar, and the card was a plate rather than a table. */}
+      <circle cx={50} cy={52} r={25} fill={panel} />
+      <circle cx={50} cy={52} r={25} fill="none" stroke={ink} strokeWidth={0.8} opacity={0.14} />
+      {half(38, 47, 0.4)}
+      {half(63, 56, 0.9)}
+
+      {/* Coffee, from directly above: the cup, the crema, the handle.
+          Its own browns rather than the palette's ink and accent. Coffee is
+          brown in every colourway the same way the crust is: mixed from the
+          palette it came out beetroot on the rose card and slate on the dark
+          one, and a cup of something that is not coffee beside a bagel is a
+          picture of a different breakfast. */}
+      <g>
+        <path
+          d="M 112 46 a 8 8 0 1 1 0 16 a 6 6 0 1 0 0 -16 Z"
+          fill={panel}
+        />
+        <circle cx={104} cy={54} r={13} fill={panel} />
+        <circle cx={104} cy={54} r={10.2} fill={COFFEE} />
+        <ellipse cx={100.6} cy={50.6} rx={3} ry={2} fill={CREMA} opacity={0.5} />
+      </g>
+
+      {/* A knife, and crumbs where a knife has been. */}
+      <g transform="rotate(9 96 84)">
+        <rect x={78} y={82} width={26} height={3} rx={1.5} fill={ink} opacity={0.55} />
+        <rect x={104} y={80.6} width={17} height={5.8} rx={2.6} fill={panel} />
+      </g>
+      {[
+        [30, 86],
+        [37, 90],
+        [46, 85],
+        [62, 88],
+        [70, 84],
+      ].map(([x, y]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={1.1} fill={crust} />
+      ))}
+    </svg>
+  );
+}
+
+// ——— The skyline ———
+//
+// Where the shop is, rather than what it sells. Palms, a low sun and the
+// downtown ridge behind Koreatown — the view along Wilshire at the hour the
+// shop is either opening or shutting, depending on the palette.
+export function SkylineScene({ palette }: { palette: Palette }) {
+  const { ground, panel, ink, accent, accentSoft, crust, seed } = palette;
+  const towers = [
+    { x: 6, w: 13, h: 26 },
+    { x: 21, w: 9, h: 38 },
+    { x: 32, w: 15, h: 20 },
+    { x: 88, w: 11, h: 33 },
+    { x: 101, w: 16, h: 24 },
+    { x: 119, w: 10, h: 30 },
+  ];
+  const palm = (x: number, height: number, lean: number) => (
+    <g key={x} transform={`rotate(${lean} ${x} 78)`}>
+      <path
+        d={`M ${x - 1.6} 78 C ${x - 0.6} ${78 - height * 0.55} ${x + 0.4} ${78 - height * 0.8} ${x + 1.4} ${78 - height}
+            L ${x + 3.4} ${78 - height} C ${x + 2.4} ${78 - height * 0.78} ${x + 1.6} ${78 - height * 0.5} ${x + 1.4} 78 Z`}
+        fill={ink}
+      />
+      {[-64, -30, 0, 30, 64].map((angle) => (
+        <ellipse
+          key={angle}
+          cx={x + 2.4}
+          cy={78 - height - 3.6}
+          rx={3}
+          ry={7.6}
+          fill={accentSoft}
+          transform={`rotate(${angle} ${x + 2.4} ${78 - height})`}
+        />
+      ))}
+      <circle cx={x + 2.4} cy={78 - height} r={1.7} fill={ink} />
+    </g>
+  );
+  return (
+    <svg
+      className="h-full w-full"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      <rect width={CARD.w} height={CARD.h} fill={ground} />
+
+      {/* The sun, which is also a bagel, and is not remarked upon. */}
+      <Bagel x={67.5} y={44} r={22} crust={crust} seed={seed} hole={ground} />
+
+      {/* Bands of sky under it, the way a flat sunset is drawn: three steps,
+          not a gradient. */}
+      <rect x={0} y={66} width={CARD.w} height={4} fill={accent} opacity={0.28} />
+      <rect x={0} y={70} width={CARD.w} height={4} fill={accent} opacity={0.44} />
+
+      {towers.map((tower) => (
+        <g key={tower.x}>
+          <rect x={tower.x} y={78 - tower.h} width={tower.w} height={tower.h} fill={ink} />
+          {Array.from({ length: Math.max(2, Math.floor(tower.h / 9)) }, (_, row) => (
+            <rect
+              key={row}
+              x={tower.x + 2}
+              y={78 - tower.h + 4 + row * 8}
+              width={tower.w - 4}
+              height={2.6}
+              fill={crust}
+              opacity={0.5}
+            />
+          ))}
+        </g>
+      ))}
+
+      {palm(50, 40, -5)}
+      {palm(84, 32, 6)}
+
+      <rect x={0} y={78} width={CARD.w} height={22} fill={panel} />
+      <rect x={0} y={78} width={CARD.w} height={2.4} fill={ink} opacity={0.18} />
+      {Array.from({ length: 7 }, (_, index) => (
+        <rect key={index} x={index * 20 + 5} y={88} width={11} height={1.8} rx={0.9} fill={ink} opacity={0.22} />
+      ))}
+    </svg>
+  );
+}
+
+// ——— The wreath ———
+//
+// A ring of leaves, flowers and bagels around nothing in particular. The most
+// occasion-neutral of the set on purpose: it is the card to send when there is
+// no occasion, which is most of the time somebody sends one.
+export function WreathScene({ palette }: { palette: Palette }) {
+  const { ground, ink, accent, accentSoft, crust, seed } = palette;
+  const cx = 67.5;
+  const cy = 50;
+  const ring = 30;
+
+  // ——— Foliage in one colour, ornaments in the other ———
+  //
+  // The leaves alternated between the two accents and the rosettes were drawn
+  // in the first of them, so a rosette that landed on a leaf of its own colour
+  // fused into a single blob — an orange cap with a dark dot in it, which is a
+  // mushroom. The instinct was to move things apart, and cutting a hole in the
+  // ring for every ornament left eight clumps of foliage rather than a wreath.
+  //
+  // The overlap was never the problem. Things overlapping is what a wreath is;
+  // the problem was two of them being the same colour. So the foliage is all
+  // one green and every ornament is the other accent, and a flower sitting in
+  // the leaves reads as a flower sitting in the leaves.
+  const bagels = [45, 135, 225, 315];
+  const rosettes = [0, 90, 180, 270];
+
+  // The polar-to-card conversion, once. Twelve o'clock is up.
+  const at = (angle: number, radius: number) => {
+    const radians = (angle * Math.PI) / 180;
+    return { x: cx + Math.sin(radians) * radius, y: cy - Math.cos(radians) * radius };
+  };
+
+  return (
+    <svg
+      className="h-full w-full"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      {/* No panel disc behind the ring. There was one, at r=39, and it filled
+          the card edge to edge — so the card read as a decorated plate, which
+          is the other card in this set. A wreath is a ring on the ground it
+          hangs against, and nothing else. */}
+      <rect width={CARD.w} height={CARD.h} fill={ground} />
+
+      {/* Leaves the whole way round, unbroken. One shape rotated, which is what
+          makes a wreath a wreath rather than thirty-six decisions. The tilt
+          alternates so the ring does not read as a cog. */}
+      {/* Twenty-four, not thirty-six. At thirty-six the leaves were spaced 5.2
+          units apart and each one was 7.6 across, so every leaf was inside its
+          neighbours and the ring came out as a single wavy rope. Twenty-four
+          spaces them at 7.9, which is a hair wider than one leaf: they touch,
+          which is what foliage does, and each one still has an edge. */}
+      {Array.from({ length: 24 }, (_, index) => (
+        <g key={index} transform={`rotate(${(index / 24) * 360} ${cx} ${cy})`}>
+          <ellipse
+            cx={cx}
+            cy={cy - ring}
+            rx={2.6}
+            ry={6.5}
+            fill={accentSoft}
+            transform={`rotate(${index % 2 ? 28 : -28} ${cx} ${cy - ring})`}
+          />
+        </g>
+      ))}
+
+      {bagels.map((angle) => {
+        const point = at(angle, ring);
+        return (
+          <Bagel
+            key={angle}
+            x={point.x}
+            y={point.y}
+            r={7.2}
+            crust={crust}
+            seed={seed}
+            hole={ground}
+          />
+        );
+      })}
+      {rosettes.map((angle) => {
+        const point = at(angle, ring);
+        return (
+          <Rosette key={angle} x={point.x} y={point.y} r={5} petal={accent} heart={ink} />
+        );
+      })}
+
+      {/* The middle stays empty. A wreath with something in it is a badge, and
+          empty is also what leaves room for whatever somebody writes in the
+          message field — this is the card that carries no word of its own. */}
     </svg>
   );
 }

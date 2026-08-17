@@ -716,6 +716,15 @@ export const en = {
   "gift.artValentine": "Folk-cut gift card with two bagels and a heart",
   "gift.artHolidays": "Gift card showing the shop under snow",
   "gift.artCongratsPapel": "Folk-cut gift card reading congrats",
+  "gift.artTable": "Gift card showing a bagel and coffee on a table, from above",
+  "gift.artSkyline": "Gift card showing the city at sunset with a bagel for a sun",
+  "gift.artWreath": "Gift card with a wreath of leaves and bagels, in olive",
+  "gift.artWreathRose": "Gift card with a wreath of leaves and bagels, in rose",
+  "gift.artSkylineNight": "Gift card showing the city at night with a bagel for a moon",
+  "gift.artTableRose": "Gift card showing a bagel and coffee on a table, in rose",
+  "gift.artShopMorning": "Gift card showing the shop on a bright morning",
+  "gift.artDeliveryDusk": "Gift card showing a bagel riding on a car at dusk",
+  "gift.artPapelOlive": "Folk-cut gift card with two bagels and a heart, in olive",
 
   // ——— Careers ———
   // The application form. What isn't here is as deliberate as what is: see
