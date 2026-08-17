@@ -479,6 +479,9 @@ export const en = {
   "gift.wordBirthday": "HAPPY BIRTHDAY",
   "gift.wordCongrats": "CONGRATS",
   "gift.wordThankYou": "THANK YOU",
+  "gift.wordOnMe": "THIS ONE IS ON ME",
+  "gift.wordValentine": "BE MY VALENTINE",
+  "gift.wordHolidays": "HAPPY HOLIDAYS",
   "gift.catJustBecause": "Just because",
   "gift.catBirthday": "Birthday",
   "gift.catCongrats": "Congrats",
@@ -709,6 +712,10 @@ export const en = {
   "gift.artCongratsChecker": "Checkerboard gift card reading congrats",
   "gift.artBirthdayRed": "Red gift card reading happy birthday",
   "gift.artGinghamOlive": "Olive gingham gift card",
+  "gift.artOnMe": "Gift card showing a bagel riding on a car",
+  "gift.artValentine": "Folk-cut gift card with two bagels and a heart",
+  "gift.artHolidays": "Gift card showing the shop under snow",
+  "gift.artCongratsPapel": "Folk-cut gift card reading congrats",
 
   // ——— Careers ———
   // The application form. What isn't here is as deliberate as what is: see

@@ -2,6 +2,7 @@
 
 import { useT, type StringKey } from "../../i18n";
 import { CREAM, type Art } from "./giftCards";
+import { DeliveryScene, PapelScene, ShopScene, type Palette } from "./GiftCardScenes";
 
 // Every card carries the wordmark and an outlined "GIFT CARD" badge, as in
 // the reference — that pairing is what makes a patterned rectangle read as a
@@ -110,11 +111,53 @@ function Wordmark({ ink, ground, word }: { ink: string; ground: string; word: St
   );
 }
 
+// An illustrated face: the drawing, then the message over it as real text.
+//
+// The lettering is not in the SVG on purpose. It is a string key, so it is
+// eight different lengths in ten languages, and a <text> element would need a
+// font size per language or it would run off the card. Laid out as HTML it
+// wraps, balances and shrinks like every other piece of copy in the app.
+function Scene({
+  scene,
+  palette,
+  word,
+  ink,
+  wordAt,
+}: {
+  scene: "papel" | "delivery" | "shop";
+  palette: Palette;
+  word: StringKey;
+  ink: string;
+  wordAt: "top" | "middle";
+}) {
+  const t = useT();
+  return (
+    <div className="absolute inset-0">
+      {scene === "papel" ? <PapelScene palette={palette} /> : null}
+      {scene === "delivery" ? <DeliveryScene palette={palette} /> : null}
+      {scene === "shop" ? <ShopScene palette={palette} /> : null}
+      <div
+        className={
+          "pointer-events-none absolute inset-x-0 flex justify-center px-5 " +
+          (wordAt === "top" ? "top-[7%]" : "inset-y-0 items-center")
+        }
+      >
+        <span
+          className="text-balance text-center text-[15px] font-bold uppercase leading-[0.98] tracking-[-0.01em] sm:text-[18px]"
+          style={{ color: ink }}
+        >
+          {t(word)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function GiftCardArt({ art }: { art: Art }) {
   const t = useT();
   // The worded designs carry their message as the whole face, so the
   // wordmark sits along the bottom rather than over the top of it.
-  const worded = art.kind === "checker" || art.kind === "wordmark";
+  const worded = art.kind === "checker" || art.kind === "wordmark" || art.kind === "scene";
 
   return (
     <div className="absolute inset-0">
@@ -125,6 +168,15 @@ export default function GiftCardArt({ art }: { art: Art }) {
       ) : null}
       {art.kind === "wordmark" ? (
         <Wordmark ink={art.ink} ground={art.ground} word={art.word} />
+      ) : null}
+      {art.kind === "scene" ? (
+        <Scene
+          scene={art.scene}
+          palette={art.palette}
+          word={art.word}
+          ink={art.ink}
+          wordAt={art.wordAt}
+        />
       ) : null}
 
       {worded ? (
