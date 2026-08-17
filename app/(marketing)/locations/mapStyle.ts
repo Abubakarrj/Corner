@@ -14,73 +14,31 @@ import type { MapTheme } from "./mapEngine";
 // So the style lives here and both import it. A screen that wants a map does
 // not get to have an opinion about what a map looks like.
 
-// Everything taken off the map, regardless of theme.
+// ——— Nothing is taken off the map ———
 //
-// Google's default styling is a general-purpose map: it labels every state,
-// every bay and sea, every business, and badges every interstate, because it
-// doesn't know what you're looking for. We do. This map answers one question,
-// "where is the counter", and anything that isn't part of that answer is in
-// the way of it.
+// This file used to hold a list of everything hidden: POI icons, transit lines
+// and station names, state and county lines, neighbourhood labels, the names
+// of every bay and sea, and the numbered badge on an interstate. The reasoning
+// was that the map answers one question, "where is the counter", and anything
+// else is in the way of it.
 //
-// At the opening zoom the difference is most of the screen: forty grey state
-// and province initials scattered across North America, plus Hudson Bay, the
-// Caribbean Sea and the Northwestern Passages, all gone. What's left is
-// country names, the coastline, and our pin.
-const QUIET: google.maps.MapTypeStyle[] = [
-  // ——— The icons go; the names stay ———
-  //
-  // Google's coloured POI icons — the orange fork, the pink bed — are the
-  // loudest thing on the stock basemap and the reason this map used to look
-  // like somebody else's product. The *names* beside them are what tells
-  // somebody which street they are looking at, and they are wanted.
-  //
-  // Said as one narrow rule rather than as a blanket `poi: off` with the names
-  // turned back on afterwards. Both should express the same thing, because a
-  // style array is applied in order and the last rule for a feature/element
-  // pair wins. The difference is what happens if that is not quite true of
-  // re-enabling a child of a feature that was switched off wholesale: the
-  // blanket version silently renders nothing, on a map, in a browser, which is
-  // the one place none of this can be tested. This version has nothing to
-  // override and so has nothing to be wrong about.
-  //
-  // POI geometry needs no rule of its own: the palette below paints all
-  // geometry the ground colour, so a park or a building footprint is already
-  // the same shade as the block it sits on. The pin picker overrides that
-  // deliberately — see doorwayDetail.
-  { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+// That was wrong about how people read a map. A person does not locate a shop
+// by looking only at the shop — they locate it against the neighbourhood they
+// know, the station they get off at, the restaurant on the corner they have
+// walked past. Stripping those left a map that was calm and hard to place, and
+// the symptom was somebody looking at their own block and not recognising it.
+//
+// So a roadmap is a roadmap: roads, neighbourhood labels, businesses, transit,
+// water names, everything Google draws on the map anyone already knows how to
+// read. What stays ours is the palette below — the colour of it, not the
+// content of it.
+//
+// If a particular feature ever earns hiding again, this is the place, and the
+// bar is a specific thing somebody could not do because of it.
 
-  // Transit lines and their labels, by the same reasoning: the coloured rail
-  // ribbons are somebody else's map. Station *names* are re-enabled by the pin
-  // picker alone, where a Metro entrance is the best landmark on a block.
-  { featureType: "transit.line", stylers: [{ visibility: "off" }] },
-  { featureType: "transit.station", elementType: "labels", stylers: [{ visibility: "off" }] },
-
-  // State and province initials, their borders, and county lines. Country
-  // names stay: they orient you at the opening zoom without crowding it, and
-  // they are all the reference map showed.
-  { featureType: "administrative.province", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
-  { featureType: "administrative.neighborhood", elementType: "labels", stylers: [{ visibility: "off" }] },
-
-  // Water gets a colour, not a name. Nobody finds a bagel by way of the
-  // Caribbean Sea.
-  { featureType: "water", elementType: "labels", stylers: [{ visibility: "off" }] },
-  { featureType: "landscape", elementType: "labels", stylers: [{ visibility: "off" }] },
-
-  // Road shields, the little numbered badges. The street name is worth having
-  // at the zoom the shop's card opens at, so labels.text stays; the badge for
-  // Interstate 10 is not, so labels.icon goes.
-  { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-];
-
-// The base every map in the app draws with: the quiet rules, then the palette.
-// Kept separate from MAP_STYLE below only so the names can be appended after
-// it — Google applies a style array in order and the last rule for a given
-// feature/element pair wins, so QUIET's blanket `poi: off` has to come first
-// or the names never appear.
+// The app's colours over Google's own map.
 const PALETTE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
   light: [
-    ...QUIET,
     { elementType: "geometry", stylers: [{ color: "#f2eee1" }] },
     { elementType: "labels.text.fill", stylers: [{ color: "#6b6553" }] },
     { elementType: "labels.text.stroke", stylers: [{ color: "#f7f4eb" }] },
@@ -97,7 +55,6 @@ const PALETTE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
     },
   ],
   dark: [
-    ...QUIET,
     { elementType: "geometry", stylers: [{ color: "#232220" }] },
     { elementType: "labels.text.fill", stylers: [{ color: "#8f8a80" }] },
     { elementType: "labels.text.stroke", stylers: [{ color: "#171614" }] },
@@ -134,85 +91,28 @@ const PALETTE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
 // Google applies a style array in order and the last rule for a given
 // feature/element pair wins, so appending is what overrides QUIET's blanket
 // `poi: off` above. The base has to come first.
-// ——— The names of places, on every map ———
-//
-// This used to be the pin picker's alone, on the reasoning that a hundred
-// competing restaurant markers are not help on a map with one pin that
-// matters. Half of that held up and half of it did not.
-//
-// The half that held: coloured icons really are clutter, and they are still
-// off everywhere.
-//
-// The half that did not: a city block with no names on it is not calm, it is
-// blank. Google draws POI labels from about zoom 13 up, so this changes
-// nothing at the country view the finder opens on and everything at the zoom
-// somebody actually reads — where the shops either side of ours are how a
-// person recognises the street they are looking at.
-//
-// Costs no request. The names are already on the tile Google is drawing; the
-// quiet style was hiding them. A Nearby Search would be a billed call on every
-// pan to re-fetch labels that were there all along.
-function businessNames(theme: MapTheme): google.maps.MapTypeStyle[] {
-  // Quieter than the street names deliberately, on both maps. Streets place a
-  // door and landmarks only confirm it, so they must not compete.
-  //
-  // ——— Asked for out loud, twice ———
-  //
-  // The last version left visibility alone on the reasoning that on is the
-  // default and nothing switches it off any more, so an explicit rule would be
-  // a no-op. That reasoning is probably right and it is not worth relying on:
-  // it is a claim about Google's default for a styled map, made from a machine
-  // that cannot load a Google map, about the one behaviour whose failure looks
-  // identical to success. Saying it costs one array entry.
-  //
-  // `poi.business` as well as `poi`, because a registered business is the
-  // thing actually being asked for here and it is its own subfeature. A rule
-  // for the parent should cover it; a rule for the child cannot be overridden
-  // by a rule for the parent.
-  const label = theme === "light" ? "#938c7b" : "#7e786e";
-  return [
-    { featureType: "poi", elementType: "labels.text", stylers: [{ visibility: "on" }] },
-    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: label }] },
-    { featureType: "poi.business", elementType: "labels.text", stylers: [{ visibility: "on" }] },
-    { featureType: "poi.business", elementType: "labels.text.fill", stylers: [{ color: label }] },
-  ];
-}
-
-/** The extra detail for placing a pin on a doorway, which the finder does not
- *  need: it is choosing between shops, not between sides of one building. */
+/** The one thing the pin picker wants that the finder does not: a building you
+ *  can see the shape of.
+ *
+ *  The palette paints all geometry the ground colour, which is what stops a
+ *  Google map looking like Google's. At the zoom somebody places a pin at,
+ *  that flattening costs them the thing they are actually using — "mine is the
+ *  one set back from the road" — so the picker paints buildings back in, a
+ *  half-step off the ground rather than outlined. At zoom 18 an outline per
+ *  building is a screen of boxes. */
 function doorwayDetail(theme: MapTheme): google.maps.MapTypeStyle[] {
-  const label = theme === "light" ? "#938c7b" : "#7e786e";
   const footprint = theme === "light" ? "#e9e4d3" : "#2b2a27";
   return [
-    // Building footprints, which are how somebody says "mine is the one set
-    // back from the road". Tinted a half-step off the ground rather than
-    // outlined — at zoom 18 an outline per building is a screen of boxes.
-    { featureType: "poi", elementType: "geometry", stylers: [{ color: footprint }, { visibility: "on" }] },
-    {
-      featureType: "landscape.man_made",
-      elementType: "geometry",
-      stylers: [{ color: footprint }, { visibility: "on" }],
-    },
-
-    // A Metro entrance is the best landmark on a city block: it is large,
-    // signposted in the street, and everybody local knows it. Same treatment —
-    // the name without the icon. This one does override QUIET, because station
-    // labels are off by default there; it is a labels → labels.text step
-    // rather than a whole-feature resurrection.
-    { featureType: "transit.station", elementType: "labels.text", stylers: [{ visibility: "on" }] },
-    { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: label }] },
-    { featureType: "transit.station", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+    { featureType: "poi", elementType: "geometry", stylers: [{ color: footprint }] },
+    { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ color: footprint }] },
   ];
 }
 
-/** Every map in the app: the palette, and the names of the places on it.
+/** Every map in the app: Google's roadmap, in the app's colours.
  *
  *  One export rather than a per-screen choice, so a shop card, a coverage
  *  contour and a pin cannot end up looking like three products. */
-export const MAP_STYLE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
-  light: [...PALETTE.light, ...businessNames("light")],
-  dark: [...PALETTE.dark, ...businessNames("dark")],
-};
+export const MAP_STYLE: Record<MapTheme, google.maps.MapTypeStyle[]> = PALETTE;
 
 /** The basemap for placing a delivery pin: MAP_STYLE, plus the building
  *  footprints and station names that answer "which side of the block". */
