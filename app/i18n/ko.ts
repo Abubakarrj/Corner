@@ -315,6 +315,7 @@ export const ko: Table = {
   "gift.continueAsGuest": "비회원으로 계속",
 
   "order.arrivingAround": "{time}쯤 도착",
+  "order.arrivingNow": "곧 도착합니다",
   "order.estimated": "{eta} · 예상",
   "order.courier": "{name} 님이 가져다드립니다.",
   "order.courierWith": "{name} 님이 {vehicle}(으)로 가져다드립니다.",

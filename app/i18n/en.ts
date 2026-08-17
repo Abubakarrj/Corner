@@ -363,6 +363,7 @@ export const en = {
   "gift.continueAsGuest": "Continue as guest",
 
   "order.arrivingAround": "Arriving around {time}",
+  "order.arrivingNow": "Arriving now",
   "order.estimated": "{eta} · estimated",
   "order.courier": "{name} is bringing it over.",
   "order.courierWith": "{name} is bringing it over by {vehicle}.",

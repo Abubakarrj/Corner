@@ -350,6 +350,7 @@ export const fr: Table = {
   "gift.continueAsGuest": "Continuer sans compte",
 
   "order.arrivingAround": "Arrivée vers {time}",
+  "order.arrivingNow": "Arrive maintenant",
   "order.estimated": "{eta} · estimation",
   "order.courier": "{name} vous l’apporte.",
   "order.courierWith": "{name} vous l’apporte en {vehicle}.",

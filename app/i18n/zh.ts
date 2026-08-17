@@ -316,6 +316,7 @@ export const zh: Table = {
   "gift.continueAsGuest": "以访客身份继续",
 
   "order.arrivingAround": "约 {time} 送达",
+  "order.arrivingNow": "即将送达",
   "order.estimated": "{eta} · 预计",
   "order.courier": "{name} 正在为您送达。",
   "order.courierWith": "{name} 正在骑{vehicle}为您送达。",

@@ -318,6 +318,7 @@ export const ur: Table = {
   "gift.continueAsGuest": "بطور مہمان جاری رکھیں",
 
   "order.arrivingAround": "تقریباً {time} پر پہنچے گا",
+  "order.arrivingNow": "پہنچنے والا ہے",
   "order.estimated": "{eta} · تخمینہ",
   "order.courier": "{name} یہ آپ تک لا رہے ہیں۔",
   "order.courierWith": "{name} یہ {vehicle} پر لا رہے ہیں۔",

@@ -33,6 +33,12 @@ export type LiveStatus = {
   /** Who has the bag. Absent until Uber assigns somebody. */
   courierName?: string;
   courierVehicle?: string;
+  /** Uber says the courier is about to arrive.
+   *
+   *  Only ever set true. Absent is "not said", and the screens read it that
+   *  way — a false would invite copy that says he is *not* nearly here, which
+   *  is a claim nobody made. */
+  courierNear?: true;
   /** When the provider last told us, epoch ms. */
   at: number;
 };

@@ -77,7 +77,8 @@ async function ask(key: string): Promise<void> {
       was?.courier === body.courier &&
       was?.etaAt === body.etaAt &&
       was?.courierName === body.courierName &&
-      was?.courierVehicle === body.courierVehicle
+      was?.courierVehicle === body.courierVehicle &&
+      was?.courierNear === body.courierNear
     ) {
       return;
     }

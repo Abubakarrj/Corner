@@ -149,13 +149,20 @@ export default function OrderTracker({ id }: { id: string }) {
           guess of ours undersells the one piece of real information on the
           page. */}
       <p className="mt-2 text-[13px]" style={{ color: faint }}>
-        {progress.eta
-          ? progress.eta.reported
-            ? t(progress.eta.key, { time: progress.eta.time })
-            : t("order.estimated", {
-                eta: t(progress.eta.key, { time: progress.eta.time }),
-              })
-          : t("order.shopConfirms")}
+        {/* Uber's "about to arrive" outranks any clock time, including Uber's
+            own. An arrival time is a plan; this is a reason to stand up, and
+            once it is true the minute on the line stops being the useful part.
+            Only ever shown because Uber said so — courierNear is never false,
+            only absent, so this cannot claim he is *not* nearly here. */}
+        {live?.courierNear
+          ? t("order.arrivingNow")
+          : progress.eta
+            ? progress.eta.reported
+              ? t(progress.eta.key, { time: progress.eta.time })
+              : t("order.estimated", {
+                  eta: t(progress.eta.key, { time: progress.eta.time }),
+                })
+            : t("order.shopConfirms")}
       </p>
 
       {/* Who has the bag, once somebody does. Uber hands us a first name and

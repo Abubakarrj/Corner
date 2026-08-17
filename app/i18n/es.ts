@@ -318,6 +318,7 @@ export const es: Table = {
   "gift.continueAsGuest": "Continuar como invitado",
 
   "order.arrivingAround": "Llega hacia las {time}",
+  "order.arrivingNow": "Está llegando",
   "order.estimated": "{eta} · estimado",
   "order.courier": "{name} te lo lleva.",
   "order.courierWith": "{name} te lo lleva en {vehicle}.",

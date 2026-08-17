@@ -306,6 +306,16 @@ export async function POST(request: Request) {
   // re-derived at booking time, so the point the quote was priced from is the
   // point the courier is sent to.
   let pickupPoint: [number, number] | null = null;
+  // The one handle this order is known by, written onto Uber's copy of it as
+  // external_id. Toast's guid where Toast is connected, the queue id where it
+  // isn't — the same string the client polls the tracker with and the kitchen
+  // queue is keyed on, so a delivery on Uber's dashboard can be traced back to
+  // an order here without a fourth identifier to keep in step.
+  //
+  // Set on both paths before bookCourier() runs. It cannot read `queueId`
+  // directly: that const is declared after the Toast branch returns, and the
+  // Toast path calls bookCourier() above it.
+  let reference: string | null = null;
 
   // ——— What the driver is told ———
   //
@@ -465,6 +475,7 @@ export async function POST(request: Request) {
     // Points, on the subtotal, keyed to this order so a retry cannot pay
     // twice. Awaited but incapable of failing the order — see earn().
     await earn(order.email, sent.orderGuid, subtotalCents);
+    reference = sent.orderGuid;
 
     return Response.json(
       {
@@ -502,6 +513,7 @@ export async function POST(request: Request) {
   // which is the only handle this branch has — and it is the one the client
   // gets back, so the two agree about which order was paid for.
   await earn(order.email, queueId, subtotalCents);
+  reference = queueId;
 
   return Response.json(
     { ok: true, totals, submitted: "logged", queueId, ...(await bookCourier()) },
@@ -544,6 +556,7 @@ export async function POST(request: Request) {
       dropoffAddress: dropoff.address,
       dropoffLat: dropoff.lat,
       dropoffLng: dropoff.lng,
+      ...(reference ? { reference } : {}),
       // Uber calls this number when the courier is outside. Without one the
       // delivery can stall on the pavement, which is why the checkout asks
       // for a phone and why this falls back to the shop's line.

@@ -138,6 +138,7 @@ export async function refresh(
     ...(state.dropoffEta === null ? {} : { etaAt: state.dropoffEta }),
     ...(state.courierName === null ? {} : { courierName: state.courierName }),
     ...(state.courierVehicle === null ? {} : { courierVehicle: state.courierVehicle }),
+    ...(state.courierImminent ? { courierNear: true as const } : {}),
     at: now,
   };
   write(`uber:${id}`, status);
@@ -170,11 +171,12 @@ export async function statusOf(
   // field listed here is a field a customer can read, and that list should be
   // something somebody chose rather than whatever the Uber client happened to
   // pick up.
-  const { etaAt, courierName, courierVehicle } = parts[1] ?? {};
+  const { etaAt, courierName, courierVehicle, courierNear } = parts[1] ?? {};
   return {
     ...(etaAt === undefined ? {} : { etaAt }),
     ...(courierName === undefined ? {} : { courierName }),
     ...(courierVehicle === undefined ? {} : { courierVehicle }),
+    ...(courierNear === undefined ? {} : { courierNear }),
     ...(food === undefined ? {} : { food }),
     ...(courier === undefined ? {} : { courier }),
     at: Math.max(parts[0]?.at ?? 0, parts[1]?.at ?? 0),

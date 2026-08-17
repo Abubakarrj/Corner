@@ -314,6 +314,7 @@ export const ja: Table = {
   "gift.continueAsGuest": "ゲストとして続ける",
 
   "order.arrivingAround": "{time}頃に到着",
+  "order.arrivingNow": "まもなく到着",
   "order.estimated": "{eta} · 目安",
   "order.courier": "{name}さんがお届けします。",
   "order.courierWith": "{name}さんが{vehicle}でお届けします。",

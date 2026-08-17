@@ -350,6 +350,7 @@ export const fa: Table = {
   "gift.continueAsGuest": "ادامه بدون حساب",
 
   "order.arrivingAround": "حدود {time} می‌رسد",
+  "order.arrivingNow": "در حال رسیدن",
   "order.estimated": "{eta} · برآوردی",
   "order.courier": "{name} دارد آن را می‌آورد.",
   "order.courierWith": "{name} دارد آن را با {vehicle} می‌آورد.",

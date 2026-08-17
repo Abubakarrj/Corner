@@ -322,6 +322,20 @@ export async function createDelivery(input: {
   dropoffLat: number;
   dropoffLng: number;
   dropoffNote?: string;
+  /** Our own handle for this order, written on Uber's copy of it.
+   *
+   *  Uber's `external_id`. Without it the only thing tying a courier job to a
+   *  Corner Bagel order is a delivery id we stored on our side, which is fine
+   *  until somebody is looking at the *other* side: a charge on the Uber
+   *  dashboard, a support thread about a delivery that went wrong, a
+   *  reconciliation at the end of a week. Those all start from Uber's record
+   *  and have nowhere to go.
+   *
+   *  The value is whatever the rest of the order is keyed by — Toast's order
+   *  guid where Toast is connected, the queue id where it isn't. Deliberately
+   *  the same string the customer's tracker polls with and the kitchen queue
+   *  is keyed on, so there is one handle rather than a fourth. */
+  reference?: string;
   // What's in the bag. Uber shows this to the courier and uses it for the
   // undeliverable-return flow, so it's the real items and not "food".
   //
@@ -346,6 +360,7 @@ export async function createDelivery(input: {
     dropoff_latitude: input.dropoffLat,
     dropoff_longitude: input.dropoffLng,
     ...(input.dropoffNote ? { dropoff_notes: input.dropoffNote.slice(0, 280) } : {}),
+    ...(input.reference ? { external_id: input.reference } : {}),
     manifest_items: input.items.map((item) => ({
       name: manifestName(item.name, item.options),
       quantity: item.quantity,
@@ -403,6 +418,14 @@ export type DeliveryState = {
   /** Who is bringing it, and in what. Absent until a courier is assigned. */
   courierName: string | null;
   courierVehicle: string | null;
+  /** Uber's own "he is about to arrive".
+   *
+   *  Worth having because the alternative is arithmetic. A tracker can say
+   *  "arriving around 8:42" from an ETA and be five minutes wrong in either
+   *  direction; this is Uber watching the courier's actual position against
+   *  the dropoff. It is the difference between a time to plan around and a
+   *  reason to put shoes on. */
+  courierImminent: boolean;
 };
 
 // Uber sends timestamps as RFC3339. Anything unparseable is treated as absent
@@ -454,5 +477,9 @@ export async function fetchDelivery(deliveryId: string): Promise<DeliveryState |
     dropoffEta: instant(body.dropoff_eta),
     courierName: courier ? text(courier.name) : null,
     courierVehicle: courier ? text(courier.vehicle_type) : null,
+    // Strictly true, never merely truthy. Absent means "Uber has not said so",
+    // which is not the same claim as "he is nearly here" and must not become
+    // it on a response that happened to omit the field.
+    courierImminent: body.courier_imminent === true,
   };
 }

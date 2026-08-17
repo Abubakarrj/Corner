@@ -316,6 +316,7 @@ export const my: Table = {
   "gift.continueAsGuest": "ဧည့်သည်အဖြစ် ဆက်လက်",
 
   "order.arrivingAround": "{time} ခန့်တွင် ရောက်မည်",
+  "order.arrivingNow": "ရောက်တော့မည်",
   "order.estimated": "{eta} · ခန့်မှန်း",
   "order.courier": "{name} က ယူလာနေပါပြီ။",
   "order.courierWith": "{name} က {vehicle} နဲ့ ယူလာနေပါပြီ။",
