@@ -178,12 +178,13 @@ export const fa: Table = {
   "checkout.title": "تسویه حساب",
   "checkout.emptyBasket": "سبد شما خالی است.",
   "checkout.contact": "اطلاعات تماس",
-  "checkout.contactNote":
-    "از این‌ها فقط برای تماس دربارهٔ همین سفارش استفاده می‌کنیم. نه چیز دیگری.",
+  "checkout.contactNote": "تا فروشگاه دربارهٔ این سفارش با شما تماس بگیرد و پیک شما را پیدا کند. نه چیز دیگری.",
   "checkout.firstName": "نام",
   "checkout.lastName": "نام خانوادگی",
   "checkout.email": "ایمیل",
   "checkout.phone": "تلفن",
+  "checkout.validPhone": "شماره‌ای وارد کنید که بتوانیم با شما تماس بگیریم.",
+  "api.fillNamePhone": "نام و شمارهٔ تلفن خود را وارد کنید.",
   "checkout.required": "الزامی است.",
   "checkout.validEmail": "یک ایمیل معتبر وارد کنید.",
   "checkout.orderDetails": "جزئیات سفارش",
@@ -629,7 +630,6 @@ export const fa: Table = {
   "api.deliveryDownPickupOpen":
     "ارسال الان در دسترس نیست. تحویل حضوری همچنان ممکن است.",
   "api.deliveryDown": "ارسال الان در دسترس نیست.",
-  "api.fillNameEmail": "نام و ایمیلتان را کامل کنید.",
   "api.rileyDown": "رایلی الان نتوانست پاسخ دهد. کمی بعد دوباره امتحان کنید.",
   "api.rileyNoReply": "رایلی برای آن پاسخی نداشت. جور دیگری بگویید؟",
   "api.codeWrong":

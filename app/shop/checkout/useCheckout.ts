@@ -40,7 +40,31 @@ import type { CartRow } from "../CartContext";
 // it. If that ever needs revisiting, revisit it here rather than by giving her
 // a tool that posts.
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// ——— A phone, not an email ———
+//
+// A food order needs a way to reach the person, and for this shop that is a
+// phone: the kitchen rings when something has sold out from under an order,
+// and a courier standing outside a locked lobby rings before he gives up. An
+// email does neither of those in the ten minutes either of them matters.
+//
+// It was an email, required, and nothing was ever sent to it. The only message
+// this app puts through Resend is a job application; there is no order receipt
+// and no confirmation mail. So the checkout demanded an address, used it as an
+// identity key, and never wrote to it — while the phone number that delivery
+// actually depends on was optional.
+//
+// Email is still how somebody signs in and how an account is named. It is just
+// not something to ask a stranger for in order to sell them a bagel.
+//
+// Deliberately loose. A phone number is typed with brackets, spaces, dots and
+// dashes, in this neighbourhood often with a +82 or +52 in front, and a strict
+// pattern rejects a real number far more often than it catches a fake one. Ten
+// digits after the punctuation is what a US number has; anything longer is
+// somebody who typed a country code, and that is not an error either.
+const PHONE_DIGITS = /\d/g;
+function phoneOk(value: string): boolean {
+  return (value.match(PHONE_DIGITS) ?? []).length >= 10;
+}
 
 export type CheckoutStatus = "idle" | "sending" | "placed";
 
@@ -52,7 +76,7 @@ export type CheckoutStatus = "idle" | "sending" | "placed";
 // put the tip, the kerbside checkbox and the order note between the fields and
 // the money. Splitting it also means the contact details are validated before
 // anything payment-shaped appears, so nobody reaches a card field and then
-// gets sent back up for a missing email.
+// gets sent back up for a missing phone number.
 export type CheckoutStep = "details" | "payment";
 
 export type DeliveryQuote = {
@@ -115,12 +139,10 @@ export type Checkout = {
   setFirstName: (value: string) => void;
   lastName: string;
   setLastName: (value: string) => void;
-  email: string;
-  setEmail: (value: string) => void;
   phone: string;
   setPhone: (value: string) => void;
   firstNameError: string | undefined;
-  emailError: string | undefined;
+  phoneError: string | undefined;
 
   // ——— The extras ———
   curbside: boolean;
@@ -139,7 +161,7 @@ export type Checkout = {
 
   // ——— The two steps ———
   step: CheckoutStep;
-  /** Enough to move on: a name and an email that parses. */
+  /** Enough to move on: a name and a phone number that could be one. */
   detailsValid: boolean;
   /** Marks the fields tried and advances if they pass. */
   continueToPayment: () => void;
@@ -166,7 +188,6 @@ export function useCheckout(): Checkout {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [curbside, setCurbside] = useState(false);
   const [utensils, setUtensils] = useState(false);
@@ -219,7 +240,7 @@ export function useCheckout(): Checkout {
 
   // The card fields, in their own hook so the number has no route into the
   // request body below. `tried` is passed in for the same reason the name and
-  // email errors read it: nothing is marked wrong before somebody tries.
+  // phone errors read it: nothing is marked wrong before somebody tries.
   const card = useCard(tried);
 
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
@@ -315,14 +336,14 @@ export function useCheckout(): Checkout {
     deliveryCents: quote?.feeCents ?? 0,
   });
 
-  const emailError = tried && !EMAIL.test(email.trim()) ? t("checkout.validEmail") : undefined;
+  const phoneError = tried && !phoneOk(phone) ? t("checkout.validPhone") : undefined;
   const firstNameError = tried && firstName.trim().length === 0 ? t("checkout.required") : undefined;
 
   // Everything the first step is responsible for. Kept apart from `valid` so
   // the Continue button can refuse for its own reasons and the Place order
   // button can refuse for the rest — a delivery that hasn't been priced yet
   // shouldn't grey out a Continue button that has nothing to do with it.
-  const detailsValid = firstName.trim().length > 0 && EMAIL.test(email.trim());
+  const detailsValid = firstName.trim().length > 0 && phoneOk(phone);
 
   function continueToPayment() {
     setTried(true);
@@ -369,7 +390,11 @@ export function useCheckout(): Checkout {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-          email,
+          // No email. It used to ride along here and the server keyed the
+          // rewards ledger off it, which meant the address that earned the
+          // points was a free-text field in a request body — anybody could
+          // post an order and credit somebody else's account. The server
+          // reads the session cookie for that now. See /api/shop-order.
           phone,
           fulfillment,
           // Uber's quote, so the courier booked on the far side is booked at
@@ -542,12 +567,10 @@ export function useCheckout(): Checkout {
     setFirstName,
     lastName,
     setLastName,
-    email,
-    setEmail,
     phone,
     setPhone,
     firstNameError,
-    emailError,
+    phoneError,
 
     curbside,
     setCurbside,

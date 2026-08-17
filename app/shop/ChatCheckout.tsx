@@ -53,12 +53,10 @@ export default function ChatCheckout({
     setFirstName,
     lastName,
     setLastName,
-    email,
-    setEmail,
     phone,
     setPhone,
     firstNameError,
-    emailError,
+    phoneError,
     curbside,
     setCurbside,
     utensils,
@@ -137,16 +135,8 @@ export default function ChatCheckout({
               type="tel"
               inputMode="tel"
               autoComplete="tel"
-            />
-            <Field
-              label={t("checkout.email")}
-              value={email}
-              onChange={setEmail}
-              type="email"
-              inputMode="email"
-              autoComplete="email"
               required
-              error={emailError}
+              error={phoneError}
             />
           </div>
 

@@ -73,12 +73,10 @@ export default function CheckoutPage() {
     setFirstName,
     lastName,
     setLastName,
-    email,
-    setEmail,
     phone,
     setPhone,
     firstNameError,
-    emailError,
+    phoneError,
     curbside,
     setCurbside,
     utensils,
@@ -245,18 +243,10 @@ export default function CheckoutPage() {
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
+                  required
                   value={phone}
                   onChange={setPhone}
-                />
-                <Field
-                  label={t("checkout.email")}
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={setEmail}
-                  error={emailError}
+                  error={phoneError}
                 />
                 <p className="m-0 text-[11px] leading-[1.5] text-quiet">
                   {t("checkout.contactNote")}

@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { SESSION_COOKIE, readSession } from "../../auth/auth0";
 import {
   describeOptions,
   getProduct,
@@ -50,9 +52,6 @@ function isNonEmptyString(input: unknown): input is string {
   return typeof input === "string" && input.trim().length > 0;
 }
 
-function isValidEmail(input: unknown): input is string {
-  return typeof input === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
-}
 
 /** A free-text field off the request: trimmed, capped, and "" for anything
  *  that isn't a string. The cap is here rather than at the field's own call
@@ -76,7 +75,26 @@ type OrderItem = {
 };
 type Order = {
   name: string;
+  /** The signed-in account's address, or "" for a guest.
+   *
+   *  ——— Not from the request ———
+   *
+   *  This used to be a field in the body, and the rewards ledger was keyed off
+   *  it: `earn(order.email, ...)`. So the address that collected the points was
+   *  free text a caller chose, and anybody could post an order and credit
+   *  somebody else's account with it. It is read from the session cookie now,
+   *  which is a signed JWT script cannot forge — the same rule /api/orders
+   *  already follows about whose history it will hand over.
+   *
+   *  Empty is an ordinary state, not a failure: most people ordering breakfast
+   *  are not signed in. It costs them points and cross-device history, and
+   *  costs the order nothing. */
   email: string;
+  /** How the shop reaches them, and required now that the email is not.
+   *
+   *  The kitchen rings when something sells out from under an order, and a
+   *  courier outside a locked lobby rings before giving up — Uber is handed
+   *  this as dropoff_phone_number. */
   phone: string;
   items: OrderItem[];
   subtotalCents: number;
@@ -109,7 +127,8 @@ function onOrder(order: Order) {
     .filter(Boolean)
     .join(", ");
   console.info(
-    `[shop-order] order from ${order.name} <${order.email}>, phone=${order.phone || "—"}\n${lines}\n` +
+    `[shop-order] order from ${order.name}, phone=${order.phone}` +
+      `${order.email ? ` <${order.email}>` : " (guest)"}\n${lines}\n` +
       `  Subtotal: $${(order.subtotalCents / 100).toFixed(2)}` +
       `  Tip: $${(order.tipCents / 100).toFixed(2)}` +
       `  Total: $${(order.totalCents / 100).toFixed(2)}` +
@@ -132,16 +151,24 @@ export async function POST(request: Request) {
   }
 
   const body = payload as
-    | { name?: unknown; email?: unknown; phone?: unknown; items?: unknown }
+    | { name?: unknown; phone?: unknown; items?: unknown }
     | null;
 
-  const { name, email } = body ?? {};
-  if (!isNonEmptyString(name) || !isValidEmail(email)) {
+  const { name, phone } = body ?? {};
+  // A name and a number the shop can ring. Ten digits after the punctuation,
+  // matching the checkout's own test — see the note on PHONE_DIGITS in
+  // useCheckout.ts for why this is deliberately loose.
+  const digits = typeof phone === "string" ? (phone.match(/\d/g) ?? []).length : 0;
+  if (!isNonEmptyString(name) || !isNonEmptyString(phone) || digits < 10) {
     return Response.json(
-      { error: "api.fillNameEmail" },
+      { error: "api.fillNamePhone" },
       { status: 400 },
     );
   }
+
+  // Whose account this order belongs to, from the cookie rather than the body.
+  // Null for a guest, which is fine and common — see the note on Order.email.
+  const account = await readSession((await cookies()).get(SESSION_COOKIE)?.value);
 
   // Closed means closed. The checkout disables its own button, but that is a
   // courtesy to the person using it — this is the rule, and it's here because
@@ -406,8 +433,8 @@ export async function POST(request: Request) {
 
   const order: Order = {
     name: name.trim(),
-    email: email.trim(),
-    phone: typeof body?.phone === "string" ? body.phone.trim() : "",
+    email: account?.email ?? "",
+    phone: phone.trim(),
     items,
     subtotalCents,
     deliveryCents: totals.deliveryCents,
@@ -474,7 +501,11 @@ export async function POST(request: Request) {
     await joinQueue(sent.orderGuid, sent.orderGuid);
     // Points, on the subtotal, keyed to this order so a retry cannot pay
     // twice. Awaited but incapable of failing the order — see earn().
-    await earn(order.email, sent.orderGuid, subtotalCents);
+    //
+    // Only for a signed-in customer. A guest has no account to credit, and
+    // inventing one from a typed-in address is exactly what this stopped
+    // doing.
+    if (order.email) await earn(order.email, sent.orderGuid, subtotalCents);
     reference = sent.orderGuid;
 
     return Response.json(
@@ -512,7 +543,7 @@ export async function POST(request: Request) {
   // Same on this path. The ref is the queue id rather than a Toast guid,
   // which is the only handle this branch has — and it is the one the client
   // gets back, so the two agree about which order was paid for.
-  await earn(order.email, queueId, subtotalCents);
+  if (order.email) await earn(order.email, queueId, subtotalCents);
   reference = queueId;
 
   return Response.json(
@@ -552,7 +583,11 @@ export async function POST(request: Request) {
       // See the note in uberDirect.ts.
       pickupLat: pickupPoint[0],
       pickupLng: pickupPoint[1],
-      dropoffName: `${firstName ?? ""} ${rest.join(" ")}`.trim() || order.email,
+      // The name, and it is always there — the endpoint refuses an order
+      // without one. The old fallback here was the email address, which a
+      // guest no longer has and which was never a thing to read out to a
+      // courier anyway.
+      dropoffName: `${firstName ?? ""} ${rest.join(" ")}`.trim() || order.name,
       dropoffAddress: dropoff.address,
       dropoffLat: dropoff.lat,
       dropoffLng: dropoff.lng,

@@ -172,12 +172,13 @@ export const it: Table = {
   "checkout.title": "Cassa",
   "checkout.emptyBasket": "Il tuo carrello è vuoto.",
   "checkout.contact": "Contatti",
-  "checkout.contactNote":
-    "Li usiamo per contattarti su questo ordine. Nient'altro.",
+  "checkout.contactNote": "Perché il negozio possa contattarti su questo ordine e il fattorino ti trovi. Nient'altro.",
   "checkout.firstName": "Nome",
   "checkout.lastName": "Cognome",
   "checkout.email": "E-mail",
   "checkout.phone": "Telefono",
+  "checkout.validPhone": "Inserisci un numero a cui possiamo contattarti.",
+  "api.fillNamePhone": "Inserisci il tuo nome e il tuo numero di telefono.",
   "checkout.required": "Obbligatorio.",
   "checkout.validEmail": "Inserisci un'e-mail valida.",
   "checkout.orderDetails": "Dettagli dell'ordine",
@@ -631,7 +632,6 @@ export const it: Table = {
   "api.deliveryDownPickupOpen":
     "La consegna non è disponibile adesso. Il ritiro è comunque disponibile.",
   "api.deliveryDown": "La consegna non è disponibile adesso.",
-  "api.fillNameEmail": "Compila nome ed e-mail.",
   "api.rileyDown": "Riley non è riuscita a rispondere. Riprova tra poco.",
   "api.rileyNoReply": "Riley non aveva una risposta. Riprovi a dirlo altrimenti?",
   "api.codeWrong":
