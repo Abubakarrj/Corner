@@ -22,6 +22,35 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+// ——— Which pills a card answers to ———
+//
+// The nine wordless designs went in with categories chosen to make every pill
+// look well stocked, which is the one thing a filter must not be built for. A
+// pill that returns almost everything has told the buyer nothing, and the buyer
+// who tapped "Congrats" and got a picture of breakfast now trusts the next pill
+// less. The rail unfiltered is already the "show me everything" view.
+//
+// So there are two rules, and they come from what is on the card:
+//
+//   A card with a word on it belongs to the occasion its word names, and to
+//   nothing else. "BE MY VALENTINE" is not a just-because card and "CONGRATS"
+//   is not a birthday card, however pretty either one is. The word decides,
+//   because the word is what the recipient will read.
+//
+//   A wordless card belongs to "Just because" always, plus any occasion its
+//   picture positively suggests. Not every occasion its picture fails to rule
+//   out — that test passes for everything and is how the first pass went wrong.
+//   A green wreath suggests a holiday. A pink one suggests a laurel, which is
+//   what congratulations has looked like for two thousand years. A plate of
+//   breakfast suggests a thank-you. A night skyline suggests nothing in
+//   particular, which is a real answer and puts it in one pill rather than four.
+//
+// Where that leaves the counts: Just because 13, Thanks 8, Seasonal 4,
+// Congrats 4, Birthday 3. Birthday being the thinnest is worth knowing, since
+// it is the most common reason anybody buys a gift card at all — and it is a
+// gap in the artwork rather than in the filing. The fix is a birthday palette
+// on the wreath or the table, which is four hex values, not a re-sort.
+
 // What each filter pill says, in whichever language is on. Kept as a map from
 // the category rather than as string keys on the categories themselves,
 // because the category *is* the id — it's what a card's `categories` array
@@ -267,7 +296,9 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "bagels-wheat",
     label: "gift.artBagelsWheat",
-    categories: ["Just because", "Seasonal"],
+    // Wheat colour is not a season. A field of bagels suggests no occasion,
+    // which is exactly what the last pill is for.
+    categories: ["Just because"],
     art: { kind: "bagels", ink: OLIVE, ground: WHEAT },
   },
   {
@@ -296,7 +327,9 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "valentine-papel",
     label: "gift.artValentine",
-    categories: ["Seasonal", "Just because"],
+    // Not "Just because". A card that reads BE MY VALENTINE sent for no reason
+    // is a card that says something the sender did not mean.
+    categories: ["Seasonal"],
     art: {
       kind: "scene", scene: "papel", palette: SPRING,
       word: "gift.wordValentine", ink: "#2C2A3D", wordAt: "top",
@@ -315,7 +348,9 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "congrats-papel",
     label: "gift.artCongratsPapel",
-    categories: ["Congrats", "Birthday"],
+    // It says CONGRATS. That is not a birthday card, and it was under Birthday
+    // only because Birthday was short.
+    categories: ["Congrats"],
     art: {
       // Dark, not pale. The papel scene is a sheet of cream paper across the
       // whole card, so pale lettering on it was not lettering — this card
@@ -327,49 +362,61 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "table-morning",
     label: "gift.artTable",
-    categories: ["Just because", "Thanks", "Birthday"],
+    // Breakfast made for somebody is a thank-you. It is not a birthday.
+    categories: ["Thanks", "Just because"],
     art: { kind: "scene", scene: "table", palette: MORNING, ink: "#26364A" },
   },
   {
     id: "skyline-sunset",
     label: "gift.artSkyline",
-    categories: ["Just because", "Congrats"],
+    // The city lit gold. Celebratory enough to earn Congrats, which the
+    // night version below is not.
+    categories: ["Congrats", "Just because"],
     art: { kind: "scene", scene: "skyline", palette: SUNSET, ink: "#3A2540" },
   },
   {
     id: "wreath-olive",
     label: "gift.artWreath",
-    categories: ["Just because", "Thanks", "Seasonal"],
+    // A green wreath is a holiday wreath.
+    categories: ["Seasonal", "Just because"],
     art: { kind: "scene", scene: "wreath", palette: OLIVE_GROVE, ink: "#F4EDE0" },
   },
   {
     id: "wreath-rose",
     label: "gift.artWreathRose",
-    categories: ["Birthday", "Congrats", "Just because"],
+    // A flowered wreath is a laurel, which is what congratulations has
+    // looked like for two thousand years, and pink carries a birthday.
+    categories: ["Congrats", "Birthday", "Just because"],
     art: { kind: "scene", scene: "wreath", palette: ROSE, ink: "#5A2A3B" },
   },
   {
     id: "skyline-night",
     label: "gift.artSkylineNight",
-    categories: ["Just because", "Congrats"],
+    // A night skyline suggests nothing in particular. That is a real answer.
+    categories: ["Just because"],
     art: { kind: "scene", scene: "skyline", palette: SLATE, ink: "#1B252C" },
   },
   {
     id: "table-rose",
     label: "gift.artTableRose",
-    categories: ["Thanks", "Just because"],
+    // The same breakfast in pink, which carries a birthday the blue one does
+    // not. Colour is the whole difference between these two cards, so it is
+    // allowed to be the whole difference in where they file.
+    categories: ["Thanks", "Birthday", "Just because"],
     art: { kind: "scene", scene: "table", palette: ROSE, ink: "#5A2A3B" },
   },
   {
     id: "shop-morning",
     label: "gift.artShopMorning",
-    categories: ["Just because", "Thanks"],
+    categories: ["Thanks", "Just because"],
     art: { kind: "scene", scene: "shopClear", palette: MORNING, ink: "#26364A" },
   },
   {
     id: "delivery-dusk",
     label: "gift.artDeliveryDusk",
-    categories: ["Just because", "Birthday"],
+    // The delivery drawing, same as on-me above and filed the same way.
+    // Nothing about a car at dusk says birthday.
+    categories: ["Thanks", "Just because"],
     art: { kind: "scene", scene: "delivery", palette: DUSK, ink: "#1A2747" },
   },
   {
@@ -386,7 +433,8 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "gingham-olive",
     label: "gift.artGinghamOlive",
-    categories: ["Thanks", "Congrats", "Just because"],
+    // Olive check suggests nothing celebratory; Congrats was unearned.
+    categories: ["Thanks", "Just because"],
     art: { kind: "gingham", ink: OLIVE, ground: CREAM },
   },
 ];
