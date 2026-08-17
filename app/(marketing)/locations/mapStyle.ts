@@ -156,14 +156,25 @@ function businessNames(theme: MapTheme): google.maps.MapTypeStyle[] {
   // Quieter than the street names deliberately, on both maps. Streets place a
   // door and landmarks only confirm it, so they must not compete.
   //
-  // Only a colour. Visibility is Google's default and QUIET no longer switches
-  // it off, so there is nothing here to turn back on.
+  // ——— Asked for out loud, twice ———
+  //
+  // The last version left visibility alone on the reasoning that on is the
+  // default and nothing switches it off any more, so an explicit rule would be
+  // a no-op. That reasoning is probably right and it is not worth relying on:
+  // it is a claim about Google's default for a styled map, made from a machine
+  // that cannot load a Google map, about the one behaviour whose failure looks
+  // identical to success. Saying it costs one array entry.
+  //
+  // `poi.business` as well as `poi`, because a registered business is the
+  // thing actually being asked for here and it is its own subfeature. A rule
+  // for the parent should cover it; a rule for the child cannot be overridden
+  // by a rule for the parent.
+  const label = theme === "light" ? "#938c7b" : "#7e786e";
   return [
-    {
-      featureType: "poi",
-      elementType: "labels.text.fill",
-      stylers: [{ color: theme === "light" ? "#938c7b" : "#7e786e" }],
-    },
+    { featureType: "poi", elementType: "labels.text", stylers: [{ visibility: "on" }] },
+    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: label }] },
+    { featureType: "poi.business", elementType: "labels.text", stylers: [{ visibility: "on" }] },
+    { featureType: "poi.business", elementType: "labels.text.fill", stylers: [{ color: label }] },
   ];
 }
 

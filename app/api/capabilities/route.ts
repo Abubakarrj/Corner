@@ -126,6 +126,24 @@ function pushGap(): string[] {
   return gaps;
 }
 
+// ——— Which build is answering ———
+//
+// Added after two rounds of "the change isn't showing" that could not be told
+// apart from "the change isn't deployed" by anybody, including from inside the
+// app. A styling change in particular has no other symptom: the old build and
+// a broken new one look the same, and the only way to distinguish them was to
+// guess at Render's build times.
+//
+// Render sets RENDER_GIT_COMMIT on every deploy. Short form, because the point
+// is comparing it to a commit somebody has in front of them, not cloning from
+// it. A commit hash names a revision and unlocks nothing; it is on the same
+// footing as the shop's phone number below, and the alternative is continuing
+// to answer this question by inference.
+function build(): string | null {
+  const commit = process.env.RENDER_GIT_COMMIT?.trim();
+  return commit ? commit.slice(0, 7) : null;
+}
+
 export function GET() {
   const delivery = isUberConfigured();
   if (!delivery) reportUberGap();
@@ -167,6 +185,8 @@ export function GET() {
     // a Call button that rings +1 213 555 1234 is worse than no Call button.
     // There is a real line now, so the guard has nothing left to guard.
     phone: SHOP_PHONE,
+    // The deployed revision, or null off Render. See build() above.
+    build: build(),
     // ⚠️ True only when SHOP_OPEN_PREVIEW is set, which must never be a
     // deploy real customers use. Reported so the screens agree with the
     // server rather than showing "closed" over an endpoint that accepts.

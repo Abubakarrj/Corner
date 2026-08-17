@@ -108,11 +108,12 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
         url: `pmtiles://${config.pmtiles}`,
       },
     },
-    // Points of interest dropped for the same reason they're off on the Google
-    // map: this map has one pin that matters.
-    layers: layers("protomaps", flavorFor(theme), { lang: "en" }).filter(
-      (layer) => layer.id !== "pois",
-    ),
+    // Points of interest kept, for the same reason they are on the Google map:
+    // the shops either side of ours are how somebody recognises the street
+    // they are looking at. This used to drop the layer and cite the Google
+    // side for it, which stopped being true when the Google side changed —
+    // the sort of comment that turns into a second, quieter bug.
+    layers: layers("protomaps", flavorFor(theme), { lang: "en" }),
   });
 
   const map = new MapLibreMap({
