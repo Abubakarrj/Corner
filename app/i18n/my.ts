@@ -280,9 +280,6 @@ export const my: Table = {
   "deliveryFee.band": "{from}–{to} မိုင်",
   "deliveryFee.tripFee": "ကယ်လီဖိုးနီးယား ခရီးစဉ်ခ",
   "deliveryFee.yourFee": "သင့်ပို့ခ",
-  "deliveryFee.courierFee": "Uber Direct ၏ အခကြေးငွေ",
-  "deliveryFee.halfOff": "50% လျှော့",
-  "deliveryFee.youPay": "သင် ပေးရမည့်ငွေ",
   "deliveryFee.passthrough": "Corner Bagel က အပိုမတင်ပါ။",
   "deliveryFee.quotedFresh":
     "Uber သည် သင်မှာယူသည့်အချိန်တွင် သင့်လိပ်စာအတွက် စျေးနှုန်းသတ်မှတ်ပါသည်။ ရာသီဥတုနှင့် ယာဉ်ကြောကြောင့် ပြောင်းလဲနိုင်သည်။",

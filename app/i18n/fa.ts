@@ -312,9 +312,6 @@ export const fa: Table = {
   "deliveryFee.band": "{from}–{to} مایل",
   "deliveryFee.tripFee": "هزینه سفر کالیفرنیا",
   "deliveryFee.yourFee": "هزینه شما",
-  "deliveryFee.courierFee": "هزینهٔ Uber Direct",
-  "deliveryFee.halfOff": "۵۰٪ تخفیف",
-  "deliveryFee.youPay": "شما می‌پردازید",
   "deliveryFee.passthrough": "Corner Bagel چیزی روی آن نمی‌گذارد.",
   "deliveryFee.quotedFresh":
     "اوبر در لحظهٔ سفارش برای نشانی شما قیمت‌گذاری می‌کند. آب‌وهوا و ترافیک می‌تواند آن را تغییر دهد.",

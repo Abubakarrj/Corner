@@ -184,48 +184,36 @@ export default function DeliveryFeeInfo({
               </tr>
             ) : null}
           </tbody>
-          {breakdown ? (
+          {/* ——— No total row when the shop is paying part of the trip ———
+
+              The table sums Uber's bands to Uber's fee, and on a subsidised
+              delivery that is not what anybody is charged. There were three
+              rows here spelling the difference out and they are gone: the fee
+              being lower than the card is not a thing to explain, it is just
+              the price.
+
+              What is left is Uber's rate card with no total attached, and the
+              charge at the top of the sheet. That is a stronger answer to "am I
+              being padded" than the arithmetic was — the card is visibly higher
+              than the number on the bill, and nothing has to add up for the
+              reader to see it.
+
+              A closing row that read $10.99 under a bill saying $5.49 was the
+              other option and is the one thing this table must never do.
+
+              It comes back when nothing is being covered, which is a waived
+              delivery: there the card really does sum to what the trip cost,
+              and saying so is the point of showing it. */}
+          {breakdown && covered === 0 ? (
             <tfoot>
-              {/* Two shapes, and which one shows is decided by whether the shop
-                  is actually paying part of this trip. With no subsidy the
-                  bands sum to the bill and one row closes it; with one, the sum
-                  is an intermediate figure and stopping there would leave a
-                  table whose last line is not the number on the receipt. */}
-              {covered > 0 ? (
-                <>
-                  <tr>
-                    <td className="border-t border-line pt-2 text-muted">
-                      {t("deliveryFee.courierFee")}
-                    </td>
-                    <td className="border-t border-line pt-2 text-right tabular-nums text-muted">
-                      {formatPrice(breakdown.totalCents)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 text-muted">{t("deliveryFee.halfOff")}</td>
-                    <td className="py-1 text-right tabular-nums text-muted">
-                      −{formatPrice(covered)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border-t border-line pt-2 font-medium text-ink">
-                      {t("deliveryFee.youPay")}
-                    </td>
-                    <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
-                      {formatPrice(chargedCents as number)}
-                    </td>
-                  </tr>
-                </>
-              ) : (
-                <tr>
-                  <td className="border-t border-line pt-2 font-medium text-ink">
-                    {t("deliveryFee.yourFee")}
-                  </td>
-                  <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
-                    {formatPrice(breakdown.totalCents)}
-                  </td>
-                </tr>
-              )}
+              <tr>
+                <td className="border-t border-line pt-2 font-medium text-ink">
+                  {t("deliveryFee.yourFee")}
+                </td>
+                <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
+                  {formatPrice(breakdown.totalCents)}
+                </td>
+              </tr>
             </tfoot>
           ) : null}
         </table>
