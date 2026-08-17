@@ -13,6 +13,8 @@
 // restart. Reading it at request time means the key you paste into Render is
 // live on the next request, and it means there is exactly one variable to set.
 
+import { dedupePlaces } from "./placeSuggestions";
+
 export type Suggestion = { id: string; primary: string; secondary: string };
 
 // Businesses are in the delivery layer, not the other two. See the note on
@@ -307,12 +309,16 @@ export async function suggestAddresses(
 
   if (signal?.aborted) return [];
 
-  return suggestions
-    .map((entry) => entry.placePrediction)
-    .filter((prediction): prediction is google.maps.places.PlacePrediction => prediction !== null)
-    .map((prediction) => ({
-      id: prediction.placeId,
-      primary: prediction.mainText?.text ?? prediction.text.text,
-      secondary: prediction.secondaryText?.text ?? "",
-    }));
+  // Deduped, same as the server copy: a business and the address it stands at
+  // are two predictions for one doorway. See app/placeSuggestions.ts.
+  return dedupePlaces(
+    suggestions
+      .map((entry) => entry.placePrediction)
+      .filter((prediction): prediction is google.maps.places.PlacePrediction => prediction !== null)
+      .map((prediction) => ({
+        id: prediction.placeId,
+        primary: prediction.mainText?.text ?? prediction.text.text,
+        secondary: prediction.secondaryText?.text ?? "",
+      })),
+  );
 }

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { dedupePlaces } from "./placeSuggestions";
+
 // Google Maps Platform, server side: geocoding and routing.
 //
 // One key does everything, which is the reason this replaced Radar. It is also
@@ -941,12 +943,16 @@ export async function suggest(
     }[];
   };
 
-  return (body.suggestions ?? [])
-    .map((entry) => entry.placePrediction)
-    .filter((prediction) => typeof prediction?.placeId === "string")
-    .map((prediction) => ({
-      id: prediction!.placeId!,
-      primary: prediction!.structuredFormat?.mainText?.text ?? prediction!.text?.text ?? "",
-      secondary: prediction!.structuredFormat?.secondaryText?.text ?? "",
-    }));
+  // Deduped, because a business and the address it stands at come back as two
+  // predictions for one doorway. See app/placeSuggestions.ts.
+  return dedupePlaces(
+    (body.suggestions ?? [])
+      .map((entry) => entry.placePrediction)
+      .filter((prediction) => typeof prediction?.placeId === "string")
+      .map((prediction) => ({
+        id: prediction!.placeId!,
+        primary: prediction!.structuredFormat?.mainText?.text ?? prediction!.text?.text ?? "",
+        secondary: prediction!.structuredFormat?.secondaryText?.text ?? "",
+      })),
+  );
 }
