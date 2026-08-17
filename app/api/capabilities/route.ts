@@ -1,4 +1,6 @@
 import { isAuthConfigured } from "../../auth/auth0";
+import { isDatabaseConfigured } from "../../db";
+import { pushProblem } from "../../push/send";
 import { SHOP_PHONE, openPreview } from "../../shopFacts";
 import { isUberConfigured } from "../../uberDirect";
 
@@ -81,9 +83,61 @@ function reportUberGap(): void {
   );
 }
 
+// ——— Whether a phone will actually buzz ———
+//
+// Push has three legs and they fail in three different places, so each of them
+// looked fine from where its own code sits while the feature as a whole did
+// nothing.
+//
+// The VAPID keys are validated properly already, in send.ts. The other two are
+// not:
+//
+//   the database   holds the subscriptions. Without it a device can be granted
+//                  permission, register happily, and be findable by nobody:
+//                  subscriptionsForProvider returns an empty list and announce
+//                  returns early. Nothing errors on either side. See the note
+//                  at the top of push/store.ts — this is the exact failure it
+//                  warns about, and until now nothing said it out loud.
+//
+//   the webhook    is what makes a notification arrive while the app is shut.
+//                  Without UBER_WEBHOOK_SECRET the endpoint refuses Uber's
+//                  messages, so the only thing that ever calls refresh() is a
+//                  tracker somebody is already looking at — and a notification
+//                  to a screen in front of you is not the feature.
+//
+// Same shape as the delivery report below it: named in the log, where whoever
+// is doing the configuring can read it, and a plain boolean in the response.
+function pushGap(): string[] {
+  const gaps: string[] = [];
+  const keys = pushProblem();
+  if (keys) gaps.push(`VAPID: ${keys}`);
+  if (!isDatabaseConfigured()) {
+    gaps.push(
+      "CORNER_DATABASE_URL is not set, so there is nowhere to keep a" +
+        " subscription. Devices will register and never be sent anything",
+    );
+  }
+  if (!process.env.UBER_WEBHOOK_SECRET) {
+    gaps.push(
+      "UBER_WEBHOOK_SECRET is not set, so Uber's delivery events are refused" +
+        " and nothing can reach a phone unless the tracker is open on it",
+    );
+  }
+  return gaps;
+}
+
 export function GET() {
   const delivery = isUberConfigured();
   if (!delivery) reportUberGap();
+
+  const gaps = pushGap();
+  const push = gaps.length === 0;
+  if (!push) {
+    console.warn(
+      `[capabilities] push is INCOMPLETE. ${gaps.join(". ")}.` +
+        " Render needs a redeploy after any of these are added.",
+    );
+  }
 
   return Response.json({
     auth: isAuthConfigured(),
@@ -99,6 +153,11 @@ export function GET() {
     // CLIENT_SECRET — and nothing else does. There is no flag, and no code
     // change: the whole delivery path is built and waiting on them.
     delivery,
+    // Whether a notification would actually land on a phone: keys, a place to
+    // keep the subscription, and the webhook that fires while the app is shut.
+    // Reported so a shop can tell "nobody has turned notifications on" from
+    // "notifications cannot work here", which read identically from outside.
+    push,
     // The one non-boolean here, and it is not a secret: a shop's phone number
     // is on its window.
     //
