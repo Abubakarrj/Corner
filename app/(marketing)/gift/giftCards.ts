@@ -37,19 +37,33 @@ export type Category = (typeof CATEGORIES)[number];
 //   is not a birthday card, however pretty either one is. The word decides,
 //   because the word is what the recipient will read.
 //
-//   A wordless card belongs to "Just because" always, plus any occasion its
-//   picture positively suggests. Not every occasion its picture fails to rule
-//   out — that test passes for everything and is how the first pass went wrong.
-//   A green wreath suggests a holiday. A pink one suggests a laurel, which is
-//   what congratulations has looked like for two thousand years. A plate of
-//   breakfast suggests a thank-you. A night skyline suggests nothing in
-//   particular, which is a real answer and puts it in one pill rather than four.
+//   A wordless card belongs to whatever occasion its picture positively
+//   suggests. Not every occasion its picture fails to rule out — that test
+//   passes for everything. A green wreath suggests a holiday. A pink one
+//   suggests a laurel, which is what congratulations has looked like for two
+//   thousand years. A plate of breakfast suggests a thank-you.
 //
-// Where that leaves the counts: Just because 13, Thanks 8, Seasonal 4,
-// Congrats 4, Birthday 3. Birthday being the thinnest is worth knowing, since
-// it is the most common reason anybody buys a gift card at all — and it is a
-// gap in the artwork rather than in the filing. The fix is a birthday palette
-// on the wreath or the table, which is four hex values, not a re-sort.
+// ——— "Just because" is the residual, not a free extra ———
+//
+// It was on every wordless card, which put thirteen of nineteen designs behind
+// it and made it a synonym for "the ones without writing on them". A pill that
+// holds two thirds of the rail is not a filter, it is a second All button, and
+// it made the other four look like the exceptions rather than the answers.
+//
+// So a card lands here only when no occasion pill claims it. That is what the
+// words mean — there is no occasion — and it makes the pill worth tapping: it
+// now returns the designs that carry no message at all, which is a real thing
+// to want and was previously impossible to ask for.
+//
+// A card can still hold two occasions where it genuinely reads as both; a pink
+// wreath is a congratulations and a birthday. What it cannot do is hold an
+// occasion and "no occasion" at the same time.
+//
+// Counts land at Thanks 5, Just because 5, Seasonal 4, Congrats 4, Birthday 3
+// over nineteen designs. Birthday being thinnest is worth knowing, since it is
+// the most common reason anybody buys a gift card at all — and that is a gap in
+// the artwork rather than in the filing. The fix is a birthday palette on the
+// wreath or the table, which is four hex values, not a re-sort.
 
 // What each filter pill says, in whichever language is on. Kept as a map from
 // the category rather than as string keys on the categories themselves,
@@ -87,11 +101,21 @@ export const CATEGORY_LABEL: Record<Category, StringKey> = {
 // How the card face is drawn. The gallery maps these to real markup in
 // GiftCardArt.tsx; keeping them as names rather than raw styles means a
 // design can be restyled in one place instead of per entry.
+// ——— The four patterned faces ———
+//
+// `ground` is the paper the pattern is printed on and `ink` is the pattern
+// itself, which is also what the frame, the corner rosettes and all the
+// lettering are drawn in — one colour per card, the way a two-colour press
+// works, and the reason these recolour from two hex values.
+//
+// `plate` is the label laid over the pattern. It is not optional and must not
+// become so: without it the type sits on the wallpaper, which is what these
+// cards were and why they needed a face lift. See Plate in GiftCardScenes.tsx.
 export type Art =
-  | { kind: "gingham"; ink: string; ground: string }
-  | { kind: "bagels"; ink: string; ground: string }
-  | { kind: "checker"; ink: string; ground: string; word: StringKey }
-  | { kind: "wordmark"; ink: string; ground: string; word: StringKey }
+  | { kind: "gingham"; ink: string; ground: string; plate: string }
+  | { kind: "bagels"; ink: string; ground: string; plate: string }
+  | { kind: "checker"; ink: string; ground: string; plate: string; word: StringKey }
+  | { kind: "wordmark"; ink: string; ground: string; plate: string; word: StringKey }
   // The illustrated three. `scene` picks the drawing and `palette` colours it,
   // so a second Valentine or a summer shopfront is a palette rather than a
   // fourth illustration.
@@ -207,9 +231,20 @@ export function contrast(a: string, b: string): number {
  *  Cards whose face is not a drawing are not measured here — a checker or a
  *  wordmark card names both its ink and its ground in the same object, so
  *  there is nothing for them to get out of step with. */
-export function legibility(card: GiftCard): { foot: number; word: number | null } | null {
-  if (card.art.kind !== "scene") return null;
-  const { scene, palette, ink, footInk, word } = card.art;
+export function legibility(card: GiftCard): { foot: number; word: number | null } {
+  const { art } = card;
+  // A patterned card is the easy case now, and that is the whole argument for
+  // the plate: its greeting and its wordmark both sit on one flat colour that
+  // the card itself names, so there is nothing to look up and nothing that can
+  // fall out of step with a drawing. Before the plate they sat on gingham,
+  // which is two colours at once and could not be measured against either.
+  if (art.kind !== "scene") {
+    return {
+      foot: contrast(art.ink, art.plate),
+      word: "word" in art ? contrast(art.ink, art.plate) : null,
+    };
+  }
+  const { scene, palette, ink, footInk, word } = art;
   const backdrop = SCENE_BACKDROP[scene];
   return {
     foot: contrast(footInk ?? ink, backdrop.foot(palette)),
@@ -233,14 +268,18 @@ const OLIVE = "#3E4A30";
 const SAGE = "#B7C9A2";
 const RED = "#BE1923";
 const WHEAT = "#EFE3C4";
+// The label stock the patterned cards are printed on. Warmer than CREAM on
+// purpose: the red gingham's pale squares are CREAM, and a plate in exactly
+// that colour would have no edge where it crossed one.
+const PAPER = "#FFF6E2";
 
 // The illustrated cards carry more colour than the rest of the app does, and
 // that is correct rather than a lapse: a gift card is printed artwork, it is
 // looked at once, and it is the one surface here allowed to be louder than
 // the shop. Still literals, for the reason above — a card is the same card in
 // dark mode as in light, the way it would be in somebody's hand.
-const CRUST = "#E8B14C";
-const SESAME = "#F6EBD2";
+export const CRUST = "#E8B14C";
+export const SESAME = "#F6EBD2";
 
 const SPRING: Palette = {
   ground: "#F2C438", panel: "#FFF6E2", ink: "#2C2A3D",
@@ -284,39 +323,46 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "gingham-red",
     label: "gift.artGinghamRed",
-    categories: ["Seasonal", "Just because"],
-    art: { kind: "gingham", ink: RED, ground: CREAM },
+    // Red gingham is a festive table. Not also "Just because" — an occasion
+    // pill has claimed it.
+    categories: ["Seasonal"],
+    art: { kind: "gingham", ink: RED, ground: CREAM, plate: PAPER },
   },
   {
     id: "thank-you-olive",
     label: "gift.artThankYouOlive",
     categories: ["Thanks"],
-    art: { kind: "wordmark", ink: CREAM, ground: OLIVE, word: "gift.wordThankYou" },
+    // Ink is the olive now, not the cream. The word moved off the flat ground
+    // and onto the plate, and cream lettering on cream paper is no lettering.
+    art: { kind: "wordmark", ink: OLIVE, ground: OLIVE, plate: PAPER, word: "gift.wordThankYou" },
   },
   {
     id: "bagels-wheat",
     label: "gift.artBagelsWheat",
-    // Wheat colour is not a season. A field of bagels suggests no occasion,
-    // which is exactly what the last pill is for.
+    // A field of bagels suggests no occasion, which is what the last pill is
+    // for and now means.
     categories: ["Just because"],
-    art: { kind: "bagels", ink: OLIVE, ground: WHEAT },
+    art: { kind: "bagels", ink: OLIVE, ground: WHEAT, plate: PAPER },
   },
   {
     id: "congrats-checker",
     label: "gift.artCongratsChecker",
     categories: ["Congrats"],
-    art: { kind: "checker", ink: OLIVE, ground: SAGE, word: "gift.wordCongrats" },
+    art: { kind: "checker", ink: OLIVE, ground: SAGE, plate: PAPER, word: "gift.wordCongrats" },
   },
   {
     id: "birthday-red",
     label: "gift.artBirthdayRed",
     categories: ["Birthday"],
-    art: { kind: "wordmark", ink: CREAM, ground: RED, word: "gift.wordBirthday" },
+    // Ink is the red now, for the same reason as the thank-you card above.
+    art: { kind: "wordmark", ink: RED, ground: RED, plate: PAPER, word: "gift.wordBirthday" },
   },
   {
     id: "on-me-delivery",
     label: "gift.artOnMe",
-    categories: ["Just because", "Thanks"],
+    // "This one is on me" is not an occasion, but it is how people say thank
+    // you when they would rather buy something than say it.
+    categories: ["Thanks"],
     art: {
       // Dark greeting against the sky, pale foot against the hedge. The foot
       // was the same navy as the greeting and came out at 2.5:1 on the green.
@@ -362,37 +408,39 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "table-morning",
     label: "gift.artTable",
-    // Breakfast made for somebody is a thank-you. It is not a birthday.
-    categories: ["Thanks", "Just because"],
+    // Breakfast made for somebody is a thank-you.
+    categories: ["Thanks"],
     art: { kind: "scene", scene: "table", palette: MORNING, ink: "#26364A" },
   },
   {
     id: "skyline-sunset",
     label: "gift.artSkyline",
-    // The city lit gold. Celebratory enough to earn Congrats, which the
-    // night version below is not.
-    categories: ["Congrats", "Just because"],
+    // The city lit gold. Celebratory enough to earn Congrats, which the night
+    // version below is not.
+    categories: ["Congrats"],
     art: { kind: "scene", scene: "skyline", palette: SUNSET, ink: "#3A2540" },
   },
   {
     id: "wreath-olive",
     label: "gift.artWreath",
     // A green wreath is a holiday wreath.
-    categories: ["Seasonal", "Just because"],
+    categories: ["Seasonal"],
     art: { kind: "scene", scene: "wreath", palette: OLIVE_GROVE, ink: "#F4EDE0" },
   },
   {
     id: "wreath-rose",
     label: "gift.artWreathRose",
-    // A flowered wreath is a laurel, which is what congratulations has
-    // looked like for two thousand years, and pink carries a birthday.
-    categories: ["Congrats", "Birthday", "Just because"],
+    // A flowered wreath is a laurel, which is what congratulations has looked
+    // like for two thousand years, and pink carries a birthday. Two occasions,
+    // both real — that is allowed; an occasion plus "no occasion" is not.
+    categories: ["Congrats", "Birthday"],
     art: { kind: "scene", scene: "wreath", palette: ROSE, ink: "#5A2A3B" },
   },
   {
     id: "skyline-night",
     label: "gift.artSkylineNight",
-    // A night skyline suggests nothing in particular. That is a real answer.
+    // A night skyline suggests nothing in particular. That is a real answer,
+    // and this pill is where it belongs.
     categories: ["Just because"],
     art: { kind: "scene", scene: "skyline", palette: SLATE, ink: "#1B252C" },
   },
@@ -402,27 +450,29 @@ export const GIFT_CARDS: GiftCard[] = [
     // The same breakfast in pink, which carries a birthday the blue one does
     // not. Colour is the whole difference between these two cards, so it is
     // allowed to be the whole difference in where they file.
-    categories: ["Thanks", "Birthday", "Just because"],
+    categories: ["Thanks", "Birthday"],
     art: { kind: "scene", scene: "table", palette: ROSE, ink: "#5A2A3B" },
   },
   {
     id: "shop-morning",
     label: "gift.artShopMorning",
-    categories: ["Thanks", "Just because"],
+    // The shop on a clear morning: the come-by card, which is a thank-you.
+    categories: ["Thanks"],
     art: { kind: "scene", scene: "shopClear", palette: MORNING, ink: "#26364A" },
   },
   {
     id: "delivery-dusk",
     label: "gift.artDeliveryDusk",
-    // The delivery drawing, same as on-me above and filed the same way.
-    // Nothing about a car at dusk says birthday.
-    categories: ["Thanks", "Just because"],
+    // Wordless, so it carries no message the way the on-me version does. A
+    // bagel arriving at night names no occasion.
+    categories: ["Just because"],
     art: { kind: "scene", scene: "delivery", palette: DUSK, ink: "#1A2747" },
   },
   {
     id: "papel-olive",
     label: "gift.artPapelOlive",
-    categories: ["Thanks", "Just because"],
+    // A heart with no word on it. Affection, and no occasion attached.
+    categories: ["Just because"],
     art: {
       // The paper is cream and the ground under it is olive, so the word and
       // the foot are opposite colours. See footInk on the Art type.
@@ -433,8 +483,8 @@ export const GIFT_CARDS: GiftCard[] = [
   {
     id: "gingham-olive",
     label: "gift.artGinghamOlive",
-    // Olive check suggests nothing celebratory; Congrats was unearned.
-    categories: ["Thanks", "Just because"],
-    art: { kind: "gingham", ink: OLIVE, ground: CREAM },
+    // Olive check suggests nothing at all, celebratory or otherwise.
+    categories: ["Just because"],
+    art: { kind: "gingham", ink: OLIVE, ground: CREAM, plate: PAPER },
   },
 ];

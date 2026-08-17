@@ -179,6 +179,100 @@ function scallopPath(x: number, y: number, w: number, h: number, r: number): str
   ].join(" ");
 }
 
+// ——— The label plate, for the cards whose face is a pattern ———
+//
+// Six designs predate the illustrated ones and they were patterns and nothing
+// else: gingham, a checkerboard, a tile of bagels, a flat ground. Whatever text
+// they carried floated loose on the wallpaper with nothing holding it, and
+// beside a drawn card they read as the placeholders they originally were.
+//
+// The fix is not to redraw them as scenes. A flat pattern is a real style and
+// the rail is better for having some, and a set where every card is an
+// illustration has no quiet ones in it. What the patterns were missing is the
+// thing the papel card already had: a piece of paper laid on top, with the
+// message on the paper. That is how a printed card is actually made, it gives
+// the type something to sit on, and it borrows the folk grammar — the corner
+// rosettes, the bagel — from the drawings, so the two halves of the set stop
+// looking like two products.
+//
+// It also fixes something the flat cards got wrong for free. Their lettering
+// used to sit on the pattern itself, which on gingham means it crosses a light
+// square and a dark one and is fighting both. On the plate there is one colour
+// behind it.
+export function Plate({
+  fill,
+  mark,
+  crust,
+  seed,
+  medallion,
+}: {
+  /** The paper. */
+  fill: string;
+  /** The rosettes and the sprigs — the pattern's own colour, so the plate
+   *  belongs to the card rather than being a white box dropped on it. */
+  mark: string;
+  crust: string;
+  seed: string;
+  /** Whether to draw the bagel and its sprigs in the middle. On a card with a
+   *  greeting the greeting goes there instead, and both would be a fight. */
+  medallion: boolean;
+}) {
+  const corners: [number, number][] = [
+    [19, 18],
+    [116, 18],
+    [19, 74],
+    [116, 74],
+  ];
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full"
+      viewBox={`0 0 ${CARD.w} ${CARD.h}`}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      {/* Square-cornered rather than scalloped, deliberately. The papel card is
+          the scalloped one; if these were too, the set would have seven cards
+          with the same silhouette.
+
+          Inset eleven units, not four. At four the plate covered the card and
+          the pattern survived only as a hairline round the edge — which loses
+          the thing that makes a gingham card a gingham card. The border has to
+          be wide enough to show the pattern repeating, or it reads as a fault
+          in the printing rather than as a border. */}
+      <rect x={11} y={10} width={113} height={80} rx={3} fill={fill} />
+      <rect
+        x={15}
+        y={14}
+        width={105}
+        height={64}
+        rx={2}
+        fill="none"
+        stroke={mark}
+        strokeWidth={0.7}
+        opacity={0.35}
+      />
+      {corners.map(([x, y]) => (
+        <Rosette key={`${x}-${y}`} x={x} y={y} r={4.2} petal={mark} heart={fill} />
+      ))}
+      {medallion ? (
+        // The sprigs tuck behind the bagel rather than standing off it. Placed
+        // clear of it they were two leaves adrift on an empty plate, which is
+        // what a motif looks like when its parts are not touching. Angled down
+        // and out they hung below it instead and the whole thing read as a
+        // rocket with fins. Up and out is right, but they have to be long
+        // enough that a leaf clears the bagel rather than a crescent of one:
+        // at eighteen units the visible part was a nub either side and the
+        // emblem had ears.
+        <g>
+          <Sprig x={63} y={52} length={27} angle={-44} fill={mark} />
+          <Sprig x={72} y={52} length={27} angle={44} fill={mark} />
+          <Bagel x={67.5} y={44} r={15} crust={crust} seed={seed} hole={fill} />
+        </g>
+      ) : null}
+    </svg>
+  );
+}
+
 export function PapelScene({ palette }: { palette: Palette }) {
   const { ground, panel, ink, accent, accentSoft, crust, seed } = palette;
   const corners = [
