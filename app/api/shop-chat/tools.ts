@@ -807,6 +807,11 @@ export async function runTool(
       // out a customer's delivery charge; this asks it rather than halving the
       // number itself, so the chat and the bill cannot drift apart.
       //
+      // Only the charged figure goes to the model. Handing it the courier's
+      // quote as well invites it to narrate the difference, and the shop paying
+      // part of a delivery fee is not something a customer needs told twice —
+      // or at all, in a chat message about whether we come to their street.
+      //
       // No subtotal is passed: the free-delivery threshold is about a basket
       // and this tool answers a question about an address, often before there
       // is one. That makes this the un-waived price, which is the right thing
@@ -825,8 +830,6 @@ export async function runTool(
           drivingMiles: miles,
           deliverable: true,
           fee: formatPrice(charged.deliveryCents),
-          courierFee: formatPrice(charged.deliveryQuotedCents),
-          note: "The shop covers half the courier's fee. `fee` is what they pay.",
           etaMinutes: quote.quote.etaMinutes,
         },
         attach: {

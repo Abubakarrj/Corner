@@ -281,9 +281,8 @@ export const my: Table = {
   "deliveryFee.tripFee": "ကယ်လီဖိုးနီးယား ခရီးစဉ်ခ",
   "deliveryFee.yourFee": "သင့်ပို့ခ",
   "deliveryFee.courierFee": "Uber Direct ၏ အခကြေးငွေ",
-  "deliveryFee.weCover": "Corner Bagel မှ ထက်ဝက် ကျခံသည်",
+  "deliveryFee.halfOff": "50% လျှော့",
   "deliveryFee.youPay": "သင် ပေးရမည့်ငွေ",
-  "deliveryFee.halfOnUs": "Corner Bagel သည် ဤအပေါ်တွင် ဘာမျှ မထပ်ဆင့်ဘဲ ပို့ဆောင်သူ၏ အခကြေးငွေ ထက်ဝက်ကို ကျခံပါသည်။",
   "deliveryFee.passthrough": "Corner Bagel က အပိုမတင်ပါ။",
   "deliveryFee.quotedFresh":
     "Uber သည် သင်မှာယူသည့်အချိန်တွင် သင့်လိပ်စာအတွက် စျေးနှုန်းသတ်မှတ်ပါသည်။ ရာသီဥတုနှင့် ယာဉ်ကြောကြောင့် ပြောင်းလဲနိုင်သည်။",

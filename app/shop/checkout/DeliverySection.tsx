@@ -240,25 +240,14 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
               chargedCents={totals.deliveryCents}
             />
           </span>
-          <span className="flex items-baseline gap-1.5 text-[14px] tabular-nums text-ink">
-            {/* Same struck-through quote as the summary. This screen is where
-                somebody first sees a delivery number, so it is the one that
-                has to say the shop is covering half — the summary saying it
-                two sections later is late. */}
-            {quote && !totals.deliveryWaived && totals.deliveryCoveredCents > 0 ? (
-              <span className="text-[13px] text-quiet line-through">
-                {formatPrice(totals.deliveryQuotedCents)}
-              </span>
-            ) : null}
-            <span>
-              {quote
-                ? totals.deliveryWaived
-                  ? t("checkout.deliveryWaived")
-                  : formatPrice(totals.deliveryCents)
-                : quoting
-                  ? t("delivery.pricing")
-                  : "—"}
-            </span>
+          <span className="text-[14px] tabular-nums text-ink">
+            {quote
+              ? totals.deliveryWaived
+                ? t("checkout.deliveryWaived")
+                : formatPrice(totals.deliveryCents)
+              : quoting
+                ? t("delivery.pricing")
+                : "—"}
           </span>
         </div>
       </div>

@@ -169,21 +169,12 @@ export function Disclosure({
 export function Money({
   label,
   amount,
-  was,
   strong,
   tone,
   after,
 }: {
   label: string;
   amount: string;
-  /** What the row would have said, struck through beside what it says.
-   *
-   *  Only the delivery line uses it, and only because the shop is paying part
-   *  of that one: a fee that quietly arrives smaller than the courier charged
-   *  is a fee the customer has no reason to credit anyone for, and — worse —
-   *  it reads as the courier's price, which it is not. Both numbers, and the
-   *  gap between them is the shop's. */
-  was?: string;
   strong?: boolean;
   tone?: "credit";
   after?: React.ReactNode;
@@ -198,26 +189,21 @@ export function Money({
         <span className="truncate">{label}</span>
         {after}
       </span>
-      <span className="flex items-baseline gap-1.5">
-        {was ? (
-          <span className="text-[13px] tabular-nums text-quiet line-through">{was}</span>
-        ) : null}
-        {/* Swapped rather than replaced. Every row on a bill can change while
-            somebody is looking at it — a spread, a quantity, a tip, a courier
-            quote arriving — and four numbers changing silently means none of
-            them announces which one moved. See app/ui/Swap.tsx; it is 120ms and
-            the new value is readable throughout. */}
-        <Swap
-          value={amount}
-          className={
-            strong
-              ? "justify-items-end text-[15px] font-medium text-ink"
-              : tone === "credit"
-                ? "justify-items-end text-[14px] text-ink"
-                : "justify-items-end text-[14px] text-ink"
-          }
-        />
-      </span>
+      {/* Swapped rather than replaced. Every row on a bill can change while
+          somebody is looking at it — a spread, a quantity, a tip, a courier
+          quote arriving — and four numbers changing silently means none of
+          them announces which one moved. See app/ui/Swap.tsx; it is 120ms and
+          the new value is readable throughout. */}
+      <Swap
+        value={amount}
+        className={
+          strong
+            ? "justify-items-end text-[15px] font-medium text-ink"
+            : tone === "credit"
+              ? "justify-items-end text-[14px] text-ink"
+              : "justify-items-end text-[14px] text-ink"
+        }
+      />
     </div>
   );
 }

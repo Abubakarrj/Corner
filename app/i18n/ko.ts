@@ -280,9 +280,8 @@ export const ko: Table = {
   "deliveryFee.tripFee": "캘리포니아 운행 수수료",
   "deliveryFee.yourFee": "고객님의 요금",
   "deliveryFee.courierFee": "Uber Direct 요금",
-  "deliveryFee.weCover": "Corner Bagel이 절반 부담",
+  "deliveryFee.halfOff": "50% 할인",
   "deliveryFee.youPay": "고객 부담",
-  "deliveryFee.halfOnUs": "Corner Bagel은 여기에 아무것도 더하지 않으며, 배송 기사 요금의 절반을 부담합니다.",
   "deliveryFee.passthrough": "Corner Bagel은 여기에 아무것도 더하지 않습니다.",
   "deliveryFee.quotedFresh":
     "우버는 주문하는 시점에 주소별 요금을 계산합니다. 날씨와 교통 상황에 따라 달라질 수 있습니다.",

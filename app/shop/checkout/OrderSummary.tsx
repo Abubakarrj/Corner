@@ -86,16 +86,6 @@ export default function OrderSummary({ checkout }: { checkout: Checkout }) {
                 ? t("checkout.deliveryWaived")
                 : formatPrice(totals.deliveryCents)
             }
-            // The courier's number, struck through, whenever the shop is
-            // paying part of it. Without this the row is just a smaller fee
-            // next to the Uber Direct mark, which reads as Uber's price and
-            // is not — and it throws away the only moment the shop gets any
-            // credit for the money it is spending here.
-            was={
-              totals.deliveryCoveredCents > 0 && !totals.deliveryWaived
-                ? formatPrice(totals.deliveryQuotedCents)
-                : undefined
-            }
             after={
               <>
                 <UberDirectMark className="text-[11px] text-quiet" />

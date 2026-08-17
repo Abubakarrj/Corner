@@ -38,18 +38,20 @@ import UberDirectMark from "./UberDirectMark";
 // bare card, and the fee stands on its own without a breakdown claiming to
 // explain it. The quote is never recomputed from these numbers.
 //
-// ——— And what the shop is paying of it ———
+// ——— The discount is a row, and only a row ———
 //
-// The table reconstructs the courier's quote, which stopped being the number on
-// the bill the moment the shop started absorbing half of it. A sheet whose sum
-// is three dollars off the row it hangs from is the same failure as before, in
-// the other direction: this one exists to answer "am I being padded", and one
-// that disagrees with the bill at all answers badly whichever way it disagrees.
+// Half of the courier's fee comes off before the customer is charged, and this
+// is the only screen that mentions it. Everywhere else the bill simply says
+// $5.49, because a smaller number is not news and a shop narrating its own
+// generosity on four screens is.
 //
-// So the arithmetic runs all the way down. The bands and the trip fee add to
-// what Uber charges, the shop's half comes off, and the last row is the number
-// on the bill. That also puts the subsidy where somebody who is suspicious of
-// the fee will actually find it, which is the only place it does any good.
+// It has to appear here, though, and not as a boast: the table reconstructs
+// Uber's quote from the bands, and that sum stopped being the number on the
+// bill. A sheet three dollars off the row it hangs from is the same failure
+// this table was built to fix, in the other direction — it answers "am I being
+// padded", and one that disagrees with the bill answers badly whichever way it
+// disagrees. So the arithmetic runs to the end and the middle row states the
+// discount without saying who paid for it.
 export default function DeliveryFeeInfo({
   miles,
   feeCents,
@@ -108,15 +110,8 @@ export default function DeliveryFeeInfo({
           <div className="mt-4 rounded-xl bg-raise px-4 py-3">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[13px] text-muted">{t("deliveryFee.yourAddress")}</span>
-              <span className="flex items-baseline gap-1.5">
-                {covered > 0 ? (
-                  <span className="text-[13px] tabular-nums text-quiet line-through">
-                    {formatPrice(feeCents as number)}
-                  </span>
-                ) : null}
-                <span className="text-[15px] font-medium tabular-nums text-ink">
-                  {formatPrice(covered > 0 ? (chargedCents as number) : (feeCents as number))}
-                </span>
+              <span className="text-[15px] font-medium tabular-nums text-ink">
+                {formatPrice(covered > 0 ? (chargedCents as number) : (feeCents as number))}
               </span>
             </div>
             {/* The distance, when Routes answered. It used to gate this whole
@@ -207,7 +202,7 @@ export default function DeliveryFeeInfo({
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-1 text-muted">{t("deliveryFee.weCover")}</td>
+                    <td className="py-1 text-muted">{t("deliveryFee.halfOff")}</td>
                     <td className="py-1 text-right tabular-nums text-muted">
                       −{formatPrice(covered)}
                     </td>
@@ -236,7 +231,7 @@ export default function DeliveryFeeInfo({
         </table>
 
         <p className="m-0 mt-4 border-t border-line pt-4 text-[13px] leading-[1.55] text-ink">
-          {covered > 0 ? t("deliveryFee.halfOnUs") : t("deliveryFee.passthrough")}
+          {t("deliveryFee.passthrough")}
         </p>
         <p className="m-0 mt-2 text-[12px] leading-[1.5] text-muted">
           {t("deliveryFee.quotedFresh")}

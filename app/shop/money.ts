@@ -108,9 +108,11 @@ export type OrderTotals = {
   /** The part of the quote the shop is absorbing — the whole thing when the
    *  basket cleared the threshold, half of it otherwise, zero on a pickup.
    *
-   *  Derivable from the two above, and here anyway because it is the number
-   *  the customer is being shown and a screen should not be doing arithmetic
-   *  to find out what it is allowed to say. */
+   *  No screen shows it. It is here for the books: the shop's cost on a
+   *  delivery is the gap between what Uber invoices and what was charged, and
+   *  stating it once beside the two numbers it comes from is better than
+   *  leaving whoever reconciles the invoice to work out which subtraction was
+   *  meant. Also what the arithmetic is asserted on. */
   deliveryCoveredCents: number;
   /** Whether the shop picked up the whole courier on this one. Still means the
    *  whole thing, not "some of it" — the half-subsidy is on every delivery and

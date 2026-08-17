@@ -283,9 +283,8 @@ export const es: Table = {
   "deliveryFee.tripFee": "Tarifa por viaje en California",
   "deliveryFee.yourFee": "Tu tarifa",
   "deliveryFee.courierFee": "Tarifa de Uber Direct",
-  "deliveryFee.weCover": "Corner Bagel paga la mitad",
+  "deliveryFee.halfOff": "50% de descuento",
   "deliveryFee.youPay": "Tú pagas",
-  "deliveryFee.halfOnUs": "Corner Bagel no añade nada encima y paga la mitad de lo que cobra el mensajero.",
   "deliveryFee.passthrough": "Corner Bagel no añade nada encima.",
   "deliveryFee.quotedFresh":
     "Uber calcula el precio de tu dirección en el momento del pedido. El clima y el tráfico pueden moverlo.",
