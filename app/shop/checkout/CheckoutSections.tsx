@@ -181,8 +181,22 @@ export function Money({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5">
+      {/* Baselines, not boxes.
+          The delivery row sets its label at 14px and hangs the Uber Direct
+          mark off it at 11px, and `items-center` aligns the two boxes' middles
+          rather than the two texts. Because the mark is `leading-none` its box
+          is tight to its own glyphs, so centring it put its baseline two pixels
+          above the word beside it — small, and plainly visible, because two
+          words on one line either sit on the same baseline or they do not.
+          Two pixels and not the six an earlier measurement claimed: a probe
+          using an `overflow:hidden` inline-block reports its bottom margin
+          edge rather than the baseline, so it was comparing line boxes. A
+          zero-height inline-block sits on the baseline itself.
+          The (i) beside it stays centred, and has to: it is a circle, and a
+          circle baseline-aligned on the tiny "i" inside it drops below the
+          text. See its `self-center` in DeliveryFeeInfo.tsx. */}
       <span
-        className={`flex min-w-0 items-center gap-1.5 ${
+        className={`flex min-w-0 items-baseline gap-1.5 ${
           strong ? "text-[15px] font-medium text-ink" : "text-[14px] text-muted"
         }`}
       >

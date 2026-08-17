@@ -487,8 +487,11 @@ function Line({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1">
+      {/* items-baseline for the same reason as Money in CheckoutSections.tsx:
+          the receipt's delivery row carries the same 11px mark beside 13px
+          text, and centring the boxes leaves the mark floating above the line. */}
       <span
-        className={`flex min-w-0 items-center gap-1.5 ${
+        className={`flex min-w-0 items-baseline gap-1.5 ${
           strong ? "text-[14px] font-medium" : "text-[13px]"
         }`}
         style={{ color: strong ? ink : muted }}

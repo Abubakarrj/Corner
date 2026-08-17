@@ -88,7 +88,7 @@ export default function DeliveryFeeInfo({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t("deliveryFee.title")}
-        className="cb-press inline-flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center rounded-full border border-line text-[11px] font-medium leading-none text-muted transition-colors hover:border-ink hover:text-ink"
+        className="cb-press inline-flex h-[18px] w-[18px] shrink-0 cursor-pointer items-center justify-center self-center rounded-full border border-line text-[11px] font-medium leading-none text-muted transition-colors hover:border-ink hover:text-ink"
       >
         <span aria-hidden>i</span>
       </button>
