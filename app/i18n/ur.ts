@@ -67,7 +67,7 @@ export const ur: Table = {
   "finder.directions": "راستہ",
   "finder.call": "کال کریں",
   "finder.copyAddress": "پتہ کاپی کریں",
-  "finder.hoursEveryDay": "روزانہ، {open}–{close}",
+  "finder.hoursEveryDay": "روزانہ • {open} - {close}",
   "finder.copied": "کاپی ہو گیا",
   "finder.about": "{name} کے بارے میں",
   "finder.orderFrom": "{name} سے آرڈر کریں",

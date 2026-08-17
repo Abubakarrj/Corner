@@ -64,7 +64,7 @@ export const my: Table = {
   "finder.directions": "လမ်းညွှန်",
   "finder.call": "ဖုန်းခေါ်ရန်",
   "finder.copyAddress": "လိပ်စာ ကူးယူပါ",
-  "finder.hoursEveryDay": "နေ့တိုင်း {open}–{close}",
+  "finder.hoursEveryDay": "နေ့တိုင်း • {open} - {close}",
   "finder.copied": "ကူးယူပြီး",
   "finder.about": "{name} အကြောင်း",
   "finder.orderFrom": "{name} မှ မှာယူရန်",

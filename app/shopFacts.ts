@@ -6,31 +6,37 @@
 // "Hours to come" in one file and unmentioned in three others; when they
 // changed there was no single place to change them, and Riley would have gone
 // on telling people they weren't published.
-// The en dash here is unspaced on purpose. Riley's reply is scrubbed for em
-// dashes on the way out, and a *spaced* en dash is doing an em dash's job so
-// it gets replaced by a comma. Unspaced, it reads as a range and is left
-// alone, which is what "7am–4pm" is. Spaced, this would reach a customer as
-// "7am, 4pm".
-export const SHOP_HOURS = "Every Day, 7am–4pm";
+// A hyphen between the times, not an en dash, and that is load-bearing rather
+// than a typo. Riley's reply is scrubbed for em dashes on the way out and a
+// *spaced* en dash is doing an em dash's job, so it would be replaced by a
+// comma and reach a customer as "7 AM, 4 PM". An unspaced en dash survives the
+// scrub but does not match the shop's own signage, which is what this is.
+export const SHOP_HOURS = "Everyday • 7 AM - 4 PM";
 
 export const OPEN_HOUR = 7;
 export const CLOSE_HOUR = 16;
 
-// "7am" and "4pm", derived rather than typed.
+// "7 AM" and "4 PM", derived rather than typed.
 //
 // Three screens had "2pm" written into a sentence, so changing the closing
 // time meant finding all three, and the order flow told people it shut at 2pm
 // for as long as one was missed. A time that appears in prose is still the
 // same fact as the number the clock compares against, and it should come from
 // the same place.
-// The default is the shop's own house style, "7am", closed up and lowercase.
+// The default is the shop's own house style, "7 AM", spaced and capitalised.
 // Every other language gets what its locale data says, because "午前7時" is
-// not a variant of "7am" that can be reached by lowercasing anything.
+// not a variant of "7 AM" that can be reached by casing anything.
+//
+// Changed here and not at the one call site that prompted it. This is the only
+// place an English time is spelled, and it feeds the hours line, "Open until
+// 4 PM", "opens at 7 AM", the checkout's closing notice and Riley — so styling
+// one of them differently is how a shop ends up telling somebody it shuts at
+// "4pm" on one screen and "4 PM" on the next.
 export function clockLabel(hour24: number, tag = "en-US"): string {
   if (tag.startsWith("en")) {
-    const period = hour24 >= 12 ? "pm" : "am";
+    const period = hour24 >= 12 ? "PM" : "AM";
     const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
-    return `${hour}${period}`;
+    return `${hour} ${period}`;
   }
   try {
     return new Date(2000, 0, 1, hour24).toLocaleTimeString(tag, { hour: "numeric" });

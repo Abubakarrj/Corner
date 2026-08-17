@@ -64,7 +64,7 @@ export const ja: Table = {
   "finder.directions": "経路",
   "finder.call": "電話",
   "finder.copyAddress": "住所をコピー",
-  "finder.hoursEveryDay": "毎日 {open}–{close}",
+  "finder.hoursEveryDay": "毎日 • {open} - {close}",
   "finder.copied": "コピーしました",
   "finder.about": "{name}について",
   "finder.orderFrom": "{name}から注文",

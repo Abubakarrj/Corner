@@ -64,7 +64,7 @@ export const ko: Table = {
   "finder.directions": "길찾기",
   "finder.call": "전화",
   "finder.copyAddress": "주소 복사",
-  "finder.hoursEveryDay": "매일 {open}–{close}",
+  "finder.hoursEveryDay": "매일 • {open} - {close}",
   "finder.copied": "복사됨",
   "finder.about": "{name} 정보",
   "finder.orderFrom": "{name}에서 주문",

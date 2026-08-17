@@ -73,7 +73,7 @@ export const fa: Table = {
   "finder.directions": "مسیر",
   "finder.call": "تماس",
   "finder.copyAddress": "کپی نشانی",
-  "finder.hoursEveryDay": "هر روز، {open}–{close}",
+  "finder.hoursEveryDay": "هر روز • {open} - {close}",
   "finder.copied": "کپی شد",
   "finder.about": "دربارهٔ {name}",
   "finder.orderFrom": "سفارش از {name}",

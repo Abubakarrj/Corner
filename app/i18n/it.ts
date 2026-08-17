@@ -65,7 +65,7 @@ export const it: Table = {
   "finder.directions": "Indicazioni",
   "finder.call": "Chiama",
   "finder.copyAddress": "Copia indirizzo",
-  "finder.hoursEveryDay": "Tutti i giorni, {open}–{close}",
+  "finder.hoursEveryDay": "Tutti i giorni • {open} - {close}",
   "finder.copied": "Copiato",
   "finder.about": "Su {name}",
   "finder.orderFrom": "Ordina da {name}",

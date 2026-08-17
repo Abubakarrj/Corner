@@ -66,7 +66,7 @@ export const zh: Table = {
   "finder.directions": "路线",
   "finder.call": "致电",
   "finder.copyAddress": "复制地址",
-  "finder.hoursEveryDay": "每天 {open}–{close}",
+  "finder.hoursEveryDay": "每天 • {open} - {close}",
   "finder.copied": "已复制",
   "finder.about": "关于{name}",
   "finder.orderFrom": "在{name}下单",
