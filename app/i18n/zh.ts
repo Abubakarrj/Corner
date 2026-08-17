@@ -519,6 +519,8 @@ export const zh: Table = {
   "droplist.already": "已在名单中",
   "droplist.email": "邮箱地址",
   "droplist.terms": "服务条款",
+  "footer.dropList": "新品通知",
+  "droplist.joinLink": "加入新品通知",
   "footer.privacy": "隐私政策",
 
   "about.tagline": "就在街角",

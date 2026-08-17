@@ -564,6 +564,8 @@ export const fa: Table = {
   "droplist.already": "از قبل در فهرست هستید",
   "droplist.email": "نشانی ایمیل",
   "droplist.terms": "شرایط استفاده",
+  "footer.dropList": "تازه‌ها",
+  "droplist.joinLink": "به فهرست ما بپیوندید",
   "footer.privacy": "سیاست حریم خصوصی",
 
   "about.tagline": "درست سر همین کوچه",

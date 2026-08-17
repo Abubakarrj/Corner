@@ -518,6 +518,8 @@ export const ja: Table = {
   "droplist.already": "すでに登録済みです",
   "droplist.email": "メールアドレス",
   "droplist.terms": "利用規約",
+  "footer.dropList": "新着のお知らせ",
+  "droplist.joinLink": "新着のお知らせを受け取る",
   "footer.privacy": "プライバシーポリシー",
 
   "about.tagline": "すぐ角を曲がったところに",

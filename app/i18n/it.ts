@@ -565,6 +565,8 @@ export const it: Table = {
   "droplist.already": "Sei già nella lista",
   "droplist.email": "Indirizzo e-mail",
   "droplist.terms": "Termini di servizio",
+  "footer.dropList": "Novità",
+  "droplist.joinLink": "Iscriviti alla lista",
   "footer.privacy": "Informativa sulla privacy",
 
   "about.tagline": "Proprio dietro l'angolo",

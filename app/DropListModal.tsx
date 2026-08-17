@@ -5,6 +5,7 @@ import { useServerText, useT } from "./i18n";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { hasConsented, subscribeConsentChanged } from "./CookieConsent";
 import { isReturning, noteVisit } from "./visits";
+import { subscribeOpenDropList } from "./dropList";
 
 // The drop-list signup modal. It lives in the root layout so it can appear over
 // any page, blurring whatever is behind it.
@@ -215,6 +216,10 @@ export default function DropListModal() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const answeredRef = useRef(false);
+  // Whether this opening was asked for rather than decided. It changes one
+  // thing — what closing without joining means — and that one thing matters:
+  // see close() below.
+  const askedForRef = useRef(false);
   const honeypotRef = useRef<HTMLInputElement>(null);
   // When the modal became visible, so the server can reject a submit that
   // arrives faster than a human could plausibly fill the field.
@@ -235,6 +240,22 @@ export default function DropListModal() {
   // above and bumps the count that schedule reads from.
   const close = useCallback((outcome: "dismissed" | "joined" | "already") => {
     setOpen(false);
+    const askedFor = askedForRef.current;
+    askedForRef.current = false;
+
+    // ——— Closing something you opened is not a refusal ———
+    //
+    // The cooldown exists to count the times this shop asked and was turned
+    // down. Somebody who tapped "Drop list", read it, and closed it has not
+    // turned anything down — they answered their own question. Recording that
+    // as a dismissal would push the next automatic ask out by days and
+    // eventually silence it, so opening the thing to look at it would be a way
+    // to stop being offered it. Nothing is written and nothing is counted.
+    //
+    // Joining still is, on either path. That one is terminal wherever it
+    // happens: they are on the list, and the modal is finished on this device.
+    if (askedFor && outcome === "dismissed") return;
+
     answeredRef.current = true;
     try {
       const prior = readStoredState();
@@ -247,6 +268,22 @@ export default function DropListModal() {
       // next time, which is better than failing to close.
     }
   }, []);
+
+  // Asked for, by a link somewhere on the page. Answers to none of the rules
+  // in the effect below — no dwell, no route check, no visit count, no
+  // cooldown, and no consent gate. Those all exist to keep an uninvited modal
+  // from landing on somebody, and this one was invited.
+  //
+  // Its own effect, mounted for the life of the component, so it works on a
+  // route the automatic path never runs on.
+  useEffect(
+    () =>
+      subscribeOpenDropList(() => {
+        askedForRef.current = true;
+        setOpen(true);
+      }),
+    [],
+  );
 
   // Open on whichever cue lands first — the dwell timer for this route, or
   // the pointer leaving the top of the viewport — for a visitor who has never

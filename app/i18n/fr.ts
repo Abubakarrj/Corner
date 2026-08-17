@@ -565,6 +565,8 @@ export const fr: Table = {
   "droplist.already": "Déjà sur la liste",
   "droplist.email": "Adresse e-mail",
   "droplist.terms": "Conditions d'utilisation",
+  "footer.dropList": "Nouveautés",
+  "droplist.joinLink": "Rejoindre la liste",
   "footer.privacy": "Politique de confidentialité",
 
   "about.tagline": "Juste au coin de la rue",

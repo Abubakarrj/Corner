@@ -570,6 +570,8 @@ export const en = {
   "droplist.already": "Already on the list",
   "droplist.email": "Email address",
   "droplist.terms": "Terms of Service",
+  "footer.dropList": "Drop list",
+  "droplist.joinLink": "Join the drop list",
   "footer.privacy": "Privacy Policy",
 
   "about.tagline": "Right Around The Corner",
