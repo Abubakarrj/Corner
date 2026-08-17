@@ -150,7 +150,7 @@ export const my: Table = {
   "checkout.title": "ငွေရှင်းရန်",
   "checkout.emptyBasket": "သင့်ခြင်း ဗလာဖြစ်နေသည်။",
   "checkout.contact": "ဆက်သွယ်ရန်",
-  "checkout.contactNote": "ဤအမှာစာအတွက် ဆိုင်မှ ဆက်သွယ်ရန်နှင့် ပို့ဆောင်သူ သင့်ကို ရှာတွေ့ရန်သာ ဖြစ်သည်။",
+  "checkout.contactNote": "ဤအမှာစာအတွက်သာ အသုံးပြုပါသည်။",
   "checkout.firstName": "အမည်",
   "checkout.lastName": "မျိုးနွယ်အမည်",
   "checkout.email": "အီးမေးလ်",

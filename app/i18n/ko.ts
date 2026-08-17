@@ -150,7 +150,7 @@ export const ko: Table = {
   "checkout.title": "결제",
   "checkout.emptyBasket": "장바구니가 비어 있습니다.",
   "checkout.contact": "연락처",
-  "checkout.contactNote": "주문 관련 연락과 배달 기사가 찾아올 때만 사용합니다. 그 외에는 쓰지 않습니다.",
+  "checkout.contactNote": "이 주문에만 사용됩니다.",
   "checkout.firstName": "이름",
   "checkout.lastName": "성",
   "checkout.email": "이메일",

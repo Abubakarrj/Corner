@@ -152,7 +152,7 @@ export const es: Table = {
   "checkout.title": "Pagar",
   "checkout.emptyBasket": "Tu cesta está vacía.",
   "checkout.contact": "Contacto",
-  "checkout.contactNote": "Para que la tienda pueda contactarte sobre este pedido y el repartidor te encuentre. Nada más.",
+  "checkout.contactNote": "Solo se usa para este pedido.",
   "checkout.firstName": "Nombre",
   "checkout.lastName": "Apellido",
   "checkout.email": "Correo electrónico",

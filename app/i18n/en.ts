@@ -180,7 +180,7 @@ export const en = {
   "checkout.title": "Checkout",
   "checkout.emptyBasket": "Your basket is empty.",
   "checkout.contact": "Contact",
-  "checkout.contactNote": "So the shop can reach you about this order, and the driver can find you. Nothing else.",
+  "checkout.contactNote": "Only used for this order.",
   "checkout.firstName": "First name",
   "checkout.lastName": "Last name",
   "checkout.email": "Email",

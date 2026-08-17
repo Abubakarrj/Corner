@@ -172,7 +172,7 @@ export const fr: Table = {
   "checkout.title": "Commande",
   "checkout.emptyBasket": "Votre panier est vide.",
   "checkout.contact": "Coordonnées",
-  "checkout.contactNote": "Pour que la boutique puisse vous joindre au sujet de cette commande et que le livreur vous trouve. Rien d'autre.",
+  "checkout.contactNote": "Utilisé uniquement pour cette commande.",
   "checkout.firstName": "Prénom",
   "checkout.lastName": "Nom",
   "checkout.email": "E-mail",

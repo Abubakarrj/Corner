@@ -153,7 +153,7 @@ export const ur: Table = {
   "checkout.title": "چیک آؤٹ",
   "checkout.emptyBasket": "آپ کی ٹوکری خالی ہے۔",
   "checkout.contact": "رابطہ",
-  "checkout.contactNote": "تاکہ دکان اس آرڈر کے بارے میں آپ سے رابطہ کر سکے اور ڈرائیور آپ کو ڈھونڈ سکے۔ اور کچھ نہیں۔",
+  "checkout.contactNote": "صرف اس آرڈر کے لیے استعمال ہوتا ہے۔",
   "checkout.firstName": "پہلا نام",
   "checkout.lastName": "آخری نام",
   "checkout.email": "ای میل",

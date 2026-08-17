@@ -172,7 +172,7 @@ export const it: Table = {
   "checkout.title": "Cassa",
   "checkout.emptyBasket": "Il tuo carrello è vuoto.",
   "checkout.contact": "Contatti",
-  "checkout.contactNote": "Perché il negozio possa contattarti su questo ordine e il fattorino ti trovi. Nient'altro.",
+  "checkout.contactNote": "Usato solo per questo ordine.",
   "checkout.firstName": "Nome",
   "checkout.lastName": "Cognome",
   "checkout.email": "E-mail",

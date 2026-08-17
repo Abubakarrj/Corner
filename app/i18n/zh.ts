@@ -152,7 +152,7 @@ export const zh: Table = {
   "checkout.title": "结账",
   "checkout.emptyBasket": "购物篮是空的。",
   "checkout.contact": "联系方式",
-  "checkout.contactNote": "仅用于就本次订单联系您，以及方便配送员找到您。不作他用。",
+  "checkout.contactNote": "仅用于本次订单。",
   "checkout.firstName": "名",
   "checkout.lastName": "姓",
   "checkout.email": "邮箱",

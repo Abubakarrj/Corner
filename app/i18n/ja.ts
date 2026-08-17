@@ -150,7 +150,7 @@ export const ja: Table = {
   "checkout.title": "お会計",
   "checkout.emptyBasket": "カートは空です。",
   "checkout.contact": "連絡先",
-  "checkout.contactNote": "このご注文についてのご連絡と、配達員がお客様を見つけるためだけに使います。",
+  "checkout.contactNote": "このご注文にのみ使用します。",
   "checkout.firstName": "名",
   "checkout.lastName": "姓",
   "checkout.email": "メールアドレス",

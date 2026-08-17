@@ -178,7 +178,7 @@ export const fa: Table = {
   "checkout.title": "تسویه حساب",
   "checkout.emptyBasket": "سبد شما خالی است.",
   "checkout.contact": "اطلاعات تماس",
-  "checkout.contactNote": "تا فروشگاه دربارهٔ این سفارش با شما تماس بگیرد و پیک شما را پیدا کند. نه چیز دیگری.",
+  "checkout.contactNote": "فقط برای همین سفارش استفاده می‌شود.",
   "checkout.firstName": "نام",
   "checkout.lastName": "نام خانوادگی",
   "checkout.email": "ایمیل",
