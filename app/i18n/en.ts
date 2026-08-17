@@ -364,6 +364,12 @@ export const en = {
 
   "order.arrivingAround": "Arriving around {time}",
   "order.arrivingNow": "Arriving now",
+  "order.headingToGuess": "Waiting to hear that a courier has it. It's going to {where}.",
+  "order.atCounterGuess": "Usually ready about now. The shop will confirm.",
+  "order.onTheWayGuess": "Should be on the way",
+  "order.readyGuess": "Should be ready",
+  "order.deliveryCanceled": "Delivery canceled",
+  "order.deliveryCanceledDetail": "The courier is not bringing this order. Call the shop to sort out what happens next.",
   "order.estimated": "{eta} · estimated",
   "order.courier": "{name} is bringing it over.",
   "order.courierWith": "{name} is bringing it over by {vehicle}.",

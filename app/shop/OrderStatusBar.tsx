@@ -69,7 +69,10 @@ export default function OrderStatusBar({ dock = false }: { dock?: boolean }) {
   if (!order) return null;
 
   const progress = progressFor(order, "en-US", undefined, live);
-  const stage = progress.stages[progress.current];
+  // progress.headline, not stage.label: these two read one status and drew two
+  // conclusions from it, the tracker saying the delivery was canceled while
+  // this strip, an inch above it, still said "On the way" with a pulsing dot
+  // beside it. One computed answer, both consumers.
 
   return (
     <Link
@@ -136,13 +139,32 @@ export default function OrderStatusBar({ dock = false }: { dock?: boolean }) {
       }
     >
       <div className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
+        {/* The dot pulses because something is happening. On a canceled
+            delivery nothing is, so it holds still — the animation is the
+            strip's whole claim to being live, and a claim is what this one
+            has stopped being entitled to. The dot itself stays: the order is
+            still worth a row, it is just not in motion. */}
         <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky opacity-70 motion-reduce:animate-none" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-sky" />
+          {progress.canceled ? null : (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky opacity-70 motion-reduce:animate-none" />
+          )}
+          <span
+            className={
+              "relative inline-flex h-2 w-2 rounded-full" +
+              (progress.canceled ? " bg-muted" : " bg-sky")
+            }
+          />
         </span>
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-          {t(stage.label)}
-          {progress.eta ? (
+          {t(progress.headline)}
+          {/* Same order of precedence as the tracker: Uber saying the courier
+              is about to arrive outranks any clock time, including Uber's own.
+              Without this the strip read "On the way · Arriving around 8:42"
+              directly above a page that said "Arriving now", which is two
+              answers to one question a thumb's width apart. */}
+          {live?.courierNear ? (
+            <span className="font-normal text-muted"> · {t("order.arrivingNow")}</span>
+          ) : progress.eta ? (
             <span className="font-normal text-muted">
               {" "}
               · {t(progress.eta.key, { time: progress.eta.time })}

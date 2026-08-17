@@ -316,6 +316,12 @@ export const ko: Table = {
 
   "order.arrivingAround": "{time}쯤 도착",
   "order.arrivingNow": "곧 도착합니다",
+  "order.headingToGuess": "배달원이 픽업했는지 아직 확인되지 않았습니다. {where}(으)로 갑니다.",
+  "order.atCounterGuess": "보통 이맘때 준비됩니다. 매장에서 확인해 드립니다.",
+  "order.onTheWayGuess": "배달 중일 것으로 예상",
+  "order.readyGuess": "준비되었을 것으로 예상",
+  "order.deliveryCanceled": "배달 취소됨",
+  "order.deliveryCanceledDetail": "배달원이 이 주문을 가져가지 않습니다. 매장에 전화해 다음 절차를 확인해 주세요.",
   "order.estimated": "{eta} · 예상",
   "order.courier": "{name} 님이 가져다드립니다.",
   "order.courierWith": "{name} 님이 {vehicle}(으)로 가져다드립니다.",

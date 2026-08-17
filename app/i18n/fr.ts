@@ -351,6 +351,12 @@ export const fr: Table = {
 
   "order.arrivingAround": "Arrivée vers {time}",
   "order.arrivingNow": "Arrive maintenant",
+  "order.headingToGuess": "Nous attendons la confirmation qu’un coursier l’a récupérée. Destination : {where}.",
+  "order.atCounterGuess": "Normalement prêt vers cette heure. La boutique confirmera.",
+  "order.onTheWayGuess": "Devrait être en route",
+  "order.readyGuess": "Devrait être prêt",
+  "order.deliveryCanceled": "Livraison annulée",
+  "order.deliveryCanceledDetail": "Le coursier n’apporte pas cette commande. Appelez la boutique pour la suite.",
   "order.estimated": "{eta} · estimation",
   "order.courier": "{name} vous l’apporte.",
   "order.courierWith": "{name} vous l’apporte en {vehicle}.",

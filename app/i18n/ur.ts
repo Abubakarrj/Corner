@@ -319,6 +319,12 @@ export const ur: Table = {
 
   "order.arrivingAround": "تقریباً {time} پر پہنچے گا",
   "order.arrivingNow": "پہنچنے والا ہے",
+  "order.headingToGuess": "ابھی تصدیق نہیں ہوئی کہ کوریئر نے یہ اٹھا لیا ہے۔ یہ {where} جا رہا ہے۔",
+  "order.atCounterGuess": "عام طور پر اس وقت تک تیار ہو جاتا ہے۔ دکان تصدیق کرے گی۔",
+  "order.onTheWayGuess": "غالباً راستے میں ہے",
+  "order.readyGuess": "غالباً تیار ہے",
+  "order.deliveryCanceled": "ڈلیوری منسوخ",
+  "order.deliveryCanceledDetail": "کوریئر یہ آرڈر نہیں لا رہا۔ آگے کیا ہوگا، اس کے لیے دکان کو کال کریں۔",
   "order.estimated": "{eta} · تخمینہ",
   "order.courier": "{name} یہ آپ تک لا رہے ہیں۔",
   "order.courierWith": "{name} یہ {vehicle} پر لا رہے ہیں۔",

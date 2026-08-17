@@ -632,6 +632,26 @@ export type OrderProgress = {
    *  it from the clock. The tracker drops the word "estimated" when it's set. */
   eta: { key: StringKey; time: string; reported: boolean } | null;
   settled: boolean;
+  /** Whether the stage on screen is one a provider reported, or one the clock
+   *  worked out.
+   *
+   *  The difference is the whole of this page's honesty. "On the way" from
+   *  Uber means a courier has the bag; "on the way" from a clock means eight
+   *  minutes have passed. They read identically to somebody watching, so the
+   *  copy under them must not. */
+  reported: boolean;
+  /** The words at the top of the screen, for every consumer.
+   *
+   *  Computed here rather than in each of them, because there are two — the
+   *  tracker and the docked strip above it — and they read the same status and
+   *  drew different conclusions from it more than once. A canceled delivery
+   *  had "Delivery canceled" on the page and "On the way" an inch above it. */
+  headline: StringKey;
+  /** Uber says this delivery is not happening — canceled, or returned.
+   *
+   *  Its own field rather than a stage, because it is not a later point on the
+   *  same line. Everything the stage list describes stopped being true. */
+  canceled: boolean;
 };
 
 // Tolerant of every shape this field has been stored in — see
@@ -811,16 +831,73 @@ export function progressFor(
     : guessed;
 
   const done = current >= stages.length - 1;
-  const arrived = real?.firm && real.index >= READY;
+  // ——— "Arrived" is not the same index on the two kinds of order ———
+  //
+  // This read `real.index >= READY` for both, and on a delivery READY is the
+  // courier having the bag — which is the middle of the journey, not the end
+  // of it. So the moment Uber started reporting a real courier with a real
+  // arrival time, the page threw the time away as though there were nothing
+  // left to wait for, and fell through to "The shop will confirm when it's
+  // ready. We can't see the counter from here." Both halves of that were
+  // false: we could see, and it was not about the counter.
+  //
+  // A delivery has arrived when it is delivered. A pickup has arrived when it
+  // is on the counter, because at that point the waiting genuinely is over.
+  const arrived =
+    real !== undefined && real.firm && real.index >= (delivery ? stages.length - 1 : READY);
+  // Reported, not guessed. A provider has to have named *this* stage — a
+  // clock that has crept past what Toast last said is still a clock.
+  const reported = real !== undefined && real.index === current;
+  // Uber's canceled covers cancelled and returned. stageFromLive drops it, so
+  // without this the estimate carries on counting towards a delivery nobody is
+  // making.
+  const canceled = delivery && live?.courier === "canceled";
   const fraction = arrived ? 1 : Math.min(1, elapsed / totalMinutes);
   // Past the estimate with nothing to add, or finished for real. An order the
   // shop has actually marked ready stays on the screen until it is collected
   // rather than ageing off it.
   const settled = done || (elapsed >= totalMinutes && !real);
 
+  // ——— A guessed stage does not get to talk like a reported one ———
+  //
+  // The stage list is the same four rows either way, and the detail under the
+  // active row is where the page makes its claim. "Heading to 650 S Catalina
+  // St." says a courier has the bag. "Waiting for you at the counter." says
+  // somebody can leave the house. Both were printed off a clock the moment
+  // enough minutes had passed, with no provider having said anything — and the
+  // pickup one is the failure the note above stageFromLive warns about, showing
+  // up in a different place than it was guarded in.
+  //
+  // So the third stage's detail is swapped for one the clock can support when
+  // nothing has reported it. Only the third: "placed" and "in the kitchen" are
+  // safe to say from a clock, and the last stage cannot be reached by one.
+  const spoken =
+    current === READY && !reported
+      ? stages.map((entry, index): OrderStage => {
+          if (index !== READY) return entry;
+          const detail: StringKey = delivery
+            ? "order.headingToGuess"
+            : "order.atCounterGuess";
+          return { ...entry, detail };
+        })
+      : stages;
+
+  // The headline is the page's answer to "where is my order", in 26px, and a
+  // stage name is not always an honest one. "On the way" over a detail that
+  // says we are waiting to hear from a courier is the screen arguing with
+  // itself; the guessed form says the same thing as the detail does.
+  const headline: StringKey = canceled
+    ? "order.deliveryCanceled"
+    : current === READY && !reported
+      ? delivery
+        ? "order.onTheWayGuess"
+        : "order.readyGuess"
+      : spoken[current].label;
+
   return {
-    stages,
+    stages: spoken,
     current,
+    headline,
     fraction,
     // No estimate once it is really ready: "ready around 8:24" under the word
     // Ready is the page arguing with itself.
@@ -831,7 +908,10 @@ export function progressFor(
     // `reported` travels with it so the screen can stop calling it an
     // estimate, because at that point it isn't ours to estimate.
     eta:
-      settled || arrived
+      // Nothing to arrive, nothing to say when. A canceled delivery kept
+      // producing an arrival time, because cancellation is not a stage and
+      // every other branch here reasons about stages.
+      settled || arrived || canceled
         ? null
         : {
             key: delivery ? "order.arrivingAround" : "order.readyAround",
@@ -839,6 +919,8 @@ export function progressFor(
             reported: typeof live?.etaAt === "number",
           },
     settled,
+    reported,
+    canceled,
   };
 }
 

@@ -315,6 +315,12 @@ export const ja: Table = {
 
   "order.arrivingAround": "{time}頃に到着",
   "order.arrivingNow": "まもなく到着",
+  "order.headingToGuess": "配達員が受け取ったという連絡はまだありません。お届け先は{where}です。",
+  "order.atCounterGuess": "普段はこの時間に用意ができます。店舗から確認します。",
+  "order.onTheWayGuess": "配達中の見込み",
+  "order.readyGuess": "用意ができている見込み",
+  "order.deliveryCanceled": "配達がキャンセルされました",
+  "order.deliveryCanceledDetail": "配達員はこの注文をお届けしません。今後については店舗にお電話ください。",
   "order.estimated": "{eta} · 目安",
   "order.courier": "{name}さんがお届けします。",
   "order.courierWith": "{name}さんが{vehicle}でお届けします。",

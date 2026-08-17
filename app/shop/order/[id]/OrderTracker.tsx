@@ -120,28 +120,39 @@ export default function OrderTracker({ id }: { id: string }) {
         className="mt-5 text-[26px] font-medium leading-[1.15] tracking-[-0.02em]"
         style={{ color: ink, fontFamily: DISPLAY_FONT }}
       >
-        <TextSwap value={t(stage.label)} />
+        <TextSwap value={t(progress.headline)} />
       </h1>
       <p className="mt-1.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
-        <TextSwap value={t(stage.detail, stage.detailVars)} />
+        <TextSwap
+          value={
+            progress.canceled
+              ? t("order.deliveryCanceledDetail")
+              : t(stage.detail, stage.detailVars)
+          }
+        />
       </p>
 
       {/* The bar. Its width is the estimate's progress, not a measurement —
-          the line under it says which. */}
-      <div
-        className="mt-5 h-2 overflow-hidden rounded-full"
-        style={{ backgroundColor: "var(--cb-line-faint)" }}
-        role="progressbar"
-        aria-valuenow={Math.round(progress.fraction * 100)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={t("order.progress")}
-      >
+          the line under it says which.
+          Hidden once Uber has canceled: a bar filling towards a delivery
+          nobody is making is the page insisting on a story it has just been
+          told is over. */}
+      {progress.canceled ? null : (
         <div
-          className="h-full rounded-full transition-[width] duration-700 ease-out"
-          style={{ width: `${Math.max(6, progress.fraction * 100)}%`, backgroundColor: sky }}
-        />
-      </div>
+          className="mt-5 h-2 overflow-hidden rounded-full"
+          style={{ backgroundColor: "var(--cb-line-faint)" }}
+          role="progressbar"
+          aria-valuenow={Math.round(progress.fraction * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={t("order.progress")}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-700 ease-out"
+            style={{ width: `${Math.max(6, progress.fraction * 100)}%`, backgroundColor: sky }}
+          />
+        </div>
+      )}
 
       {/* "· estimated" is a disclaimer, and it is only honest while the time
           is one. Once Uber reports its own arrival time this is no longer
@@ -154,7 +165,11 @@ export default function OrderTracker({ id }: { id: string }) {
             once it is true the minute on the line stops being the useful part.
             Only ever shown because Uber said so — courierNear is never false,
             only absent, so this cannot claim he is *not* nearly here. */}
-        {live?.courierNear
+        {progress.canceled
+          ? // Uber has said this one is not happening. Every sentence this line
+            // can produce is about when it will get here.
+            null
+          : live?.courierNear
           ? t("order.arrivingNow")
           : progress.eta
             ? progress.eta.reported
@@ -162,7 +177,20 @@ export default function OrderTracker({ id }: { id: string }) {
               : t("order.estimated", {
                   eta: t(progress.eta.key, { time: progress.eta.time }),
                 })
-            : t("order.shopConfirms")}
+            : // No time left to show, and two very different reasons for it.
+              //
+              // If nothing has reported this stage, "the shop will confirm
+              // when it's ready, we can't see the counter from here" is
+              // exactly true and it is the most useful thing on the screen.
+              //
+              // If something *has* reported it, both halves of that sentence
+              // are false: the counter is precisely what we can see, and it
+              // has already confirmed. The stage and its detail above are the
+              // report; adding a line that contradicts them was the page
+              // arguing with itself. So there is no line.
+              progress.reported
+              ? null
+              : t("order.shopConfirms")}
       </p>
 
       {/* Who has the bag, once somebody does. Uber hands us a first name and
@@ -180,31 +208,36 @@ export default function OrderTracker({ id }: { id: string }) {
       ) : null}
 
       {/* The stages, as a list rather than a horizontal stepper: four labels
-          across a phone either truncate or shrink below reading size. */}
-      <ol className="cb-stagger mt-7 flex list-none flex-col gap-0 p-0">
-        {progress.stages.map((entry, index) => {
-          const done = index < progress.current;
-          const active = index === progress.current;
-          const last = index === progress.stages.length - 1;
-          return (
-            <li key={entry.status} className="flex gap-3.5">
-              <div className="flex flex-col items-center">
-                <span
-                  aria-hidden
-                  className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2"
-                  style={{
-                    borderColor: done || active ? ink : controlBorder,
-                    // Done is ink because it is a fact; the stage in flight is sky
-                    // because it is the thing still happening.
-                    backgroundColor: done ? ink : active ? sky : "transparent",
-                  }}
-                />
-                {last ? null : (
+          across a phone either truncate or shrink below reading size.
+          Gone on a canceled delivery, along with the bar: every row of it
+          describes a journey towards a doorstep, and Uber has said there
+          isn't one. What replaces it is the headline above and the phone
+          number below, which are the two things still true. */}
+      {progress.canceled ? null : (
+        <ol className="cb-stagger mt-7 flex list-none flex-col gap-0 p-0">
+          {progress.stages.map((entry, index) => {
+            const done = index < progress.current;
+            const active = index === progress.current;
+            const last = index === progress.stages.length - 1;
+            return (
+              <li key={entry.status} className="flex gap-3.5">
+                <div className="flex flex-col items-center">
                   <span
                     aria-hidden
-                    className="my-1 w-[2px] flex-1 rounded-full"
-                    style={{ backgroundColor: done ? ink : controlBorder }}
+                    className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2"
+                    style={{
+                      borderColor: done || active ? ink : controlBorder,
+                      // Done is ink because it is a fact; the stage in flight is sky
+                      // because it is the thing still happening.
+                      backgroundColor: done ? ink : active ? sky : "transparent",
+                    }}
                   />
+                  {last ? null : (
+                    <span
+                      aria-hidden
+                      className="my-1 w-[2px] flex-1 rounded-full"
+                      style={{ backgroundColor: done ? ink : controlBorder }}
+                    />
                 )}
               </div>
               <div className={last ? "pb-0" : "pb-5"}>
@@ -233,6 +266,7 @@ export default function OrderTracker({ id }: { id: string }) {
           );
         })}
       </ol>
+      )}
 
       {/* Under the progress and above the receipt: it is about the thing
           being waited for, and it asks at the one moment somebody wants the

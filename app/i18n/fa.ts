@@ -351,6 +351,12 @@ export const fa: Table = {
 
   "order.arrivingAround": "حدود {time} می‌رسد",
   "order.arrivingNow": "در حال رسیدن",
+  "order.headingToGuess": "هنوز تأیید نشده که پیک آن را تحویل گرفته است. مقصد {where} است.",
+  "order.atCounterGuess": "معمولاً حدود همین موقع آماده می‌شود. فروشگاه تأیید می‌کند.",
+  "order.onTheWayGuess": "احتمالاً در راه است",
+  "order.readyGuess": "احتمالاً آماده است",
+  "order.deliveryCanceled": "ارسال لغو شد",
+  "order.deliveryCanceledDetail": "پیک این سفارش را نمی‌آورد. برای ادامه با فروشگاه تماس بگیرید.",
   "order.estimated": "{eta} · برآوردی",
   "order.courier": "{name} دارد آن را می‌آورد.",
   "order.courierWith": "{name} دارد آن را با {vehicle} می‌آورد.",

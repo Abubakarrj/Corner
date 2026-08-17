@@ -317,6 +317,12 @@ export const my: Table = {
 
   "order.arrivingAround": "{time} ခန့်တွင် ရောက်မည်",
   "order.arrivingNow": "ရောက်တော့မည်",
+  "order.headingToGuess": "ပို့ဆောင်သူ ယူသွားပြီးကြောင်း အတည်ပြုချက် မရသေးပါ။ {where} သို့ သွားမည်။",
+  "order.atCounterGuess": "ပုံမှန်အားဖြင့် ဤအချိန်ခန့်တွင် အဆင်သင့်ဖြစ်ပါသည်။ ဆိုင်မှ အတည်ပြုပါမည်။",
+  "order.onTheWayGuess": "လမ်းမှာ ရှိနေဖွယ်",
+  "order.readyGuess": "အဆင်သင့် ဖြစ်နေဖွယ်",
+  "order.deliveryCanceled": "ပို့ဆောင်မှု ပယ်ဖျက်ပြီး",
+  "order.deliveryCanceledDetail": "ပို့ဆောင်သူသည် ဤအော်ဒါကို ယူဆောင်လာမည် မဟုတ်ပါ။ ဆက်လက်ဆောင်ရွက်ရန် ဆိုင်သို့ ဖုန်းဆက်ပါ။",
   "order.estimated": "{eta} · ခန့်မှန်း",
   "order.courier": "{name} က ယူလာနေပါပြီ။",
   "order.courierWith": "{name} က {vehicle} နဲ့ ယူလာနေပါပြီ။",
