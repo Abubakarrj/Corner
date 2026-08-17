@@ -56,6 +56,7 @@ import { fetchDelivery } from "./uberDirect";
 import {
   courierStageOf,
   foodStageOf,
+  type CourierStage,
   type LiveStatus,
 } from "./orderStages";
 
@@ -159,7 +160,9 @@ export async function refresh(
     );
   }
 
-  const was = read(`uber:${id}`, now)?.courier;
+  const before = read(`uber:${id}`, now);
+  const was = before?.courier;
+  const wasNear = before?.courierNear === true;
   // The ETA and the courier ride along with the stage rather than being
   // fetched separately: they came out of the same response, and splitting
   // them would mean two calls to say one thing.
@@ -178,6 +181,10 @@ export async function refresh(
   // worth a notification, and Uber's does slide. A stage we could not read is
   // not a change to announce either.
   if (courier !== undefined && was !== courier) await announce("uber", id, courier);
+
+  if (announcesArrival(wasNear, state.courierImminent, courier)) {
+    await announce("uber", id, "arriving");
+  }
   return status;
 }
 
@@ -246,6 +253,40 @@ async function resolve(
   // A provider that is down or slow leaves whatever we last knew standing,
   // rather than blanking a screen somebody is watching.
   return fresh ?? cached;
+}
+
+
+/** Whether this refresh is the moment to say "he's about to arrive".
+ *
+ *  ——— The one alert that is not a stage ———
+ *
+ *  A phone in a pocket learns nothing from the tracker, because the tracker
+ *  polls only while somebody is looking at it. refresh() is also what the Uber
+ *  webhook calls, on every event Uber sends including a courier update, so
+ *  routing this through here is what makes it reach a closed app.
+ *
+ *  ——— On the transition, and only there ———
+ *
+ *  courier_imminent stays true for the rest of the trip. Announcing whenever
+ *  it is set would buzz a phone every fifteen seconds until the door opened,
+ *  which is the fastest way to have somebody turn notifications off for good.
+ *
+ *  ——— And not on top of the end of the order ———
+ *
+ *  A response that reached "delivered" or "canceled" has already said the more
+ *  important thing in the same breath. Two notifications about one bag a
+ *  second apart is worse than either on its own.
+ *
+ *  Its own function because it is a rule rather than a line: it has three
+ *  inputs, two of them are easy to get the wrong way round, and none of the
+ *  ways it can be wrong is visible from a screen. */
+export function announcesArrival(
+  wasNear: boolean,
+  isNear: boolean,
+  courier: CourierStage | undefined,
+): boolean {
+  if (!isNear || wasNear) return false;
+  return courier !== "delivered" && courier !== "canceled";
 }
 
 /** Test seam. Nothing in the app calls this. */

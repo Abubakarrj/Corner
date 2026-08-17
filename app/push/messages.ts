@@ -22,14 +22,35 @@ import type { CourierStage, FoodStage } from "../orderStages";
 
 type Message = { title: string; body: string };
 
-const NOTIFIABLE = ["ready", "voided", "collected", "delivered", "canceled"] as const;
+const NOTIFIABLE = [
+  "ready",
+  "voided",
+  "collected",
+  "delivered",
+  "canceled",
+  // ——— Not a stage ———
+  //
+  // "arriving" is Uber's courier_imminent, and it is the only alert here that
+  // does not name a point on the order's line. It earns its place by the same
+  // test as the others — does it change what the person should do — and it is
+  // the one that most clearly does: "collected" is worth knowing, and a
+  // courier at the door in the next minute is worth standing up for.
+  //
+  // It is deliberately outside CourierStage. The stage machinery reasons about
+  // an order advancing, and imminence is a fact about right now that arrives
+  // and stops being true without the order having moved.
+  "arriving",
+] as const;
 
-/** The stages worth waking a phone for. See app/push/announce.ts for the ones
- *  deliberately left out and why. */
+/** What is worth waking a phone for. Mostly stages; see app/push/announce.ts
+ *  for the ones deliberately left out and why. */
 export type NotifiableStage = (typeof NOTIFIABLE)[number];
 
-export function notifiable(stage: FoodStage | CourierStage): stage is NotifiableStage {
-  return (NOTIFIABLE as readonly string[]).includes(stage);
+/** Anything a status refresh can decide to announce. */
+export type Alert = FoodStage | CourierStage | "arriving";
+
+export function notifiable(alert: Alert): alert is NotifiableStage {
+  return (NOTIFIABLE as readonly string[]).includes(alert);
 }
 
 const MESSAGES: Record<NotifiableStage, Record<string, Message>> = {
@@ -80,6 +101,18 @@ const MESSAGES: Record<NotifiableStage, Record<string, Message>> = {
     my: { title: "ပို့ဆောင်မှု ပယ်ဖျက်လိုက်ပါပြီ", body: "ပို့ဆောင်သူ မလာတော့ပါ။ ဆိုင်ကို ဖုန်းဆက်ပေးပါ။" },
     ur: { title: "ڈیلیوری منسوخ", body: "قاصد نہیں آ رہا۔ دکان پر کال کریں، ہم حل کر دیں گے۔" },
     zh: { title: "配送已取消", body: "骑手不会前来。请致电门店，我们来处理。" },
+  },
+  arriving: {
+    en: { title: "Arriving now", body: "Your courier is about to reach you." },
+    es: { title: "Está llegando", body: "El repartidor está a punto de llegar." },
+    fa: { title: "در حال رسیدن", body: "پیک نزدیک شماست." },
+    fr: { title: "Arrive maintenant", body: "Le coursier est sur le point d'arriver." },
+    it: { title: "Sta arrivando", body: "Il corriere sta per arrivare." },
+    ja: { title: "まもなく到着", body: "配達員がもうすぐ着きます。" },
+    ko: { title: "곧 도착합니다", body: "배달 기사가 거의 도착했어요." },
+    my: { title: "ရောက်တော့မည်", body: "ပို့ဆောင်သူ ရောက်ခါနီးပါပြီ။" },
+    ur: { title: "پہنچنے والا ہے", body: "قاصد بس پہنچنے ہی والا ہے۔" },
+    zh: { title: "即将送达", body: "骑手马上就到。" },
   },
   voided: {
     en: { title: "Your order was cancelled", body: "Call the shop and we'll sort it out." },

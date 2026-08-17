@@ -1,7 +1,6 @@
 import "server-only";
 
-import type { CourierStage, FoodStage } from "../orderStages";
-import { isFinal, messageFor, notifiable } from "./messages";
+import { isFinal, messageFor, notifiable, type Alert } from "./messages";
 import { notifyDevices } from "./send";
 import { forgetOrder, subscriptionsForProvider } from "./store";
 
@@ -39,7 +38,7 @@ import { forgetOrder, subscriptionsForProvider } from "./store";
 export async function announce(
   kind: "toast" | "uber",
   providerId: string,
-  stage: FoodStage | CourierStage,
+  stage: Alert,
 ): Promise<void> {
   try {
     if (!notifiable(stage)) return;
