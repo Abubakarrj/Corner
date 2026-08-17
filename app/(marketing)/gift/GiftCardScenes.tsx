@@ -199,30 +199,192 @@ function scallopPath(x: number, y: number, w: number, h: number, r: number): str
 // used to sit on the pattern itself, which on gingham means it crosses a light
 // square and a dark one and is fighting both. On the plate there is one colour
 // behind it.
+//
+// ——— Not with flowers, though ———
+//
+// The first plate framed itself with a hairline rectangle and a rosette in each
+// of the four corners, and hung two leaves off the bagel in the middle. Six
+// cards, twenty-four rosettes, twelve leaves. The rosette is a good mark and it
+// is already doing a job on two other cards — it is the papel card's border and
+// the wreath's flowers — so reaching for it a third time is not a decision, it
+// is a reflex, and the flat set came out looking like the drawn set with the
+// pictures removed.
+//
+// What these cards have that no other shop's do is the object itself. A bagel
+// is a rope of dough joined into a ring, so the frame is a rope: a run of
+// slanted strands walked round the perimeter, which is the product's own
+// construction doing the border's job. The middle is the bagel and nothing
+// else, and under a greeting there is a row of seeds where a printer would set
+// a fleuron. Three marks, all of them bread, none of them botanical.
+
+/** Where each strand of the rope sits, and which way it lies.
+ *
+ *  ——— The corners are rounded, and that is the whole trick ———
+ *
+ *  A strand is five units long and lies across the direction of travel, so a
+ *  square corner is a place where the direction changes by ninety degrees
+ *  between one strand and the next. Walked as a plain rectangle, whichever
+ *  strand lands nearest the turn is placed for the edge it happens to fall on
+ *  and sticks out past it — a tick in each of the four places on a border that
+ *  a person actually looks at. Stopping short of the corner and adding a
+ *  diagonal strand of its own was worse: a gap and a spur instead of a tick.
+ *
+ *  Neither is a corner problem, they are both the same problem, which is that a
+ *  sharp corner has no tangent. So the path is a rounded rectangle: through the
+ *  turn the direction changes a few degrees per strand and the cord goes round
+ *  the way a cord does. Real rope cannot make a square corner either. */
+function ropeStrands(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  radius: number,
+  step: number,
+): { cx: number; cy: number; angle: number }[] {
+  type Sample = (at: number) => { cx: number; cy: number; angle: number };
+  const line = (
+    from: [number, number],
+    to: [number, number],
+    angle: number,
+  ): { length: number; sample: Sample } => ({
+    length: Math.hypot(to[0] - from[0], to[1] - from[1]),
+    sample: (at) => ({
+      cx: from[0] + (to[0] - from[0]) * at,
+      cy: from[1] + (to[1] - from[1]) * at,
+      angle,
+    }),
+  });
+  // `from` and `to` are the angle around the arc's own centre, in degrees. The
+  // direction of travel is always ninety degrees ahead of that.
+  const turn = (
+    centre: [number, number],
+    from: number,
+    to: number,
+  ): { length: number; sample: Sample } => ({
+    length: (Math.abs(to - from) * Math.PI * radius) / 180,
+    sample: (at) => {
+      const degrees = from + (to - from) * at;
+      const radians = (degrees * Math.PI) / 180;
+      return {
+        cx: centre[0] + Math.cos(radians) * radius,
+        cy: centre[1] + Math.sin(radians) * radius,
+        angle: degrees + 90,
+      };
+    },
+  });
+
+  const path = [
+    line([x + radius, y], [x + w - radius, y], 0),
+    turn([x + w - radius, y + radius], -90, 0),
+    line([x + w, y + radius], [x + w, y + h - radius], 90),
+    turn([x + w - radius, y + h - radius], 0, 90),
+    line([x + w - radius, y + h], [x + radius, y + h], 180),
+    turn([x + radius, y + h - radius], 90, 180),
+    line([x, y + h - radius], [x, y + radius], 270),
+    turn([x + radius, y + radius], 180, 270),
+  ];
+
+  const perimeter = path.reduce((total, part) => total + part.length, 0);
+  const count = Math.max(8, Math.round(perimeter / step));
+  return Array.from({ length: count }, (_, index) => {
+    let along = (index / count) * perimeter;
+    for (const part of path) {
+      if (along <= part.length) return part.sample(along / part.length);
+      along -= part.length;
+    }
+    return path[path.length - 1].sample(1);
+  });
+}
+
+/** A twisted cord, drawn as leaning strands laid nose to tail.
+ *
+ *  Every strand leans the same way relative to the direction of travel, which
+ *  is what makes a row of capsules read as one twisted rope instead of a row of
+ *  capsules. Spacing is a shade under the strand's own footprint along the
+ *  edge, so they overlap and the cord has no daylight in it. */
+function Rope({
+  x,
+  y,
+  w,
+  h,
+  fill,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fill: string;
+}) {
+  // Fine, not chunky. At 2.3 units thick the cord was the loudest thing on the
+  // card — heavier than the bagel it frames, which is the wrong way round for a
+  // border. A border is read as an edge, not as a subject, and the way it stops
+  // competing is to get thinner rather than paler: a rope at half opacity looks
+  // like a mistake in the printing, a thin rope looks like a thin rope.
+  const length = 5;
+  const thickness = 1.6;
+  const lean = 34;
+  return (
+    <g>
+      {ropeStrands(x, y, w, h, 7, 3.7).map(({ cx, cy, angle }, index) => (
+        <rect
+          key={index}
+          x={cx - length / 2}
+          y={cy - thickness / 2}
+          width={length}
+          height={thickness}
+          rx={thickness / 2}
+          fill={fill}
+          transform={`rotate(${angle + lean} ${cx} ${cy})`}
+        />
+      ))}
+    </g>
+  );
+}
+
+/** A row of seeds, where a printer would set a fleuron.
+ *
+ *  The one piece of typographic furniture this shop can claim. It sits under a
+ *  greeting to stop the lower half of the plate being empty, and it is the same
+ *  shape as the seeds on the bagel above it — drawn in the card's own colour
+ *  rather than sesame, because on cream paper a sesame-coloured seed is not
+ *  there at all. */
+function SeedRule({ y, fill }: { y: number; fill: string }) {
+  return (
+    <g>
+      {[-11, -5.5, 0, 5.5, 11].map((offset, index) => (
+        <ellipse
+          key={offset}
+          cx={67.5 + offset}
+          cy={y}
+          rx={1.5}
+          ry={0.85}
+          fill={fill}
+          opacity={index === 2 ? 0.9 : 0.55}
+          transform={`rotate(${offset * 2.2} ${67.5 + offset} ${y})`}
+        />
+      ))}
+    </g>
+  );
+}
+
 export function Plate({
   fill,
   mark,
   crust,
   seed,
-  medallion,
+  motif,
 }: {
   /** The paper. */
   fill: string;
-  /** The rosettes and the sprigs — the pattern's own colour, so the plate
+  /** The rope and the seed rule — the pattern's own colour, so the plate
    *  belongs to the card rather than being a white box dropped on it. */
   mark: string;
   crust: string;
   seed: string;
-  /** Whether to draw the bagel and its sprigs in the middle. On a card with a
-   *  greeting the greeting goes there instead, and both would be a fight. */
-  medallion: boolean;
+  /** What goes in the middle. A card with a greeting has no room for one and
+   *  gets the seed rule under its words instead. */
+  motif?: "bagel" | "bitten";
 }) {
-  const corners: [number, number][] = [
-    [19, 18],
-    [116, 18],
-    [19, 74],
-    [116, 74],
-  ];
   return (
     <svg
       className="absolute inset-0 h-full w-full"
@@ -240,35 +402,24 @@ export function Plate({
           be wide enough to show the pattern repeating, or it reads as a fault
           in the printing rather than as a border. */}
       <rect x={11} y={10} width={113} height={80} rx={3} fill={fill} />
-      <rect
-        x={15}
-        y={14}
-        width={105}
-        height={64}
-        rx={2}
-        fill="none"
-        stroke={mark}
-        strokeWidth={0.7}
-        opacity={0.35}
-      />
-      {corners.map(([x, y]) => (
-        <Rosette key={`${x}-${y}`} x={x} y={y} r={4.2} petal={mark} heart={fill} />
-      ))}
-      {medallion ? (
-        // The sprigs tuck behind the bagel rather than standing off it. Placed
-        // clear of it they were two leaves adrift on an empty plate, which is
-        // what a motif looks like when its parts are not touching. Angled down
-        // and out they hung below it instead and the whole thing read as a
-        // rocket with fins. Up and out is right, but they have to be long
-        // enough that a leaf clears the bagel rather than a crescent of one:
-        // at eighteen units the visible part was a nub either side and the
-        // emblem had ears.
+      <Rope x={16} y={15} w={103} h={62} fill={mark} />
+      {motif ? (
         <g>
-          <Sprig x={63} y={52} length={27} angle={-44} fill={mark} />
-          <Sprig x={72} y={52} length={27} angle={44} fill={mark} />
-          <Bagel x={67.5} y={44} r={15} crust={crust} seed={seed} hole={fill} />
+          <Bagel x={67.5} y={46} r={16} crust={crust} seed={seed} hole={fill} />
+          {/* A bite, for the card that is already papered with whole ones. Two
+              overlapping discs in the paper colour rather than one, so the edge
+              of the bite is scalloped the way a bite is and not a clean arc the
+              way a hole punch is. */}
+          {motif === "bitten" ? (
+            <g fill={fill}>
+              <circle cx={79} cy={35} r={6.4} />
+              <circle cx={73} cy={31} r={5.2} />
+            </g>
+          ) : null}
         </g>
-      ) : null}
+      ) : (
+        <SeedRule y={62} fill={mark} />
+      )}
     </svg>
   );
 }

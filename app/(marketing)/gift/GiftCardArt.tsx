@@ -232,10 +232,16 @@ export default function GiftCardArt({ art }: { art: Art }) {
             mark={art.ink}
             crust={CRUST}
             seed={SESAME}
-            // The bagel and its sprigs are what a card with no greeting has
-            // instead of one. On a card that does have a greeting they would be
-            // underneath it, which is two things wanting the same middle.
-            medallion={art.kind === "gingham" || art.kind === "bagels"}
+            // What a card with no greeting has instead of one. A card that does
+            // have a greeting gets no motif — they would want the same middle —
+            // and takes the seed rule under its words.
+            //
+            // The bitten one goes to the card that is already papered with whole
+            // bagels, where a whole one in the middle would just be the pattern
+            // again at four times the size.
+            motif={
+              art.kind === "bagels" ? "bitten" : art.kind === "gingham" ? "bagel" : undefined
+            }
           />
           {art.kind === "checker" || art.kind === "wordmark" ? (
             <PlateWord word={art.word} ink={art.ink} />
