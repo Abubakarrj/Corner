@@ -47,16 +47,21 @@ type StoredState = {
 // been turned down. Grows, then holds at the last value, rather than
 // escalating without end.
 //
-// Shorter than it was — it ran 3, 7, 14, 30 — because the audience changed.
-// That schedule was written for a modal that opened on somebody's first ever
-// visit, where backing off hard was the only way not to be a nuisance. This
-// one only ever meets a returning visitor, so a day between the first ask and
-// the second is a fair thing to spend on somebody who has come back, and it
-// settles at a week rather than a month.
+// Shorter than it was — it ran 3, 7, 14, 30, then 1, 2, 4, 7 — because the
+// audience changed and then because the list was not growing fast enough. The
+// original was written for a modal that opened on somebody's first ever visit,
+// where backing off hard was the only way not to be a nuisance. This one only
+// ever meets a returning visitor, so the tail is where the slack was: a month,
+// then a week, now five days.
 //
-// The floor of one day is doing real work: it is what stops two visits in an
-// afternoon becoming two pop-ups.
-const COOLDOWN_SCHEDULE_DAYS = [1, 2, 4, 7];
+// The two ones at the front are deliberate. Somebody who has come back twice
+// and closed it twice is worth asking again the next day; somebody who has
+// closed it four times is telling you something, and that is where it settles
+// rather than escalating without end.
+//
+// The floor of one day is doing real work and is not negotiable at any
+// frequency: it is what stops two visits in an afternoon becoming two pop-ups.
+const COOLDOWN_SCHEDULE_DAYS = [1, 1, 3, 5];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function cooldownMsFor(count: number): number {
@@ -103,9 +108,30 @@ function readStoredState(): StoredState | null {
 // which is what the old gesture listener was working around. Dwell is what's
 // left, so dwell is what's used, at a length that means something:
 //
-//   /       15s. Nothing to read here, so this only says "didn't bounce."
-//   /about  20s. Roughly the reading time of the copy on that page, so it
-//           lands about when someone finishes it rather than interrupting.
+//   /               10s. Nothing to read here, so this only says "didn't
+//                   bounce." It was 15, which on a page holding one logo is a
+//                   long time to ask somebody to stand still — most of the
+//                   visits that would have converted had already moved on.
+//   /about          15s. Roughly the reading time of the copy on that page, so
+//                   it lands about when someone finishes it rather than
+//                   interrupting.
+//   /gift           12s. Nineteen cards to look through, and somebody choosing
+//                   a gift card is already thinking about sending something.
+//   /delivery-areas 15s. A map and a paragraph, read by somebody working out
+//                   whether we come to them — which is the question a drop
+//                   list answers a second time when the answer is no.
+//
+// ——— What is deliberately still absent ———
+//
+// /locations is the top of the ordering funnel: a map, a search box, and an
+// address being typed into it. A full-screen modal there interrupts the one
+// flow that ends in money, and an email is not worth a lost order. /careers is
+// somebody applying for a job, and the two policy pages are legal reading —
+// none of the three is an audience for a marketing ask.
+//
+// /shop cannot be added from here at all, and should not be: it is a separate
+// top-level segment outside this route group, so the component never mounts
+// there. Interrupting a basket is worse than interrupting a map.
 //
 // These keys double as the route allowlist — a route absent from this table
 // never opens the modal. Stated as an allowlist rather than a list of pages
@@ -121,8 +147,10 @@ function readStoredState(): StoredState | null {
 // no path check needed, which matters because a rewrite would make one
 // unreliable anyway.
 const DWELL_MS: Record<string, number> = {
-  "/": 15000,
-  "/about": 20000,
+  "/": 10000,
+  "/about": 15000,
+  "/gift": 12000,
+  "/delivery-areas": 15000,
 };
 
 // Desktop gets a second, better cue: the pointer leaving the top edge of the
