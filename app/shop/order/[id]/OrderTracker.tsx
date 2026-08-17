@@ -395,6 +395,7 @@ function Receipt({
           <div key={`${item.slug}-${index}`} className="flex items-center gap-3">
             <ProductImage
               swatch={getProduct(item.slug)?.swatch ?? "var(--cb-faint)"}
+              category={getProduct(item.slug)?.category}
               name={menu.recorded(item).name}
               className="h-10 w-10 shrink-0 rounded-lg"
             />

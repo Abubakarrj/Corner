@@ -66,6 +66,7 @@ export default function ChatConfigure({
       <div className="flex items-center gap-3">
         <ProductImage
           swatch={product.swatch}
+          category={product.category}
           name={menu.name(product)}
           className="h-14 w-14 shrink-0 rounded-xl"
         />

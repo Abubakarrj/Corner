@@ -75,6 +75,7 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
           <div key={key} className="flex gap-3 py-3">
             <ProductImage
               swatch={product.swatch}
+              category={product.category}
               name={menu.name(product)}
               className="h-12 w-12 shrink-0 rounded-lg"
             />

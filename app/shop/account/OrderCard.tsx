@@ -71,6 +71,7 @@ export default function OrderCard({ order }: { order: PlacedOrder }) {
     >
       <ProductImage
         swatch={product?.swatch ?? "var(--cb-faint)"}
+        category={product?.category}
         name={firstName}
         className="h-16 w-16 shrink-0 rounded-xl"
       />

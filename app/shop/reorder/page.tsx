@@ -115,6 +115,7 @@ export default function ReorderPage() {
                     >
                       <ProductImage
                         swatch={product?.swatch ?? "var(--cb-faint)"}
+                        category={product?.category}
                         name={menu.recorded(usual).name}
                         className="aspect-square w-full rounded-xl"
                       />

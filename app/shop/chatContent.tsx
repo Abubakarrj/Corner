@@ -181,6 +181,11 @@ export function ProductCards({
           <Link href={`/shop/product/${product.slug}`} className="cursor-pointer">
             <ProductImage
               swatch={product.swatch}
+              // A chat card is a wire payload built by the server and it
+              // carries no category, so the icon comes from the menu here.
+              // Undefined for an item that has since left it, which is the
+              // food icon and is right for everything this shop sells.
+              category={getProduct(product.slug)?.category}
               name={menu.name(product)}
               className="h-[74px] w-full rounded-none"
             />

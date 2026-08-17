@@ -1072,9 +1072,10 @@ body {
 .cb-stagger > *:nth-child(7) { animation-delay: 270ms; }
 .cb-stagger > *:nth-child(n + 8) { animation-delay: 300ms; }
 
-/* The two-letter product placeholders. Each product's swatch is picked to
-   read boldly on the light tile (#ece6d8) — which leaves it too dark to see
-   on the dark tile, so dark mode lifts the whole letter rather than every
+/* The product placeholder tiles — icons now, two letters when this was
+   written, and the same problem either way. Each product's swatch is picked
+   to read boldly on the light tile (#ece6d8) — which leaves it too dark to
+   see on the dark tile, so dark mode lifts the whole mark rather than every
    product carrying a second hex. 1.75 is the multiplier the swatches were
    verified against: every one of them clears 3:1 on both tiles with it. Note
    the ceiling — brightness() clamps each channel at 255, so a very saturated

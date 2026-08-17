@@ -196,6 +196,7 @@ export function MentionList({
             >
               <ProductImage
                 swatch={product.swatch}
+                category={product.category}
                 name={menu.name(product)}
                 className="h-7 w-7 shrink-0 rounded-md"
               />

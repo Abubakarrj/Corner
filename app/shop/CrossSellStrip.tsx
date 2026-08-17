@@ -51,6 +51,7 @@ export default function CrossSellStrip({
             <Link href={`/shop/product/${product.slug}`} onClick={onNavigate} className="relative block cursor-pointer">
               <ProductImage
                 swatch={product.swatch}
+                category={product.category}
                 name={menu.name(product)}
                 className="aspect-square w-full rounded-lg"
               />

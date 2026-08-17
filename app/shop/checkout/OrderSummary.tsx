@@ -42,6 +42,7 @@ export default function OrderSummary({ checkout }: { checkout: Checkout }) {
             <div key={key} className="flex items-center gap-3">
               <ProductImage
                 swatch={product.swatch}
+                category={product.category}
                 name={menu.name(product)}
                 className="h-11 w-11 shrink-0 rounded-lg"
               />

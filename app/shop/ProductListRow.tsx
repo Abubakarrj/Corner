@@ -31,6 +31,7 @@ export default function ProductListRow({ product }: { product: Product }) {
       >
         <ProductImage
           swatch={product.swatch}
+          category={product.category}
           name={menu.name(product)}
           className="h-14 w-14 transition-transform duration-500 ease-out group-hover:scale-[1.04] sm:h-16 sm:w-16"
         />

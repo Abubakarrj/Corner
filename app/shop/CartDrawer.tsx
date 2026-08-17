@@ -133,6 +133,7 @@ export default function CartDrawer({
                 >
                   <ProductImage
                     swatch={product.swatch}
+                    category={product.category}
                     name={menu.name(product)}
                     className="h-20 w-20 rounded-lg"
                   />

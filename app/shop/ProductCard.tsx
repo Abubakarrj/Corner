@@ -101,6 +101,7 @@ export default function ProductCard({ product }: { product: Product }) {
       >
         <ProductImage
           swatch={product.swatch}
+          category={product.category}
           name={menu.name(product)}
           className="aspect-square w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />

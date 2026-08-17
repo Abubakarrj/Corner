@@ -51,6 +51,7 @@ export default function ProductView({
         <div className="relative">
           <ProductImage
             swatch={product.swatch}
+            category={product.category}
             name={menu.name(product)}
             className="aspect-square w-full rounded-2xl"
           />

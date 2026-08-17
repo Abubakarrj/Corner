@@ -52,6 +52,7 @@ export default function CartPage() {
                 <Link href={`/shop/product/${product.slug}`} className="shrink-0 cursor-pointer">
                   <ProductImage
                     swatch={product.swatch}
+                    category={product.category}
                     name={menu.name(product)}
                     className="h-20 w-20 rounded-lg"
                   />

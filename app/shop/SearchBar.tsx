@@ -188,6 +188,7 @@ export default function SearchBar({
                 >
                   <ProductImage
                     swatch={product.swatch}
+                    category={product.category}
                     name={menu.name(product)}
                     className="h-9 w-9 shrink-0 rounded-md"
                   />
