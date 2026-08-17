@@ -1,4 +1,5 @@
-import { isAuthConfigured } from "../../auth/auth0";
+import { canSignIn } from "../../auth/auth0";
+import { reasonOff } from "../../auth/testLogin";
 import { isDatabaseConfigured } from "../../db";
 import { pushProblem } from "../../push/send";
 import { SHOP_PHONE, openPreview } from "../../shopFacts";
@@ -145,6 +146,19 @@ function build(): string | null {
 }
 
 export function GET() {
+  // ⚠️ A deploy with the debug sign-in switched on says so out loud, here and
+  // in the log. A login bypass that looks like an ordinary deploy from the
+  // outside is the version of this that gets left on by accident — see the
+  // header of app/auth/testLogin.ts.
+  const testLoginOff = reasonOff();
+  if (testLoginOff === null) {
+    console.warn(
+      "[capabilities] ⚠️ TEST LOGIN IS ON. AUTH_TEST_EMAIL and AUTH_TEST_CODE" +
+        " are set, so that one address signs in with a known code and no mail" +
+        " is sent. Unset both on any deploy real customers use.",
+    );
+  }
+
   const delivery = isUberConfigured();
   if (!delivery) reportUberGap();
 
@@ -158,7 +172,13 @@ export function GET() {
   }
 
   return Response.json({
-    auth: isAuthConfigured(),
+    // True when anybody can sign in at all, by Auth0 or by the debug bypass.
+    auth: canSignIn(),
+    // ⚠️ Whether that bypass is one of the routes. Reported for the same reason
+    // openPreview is: a flag that changes what the server accepts should not be
+    // invisible to whoever is looking at the deploy. It is a boolean — it says
+    // that a debug address exists, never which one, and never the code.
+    testLogin: testLoginOff === null,
     payments: paymentsEnabled(),
     chat: Boolean(process.env.ANTHROPIC_API_KEY),
     // Whether a courier can actually be booked. This belonged here from the

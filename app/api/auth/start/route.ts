@@ -1,4 +1,5 @@
 import { isAuthConfigured, startEmailCode } from "../../../auth/auth0";
+import { isTestAddress } from "../../../auth/testLogin";
 
 // Step one: mail a code to an address.
 //
@@ -28,13 +29,6 @@ function tooMany(email: string): boolean {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
-  if (!isAuthConfigured()) {
-    return Response.json(
-      { error: "api.signInUnavailable" },
-      { status: 503 },
-    );
-  }
-
   let payload: unknown;
   try {
     payload = await request.json();
@@ -47,6 +41,32 @@ export async function POST(request: Request) {
     return Response.json({ error: "checkout.validEmail" }, { status: 400 });
   }
   const address = email.trim().toLowerCase();
+
+  // ——— The debug address never gets mail ———
+  //
+  // Ahead of the configured check on purpose. The whole point of the test login
+  // is to reach the account screens on a deploy with no Auth0 tenant, and below
+  // this line there is a 503 that would make that impossible.
+  //
+  // The answer is the same `{ ok: true }` every other address gets, and it has
+  // to be: this endpoint deliberately cannot be used to find out whether an
+  // address has an account, and a different shape for the debug one would let
+  // it be used to find out whether a deploy has the bypass on. See
+  // app/auth/testLogin.ts.
+  if (isTestAddress(address)) {
+    console.warn(
+      `[auth] ⚠️ test login is ON for ${address}. No code was mailed;` +
+        " AUTH_TEST_CODE is the code. Unset it on any deploy real customers use.",
+    );
+    return Response.json({ ok: true }, { status: 200 });
+  }
+
+  if (!isAuthConfigured()) {
+    return Response.json(
+      { error: "api.signInUnavailable" },
+      { status: 503 },
+    );
+  }
 
   if (tooMany(address)) {
     return Response.json(

@@ -1,6 +1,6 @@
 import { authorized, notFound } from "../../diagnostics";
 import { db, explainDbError, isDatabaseConfigured } from "../../db";
-import { isAuthConfigured } from "../../auth/auth0";
+import { canSignIn } from "../../auth/auth0";
 import { isEmailConfigured } from "../../email";
 import { googleMapsKey } from "../../googleMaps";
 import { pushProblem } from "../../push/send";
@@ -121,9 +121,9 @@ export async function GET(request: Request) {
         : { without: "Job applications are logged rather than sent." }),
     },
     auth: {
-      on: isAuthConfigured(),
+      on: canSignIn(),
       how: "configured",
-      ...(isAuthConfigured() ? {} : { without: "Nobody can sign in." }),
+      ...(canSignIn() ? {} : { without: "Nobody can sign in." }),
     },
     riley: {
       on: Boolean(process.env.ANTHROPIC_API_KEY),

@@ -2,6 +2,8 @@ import "server-only";
 
 import { createRemoteJWKSet, jwtVerify, SignJWT } from "jose";
 
+import { testLogin } from "./testLogin";
+
 // Auth0, passwordless by email code.
 //
 // There is no password anywhere in this system. Somebody types an email, Auth0
@@ -51,6 +53,27 @@ export function auth0Config(): Auth0Config | null {
 
 export function isAuthConfigured(): boolean {
   return auth0Config() !== null;
+}
+
+// ——— The cookie's secret, on its own ———
+//
+// Session signing has nothing to do with Auth0's client credentials, and tying
+// it to them meant a deploy with no tenant could not hold a session at all —
+// mintSession and readSession both went through auth0Config(), so all four
+// variables had to be present for a cookie to be signed with one of them.
+//
+// That mattered the moment there was a second way to sign in. The test login
+// in ./testLogin.ts never talks to Auth0, so on a tenant-less deploy it could
+// authenticate somebody and then have nowhere to put the result.
+export function sessionSecret(): string | null {
+  return process.env.AUTH0_SESSION_SECRET || null;
+}
+
+/** Whether anybody can sign in by any route. Auth0 is one; the debug bypass in
+ *  ./testLogin.ts is the other, and to a screen deciding whether to offer a
+ *  sign-in button they are the same question. */
+export function canSignIn(): boolean {
+  return isAuthConfigured() || testLogin() !== null;
 }
 
 // Auth0's public keys, fetched once and cached by the library. Recreated only
@@ -196,21 +219,21 @@ function secretKey(secret: string) {
 }
 
 export async function mintSession(user: Verified): Promise<string> {
-  const config = auth0Config();
-  if (!config) throw new Error("mintSession without config");
+  const secret = sessionSecret();
+  if (!secret) throw new Error("mintSession without AUTH0_SESSION_SECRET");
   return new SignJWT({ email: user.email, name: user.name })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.sub)
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DAYS}d`)
-    .sign(secretKey(config.sessionSecret));
+    .sign(secretKey(secret));
 }
 
 export async function readSession(token: string | undefined): Promise<Verified | null> {
-  const config = auth0Config();
-  if (!config || !token) return null;
+  const secret = sessionSecret();
+  if (!secret || !token) return null;
   try {
-    const { payload } = await jwtVerify(token, secretKey(config.sessionSecret));
+    const { payload } = await jwtVerify(token, secretKey(secret));
     if (!payload.sub || typeof payload.email !== "string") return null;
     return {
       sub: payload.sub,
