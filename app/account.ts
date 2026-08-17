@@ -151,6 +151,7 @@ export function orderTotals(order: PlacedOrder): {
   taxCents: number;
   deliveryCents: number;
   deliveryQuotedCents: number;
+  deliveryCoveredCents: number;
   deliveryWaived: boolean;
   tipCents: number;
   totalCents: number;
@@ -166,8 +167,10 @@ export function orderTotals(order: PlacedOrder): {
     taxCents,
     deliveryCents,
     deliveryQuotedCents,
-    // Derived, not stored. A boolean saved next to two numbers is a third
-    // thing that can disagree with them.
+    // Both derived, not stored. A number saved next to the two it comes from
+    // is a third thing that can disagree with them — and on an old order it
+    // comes out zero on its own, which is the truth: nothing was covered then.
+    deliveryCoveredCents: Math.max(deliveryQuotedCents - deliveryCents, 0),
     deliveryWaived: deliveryQuotedCents > 0 && deliveryCents === 0,
     tipCents,
     totalCents:

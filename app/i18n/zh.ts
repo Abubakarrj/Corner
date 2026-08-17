@@ -281,8 +281,13 @@ export const zh: Table = {
   "deliveryFee.band": "{from}–{to} 英里",
   "deliveryFee.tripFee": "加州行程费",
   "deliveryFee.yourFee": "您的费用",
+  "deliveryFee.courierFee": "Uber Direct 费用",
+  "deliveryFee.weCover": "Corner Bagel 承担一半",
+  "deliveryFee.youPay": "您支付",
+  "deliveryFee.halfOnUs": "Corner Bagel 不加收任何费用，并承担配送员收费的一半。",
   "deliveryFee.passthrough": "Corner Bagel 不额外加价。",
-  "deliveryFee.quotedFresh": "Uber 在你下单那一刻按地址报价，所以这就是你付的钱。天气和路况可能会让它变动。",
+  "deliveryFee.quotedFresh":
+    "Uber 在您下单时为您的地址计价。天气和路况可能会改变它。",
 
   "order.notFound": "找不到该订单。",
   "order.keptOnDevice": "未登录时，订单保存在下单的设备上。登录后订单会跟着你。",

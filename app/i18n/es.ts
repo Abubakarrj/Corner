@@ -282,9 +282,13 @@ export const es: Table = {
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.tripFee": "Tarifa por viaje en California",
   "deliveryFee.yourFee": "Tu tarifa",
+  "deliveryFee.courierFee": "Tarifa de Uber Direct",
+  "deliveryFee.weCover": "Corner Bagel paga la mitad",
+  "deliveryFee.youPay": "Tú pagas",
+  "deliveryFee.halfOnUs": "Corner Bagel no añade nada encima y paga la mitad de lo que cobra el mensajero.",
   "deliveryFee.passthrough": "Corner Bagel no añade nada encima.",
   "deliveryFee.quotedFresh":
-    "Uber calcula tu dirección en el momento de pedir, así que esto es lo que pagas. El clima y el tráfico pueden moverlo.",
+    "Uber calcula el precio de tu dirección en el momento del pedido. El clima y el tráfico pueden moverlo.",
 
   "order.notFound": "No encontramos ese pedido.",
   "order.keptOnDevice": "Sin sesión, los pedidos quedan en el dispositivo desde el que se hicieron. Inicia sesión y te siguen.",

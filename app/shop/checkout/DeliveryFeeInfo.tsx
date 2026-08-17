@@ -37,12 +37,30 @@ import UberDirectMark from "./UberDirectMark";
 // returns null when it doesn't hold — in which case this falls back to the
 // bare card, and the fee stands on its own without a breakdown claiming to
 // explain it. The quote is never recomputed from these numbers.
+//
+// ——— And what the shop is paying of it ———
+//
+// The table reconstructs the courier's quote, which stopped being the number on
+// the bill the moment the shop started absorbing half of it. A sheet whose sum
+// is three dollars off the row it hangs from is the same failure as before, in
+// the other direction: this one exists to answer "am I being padded", and one
+// that disagrees with the bill at all answers badly whichever way it disagrees.
+//
+// So the arithmetic runs all the way down. The bands and the trip fee add to
+// what Uber charges, the shop's half comes off, and the last row is the number
+// on the bill. That also puts the subsidy where somebody who is suspicious of
+// the fee will actually find it, which is the only place it does any good.
 export default function DeliveryFeeInfo({
   miles,
   feeCents,
+  chargedCents,
 }: {
   miles?: number | null;
+  /** What the courier quoted. The bands explain this one. */
   feeCents?: number | null;
+  /** What the customer is charged, when it differs. Omitted on a screen that
+   *  has no bill attached to it. */
+  chargedCents?: number | null;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -51,6 +69,16 @@ export default function DeliveryFeeInfo({
   const known = typeof miles === "number" && Number.isFinite(miles);
   // Null unless the bands and the trip fee actually reconstruct the quote.
   const breakdown = explainFee(miles, feeCents);
+  // Only when there is a real gap. A fully waived delivery is charged zero and
+  // says so on the bill in its own words, so it does not need this table
+  // explaining that half of something is being covered.
+  const covered =
+    priced &&
+    typeof chargedCents === "number" &&
+    chargedCents > 0 &&
+    chargedCents < (feeCents as number)
+      ? (feeCents as number) - chargedCents
+      : 0;
 
   return (
     <>
@@ -80,8 +108,15 @@ export default function DeliveryFeeInfo({
           <div className="mt-4 rounded-xl bg-raise px-4 py-3">
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-[13px] text-muted">{t("deliveryFee.yourAddress")}</span>
-              <span className="text-[15px] font-medium tabular-nums text-ink">
-                {formatPrice(feeCents as number)}
+              <span className="flex items-baseline gap-1.5">
+                {covered > 0 ? (
+                  <span className="text-[13px] tabular-nums text-quiet line-through">
+                    {formatPrice(feeCents as number)}
+                  </span>
+                ) : null}
+                <span className="text-[15px] font-medium tabular-nums text-ink">
+                  {formatPrice(covered > 0 ? (chargedCents as number) : (feeCents as number))}
+                </span>
               </span>
             </div>
             {/* The distance, when Routes answered. It used to gate this whole
@@ -156,20 +191,52 @@ export default function DeliveryFeeInfo({
           </tbody>
           {breakdown ? (
             <tfoot>
-              <tr>
-                <td className="border-t border-line pt-2 font-medium text-ink">
-                  {t("deliveryFee.yourFee")}
-                </td>
-                <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
-                  {formatPrice(breakdown.totalCents)}
-                </td>
-              </tr>
+              {/* Two shapes, and which one shows is decided by whether the shop
+                  is actually paying part of this trip. With no subsidy the
+                  bands sum to the bill and one row closes it; with one, the sum
+                  is an intermediate figure and stopping there would leave a
+                  table whose last line is not the number on the receipt. */}
+              {covered > 0 ? (
+                <>
+                  <tr>
+                    <td className="border-t border-line pt-2 text-muted">
+                      {t("deliveryFee.courierFee")}
+                    </td>
+                    <td className="border-t border-line pt-2 text-right tabular-nums text-muted">
+                      {formatPrice(breakdown.totalCents)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-muted">{t("deliveryFee.weCover")}</td>
+                    <td className="py-1 text-right tabular-nums text-muted">
+                      −{formatPrice(covered)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="border-t border-line pt-2 font-medium text-ink">
+                      {t("deliveryFee.youPay")}
+                    </td>
+                    <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
+                      {formatPrice(chargedCents as number)}
+                    </td>
+                  </tr>
+                </>
+              ) : (
+                <tr>
+                  <td className="border-t border-line pt-2 font-medium text-ink">
+                    {t("deliveryFee.yourFee")}
+                  </td>
+                  <td className="border-t border-line pt-2 text-right font-medium tabular-nums text-ink">
+                    {formatPrice(breakdown.totalCents)}
+                  </td>
+                </tr>
+              )}
             </tfoot>
           ) : null}
         </table>
 
         <p className="m-0 mt-4 border-t border-line pt-4 text-[13px] leading-[1.55] text-ink">
-          {t("deliveryFee.passthrough")}
+          {covered > 0 ? t("deliveryFee.halfOnUs") : t("deliveryFee.passthrough")}
         </p>
         <p className="m-0 mt-2 text-[12px] leading-[1.5] text-muted">
           {t("deliveryFee.quotedFresh")}

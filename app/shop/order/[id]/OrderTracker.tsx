@@ -432,10 +432,18 @@ function Receipt({
                 ? t("checkout.deliveryWaived")
                 : formatPrice(bill.deliveryCents)
             }
+            was={
+              bill.deliveryCoveredCents > 0 && !bill.deliveryWaived
+                ? formatPrice(bill.deliveryQuotedCents)
+                : undefined
+            }
             after={
               <>
                 <UberDirectMark className="text-[11px]" />
-                <DeliveryFeeInfo feeCents={bill.deliveryQuotedCents} />
+                <DeliveryFeeInfo
+                  feeCents={bill.deliveryQuotedCents}
+                  chargedCents={bill.deliveryCents}
+                />
               </>
             }
           />
@@ -474,11 +482,16 @@ function Receipt({
 function Line({
   label,
   amount,
+  was,
   strong,
   after,
 }: {
   label: string;
   amount: string;
+  /** The pre-subsidy figure, struck through. Only the delivery row has one.
+   *  See the note on Money in CheckoutSections.tsx: a fee that is quietly
+   *  smaller than the courier charged reads as the courier's price. */
+  was?: string;
   strong?: boolean;
   after?: React.ReactNode;
 }) {
@@ -493,11 +506,18 @@ function Line({
         <span className="truncate">{label}</span>
         {after}
       </span>
-      <span
-        className={strong ? "text-[15px] font-medium" : "text-[13px]"}
-        style={{ color: ink }}
-      >
-        {amount}
+      <span className="flex items-baseline gap-1.5">
+        {was ? (
+          <span className="text-[12px] line-through" style={{ color: muted }}>
+            {was}
+          </span>
+        ) : null}
+        <span
+          className={strong ? "text-[15px] font-medium" : "text-[13px]"}
+          style={{ color: ink }}
+        >
+          {amount}
+        </span>
       </span>
     </div>
   );

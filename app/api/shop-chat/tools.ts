@@ -798,13 +798,35 @@ export async function runTool(
         };
       }
 
+      // What the customer pays, not what the courier charges.
+      //
+      // Riley reads this straight out into a sentence, and the shop absorbs
+      // half of every delivery fee — so quoting the raw quote here would have
+      // Riley naming a number nobody is charged, roughly twice the one on the
+      // checkout two taps later. totalsFor() is the only thing allowed to work
+      // out a customer's delivery charge; this asks it rather than halving the
+      // number itself, so the chat and the bill cannot drift apart.
+      //
+      // No subtotal is passed: the free-delivery threshold is about a basket
+      // and this tool answers a question about an address, often before there
+      // is one. That makes this the un-waived price, which is the right thing
+      // to quote — it is what they pay unless their order grows into a better
+      // answer, and a fee that turns out to be zero is a welcome surprise in a
+      // way that one which turns out to be double is not.
+      const charged = totalsFor({
+        subtotalCents: 0,
+        deliveryCents: quote.quote.feeCents,
+      });
+
       return {
         forModel: {
           found: true,
           address: place.address,
           drivingMiles: miles,
           deliverable: true,
-          fee: formatPrice(quote.quote.feeCents),
+          fee: formatPrice(charged.deliveryCents),
+          courierFee: formatPrice(charged.deliveryQuotedCents),
+          note: "The shop covers half the courier's fee. `fee` is what they pay.",
           etaMinutes: quote.quote.etaMinutes,
         },
         attach: {
@@ -816,7 +838,7 @@ export async function runTool(
                 { label: { key: "chat.deliveryAddressLabel" }, value: { text: place.address } },
                 {
                   label: { key: "chat.deliveryFeeLabel" },
-                  value: { text: formatPrice(quote.quote.feeCents) },
+                  value: { text: formatPrice(charged.deliveryCents) },
                 },
                 ...(quote.quote.etaMinutes !== null
                   ? [

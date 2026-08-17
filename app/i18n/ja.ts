@@ -279,8 +279,13 @@ export const ja: Table = {
   "deliveryFee.band": "{from}〜{to}マイル",
   "deliveryFee.tripFee": "カリフォルニア運行手数料",
   "deliveryFee.yourFee": "お客様の料金",
+  "deliveryFee.courierFee": "Uber Direct の料金",
+  "deliveryFee.weCover": "Corner Bagel が半額負担",
+  "deliveryFee.youPay": "お支払い額",
+  "deliveryFee.halfOnUs": "Corner Bagel は上乗せを一切せず、配達料の半額を負担しています。",
   "deliveryFee.passthrough": "Corner Bagel は上乗せしません。",
-  "deliveryFee.quotedFresh": "Uber がご注文の時点でご住所の料金を出すので、これがお支払い額です。天候や渋滞で変わることがあります。",
+  "deliveryFee.quotedFresh":
+    "Uber は注文時点でお客様の住所の料金を算出します。天候や交通状況で変わることがあります。",
 
   "order.notFound": "そのご注文が見つかりません。",
   "order.keptOnDevice": "サインアウト中は、注文した端末に注文が残ります。サインインすれば引き継がれます。",

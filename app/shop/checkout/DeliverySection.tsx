@@ -234,16 +234,31 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
         <div className="flex items-center justify-between gap-3 border-t border-line-faint px-4 py-3">
           <span className="flex items-center gap-1.5 text-[13px] text-muted">
             {t("checkout.delivery")}
-            <DeliveryFeeInfo miles={quote?.miles} feeCents={quote?.feeCents} />
+            <DeliveryFeeInfo
+              miles={quote?.miles}
+              feeCents={quote?.feeCents}
+              chargedCents={totals.deliveryCents}
+            />
           </span>
-          <span className="text-[14px] tabular-nums text-ink">
-            {quote
-              ? totals.deliveryWaived
-                ? t("checkout.deliveryWaived")
-                : formatPrice(totals.deliveryCents)
-              : quoting
-                ? t("delivery.pricing")
-                : "—"}
+          <span className="flex items-baseline gap-1.5 text-[14px] tabular-nums text-ink">
+            {/* Same struck-through quote as the summary. This screen is where
+                somebody first sees a delivery number, so it is the one that
+                has to say the shop is covering half — the summary saying it
+                two sections later is late. */}
+            {quote && !totals.deliveryWaived && totals.deliveryCoveredCents > 0 ? (
+              <span className="text-[13px] text-quiet line-through">
+                {formatPrice(totals.deliveryQuotedCents)}
+              </span>
+            ) : null}
+            <span>
+              {quote
+                ? totals.deliveryWaived
+                  ? t("checkout.deliveryWaived")
+                  : formatPrice(totals.deliveryCents)
+                : quoting
+                  ? t("delivery.pricing")
+                  : "—"}
+            </span>
           </span>
         </div>
       </div>

@@ -326,9 +326,13 @@ export const en = {
   "deliveryFee.band": "{from}–{to} mi",
   "deliveryFee.tripFee": "California trip fee",
   "deliveryFee.yourFee": "Your fee",
+  "deliveryFee.courierFee": "Uber Direct's fee",
+  "deliveryFee.weCover": "Corner Bagel covers half",
+  "deliveryFee.youPay": "You pay",
+  "deliveryFee.halfOnUs": "Corner Bagel adds nothing on top, and pays half of what the courier charges.",
   "deliveryFee.passthrough": "Corner Bagel adds nothing on top of this.",
   "deliveryFee.quotedFresh":
-    "Uber prices your address at the moment you order, so this is what you pay. Weather and traffic can move it.",
+    "Uber prices your address at the moment you order. Weather and traffic can move it.",
 
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice": "Signed out, orders stay on the device they were placed from. Sign in and they follow you.",

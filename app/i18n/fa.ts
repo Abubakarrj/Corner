@@ -312,9 +312,13 @@ export const fa: Table = {
   "deliveryFee.band": "{from}–{to} مایل",
   "deliveryFee.tripFee": "هزینه سفر کالیفرنیا",
   "deliveryFee.yourFee": "هزینه شما",
+  "deliveryFee.courierFee": "هزینهٔ Uber Direct",
+  "deliveryFee.weCover": "Corner Bagel نیمی را می‌پردازد",
+  "deliveryFee.youPay": "شما می‌پردازید",
+  "deliveryFee.halfOnUs": "Corner Bagel چیزی به این مبلغ اضافه نمی‌کند و نیمی از هزینهٔ پیک را خودش می‌پردازد.",
   "deliveryFee.passthrough": "Corner Bagel چیزی روی آن نمی‌گذارد.",
   "deliveryFee.quotedFresh":
-    "Uber آدرس شما را در همان لحظه سفارش قیمت می‌دهد، پس همین مبلغ را می‌پردازید. هوا و ترافیک می‌تواند تغییرش دهد.",
+    "اوبر در لحظهٔ سفارش برای نشانی شما قیمت‌گذاری می‌کند. آب‌وهوا و ترافیک می‌تواند آن را تغییر دهد.",
 
   "order.notFound": "این سفارش را پیدا نمی‌کنیم.",
   "order.keptOnDevice": "وقتی خارج شده‌اید، سفارش‌ها روی همان دستگاه می‌مانند. وارد شوید تا همراهتان بیایند.",

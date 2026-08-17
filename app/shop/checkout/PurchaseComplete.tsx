@@ -136,10 +136,18 @@ export default function PurchaseComplete({
                     ? t("checkout.deliveryWaived")
                     : formatPrice(bill.deliveryCents)
                 }
+                was={
+                  bill.deliveryCoveredCents > 0 && !bill.deliveryWaived
+                    ? formatPrice(bill.deliveryQuotedCents)
+                    : undefined
+                }
                 after={
                   <>
                     <UberDirectMark className="text-[11px] text-quiet" />
-                    <DeliveryFeeInfo feeCents={bill.deliveryQuotedCents} />
+                    <DeliveryFeeInfo
+                      feeCents={bill.deliveryQuotedCents}
+                      chargedCents={bill.deliveryCents}
+                    />
                   </>
                 }
               />

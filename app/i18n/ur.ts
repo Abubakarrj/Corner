@@ -282,9 +282,13 @@ export const ur: Table = {
   "deliveryFee.band": "{from}–{to} میل",
   "deliveryFee.tripFee": "کیلیفورنیا ٹرپ فیس",
   "deliveryFee.yourFee": "آپ کا کرایہ",
+  "deliveryFee.courierFee": "Uber Direct کی فیس",
+  "deliveryFee.weCover": "Corner Bagel آدھا ادا کرتا ہے",
+  "deliveryFee.youPay": "آپ ادا کرتے ہیں",
+  "deliveryFee.halfOnUs": "Corner Bagel اس پر کچھ نہیں بڑھاتا، اور کورئیر کی فیس کا آدھا خود ادا کرتا ہے۔",
   "deliveryFee.passthrough": "Corner Bagel اس پر کچھ نہیں بڑھاتا۔",
   "deliveryFee.quotedFresh":
-    "Uber آرڈر کے وقت آپ کے پتے کا کرایہ نکالتا ہے، سو یہی آپ ادا کریں گے۔ موسم اور ٹریفک سے بدل سکتا ہے۔",
+    "اوبر آپ کے آرڈر کے وقت آپ کے پتے کی قیمت لگاتا ہے۔ موسم اور ٹریفک سے یہ بدل سکتی ہے۔",
 
   "order.notFound": "ہمیں یہ آرڈر نہیں مل رہا۔",
   "order.keptOnDevice": "سائن آؤٹ ہوں تو آرڈر اسی ڈیوائس پر رہتے ہیں۔ سائن اِن کریں تو ساتھ چلتے ہیں۔",

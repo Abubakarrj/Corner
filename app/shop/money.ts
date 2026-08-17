@@ -52,6 +52,31 @@ export const TIP_PRESETS = [0.22, 0.2, 0.15] as const;
 // remember, against a fee the customer can see on the screen and feel.
 export const FREE_DELIVERY_OVER_CENTS = 4000;
 
+// ——— The shop pays half the courier on every other delivery ———
+//
+// A basket under the threshold used to carry the whole quote, and the quote is
+// eleven or thirteen dollars. On a $15 order of bagels that is not a delivery
+// fee, it is a second order — the total nearly doubles between the bag and the
+// bill, and the number that does it lands at the last screen. The abandonment
+// is not really about the money either; it is that nothing earlier in the flow
+// predicted it.
+//
+// So the shop absorbs half. Same lever as the free-delivery threshold above,
+// turned down: that one buys a big basket, this one keeps a small one from
+// falling over.
+//
+// ⚠️ This is the shop's money, not a discount on Uber's price. The courier
+// still bills the full quote, `deliveryQuotedCents` still carries it, and the
+// order record keeps both numbers so the books reconcile against the invoice.
+// Anything that shows a customer the halved figure has to show it as the
+// shop's contribution and not as what the courier charged — see the note on
+// deliveryCoveredCents below, and DeliveryFeeInfo.tsx.
+//
+// The exposure is uncapped on purpose, because the fee it is halving is
+// already bounded: the ten-mile radius puts the worst case at $10.99 + $3.00,
+// so the most this can cost on one order is $6.99.
+export const DELIVERY_SUBSIDY = 0.5;
+
 // Half-up on the cent, which is what a till does. Math.round() is half-up for
 // positives, but it's spelled out because "round the money" is the kind of
 // line somebody later replaces with a floor and wonders why totals drift.
@@ -80,7 +105,16 @@ export type OrderTotals = {
    *  so it is what the receipt shows crossed out and what the order record
    *  keeps. Zero on a pickup order. */
   deliveryQuotedCents: number;
-  /** Whether the shop picked up the courier on this one. */
+  /** The part of the quote the shop is absorbing — the whole thing when the
+   *  basket cleared the threshold, half of it otherwise, zero on a pickup.
+   *
+   *  Derivable from the two above, and here anyway because it is the number
+   *  the customer is being shown and a screen should not be doing arithmetic
+   *  to find out what it is allowed to say. */
+  deliveryCoveredCents: number;
+  /** Whether the shop picked up the whole courier on this one. Still means the
+   *  whole thing, not "some of it" — the half-subsidy is on every delivery and
+   *  a flag that is true always says nothing. */
   deliveryWaived: boolean;
   tipCents: number;
   totalCents: number;
@@ -119,7 +153,11 @@ export function totalsFor({
   // basket cleared the threshold — and "shown one number, charged another" is
   // the failure this module exists to make impossible.
   const waived = quoted > 0 && taxed >= FREE_DELIVERY_OVER_CENTS;
-  const delivery = waived ? 0 : quoted;
+  // Floor, not round. Half of an odd number of cents has to fall somewhere and
+  // it falls the customer's way: on a $10.99 quote they pay $5.49 and the shop
+  // pays $5.50. One cent is not the point — the point is that the direction is
+  // decided once here rather than by whichever rounding somebody reaches for.
+  const delivery = waived ? 0 : Math.floor(quoted * (1 - DELIVERY_SUBSIDY));
 
   return {
     subtotalCents,
@@ -127,6 +165,7 @@ export function totalsFor({
     taxCents,
     deliveryCents: delivery,
     deliveryQuotedCents: quoted,
+    deliveryCoveredCents: quoted - delivery,
     deliveryWaived: waived,
     tipCents: tip,
     totalCents: taxed + taxCents + delivery + tip,
