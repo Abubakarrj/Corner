@@ -126,15 +126,45 @@ export async function refresh(
     if (was !== food) await announce("toast", id, food);
     return status;
   }
+  // Straight to Uber, every time the cache above is stale. The webhook is a
+  // fast path onto the same store and not the source: with no webhook
+  // registered at all this still tells the tracker where the courier is,
+  // twenty seconds behind at worst.
   const state = await fetchDelivery(id);
-  const courier = courierStageOf(state?.status ?? null);
-  if (!state || courier === undefined) return undefined;
+  if (!state) return undefined;
+
+  const courier = courierStageOf(state.status);
+
+  // ——— One unrecognised word used to discard the whole answer ———
+  //
+  // This read `if (!state || courier === undefined) return undefined`, which
+  // conflated two different failures: Uber not answering, and Uber answering
+  // with a status word this app has no mapping for. The second threw away a
+  // perfectly good response — the arrival time, the latest arrival, the
+  // courier's name, their number, the about-to-arrive flag — because one
+  // field of it was unfamiliar.
+  //
+  // It would have taken exactly one new status in Uber's vocabulary to blank
+  // the live half of the tracker while every request succeeded, and the only
+  // symptom would have been a screen that quietly went back to guessing.
+  //
+  // So the stage is now the optional part. Everything else Uber said is kept
+  // and served; `courier` is simply absent, which the stage logic already
+  // treats as "no report" and answers with the clock.
+  if (courier === undefined && state.status) {
+    console.warn(
+      `[status] Uber reports "${state.status}" for ${id}, which maps to no stage.` +
+        ` Keeping the rest of the response; the stage falls back to the estimate.` +
+        ` Add it to courierStageOf in app/orderStages.ts.`,
+    );
+  }
+
   const was = read(`uber:${id}`, now)?.courier;
   // The ETA and the courier ride along with the stage rather than being
   // fetched separately: they came out of the same response, and splitting
   // them would mean two calls to say one thing.
   const status: LiveStatus = {
-    courier,
+    ...(courier === undefined ? {} : { courier }),
     ...(state.dropoffEta === null ? {} : { etaAt: state.dropoffEta }),
     ...(state.courierName === null ? {} : { courierName: state.courierName }),
     ...(state.courierVehicle === null ? {} : { courierVehicle: state.courierVehicle }),
@@ -145,8 +175,9 @@ export async function refresh(
   };
   write(`uber:${id}`, status);
   // Still only on a stage change. An ETA that slides by a minute is not
-  // worth a notification, and Uber's does slide.
-  if (was !== courier) await announce("uber", id, courier);
+  // worth a notification, and Uber's does slide. A stage we could not read is
+  // not a change to announce either.
+  if (courier !== undefined && was !== courier) await announce("uber", id, courier);
   return status;
 }
 
@@ -167,7 +198,18 @@ export async function statusOf(
   ]);
   const food = parts[0]?.food;
   const courier = parts[1]?.courier;
-  if (food === undefined && courier === undefined) return null;
+  // ——— "Nothing to report" is about the providers, not about the words ———
+  //
+  // This asked whether either half produced a *stage*, which is the same
+  // conflation refresh() had a few lines up: a delivery whose status word we
+  // could not map has an arrival time, a latest arrival, a courier and a
+  // number, and every one of them was thrown away here for want of a fifth
+  // thing. The tracker was told "unknown" about an order Uber had just
+  // described in detail.
+  //
+  // Null means neither provider answered. That is the case the tracker's
+  // estimate exists for, and it is the only one.
+  if (parts[0] === undefined && parts[1] === undefined) return null;
   // The courier half also carries the ETA and who is driving. Named one at a
   // time rather than spread, because this crosses into the browser: every
   // field listed here is a field a customer can read, and that list should be
