@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadMaps, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
+import { MAP_STYLE } from "../locations/mapStyle";
 import { DELIVERY_ORIGIN } from "../locations/locations";
 import { useResolvedTheme } from "../../theme";
 import { useT } from "../../i18n";
@@ -125,6 +126,10 @@ export default function DeliveryAreaMap() {
   // the palette in place, the same way the store finder does it, so the
   // polygon and the marker survive a sunset.
   const map = useRef<google.maps.Map | null>(null);
+  // The theme at the moment the map is built, then kept current for the
+  // effect below. The map is created once; the render value would be stale
+  // inside that effect and a dependency on it would rebuild the map.
+  const themeRef = useRef(theme);
   useEffect(() => {
     if (!area || !holder.current) return;
     let live = true;
@@ -144,6 +149,15 @@ export default function DeliveryAreaMap() {
         gestureHandling: "greedy",
         center: { lat: area.origin[0], lng: area.origin[1] },
         zoom: 10,
+        // The app's own map, like the other two. This one shipped with no
+        // styles at all — Google's stock blue-and-grey, hotel ratings and
+        // restaurant pins, inside a cream-and-olive app — which is the same
+        // thing the pin picker was fixed for and this page was missed on.
+        //
+        // Read from a ref rather than the render value for the same reason
+        // PinPicker does: the map is built once and the theme is applied again
+        // by the effect below when it changes.
+        styles: MAP_STYLE[themeRef.current],
       });
       map.current = instance;
 
@@ -201,6 +215,13 @@ export default function DeliveryAreaMap() {
       cleanup();
     };
   }, [area]);
+
+  // Follow the theme without rebuilding the map. setOptions swaps the basemap
+  // and leaves the polygon and the pin, which are separate objects on it.
+  useEffect(() => {
+    themeRef.current = theme;
+    map.current?.setOptions({ styles: MAP_STYLE[theme] });
+  }, [theme]);
 
   async function ask(event: React.FormEvent) {
     event.preventDefault();
