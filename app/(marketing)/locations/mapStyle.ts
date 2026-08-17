@@ -27,13 +27,33 @@ import type { MapTheme } from "./mapEngine";
 // Caribbean Sea and the Northwestern Passages, all gone. What's left is
 // country names, the coastline, and our pin.
 const QUIET: google.maps.MapTypeStyle[] = [
-  // The base is off, and businessNames() below turns the *names* back on for
-  // every map. Written as off-then-on rather than as a narrower rule because
-  // "poi" covers geometry, icons and labels, and what we want is one of the
-  // three: Google's coloured icons are the loudest thing on the stock basemap
-  // and the reason this map used to look like somebody else's product.
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  // ——— The icons go; the names stay ———
+  //
+  // Google's coloured POI icons — the orange fork, the pink bed — are the
+  // loudest thing on the stock basemap and the reason this map used to look
+  // like somebody else's product. The *names* beside them are what tells
+  // somebody which street they are looking at, and they are wanted.
+  //
+  // Said as one narrow rule rather than as a blanket `poi: off` with the names
+  // turned back on afterwards. Both should express the same thing, because a
+  // style array is applied in order and the last rule for a feature/element
+  // pair wins. The difference is what happens if that is not quite true of
+  // re-enabling a child of a feature that was switched off wholesale: the
+  // blanket version silently renders nothing, on a map, in a browser, which is
+  // the one place none of this can be tested. This version has nothing to
+  // override and so has nothing to be wrong about.
+  //
+  // POI geometry needs no rule of its own: the palette below paints all
+  // geometry the ground colour, so a park or a building footprint is already
+  // the same shade as the block it sits on. The pin picker overrides that
+  // deliberately — see doorwayDetail.
+  { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+
+  // Transit lines and their labels, by the same reasoning: the coloured rail
+  // ribbons are somebody else's map. Station *names* are re-enabled by the pin
+  // picker alone, where a Metro entrance is the best landmark on a block.
+  { featureType: "transit.line", stylers: [{ visibility: "off" }] },
+  { featureType: "transit.station", elementType: "labels", stylers: [{ visibility: "off" }] },
 
   // State and province initials, their borders, and county lines. Country
   // names stay: they orient you at the opening zoom without crowding it, and
@@ -135,11 +155,15 @@ const PALETTE: Record<MapTheme, google.maps.MapTypeStyle[]> = {
 function businessNames(theme: MapTheme): google.maps.MapTypeStyle[] {
   // Quieter than the street names deliberately, on both maps. Streets place a
   // door and landmarks only confirm it, so they must not compete.
-  const label = theme === "light" ? "#938c7b" : "#7e786e";
+  //
+  // Only a colour. Visibility is Google's default and QUIET no longer switches
+  // it off, so there is nothing here to turn back on.
   return [
-    { featureType: "poi", elementType: "labels.text", stylers: [{ visibility: "on" }] },
-    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: label }] },
-    { featureType: "poi", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+    {
+      featureType: "poi",
+      elementType: "labels.text.fill",
+      stylers: [{ color: theme === "light" ? "#938c7b" : "#7e786e" }],
+    },
   ];
 }
 
@@ -161,7 +185,9 @@ function doorwayDetail(theme: MapTheme): google.maps.MapTypeStyle[] {
 
     // A Metro entrance is the best landmark on a city block: it is large,
     // signposted in the street, and everybody local knows it. Same treatment —
-    // the name without the icon.
+    // the name without the icon. This one does override QUIET, because station
+    // labels are off by default there; it is a labels → labels.text step
+    // rather than a whole-feature resurrection.
     { featureType: "transit.station", elementType: "labels.text", stylers: [{ visibility: "on" }] },
     { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: label }] },
     { featureType: "transit.station", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
