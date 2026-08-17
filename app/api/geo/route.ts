@@ -46,9 +46,17 @@ export async function POST(request: Request) {
     kind?: unknown;
     placeId?: unknown;
     point?: unknown;
+    name?: unknown;
   } | null;
   const query = typeof body?.query === "string" ? body.query.trim() : "";
   const placeId = typeof body?.placeId === "string" ? body.placeId.trim() : "";
+  // What the customer picked it by. For a street address this is the street
+  // address; for a business it is the business's name, which is the half a
+  // geocoder throws away — see nameOn() below.
+  const name =
+    typeof body?.name === "string"
+      ? body.name.replace(/[\r\n]+/g, " ").trim().slice(0, 80)
+      : "";
   // Which of the two questions is being asked. "address" is a doorway to
   // deliver to; "region" is somewhere to point the map for pickup and
   // catering. They want different answers, and conflating them is what let a
@@ -178,6 +186,29 @@ export async function POST(request: Request) {
     );
   }
 
+  // ——— The name a place is known by, kept on the label ———
+  //
+  // Somebody who works at an office knows the name and not the number, which
+  // is the whole reason business search exists. Then the geocoder answers with
+  // "1600 Amphitheatre Pkwy, Mountain View, CA" and the name is gone — off the
+  // kitchen ticket, off the courier's screen, and off the line the customer
+  // reads back to check we understood them.
+  //
+  // So the picked name goes in front of the resolved address. Not instead of
+  // it: a courier needs the street, and a name alone is not somewhere to
+  // drive. Coordinates are untouched — this is a label, and the range check
+  // and the pickup point are both decided on numbers we fetched.
+  //
+  // Skipped when it adds nothing, which is what makes this safe to apply
+  // without asking whether the pick was a business: for a street address the
+  // picked name *is* the street address and is already in the answer, so the
+  // test for "did this add information" is the same test either way.
+  function nameOn(address: string): string {
+    if (!name) return address;
+    const already = address.toLowerCase().includes(name.toLowerCase());
+    return already ? address : `${name}, ${address}`;
+  }
+
   // Pickup and catering don't need a distance, so they don't pay for one. The
   // answer there is "put the map here", and the shop is chosen from the card
   // over the map afterwards. Routing every region search was a billed call per
@@ -223,7 +254,7 @@ export async function POST(request: Request) {
   }
 
   return Response.json({
-    address: place.address,
+    address: nameOn(place.address),
     lat: place.lat,
     lng: place.lng,
     // Whether anything was measured at all. The copy that quoted a figure

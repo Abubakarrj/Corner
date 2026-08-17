@@ -823,8 +823,24 @@ export type Suggestion = {
 // Which place types to search, by what the field is asking for. Delivery wants
 // a doorway; pickup and catering want somewhere to point the map, which is a
 // town or a ZIP.
+// ——— A place people can name is a place people get deliveries at ———
+//
+// The delivery layer was three address shapes, so a search only worked if
+// somebody knew their own street number. Plenty of deliveries go somewhere the
+// customer knows by name and not by address: an office, a hotel, a hospital, a
+// campus building. Typing "Google" returned nothing at all, which reads as the
+// search being broken rather than as the search being narrow.
+//
+// `establishment` is the type collection that covers all of them. It is only
+// added to the delivery layer: pickup and catering are looking for a place to
+// point a map, and a coffee shop is not one.
+//
+// It does not weaken the range check. Autocomplete is a suggestion list and
+// /api/geo resolves the pick from scratch on the server — isDoorstep() refuses
+// anything area-shaped whatever the browser sent, and an establishment
+// geocodes to a rooftop with a street address, which is a doorway.
 const TYPES = {
-  address: ["street_address", "premise", "subpremise"],
+  address: ["street_address", "premise", "subpremise", "establishment"],
   region: ["locality", "sublocality", "administrative_area_level_1", "postal_code"],
   // Towns only, for the City box on the job application. See the note on the
   // browser-side copy of this table.
@@ -832,6 +848,38 @@ const TYPES = {
 } as const;
 
 export type SuggestKind = keyof typeof TYPES;
+
+/** Whether businesses are still being asked for. Flipped off for the process
+ *  the first time Places refuses the request that includes them. */
+let businessesAsked = true;
+
+function withoutEstablishment(types: readonly string[]): string[] {
+  return types.filter((type) => type !== "establishment");
+}
+
+/** The layer to actually send, which is the declared one until Places has
+ *  refused it once.
+ *
+ *  The first cut only stripped `establishment` on the retry, so every search
+ *  after the fallback sent the rejected shape again, got the same 400, and —
+ *  having already spent its one retry — returned nothing. That is worse than
+ *  the behaviour it was protecting: it would have turned "cannot search a
+ *  business" into "cannot search". */
+function layerFor(kind: SuggestKind): readonly string[] {
+  return businessesAsked ? TYPES[kind] : withoutEstablishment(TYPES[kind]);
+}
+
+function dropEstablishment(kind: SuggestKind): boolean {
+  if (!businessesAsked || !TYPES[kind].includes("establishment" as never)) return false;
+  businessesAsked = false;
+  console.warn(
+    "[maps] Places refused the autocomplete request that includes" +
+      " `establishment` (400). Falling back to address shapes only for this" +
+      " process, so searching a business name by name will stop working while" +
+      " searching an address keeps working.",
+  );
+  return true;
+}
 
 // The server-side half of autocomplete, using Places API (New).
 //
@@ -846,21 +894,33 @@ export async function suggest(
   const key = googleMapsKey();
   if (!key) return [];
 
-  const response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
-    body: JSON.stringify({
-      input: query,
-      includedPrimaryTypes: [...TYPES[kind]],
-      includedRegionCodes: ["us"],
-      locationBias: {
-        circle: {
-          center: { latitude: near[0], longitude: near[1] },
-          radius: 20000,
+  const send = (types: readonly string[]) =>
+    fetch("https://places.googleapis.com/v1/places:autocomplete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
+      body: JSON.stringify({
+        input: query,
+        includedPrimaryTypes: [...types],
+        includedRegionCodes: ["us"],
+        locationBias: {
+          circle: {
+            center: { latitude: near[0], longitude: near[1] },
+            radius: 20000,
+          },
         },
-      },
-    }),
-  });
+      }),
+    });
+
+  let response = await send(layerFor(kind));
+  // Places is stricter about mixing a type collection with specific types than
+  // it is easy to check from here, and the cost of being wrong is the address
+  // box returning nothing at all. So a 400 drops back to the layer without
+  // `establishment`, which is what worked before, and stays there for the
+  // process. Somebody loses the ability to type "Google"; nobody loses the
+  // ability to type an address.
+  if (response.status === 400 && dropEstablishment(kind)) {
+    response = await send(withoutEstablishment(TYPES[kind]));
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");

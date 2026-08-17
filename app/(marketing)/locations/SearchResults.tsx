@@ -167,6 +167,11 @@ export default function SearchResults({
           action: "resolve",
           placeId: suggestion.id,
           query: chosenText,
+          // The line they actually tapped. For an address it repeats what the
+          // geocoder will say anyway; for a business it is the only place the
+          // name exists, and the server keeps it on the label when it adds
+          // something. See nameOn() in /api/geo.
+          name: suggestion.primary,
           kind: isDelivery ? "address" : "region",
         }),
       });

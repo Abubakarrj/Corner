@@ -15,8 +15,12 @@
 
 export type Suggestion = { id: string; primary: string; secondary: string };
 
+// Businesses are in the delivery layer, not the other two. See the note on
+// TYPES in app/googleMaps.ts — this table is the browser's copy of it and the
+// two have to agree, because whichever one answers is an accident of whether
+// the Maps library loaded.
 const LAYERS = {
-  address: ["street_address", "premise", "subpremise"],
+  address: ["street_address", "premise", "subpremise", "establishment"],
   region: ["locality", "sublocality", "administrative_area_level_1", "postal_code"],
   // Towns only. `region` would do for a City field except that it also matches
   // states and ZIP codes, and a City box offering "California" or "90020" is a
@@ -25,6 +29,18 @@ const LAYERS = {
 } as const;
 
 export type SuggestKind = keyof typeof LAYERS;
+
+/** Whether businesses are still being asked for in this tab. */
+let businessesAsked = true;
+
+/** The layer to actually send. Stripped for good once Places has refused it,
+ *  so a rejected shape is not re-sent on every keystroke — which would turn
+ *  "cannot search a business" into "cannot search". */
+function layerFor(kind: SuggestKind): readonly string[] {
+  return businessesAsked
+    ? LAYERS[kind]
+    : LAYERS[kind].filter((type) => type !== "establishment");
+}
 
 // ——— Configuration ———
 
@@ -261,15 +277,33 @@ export async function suggestAddresses(
     "places",
   )) as google.maps.PlacesLibrary;
 
-  const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
-    input: query,
-    includedPrimaryTypes: [...LAYERS[kind]],
-    includedRegionCodes: ["us"],
-    locationBias: {
-      center: { lat: near[0], lng: near[1] },
-      radius: 20000,
-    },
-  });
+  const ask = (types: readonly string[]) =>
+    AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      input: query,
+      includedPrimaryTypes: [...types],
+      includedRegionCodes: ["us"],
+      locationBias: {
+        center: { lat: near[0], lng: near[1] },
+        radius: 20000,
+      },
+    });
+
+  // Same fallback as the server copy, for the same reason: a request Places
+  // rejects would empty the address box entirely, and losing business search
+  // is a far smaller loss than losing search.
+  let suggestions;
+  try {
+    ({ suggestions } = await ask(layerFor(kind)));
+  } catch (error) {
+    if (!businessesAsked || !LAYERS[kind].includes("establishment" as never)) throw error;
+    businessesAsked = false;
+    console.warn(
+      "[maps] Places refused the autocomplete request that includes" +
+        " `establishment`. Falling back to address shapes only.",
+      error,
+    );
+    ({ suggestions } = await ask(layerFor(kind)));
+  }
 
   if (signal?.aborted) return [];
 
