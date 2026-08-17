@@ -33,6 +33,11 @@ export type LiveStatus = {
   /** Who has the bag. Absent until Uber assigns somebody. */
   courierName?: string;
   courierVehicle?: string;
+  /** The number the courier answers on, when Uber supplies one. */
+  courierPhone?: string;
+  /** Uber's committed latest arrival, epoch ms. Distinct from etaAt: that one
+   *  is what Uber expects and it moves, this is what Uber has undertaken. */
+  deadlineAt?: number;
   /** Uber says the courier is about to arrive.
    *
    *  Only ever set true. Absent is "not said", and the screens read it that

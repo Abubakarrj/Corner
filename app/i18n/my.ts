@@ -317,8 +317,10 @@ export const my: Table = {
 
   "order.arrivingAround": "{time} ခန့်တွင် ရောက်မည်",
   "order.arrivingNow": "ရောက်တော့မည်",
-  "order.headingToGuess": "ပို့ဆောင်သူ ယူသွားပြီးကြောင်း အတည်ပြုချက် မရသေးပါ။ {where} သို့ သွားမည်။",
-  "order.atCounterGuess": "ပုံမှန်အားဖြင့် ဤအချိန်ခန့်တွင် အဆင်သင့်ဖြစ်ပါသည်။ ဆိုင်မှ အတည်ပြုပါမည်။",
+  "order.headingToGuess": "ပို့ဆောင်သူထံမှ အချက်အလက် မရသေးပါ။ {where} သို့ သွားမည်။",
+  "order.atCounterGuess": "ဆိုင်ထံမှ အချက်အလက် မရသေးပါ။",
+  "order.latestArrival": "နောက်ဆုံး {time} တွင် ရောက်မည်",
+  "order.callCourier": "ပို့ဆောင်သူကို ဖုန်းဆက်ရန်",
   "order.onTheWayGuess": "လမ်းမှာ ရှိနေဖွယ်",
   "order.readyGuess": "အဆင်သင့် ဖြစ်နေဖွယ်",
   "order.deliveryCanceled": "ပို့ဆောင်မှု ပယ်ဖျက်ပြီး",

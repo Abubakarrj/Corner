@@ -316,8 +316,10 @@ export const ko: Table = {
 
   "order.arrivingAround": "{time}쯤 도착",
   "order.arrivingNow": "곧 도착합니다",
-  "order.headingToGuess": "배달원이 픽업했는지 아직 확인되지 않았습니다. {where}(으)로 갑니다.",
-  "order.atCounterGuess": "보통 이맘때 준비됩니다. 매장에서 확인해 드립니다.",
+  "order.headingToGuess": "배달원 업데이트 없음. {where}(으)로 갑니다.",
+  "order.atCounterGuess": "매장 업데이트 없음.",
+  "order.latestArrival": "늦어도 {time}까지 도착",
+  "order.callCourier": "배달원에게 전화",
   "order.onTheWayGuess": "배달 중일 것으로 예상",
   "order.readyGuess": "준비되었을 것으로 예상",
   "order.deliveryCanceled": "배달 취소됨",

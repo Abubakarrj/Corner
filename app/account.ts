@@ -647,6 +647,9 @@ export type OrderProgress = {
    *  drew different conclusions from it more than once. A canceled delivery
    *  had "Delivery canceled" on the page and "On the way" an inch above it. */
   headline: StringKey;
+  /** Uber's committed latest arrival, already formatted. Null when Uber has
+   *  not given one, or when there is nothing left to arrive. */
+  deadline: string | null;
   /** Uber says this delivery is not happening — canceled, or returned.
    *
    *  Its own field rather than a stage, because it is not a later point on the
@@ -921,6 +924,14 @@ export function progressFor(
     settled,
     reported,
     canceled,
+    // Shown beside the estimate, the way Uber shows it: the expected time and
+    // the one it has undertaken not to pass. Suppressed on the same terms as
+    // the estimate — there is no latest arrival for an order that has arrived,
+    // and none for one that was canceled.
+    deadline:
+      settled || arrived || canceled || typeof live?.deadlineAt !== "number"
+        ? null
+        : formatClock(live.deadlineAt, tag),
   };
 }
 

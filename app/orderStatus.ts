@@ -139,6 +139,8 @@ export async function refresh(
     ...(state.courierName === null ? {} : { courierName: state.courierName }),
     ...(state.courierVehicle === null ? {} : { courierVehicle: state.courierVehicle }),
     ...(state.courierImminent ? { courierNear: true as const } : {}),
+    ...(state.courierPhone === null ? {} : { courierPhone: state.courierPhone }),
+    ...(state.dropoffDeadline === null ? {} : { deadlineAt: state.dropoffDeadline }),
     at: now,
   };
   write(`uber:${id}`, status);
@@ -171,12 +173,20 @@ export async function statusOf(
   // field listed here is a field a customer can read, and that list should be
   // something somebody chose rather than whatever the Uber client happened to
   // pick up.
-  const { etaAt, courierName, courierVehicle, courierNear } = parts[1] ?? {};
+  // Named one at a time, still. `courierPhone` is on this list deliberately
+  // and not by accident of spreading: it is a phone number crossing into a
+  // browser, it is Uber's to publish rather than ours to invent, and it is
+  // there so somebody standing at a door with no bag can ring the person
+  // holding it.
+  const { etaAt, courierName, courierVehicle, courierNear, courierPhone, deadlineAt } =
+    parts[1] ?? {};
   return {
     ...(etaAt === undefined ? {} : { etaAt }),
     ...(courierName === undefined ? {} : { courierName }),
     ...(courierVehicle === undefined ? {} : { courierVehicle }),
     ...(courierNear === undefined ? {} : { courierNear }),
+    ...(courierPhone === undefined ? {} : { courierPhone }),
+    ...(deadlineAt === undefined ? {} : { deadlineAt }),
     ...(food === undefined ? {} : { food }),
     ...(courier === undefined ? {} : { courier }),
     at: Math.max(parts[0]?.at ?? 0, parts[1]?.at ?? 0),

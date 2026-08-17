@@ -418,6 +418,21 @@ export type DeliveryState = {
   /** Who is bringing it, and in what. Absent until a courier is assigned. */
   courierName: string | null;
   courierVehicle: string | null;
+  /** The time Uber commits to, as opposed to the one it expects.
+   *
+   *  `dropoff_deadline` on the delivery. Uber shows both on its own tracker —
+   *  an estimate, and a "latest arrival by" under it — and the second is the
+   *  more useful of the two to somebody deciding whether to wait: an estimate
+   *  moves, a deadline is a statement. */
+  dropoffDeadline: number | null;
+  /** The number the customer can reach the courier on, when Uber gives one.
+   *
+   *  Uber's own app puts a call and a chat behind the courier's name. We
+   *  cannot rebuild the chat, and would not — it is theirs — but a number is
+   *  a number. Null whenever Uber has not supplied one, which includes every
+   *  moment before a courier is assigned, and the screen simply has no button
+   *  then rather than a dead one. */
+  courierPhone: string | null;
   /** Uber's own "he is about to arrive".
    *
    *  Worth having because the alternative is arithmetic. A tracker can say
@@ -481,5 +496,7 @@ export async function fetchDelivery(deliveryId: string): Promise<DeliveryState |
     // which is not the same claim as "he is nearly here" and must not become
     // it on a response that happened to omit the field.
     courierImminent: body.courier_imminent === true,
+    dropoffDeadline: instant(body.dropoff_deadline),
+    courierPhone: courier ? text(courier.phone_number) : null,
   };
 }

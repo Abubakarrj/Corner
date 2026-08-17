@@ -317,8 +317,10 @@ export const zh: Table = {
 
   "order.arrivingAround": "约 {time} 送达",
   "order.arrivingNow": "即将送达",
-  "order.headingToGuess": "还未收到骑手取件的确认。将送往 {where}。",
-  "order.atCounterGuess": "通常这个时候就做好了，门店会再确认。",
+  "order.headingToGuess": "暂无骑手更新。将送往 {where}。",
+  "order.atCounterGuess": "暂无门店更新。",
+  "order.latestArrival": "最晚 {time} 送达",
+  "order.callCourier": "致电骑手",
   "order.onTheWayGuess": "预计已在路上",
   "order.readyGuess": "预计已做好",
   "order.deliveryCanceled": "配送已取消",

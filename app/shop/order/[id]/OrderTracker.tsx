@@ -193,18 +193,45 @@ export default function OrderTracker({ id }: { id: string }) {
               : t("order.shopConfirms")}
       </p>
 
+      {/* The time Uber has committed to, under the one it expects. Uber puts
+          both on its own tracker for a reason: an estimate moves and a
+          customer watching it move learns nothing, while "latest arrival by
+          12:50" is a statement they can decide against. Only ever Uber's
+          number — there is no version of this we compute. */}
+      {progress.deadline ? (
+        <p className="mt-1 text-[13px]" style={{ color: faint }}>
+          {t("order.latestArrival", { time: progress.deadline })}
+        </p>
+      ) : null}
+
       {/* Who has the bag, once somebody does. Uber hands us a first name and
           a vehicle type, and both are worth showing: a name makes the person
           on the doorstep expected rather than a stranger, and the vehicle is
           what you look for out of the window. Absent until a courier is
           assigned, and absent entirely on a pickup order — this renders
-          nothing rather than a row saying nobody. */}
+          nothing rather than a row saying nobody.
+
+          The number beside it is Uber's when Uber gives one. It is the answer
+          to the one question this screen could not previously help with: a
+          courier is outside, or is not, and the person who knows is the one
+          holding the bag. No number, no button — never a dead one. */}
       {live?.courierName ? (
-        <p className="mt-3 text-[14px]" style={{ color: ink }}>
-          {vehicle
-            ? t("order.courierWith", { name: live.courierName, vehicle: t(vehicle) })
-            : t("order.courier", { name: live.courierName })}
-        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <p className="m-0 text-[14px]" style={{ color: ink }}>
+            {vehicle
+              ? t("order.courierWith", { name: live.courierName, vehicle: t(vehicle) })
+              : t("order.courier", { name: live.courierName })}
+          </p>
+          {live.courierPhone ? (
+            <a
+              href={`tel:${live.courierPhone}`}
+              className="cb-press shrink-0 cursor-pointer rounded-full border px-3 py-1 text-[13px] font-medium transition-colors hover:bg-raise"
+              style={{ borderColor: ink, color: ink }}
+            >
+              {t("order.callCourier")}
+            </a>
+          ) : null}
+        </div>
       ) : null}
 
       {/* The stages, as a list rather than a horizontal stepper: four labels
