@@ -26,7 +26,11 @@ import {
   quoteDelivery,
   structuredAddress,
 } from "../../uberDirect";
-import { deliveryOrigin, deliveryStoreFor } from "../../storePlaces";
+import {
+  deliveryOrigin,
+  deliveryStoreFor,
+  earliestDeliveryHour,
+} from "../../storePlaces";
 import { notServedAt, storeById } from "../../shop/storeMenu";
 import {
   addressParts,
@@ -208,7 +212,33 @@ export async function POST(request: Request) {
   // is decided further down from the basket and the address, and the earliest
   // any of them opens is the honest bound on whether an order can be made at
   // all.
-  const counterOpensAt = opensAt(storeById(orderAt));
+  //
+  // ——— A delivery asks a different question ———
+  //
+  // Not "is the shop open" but "is there a kitchen that is open and can make
+  // this", which for a delivery is the same question. The counter it leaves
+  // from is chosen from the basket and the address further down, and the
+  // choice is only real if something is lit: at 8am with a bagel in the
+  // basket the outlet is dark and Wilshire is open, so there is one; a
+  // sandwich at 8am has only ever had one kitchen and it is open; and before
+  // 7 there is none.
+  //
+  // So a delivery is gated on the earliest hour any kitchen that could make
+  // this basket opens, rather than on a counter it has not been assigned to.
+  // Read from the payload here rather than from the bindings further down:
+  // this gate runs before the basket is parsed, deliberately, so a request
+  // that arrives at 3am is refused without the endpoint doing any of the work
+  // of understanding it.
+  const isDelivery =
+    (payload as { fulfillment?: { mode?: unknown } })?.fulfillment?.mode === "delivery";
+  const orderSlugs = Array.isArray(body?.items)
+    ? (body.items as unknown[])
+        .map((line) => (line as { slug?: unknown })?.slug)
+        .filter((value): value is string => typeof value === "string")
+    : [];
+  const counterOpensAt = isDelivery
+    ? earliestDeliveryHour(orderSlugs)
+    : opensAt(storeById(orderAt));
   if (
     !isOpenNow(new Date(), counterOpensAt) ||
     minutesUntilClose(new Date(), counterOpensAt) < PREP_MINUTES

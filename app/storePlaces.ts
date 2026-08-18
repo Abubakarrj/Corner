@@ -1,11 +1,13 @@
 import "server-only";
 import { geocode } from "./googleMaps";
 import { notServedAt } from "./shop/storeMenu";
+import { isOpenNow, minutesUntilClose, PREP_MINUTES } from "./shopFacts";
 import {
   LOCATIONS,
   deliveringStores,
   milesBetween,
   nearestDelivering,
+  opensAt,
   type StoreLocation,
 } from "./(marketing)/locations/locations";
 
@@ -177,8 +179,32 @@ export async function deliveryOrigin(to?: [number, number]): Promise<[number, nu
 // An empty basket narrows nothing, which is right for the callers that have
 // no order in hand — pricing an address, or answering "do you deliver to me".
 // Those questions are about the area, not about food.
-function kitchensFor(slugs: readonly string[]): StoreLocation[] {
-  const open = deliveringStores();
+export function kitchensFor(
+  slugs: readonly string[],
+  now: Date = new Date(),
+): StoreLocation[] {
+  // ——— Open, first ———
+  //
+  // Before anything about food. The counters no longer open together, so
+  // between 7 and 11 the outlet is a kitchen that delivers, can make a bagel,
+  // is nearest, and is dark. Routing a courier to it books a pickup at a shut
+  // door, and it is the first filter rather than the last because a shut
+  // kitchen is not a candidate at all.
+  //
+  // The prep-time headroom is the same rule the counter's own orders get: a
+  // kitchen with four minutes left is open and cannot make this.
+  const lit = deliveringStores().filter(
+    (store) =>
+      isOpenNow(now, opensAt(store)) &&
+      minutesUntilClose(now, opensAt(store)) >= PREP_MINUTES,
+  );
+  // Nothing open. Returned empty rather than falling back, so the caller can
+  // refuse the order — see deliveryKitchen() below. Every other narrowing
+  // here has a sensible fallback because the alternative is a worse choice;
+  // this one's alternative is a courier sent to a locked door.
+  if (lit.length === 0) return [];
+
+  const open = lit;
   if (slugs.length === 0) return open;
   const able = open.filter((store) => notServedAt(store.id, slugs).length === 0);
 
@@ -202,15 +228,48 @@ function kitchensFor(slugs: readonly string[]): StoreLocation[] {
   if (outlets.length > 0) return outlets;
 
   if (able.length > 0) return able;
-  // Unreachable while any counter serves the full menu, and not something to
-  // fail silently on if that ever stops being true: falling back to every
-  // kitchen keeps the order moving and the line says what happened, which is
+  // Open, but none of them makes all of it. Unreachable while the counter
+  // that serves the full menu keeps the longest hours, and not something to
+  // fail silently on if that ever stops being true: falling back to the open
+  // ones keeps the order moving and the line says what happened, which is
   // better than a 500 nobody can read.
   console.warn(
-    `[places] no delivering kitchen makes all of ${JSON.stringify(slugs)}; ` +
-      `falling back to the nearest that delivers.`,
+    `[places] no open delivering kitchen makes all of ${JSON.stringify(slugs)}; ` +
+      `falling back to the nearest that is open.`,
   );
   return open;
+}
+
+/** The earliest hour any kitchen that could make this basket opens.
+ *
+ *  What a delivery is gated on, because a delivery is not placed at a
+ *  counter: it leaves from whichever kitchen can make it, and it can be taken
+ *  as soon as the first such kitchen is open. A sandwich basket has only ever
+ *  had one kitchen, so this is that one's hour; a bagel basket has two, so it
+ *  is the earlier of them and the routing sends it to whichever is actually
+ *  lit at the time. */
+export function earliestDeliveryHour(slugs: readonly string[]): number {
+  const all = deliveringStores();
+  const able = all.filter((store) => notServedAt(store.id, slugs).length === 0);
+  const pool = able.length > 0 ? able : all;
+  return pool.reduce((earliest, store) => Math.min(earliest, opensAt(store)), 24);
+}
+
+/** The kitchen a delivery of this basket would leave from right now, or null
+ *  when there is no counter both open and able.
+ *
+ *  Null is an answer, not a failure: it is what the order endpoint checks
+ *  before taking a delivery, because "we are open" is not a fact about the
+ *  shop any more. At 8am with a bagel in the basket the outlet is shut and
+ *  Wilshire is open, so there is a kitchen; at 6am there is none. */
+export function deliveryKitchen(
+  slugs: readonly string[],
+  to?: [number, number],
+  now: Date = new Date(),
+): StoreLocation | null {
+  const pool = kitchensFor(slugs, now);
+  if (pool.length === 0) return null;
+  return (to ? nearestDelivering(to, pool) : null) ?? pool[0] ?? null;
 }
 
 /** The kitchen itself, not just its coordinates — for a courier pickup that
@@ -223,7 +282,9 @@ export async function deliveryStoreFor(
   to?: [number, number],
   carrying: readonly string[] = [],
 ): Promise<{ store: StoreLocation; place: StorePlace }> {
-  const pool = kitchensFor(carrying);
-  const store = (to ? nearestDelivering(to, pool) : null) ?? pool[0] ?? LOCATIONS[0];
+  // LOCATIONS[0] only when nothing is open, which the order endpoint has
+  // already refused before reaching here. It is a type-level fallback rather
+  // than a routing decision — this function has to return a store.
+  const store = deliveryKitchen(carrying, to) ?? LOCATIONS[0];
   return { store, place: await storePlace(store) };
 }
