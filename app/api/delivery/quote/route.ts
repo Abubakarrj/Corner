@@ -173,6 +173,7 @@ export async function POST(request: Request) {
     quoteId: quote.quote.quoteId,
     feeCents: quote.quote.feeCents,
     etaMinutes: quote.quote.etaMinutes,
+    etaAt: quote.quote.etaAt,
     expiresAt: quote.quote.expiresAt,
     address: place.address,
     // How far the driver goes, for the explainer behind the (i) on the

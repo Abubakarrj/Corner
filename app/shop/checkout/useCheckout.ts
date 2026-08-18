@@ -83,6 +83,9 @@ export type DeliveryQuote = {
   quoteId: string;
   feeCents: number;
   etaMinutes: number | null;
+  /** When Uber expects the drop-off, as an instant. See the note in
+   *  uberDirect.ts: the minute count ages, this does not. */
+  etaAt: string | null;
   /** Road miles from the counter, for the fee explainer. Null when Routes
    *  could not answer — see the note in /api/delivery/quote. */
   miles?: number | null;

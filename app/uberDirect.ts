@@ -135,6 +135,13 @@ export type Quote = {
   feeCents: number;
   // Minutes from now until it's at the door, by Uber's estimate.
   etaMinutes: number | null;
+  /** Uber's drop-off estimate as the instant it is, ISO.
+   *
+   *  Alongside the minutes rather than instead of them, because the two are
+   *  different statements. "About 30 minutes" is true when it is said and
+   *  Riley says it once; "arriving 11:42" is true until the courier arrives,
+   *  and the checkout sits on screen while somebody types a card in. */
+  etaAt: string | null;
   // When the quote stops being honoured. Past this, re-quote.
   expiresAt: string | null;
 };
@@ -184,12 +191,14 @@ export async function quoteDelivery(input: {
     return { ok: false, reason: "quote-malformed", undeliverable: false };
   }
 
-  // dropoff_eta is an ISO timestamp; the checkout wants minutes.
+  // dropoff_eta is an ISO timestamp. Both forms come out of it: the minutes
+  // for anything that says "about half an hour", the instant for anything
+  // that prints a clock time.
   const eta = result.body.dropoff_eta;
-  const etaMinutes =
-    typeof eta === "string" && !Number.isNaN(Date.parse(eta))
-      ? Math.max(0, Math.round((Date.parse(eta) - Date.now()) / 60_000))
-      : null;
+  const usable = typeof eta === "string" && !Number.isNaN(Date.parse(eta));
+  const etaMinutes = usable
+    ? Math.max(0, Math.round((Date.parse(eta as string) - Date.now()) / 60_000))
+    : null;
 
   return {
     ok: true,
@@ -197,6 +206,7 @@ export async function quoteDelivery(input: {
       quoteId: id,
       feeCents: fee,
       etaMinutes,
+      etaAt: usable ? new Date(Date.parse(eta as string)).toISOString() : null,
       expiresAt: typeof result.body.expires === "string" ? result.body.expires : null,
     },
   };

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useId } from "react";
+import { useId, useState } from "react";
+import { useCart } from "../CartContext";
+import PickupPicker from "./PickupPicker";
 import { useT } from "../../i18n";
 import { useOpening } from "../../useOpening";
 import { formatPrice } from "../products";
@@ -37,8 +39,18 @@ import type { Checkout, Handoff } from "./useCheckout";
 // 11:37–11:47, and the range is the honest shape of the same estimate.
 const WINDOW_MINUTES = 10;
 
-function at(minutes: number): string {
-  return new Date(Date.now() + minutes * 60_000).toLocaleTimeString([], {
+// ——— The window, from the instant rather than from a stopwatch ———
+//
+// This read `Date.now() + minutes`, where `minutes` was measured when the
+// quote came back. Every re-render moved the window later: quote at 11:12
+// saying 11:42, then a name typed, a box ticked, a card entered, and six
+// minutes later the same quote printed 11:48. The estimate got longer the
+// longer somebody looked at it, which is the opposite of what a clock does
+// and made every delivery read as slower than Uber had actually promised.
+//
+// So the instant Uber gave is what is rendered, and it stays put.
+function clockAt(iso: string, addMinutes = 0): string {
+  return new Date(Date.parse(iso) + addMinutes * 60_000).toLocaleTimeString([], {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -47,6 +59,8 @@ function at(minutes: number): string {
 export default function DeliverySection({ checkout }: { checkout: Checkout }) {
   const t = useT();
   const opening = useOpening();
+  const { lines } = useCart();
+  const [picking, setPicking] = useState(false);
   const {
     where,
     quote,
@@ -70,18 +84,34 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
 
   const aptId = useId();
   const noteId = useId();
-  const eta = quote?.etaMinutes ?? null;
+  const etaAt = quote?.etaAt ?? null;
 
   return (
+    <>
+    {picking ? (
+      <PickupPicker
+        slugs={lines.map((line) => line.slug)}
+        onClose={() => setPicking(false)}
+      />
+    ) : null}
     <Section
       title={t("checkout.deliveryDetails")}
       aside={
-        <Link
-          href="/locations"
-          className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
+        /* A button, not a link to /locations. Somebody in a half-filled
+           checkout who decides to walk instead should not lose the form and
+           land on a map of the United States to answer a question with two
+           answers. The picker opens over this screen and closes back onto it.
+
+           The basket rides along so a row can say what that counter cannot
+           make — the one fact that would change the choice, and the one it is
+           too late to learn afterwards. */
+        <button
+          type="button"
+          onClick={() => setPicking(true)}
+          className="cb-press cursor-pointer text-[13px] text-ink underline underline-offset-2"
         >
           {t("checkout.switchToPickup")}
-        </Link>
+        </button>
       }
     >
       <div className="rounded-xl border border-line-soft">
@@ -108,15 +138,15 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
                   drive takes, and printing it as an arrival sends somebody to
                   the window at the wrong moment. */}
               <p className="m-0 text-[14px] text-ink">
-                {eta === null
+                {etaAt === null
                   ? t("delivery.awaitingEta")
                   : t("delivery.arrivingBetween", {
-                      from: at(eta),
-                      to: at(eta + WINDOW_MINUTES),
+                      from: clockAt(etaAt),
+                      to: clockAt(etaAt, WINDOW_MINUTES),
                     })}
               </p>
               <p className="m-0 text-[12px] text-muted">
-                {eta === null ? t("delivery.etaPending") : t("delivery.etaCourier")}
+                {etaAt === null ? t("delivery.etaPending") : t("delivery.etaCourier")}
               </p>
             </div>
           </div>
@@ -252,6 +282,7 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
         </div>
       </div>
     </Section>
+    </>
   );
 }
 
