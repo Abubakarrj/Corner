@@ -289,6 +289,12 @@ export function useCheckout(): Checkout {
     ? (st(current.message) || t("checkout.couldNotPrice"))
     : null;
 
+  // The basket's composition as one string, which is both what the quote is
+  // keyed on and what it sends. One value rather than a list beside a key:
+  // a list would be a new array every render and a key that agreed with it
+  // only by convention, and the two drifting is a quote that stops refreshing.
+  const basketKey = [...new Set(lines.map((line) => line.slug))].sort().join(",");
+
   useEffect(() => {
     if (!deliveryAddress) return;
     let live = true;
@@ -299,6 +305,10 @@ export function useCheckout(): Checkout {
         address: deliveryAddress,
         lat: deliveryLat,
         lng: deliveryLng,
+        // So the fee is priced from the counter this order will leave from.
+        // With two kitchens and one shorter menu, the nearest is not always
+        // the one that can make it. See /api/delivery/quote.
+        slugs: basketKey ? basketKey.split(",") : [],
       }),
     })
       .then(async (response) => {
@@ -321,13 +331,16 @@ export function useCheckout(): Checkout {
     // The pin is part of the destination, so moving it has to re-quote even
     // when the words are unchanged — the same street address on the other side
     // of a block is a different drive.
-  }, [deliveryAddress, deliveryLat, deliveryLng]);
+    // And the basket, because which kitchen serves this address depends on
+    // what is in it. Sorted unique slugs rather than the lines themselves:
+    // changing a quantity cannot change which counter can make the order, and
+    // re-quoting on every tap of a plus button is a billed call for an answer
+    // that has not moved.
+  }, [deliveryAddress, deliveryLat, deliveryLng, basketKey]);
 
   // A row that never got its bagel chosen can't be made, and the endpoint
   // refuses it — so the button refuses first, and says where to fix it.
   const incomplete = rows.filter((row) => !row.complete);
-  // Sold out since the basket was filled. A basket outlives the morning, so
-  // this is ordinary rather than exceptional — it just can't be ordered.
   // Sold out, or not made at the counter this order is going to. Both stop
   // the order and neither is an error the customer made, so they are one list
   // for the button and told apart on the row itself.

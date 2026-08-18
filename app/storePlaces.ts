@@ -1,5 +1,6 @@
 import "server-only";
 import { geocode } from "./googleMaps";
+import { notServedAt } from "./shop/storeMenu";
 import {
   LOCATIONS,
   deliveringStores,
@@ -164,11 +165,45 @@ export async function deliveryOrigin(to?: [number, number]): Promise<[number, nu
   return position;
 }
 
+// ——— Which kitchens could make this order ———
+//
+// Every kitchen that delivers, narrowed to the ones that make everything in
+// the basket. Both counters deliver and the outlet makes a shorter menu, so
+// "nearest" and "able" stopped being the same question the day the outlet
+// started delivering: a sandwich to an address two streets from Western has
+// to leave from Wilshire, and picking the nearer kitchen would send a courier
+// to collect something nobody there can make.
+//
+// An empty basket narrows nothing, which is right for the callers that have
+// no order in hand — pricing an address, or answering "do you deliver to me".
+// Those questions are about the area, not about food.
+function kitchensFor(slugs: readonly string[]): StoreLocation[] {
+  const open = deliveringStores();
+  if (slugs.length === 0) return open;
+  const able = open.filter((store) => notServedAt(store.id, slugs).length === 0);
+  if (able.length > 0) return able;
+  // Unreachable while any counter serves the full menu, and not something to
+  // fail silently on if that ever stops being true: falling back to every
+  // kitchen keeps the order moving and the line says what happened, which is
+  // better than a 500 nobody can read.
+  console.warn(
+    `[places] no delivering kitchen makes all of ${JSON.stringify(slugs)}; ` +
+      `falling back to the nearest that delivers.`,
+  );
+  return open;
+}
+
 /** The kitchen itself, not just its coordinates — for a courier pickup that
- *  needs the address and the name as well as the point. */
+ *  needs the address and the name as well as the point.
+ *
+ *  `carrying` is the basket, as slugs. Pass it wherever there is one: it is
+ *  what stops a sandwich being collected from a counter that does not make
+ *  sandwiches. */
 export async function deliveryStoreFor(
   to?: [number, number],
+  carrying: readonly string[] = [],
 ): Promise<{ store: StoreLocation; place: StorePlace }> {
-  const store = (to ? nearestDelivering(to) : null) ?? deliveringStores()[0] ?? LOCATIONS[0];
+  const pool = kitchensFor(carrying);
+  const store = (to ? nearestDelivering(to, pool) : null) ?? pool[0] ?? LOCATIONS[0];
   return { store, place: await storePlace(store) };
 }

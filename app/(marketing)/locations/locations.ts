@@ -177,7 +177,7 @@ export const WILSHIRE: StoreLocation = {
 // of buttons.
 export const WESTERN: StoreLocation = {
   id: "western",
-  name: "Western Ave Outlet",
+  name: "Western Ave",
   kind: "shop",
   outlet: true,
   address: "355 S Western Ave #101",
@@ -185,15 +185,21 @@ export const WESTERN: StoreLocation = {
   hours: SHOP_HOURS,
   // Western between 3rd and 4th.
   position: [34.0685, -118.3092],
-  // Deliveries leave from the Wilshire kitchen, and this counter does not
-  // cater. Both stated rather than left to default, because the defaults are
-  // "yes" and an outlet quietly inheriting them is how a tray for forty gets
-  // promised from a counter that cannot build one.
-  delivery: false,
-  catering: false,
+  // An outlet is smaller, not narrower in what it will do for you: it
+  // collects, it caters and a delivery can leave from it, same as the store.
+  // Both are the defaults, so neither is written here — what makes this an
+  // outlet is the shorter menu below, and nothing else.
+  //
   // Bagels, spreads and drinks. No sandwiches: this counter has no line to
   // build one on, and a sandwich orderable here is a customer standing at a
   // counter being told no by a person rather than by the app.
+  //
+  // ⚠️ The menu applies to every mode, not only to walking up. A tray from
+  // here is a tray of these three, and a delivery that leaves from here can
+  // only carry them — which is why deliveryStoreFor takes the basket. Sending
+  // a sandwich order to the nearest kitchen without asking whether it makes
+  // sandwiches is the bug this record would otherwise introduce.
+  catering: true,
   menu: ["Bagels", "Spreads", "Drinks"],
   aliases: [
     "western",
@@ -275,9 +281,19 @@ export function deliveringStores(): StoreLocation[] {
  *  shops are close enough together that either could serve.
  *
  *  Null when no shop delivers at all, which is a configuration to notice
- *  rather than a case to paper over. */
-export function nearestDelivering(to: [number, number]): StoreLocation | null {
-  const open = deliveringStores();
+ *  rather than a case to paper over.
+ *
+ *  The pool is an argument because "which kitchens are eligible" is not
+ *  always "which kitchens deliver". Now that both counters deliver and one of
+ *  them makes a shorter menu, a delivery carrying a sandwich has fewer
+ *  kitchens to choose between than a delivery carrying bagels — and the
+ *  narrowing is the caller's, since this module deliberately knows nothing
+ *  about products. See deliveryStoreFor in storePlaces.ts. */
+export function nearestDelivering(
+  to: [number, number],
+  pool: StoreLocation[] = deliveringStores(),
+): StoreLocation | null {
+  const open = pool;
   if (open.length === 0) return null;
   return open.reduce((best, store) =>
     milesBetween(to, store.position) < milesBetween(to, best.position) ? store : best,

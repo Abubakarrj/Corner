@@ -38,7 +38,26 @@ export async function POST(request: Request) {
     return Response.json({ error: "api.badJson" }, { status: 400 });
   }
 
-  const body = payload as { address?: unknown; lat?: unknown; lng?: unknown } | null;
+  const body = payload as {
+    address?: unknown;
+    lat?: unknown;
+    lng?: unknown;
+    slugs?: unknown;
+  } | null;
+
+  // What is in the basket, so this prices from the kitchen the order will
+  // actually leave from. Both counters deliver and they are two thirds of a
+  // mile apart, which is enough to cross a distance band: quoting from the
+  // nearer counter and then collecting from the other is a fee that changes
+  // between the screen and the receipt.
+  //
+  // Optional, and absent is not an error. Riley asks this about an address
+  // with no basket behind it, and so does the checkout before anything has
+  // been added — both are asking about the area, and the area is the same
+  // from either counter.
+  const carrying = Array.isArray(body?.slugs)
+    ? body.slugs.filter((value): value is string => typeof value === "string")
+    : [];
   const address = body?.address;
   if (typeof address !== "string" || address.trim().length === 0) {
     return Response.json({ error: "api.missingAddress" }, { status: 400 });
@@ -81,7 +100,10 @@ export async function POST(request: Request) {
   //
   // The store and not only its point, because the courier is handed an address
   // as well as a coordinate and those two have to name the same counter.
-  const { store, place: pickup } = await deliveryStoreFor([place.lat, place.lng]);
+  const { store, place: pickup } = await deliveryStoreFor(
+    [place.lat, place.lng],
+    carrying,
+  );
   const from = pickup.position;
 
   const drive = await driveBetween(from, [place.lat, place.lng]);

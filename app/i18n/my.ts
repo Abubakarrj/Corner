@@ -40,8 +40,8 @@ export const my: Table = {
   "consent.label": "ကွတ်ကီး သဘောတူညီချက်",
 
   "finder.pickup": "လာယူရန်",
-  "finder.outlet": "အရောင်းဆိုင်ခွဲ",
-  "finder.outletNote": "ယူဆောင်ရန်အတွက် ကောင်တာတစ်ခုဖြစ်သည်။ ပို့ဆောင်မှုနှင့် ကေတာရင်းကို Wilshire မှ ဆောင်ရွက်ပါသည်။",
+  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outletNote": "ဘေဂယ်၊ ရှမီးယားနှင့် အဖျော်ယမကာများ။ ဆန်းဒဝစ်ချ် မရှိပါ။",
   "finder.delivery": "ပို့ဆောင်ရန်",
   "finder.catering": "ကေတာရင်",
   "finder.searchPlaceholder": "ဆိုင်၊ မြို့၊ ပြည်နယ် သို့မဟုတ် ဇစ်ကုဒ် ရှာပါ",

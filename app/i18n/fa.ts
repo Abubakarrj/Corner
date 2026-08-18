@@ -49,8 +49,8 @@ export const fa: Table = {
 
   // ——— The finder ———
   "finder.pickup": "تحویل حضوری",
-  "finder.outlet": "باجه",
-  "finder.outletNote": "پیشخوانی برای تحویل گرفتن سفارش. تحویل و پذیرایی از شعبهٔ Wilshire انجام می‌شود.",
+  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outletNote": "بیگل، اشمیر و نوشیدنی. ساندویچ نداریم.",
   "finder.delivery": "ارسال",
   "finder.catering": "پذیرایی",
   "finder.searchPlaceholder": "جست‌وجوی شعبه، شهر، ایالت یا کد پستی",

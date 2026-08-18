@@ -48,8 +48,8 @@ export const en = {
 
   // ——— The finder ———
   "finder.pickup": "Pickup",
-  "finder.outlet": "Outlet",
-  "finder.outletNote": "A counter for collection. Catering and delivery come from Wilshire.",
+  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outletNote": "Bagels, schmear & drinks. No sandwiches.",
   "finder.delivery": "Delivery",
   "finder.catering": "Catering",
   "finder.searchPlaceholder": "Search store, city, state, or zip",

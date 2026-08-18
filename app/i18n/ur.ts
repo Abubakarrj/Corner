@@ -43,8 +43,8 @@ export const ur: Table = {
   "consent.label": "کوکیز کی رضامندی",
 
   "finder.pickup": "پک اپ",
-  "finder.outlet": "آؤٹ لیٹ",
-  "finder.outletNote": "صرف اپنا آرڈر لینے کے لیے ایک کاؤنٹر۔ ڈیلیوری اور کیٹرنگ Wilshire سے ہوتی ہے۔",
+  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outletNote": "بیگل، شمیئر اور مشروبات۔ سینڈوچ نہیں۔",
   "finder.delivery": "ڈیلیوری",
   "finder.catering": "کیٹرنگ",
   "finder.searchPlaceholder": "اسٹور، شہر، ریاست یا زپ کوڈ تلاش کریں",

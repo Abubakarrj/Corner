@@ -423,8 +423,12 @@ export async function POST(request: Request) {
     }
     dropoff = place;
 
+    // The basket rides along. Nearest is not enough now that both counters
+    // deliver and one of them does not make sandwiches — see kitchensFor in
+    // storePlaces.ts.
     const { store, place: counter } = await deliveryStoreFor(
       biasedTo ?? [place.lat, place.lng],
+      items.map((item) => item.slug),
     );
     const origin = counter.position;
     pickupStore = store;

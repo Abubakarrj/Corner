@@ -314,21 +314,19 @@ export default function SearchResults({
                     style={{ borderColor: controlBorder }}
                   >
                     <span className="min-w-0 flex-1">
-                      {/* Same qualifier the map card carries, and this list is
+                      {/* Same two lines the map card carries, and this list is
                           the other half of the same choice: a row picked here
                           sets the fulfillment outright. Somebody choosing
                           between two counters a few blocks apart has to be
                           able to see which one is the full store. */}
-                      <span className="flex items-baseline gap-1.5">
-                        <span className="min-w-0 truncate text-[15px]" style={{ color: ink }}>
-                          {store.name}
-                        </span>
-                        {store.outlet ? (
-                          <span className="shrink-0 text-[12px]" style={{ color: muted }}>
-                            {t("finder.outlet")}
-                          </span>
-                        ) : null}
+                      <span className="block truncate text-[15px]" style={{ color: ink }}>
+                        {store.name}
                       </span>
+                      {store.outlet ? (
+                        <span className="block truncate text-[13px]" style={{ color: muted }}>
+                          {t("finder.outlet")}
+                        </span>
+                      ) : null}
                       <span className="block truncate text-[13px]" style={{ color: muted }}>
                         {store.address}, {store.city}
                       </span>
