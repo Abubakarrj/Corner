@@ -247,7 +247,7 @@ export const en = {
   "checkout.milesAway": "{miles} mi away",
   "checkout.opensAt": "Opens at {time}",
   "checkout.notMadeHere": "Not available here",
-  "checkout.someNotEligible": "Sorry, certain items in your cart aren’t eligible at every counter.",
+  "checkout.someNotEligible": "Sorry, certain items in your cart aren’t eligible for pickup at our outlets",
   "checkout.allSet": "You're all set",
   "checkout.done": "Done",
   "checkout.orderNumber": "Order {id}",

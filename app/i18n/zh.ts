@@ -218,7 +218,7 @@ export const zh: Table = {
   "checkout.milesAway": "{miles} 英里",
   "checkout.opensAt": "{time} 开门",
   "checkout.notMadeHere": "本店不供应",
-  "checkout.someNotEligible": "抱歉，您购物袋中的部分商品并非每家门店都供应。",
+  "checkout.someNotEligible": "抱歉，您购物袋中的部分商品无法在外卖点自取",
   "checkout.allSet": "订单已完成",
   "checkout.done": "完成",
   "checkout.orderNumber": "订单 {id}",

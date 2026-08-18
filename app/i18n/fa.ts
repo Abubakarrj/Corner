@@ -246,7 +246,7 @@ export const fa: Table = {
   "checkout.milesAway": "{miles} مایل فاصله",
   "checkout.opensAt": "ساعت {time} باز می‌شود",
   "checkout.notMadeHere": "اینجا موجود نیست",
-  "checkout.someNotEligible": "متأسفیم، برخی از اقلام سبد شما در همهٔ شعبه‌ها موجود نیست.",
+  "checkout.someNotEligible": "متأسفیم، برخی از اقلام سبد شما را نمی‌توان از باجه‌های ما تحویل گرفت",
   "checkout.allSet": "همه چیز آماده است",
   "checkout.done": "تمام",
   "checkout.orderNumber": "سفارش {id}",

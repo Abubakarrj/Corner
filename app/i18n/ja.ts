@@ -216,7 +216,7 @@ export const ja: Table = {
   "checkout.milesAway": "{miles} マイル",
   "checkout.opensAt": "{time} 開店",
   "checkout.notMadeHere": "この店舗では取り扱いなし",
-  "checkout.someNotEligible": "申し訳ありません。カート内の一部の商品は、すべての店舗ではご用意できません。",
+  "checkout.someNotEligible": "申し訳ありません。カート内の一部の商品は、アウトレットでのお受け取りができません",
   "checkout.allSet": "ご注文ありがとうございます",
   "checkout.done": "閉じる",
   "checkout.orderNumber": "注文番号 {id}",
