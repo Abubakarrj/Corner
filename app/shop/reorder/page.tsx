@@ -8,6 +8,8 @@ import { Button, ButtonLink } from "../../ui/Button";
 import { useT } from "../../i18n";
 import { useMenu } from "../../i18n/menu";
 import { getProduct } from "../products";
+import { useFulfillment } from "../../fulfillment";
+import { servesProduct } from "../storeMenu";
 import ProductImage from "../ProductImage";
 import { requestOpenBasket } from "../openBasket";
 import OrderCard from "../account/OrderCard";
@@ -49,7 +51,20 @@ export default function ReorderPage() {
   const t = useT();
   const menu = useMenu();
 
-  const usuals = useMemo(() => summarizeUsuals(orders), [orders]);
+  // Narrowed to the counter, like every other list. addItem refuses an item
+  // this counter cannot make, so a usual it would refuse is a row whose only
+  // outcome is a refusal — and a "usual" is the one kind of row somebody taps
+  // without reading, which makes it the worst place to put one.
+  const fulfillment = useFulfillment();
+  const at = fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  const usuals = useMemo(
+    () =>
+      summarizeUsuals(orders).filter((usual) => {
+        const product = getProduct(usual.slug);
+        return product ? servesProduct(at, product) : false;
+      }),
+    [orders, at],
+  );
   // Whole orders, under the individual items. Two ways to repeat yourself,
   // and they are genuinely different: one bagel you always get, against the
   // entire Friday order for four people.

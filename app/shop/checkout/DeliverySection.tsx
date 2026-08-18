@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "../CartContext";
 import ChangeFulfillment from "./ChangeFulfillment";
-import AdjustPinModal from "./AdjustPinModal";
 import { useT } from "../../i18n";
 import { useOpening } from "../../useOpening";
 import { formatPrice } from "../products";
@@ -80,8 +79,8 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
   const t = useT();
   const opening = useOpening();
   const { lines } = useCart();
-  const [picking, setPicking] = useState(false);
-  const [adjusting, setAdjusting] = useState(false);
+  // Which tab the sheet opens on, or null for closed.
+  const [picking, setPicking] = useState<"pickup" | "delivery" | null>(null);
   const {
     where,
     quote,
@@ -133,21 +132,15 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
 
   return (
     <>
+    {/* One sheet for both. "Switch to pickup" opens the counter list;
+        "Adjust pin" opens the same map the sheet already carries, seeded with
+        the address, the unit and the courier note. A second component writing
+        a delivery fulfillment is the drift this sheet exists to prevent. */}
     {picking ? (
       <ChangeFulfillment
-        initial="pickup"
+        initial={picking}
         slugs={lines.map((line) => line.slug)}
-        onClose={() => setPicking(false)}
-      />
-    ) : null}
-    {/* Narrowed here rather than inside the modal: there is no pin to adjust
-        on a pickup, and the component should not have to defend against being
-        handed one. */}
-    {adjusting && pinned && fulfillment?.mode === "delivery" ? (
-      <AdjustPinModal
-        fulfillment={fulfillment}
-        start={[fulfillment.lat as number, fulfillment.lng as number]}
-        onClose={() => setAdjusting(false)}
+        onClose={() => setPicking(null)}
       />
     ) : null}
     <Section
@@ -163,7 +156,7 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
            too late to learn afterwards. */
         <button
           type="button"
-          onClick={() => setPicking(true)}
+          onClick={() => setPicking("pickup")}
           className="cb-press cursor-pointer text-[13px] text-ink underline underline-offset-2"
         >
           {t("checkout.switchToPickup")}
@@ -241,7 +234,7 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
               {pinned ? (
                 <button
                   type="button"
-                  onClick={() => setAdjusting(true)}
+                  onClick={() => setPicking("delivery")}
                   className="cb-press cursor-pointer text-ink underline underline-offset-2"
                 >
                   {t("pin.adjust")}

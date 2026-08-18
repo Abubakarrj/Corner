@@ -23,7 +23,7 @@ import {
   type Product,
   type SelectedOptions,
 } from "../../shop/products";
-import { servesProduct } from "../../shop/storeMenu";
+import { servesCategory, servesProduct, storeById } from "../../shop/storeMenu";
 import { totalsFor } from "../../shop/money";
 import type { ChatAttachments, Phrase, ProductCard } from "../../shop/chatTypes";
 import {
@@ -37,7 +37,9 @@ import {
 } from "../../shopFacts";
 import {
   DELIVERY_RADIUS_MILES,
+  LOCATIONS,
   addressParts,
+  opensAt,
 } from "../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../googleMaps";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../uberDirect";
@@ -633,18 +635,39 @@ export async function runTool(
     }
 
     case "check_hours": {
-      const status = openingStatus();
-      const open = isOpenNow();
-      const left = minutesUntilClose();
+      // ——— Whose hours ———
+      //
+      // "Are we open" stopped having one answer the day the counters stopped
+      // opening together: between 7 and 11 the store is open and the outlet
+      // is dark. So this answers for the counter the customer is actually
+      // collecting from when there is one, and for the earliest-opening
+      // counter when there is not — which is the honest answer to "are you
+      // open" asked by somebody who has not chosen yet, since one of them is.
+      //
+      // Every counter's own hours ride along regardless. Riley is asked "what
+      // time do you open" as often as "are you open now", and the second
+      // question is the one a single boolean cannot answer.
+      const counter = storeById(context.orderAt ?? null);
+      const hour = opensAt(counter);
+      const status = openingStatus(new Date(), hour);
+      const open = isOpenNow(new Date(), hour);
+      const left = minutesUntilClose(new Date(), hour);
       const accepting = open && left >= PREP_MINUTES;
       return {
         forModel: {
+          forCounter: counter?.name ?? null,
           openNow: open,
           status: status.label,
           minutesUntilClose: open ? left : null,
           acceptingOrders: accepting,
-          nextOpening: open ? null : nextOpening(),
+          nextOpening: open ? null : nextOpening(new Date(), hour),
           prepMinutes: PREP_MINUTES,
+          counters: LOCATIONS.map((store) => ({
+            name: store.name,
+            hours: store.hours,
+            openNow: isOpenNow(new Date(), opensAt(store)),
+            makesSandwiches: servesCategory(store.id, "Sandwiches"),
+          })),
         },
         attach: {
           info: [
