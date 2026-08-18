@@ -518,7 +518,6 @@ export const ko: Table = {
   "droplist.already": "이미 등록되어 있습니다",
   "droplist.email": "이메일 주소",
   "droplist.terms": "이용약관",
-  "footer.dropList": "신제품 소식",
   "droplist.joinLink": "신제품 소식 받기",
   "footer.privacy": "개인정보 처리방침",
 

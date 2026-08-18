@@ -523,7 +523,6 @@ export const es: Table = {
   "droplist.already": "Ya estás en la lista",
   "droplist.email": "Correo electrónico",
   "droplist.terms": "Términos del servicio",
-  "footer.dropList": "Novedades",
   "droplist.joinLink": "Únete a la lista",
   "footer.privacy": "Política de privacidad",
 

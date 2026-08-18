@@ -519,7 +519,6 @@ export const my: Table = {
   "droplist.already": "စာရင်းတွင် ရှိပြီးသား",
   "droplist.email": "အီးမေးလ် လိပ်စာ",
   "droplist.terms": "ဝန်ဆောင်မှု စည်းကမ်းများ",
-  "footer.dropList": "အသစ်များ",
   "droplist.joinLink": "စာရင်းတွင် ပါဝင်ပါ",
   "footer.privacy": "ကိုယ်ရေးအချက်အလက် မူဝါဒ",
 

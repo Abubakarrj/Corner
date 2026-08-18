@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useT } from "./i18n";
 import { usePathname } from "next/navigation";
 import { hasTabBar } from "./(marketing)/TabBar";
-import { openDropList } from "./dropList";
 
 // Hidden on the app-shell routes — the full-screen ones that carry their own
 // bottom tab bar. This link is fixed to the same bottom-right corner, so on
@@ -68,20 +67,6 @@ export default function PrivacyFooterLink() {
         fontFamily: "var(--font-geist-sans), sans-serif",
       }}
     >
-      {/* The drop list, as a door that is always there.
-          The modal decides for itself when to ask, and every one of those
-          rules is about the person saying no — a first visit, a cooldown, a
-          route it stays off. None of them help the person saying yes, who
-          until now could only join in the seconds the modal chose to be open.
-          This costs one word in a corner and takes the timer out of it. */}
-      <button
-        type="button"
-        onClick={openDropList}
-        className="cb-press cursor-pointer underline-offset-2 hover:underline"
-      >
-        {t("footer.dropList")}
-      </button>
-      &nbsp;&nbsp;
       <Link href="/privacy-policy" className="hover:cursor-pointer">
         {t("footer.privacy")} &nbsp; © 2026
       </Link>
