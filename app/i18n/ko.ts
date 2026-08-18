@@ -216,7 +216,7 @@ export const ko: Table = {
   "checkout.milesAway": "{miles}마일 거리",
   "checkout.opensAt": "{time}에 엽니다",
   "checkout.notMadeHere": "이곳에서는 제공되지 않음",
-  "checkout.someNotEligible": "죄송합니다. 장바구니의 일부 상품은 간이 매장에서 픽업할 수 없습니다",
+  "checkout.someNotEligible": "장바구니의 일부 상품은 간이 매장에서 픽업할 수 없습니다",
   "checkout.allSet": "주문이 완료되었습니다",
   "checkout.done": "완료",
   "checkout.orderNumber": "주문 {id}",

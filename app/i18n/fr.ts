@@ -244,7 +244,7 @@ export const fr: Table = {
   "checkout.milesAway": "à {miles} mi",
   "checkout.opensAt": "Ouvre à {time}",
   "checkout.notMadeHere": "Pas disponible ici",
-  "checkout.someNotEligible": "Désolé, certains articles de votre panier ne peuvent pas être retirés dans nos points de vente",
+  "checkout.someNotEligible": "Certains articles de votre panier ne peuvent pas être retirés dans nos points de vente",
   "checkout.allSet": "Tout est bon",
   "checkout.done": "Terminé",
   "checkout.orderNumber": "Commande {id}",

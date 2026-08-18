@@ -218,7 +218,7 @@ export const es: Table = {
   "checkout.milesAway": "a {miles} mi",
   "checkout.opensAt": "Abre a las {time}",
   "checkout.notMadeHere": "No disponible aquí",
-  "checkout.someNotEligible": "Lo sentimos: algunos artículos de tu cesta no se pueden recoger en nuestros puntos de venta",
+  "checkout.someNotEligible": "Algunos artículos de tu cesta no se pueden recoger en nuestros puntos de venta",
   "checkout.allSet": "Todo listo",
   "checkout.done": "Listo",
   "checkout.orderNumber": "Pedido {id}",
