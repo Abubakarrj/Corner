@@ -40,7 +40,8 @@ export const es: Table = {
   "consent.label": "Consentimiento de cookies",
 
   "finder.pickup": "Recoger",
-  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outlet": "Punto de venta",
+  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "Bagels, schmear y bebidas. Sin sándwiches.",
   "finder.delivery": "Entrega",
   "finder.catering": "Catering",

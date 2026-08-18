@@ -43,7 +43,8 @@ export const ur: Table = {
   "consent.label": "کوکیز کی رضامندی",
 
   "finder.pickup": "پک اپ",
-  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outlet": "آؤٹ لیٹ",
+  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "بیگل، شمیئر اور مشروبات۔ سینڈوچ نہیں۔",
   "finder.delivery": "ڈیلیوری",
   "finder.catering": "کیٹرنگ",

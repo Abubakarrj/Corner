@@ -6,7 +6,7 @@ import { Button } from "../../ui/Button";
 import { useCapabilities } from "../../capabilities";
 import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
-import { PALETTE } from "../../shop/shopControls";
+import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { OPEN_HOUR, clockLabel, closeHour } from "../../shopFacts";
 import KitchenLoad from "./KitchenLoad";
 import type { StoreLocation } from "./locations";
@@ -153,20 +153,35 @@ export default function LocationSheet({
             match the same name on the card that opens the sheet, which has
             always been ink. Olive is for the marks that say Corner Bagel: the
             pins, the eyebrow on the careers page. */}
-        <h2
-          className="m-0 text-[26px] font-medium leading-[1.15] tracking-[-0.01em]"
-          style={{ color: ink }}
-        >
-          {location.name}
-        </h2>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h2
+            className="m-0 text-[26px] font-medium leading-[1.15] tracking-[-0.01em]"
+            style={{ color: ink }}
+          >
+            {location.name}
+          </h2>
+          {location.outlet ? (
+            <span className={OUTLET_CHIP}>{t("finder.outlet")}</span>
+          ) : null}
+        </div>
         {/* The sheet has room to say what the card only had space to label,
             and this is where somebody who tapped the name to find out more is
             asking the question. Above the address on purpose: it changes what
-            the address is good for. */}
+            the address is good for.
+
+            The full name lives here rather than on the card. "Corner Bagel
+            Outlet" beside "Western Ave" is two names for one place on a line
+            that also has to fit a street; here it is a heading's worth of
+            space and it can be said properly. */}
         {location.outlet ? (
-          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: muted }}>
-            {t("finder.outletNote")}
-          </p>
+          <>
+            <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
+              {t("finder.outletFull")}
+            </p>
+            <p className="m-0 mt-1 text-[15px] leading-[1.5]" style={{ color: muted }}>
+              {t("finder.outletNote")}
+            </p>
+          </>
         ) : null}
         <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
           {location.address}

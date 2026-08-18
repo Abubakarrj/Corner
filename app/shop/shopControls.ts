@@ -93,3 +93,19 @@ export const CONTROL_HEIGHT = "h-8";
 // it so their border, radius, and height are identical by construction.
 export const CONTROL_PILL =
   "h-8 rounded-full border border-line-soft text-[11px] text-ink";
+
+// The outlet label, as a label: a filled pill rather than more grey text.
+//
+// Grey text beside a name reads as part of the name, which is how a counter
+// called "Western Ave Outlet" ended up wearing the word "Outlet" twice. A
+// filled chip reads as something said *about* the place.
+//
+// sky-soft/sky-ink rather than a new pair. Those tokens already exist, they
+// are already this blue, and they already have a dark-mode half that clears
+// contrast against it — a fourth badge colour invented here would have to be
+// checked in both themes for no gain.
+//
+// Shared by the map card, the search list and the sheet so one fact cannot
+// grow three different-looking badges.
+export const OUTLET_CHIP =
+  "rounded-full bg-sky-soft px-2 py-[3px] text-[11px] font-medium leading-none text-sky-ink";

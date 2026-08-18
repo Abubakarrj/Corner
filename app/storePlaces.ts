@@ -181,6 +181,26 @@ function kitchensFor(slugs: readonly string[]): StoreLocation[] {
   const open = deliveringStores();
   if (slugs.length === 0) return open;
   const able = open.filter((store) => notServedAt(store.id, slugs).length === 0);
+
+  // ——— And of those, the outlets first ———
+  //
+  // Not "whichever is nearest". An order an outlet can make should leave from
+  // an outlet, so that the store's line stays free for the orders only it can
+  // make. Nearest is the tie-break between outlets, not the rule.
+  //
+  // The consequence is deliberate and worth knowing: a bag of bagels going to
+  // an address on the store's own block will travel from the outlet a mile
+  // away. That is a slightly longer drive bought on purpose, because the
+  // alternative is a sandwich order queued behind a bagel order at the only
+  // counter that can make sandwiches.
+  //
+  // Reads `outlet` — the label — which is the one place in the app that does.
+  // Everywhere else the label describes and the flags decide, and this is the
+  // exception because the rule the shop stated is about outlets as such: any
+  // outlet added later inherits it by being one.
+  const outlets = able.filter((store) => store.outlet);
+  if (outlets.length > 0) return outlets;
+
   if (able.length > 0) return able;
   // Unreachable while any counter serves the full menu, and not something to
   // fail silently on if that ever stops being true: falling back to every

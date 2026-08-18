@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PALETTE } from "../../shop/shopControls";
+import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { mapsConfig } from "../../googleMapsPublic";
 import { useResolvedTheme } from "../../theme";
 import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
@@ -83,6 +83,7 @@ export type MapFocus = {
 // object separately are three controls that end up describing it differently.
 const CHROME =
   "border border-map-chrome-edge bg-map-chrome shadow-[var(--cb-map-chrome-shadow)]";
+
 
 export default function StoreMap({
   locations,
@@ -534,28 +535,34 @@ export default function StoreMap({
                     onClick={() => order(location)}
                     className="min-w-0 flex-1 cursor-pointer text-left"
                   >
-                    {/* The street, then what this counter is.
+                    {/* The street, and a label saying what this counter is.
                         A row on this rail is a choice between counters, so it
                         has to carry the difference: somebody picking the
                         nearest pin should not find out at checkout that it
-                        makes no sandwiches. Stacked rather than sat beside the
-                        name — "Corner Bagel Outlet" next to "Western Ave" on a
-                        390px card truncates the street to make room for the
-                        label, which loses the half that says where it is. */}
-                    <span
-                      className="block truncate text-[17px] font-medium leading-tight"
-                      style={{ color: ink }}
-                    >
-                      {location.name}
-                    </span>
-                    {location.outlet ? (
+                        makes no sandwiches.
+
+                        A chip rather than a second run of grey text. Grey text
+                        beside a name reads as part of the name — which is how
+                        "Western Ave Outlet" next to the word "Outlet" happened
+                        — and a filled pill reads as a label about the thing,
+                        which is what it is. One word, so it fits on the line
+                        without pushing the street into an ellipsis; the full
+                        name is in the sheet, where there is room.
+
+                        sky-soft/sky-ink rather than a new pair: the tokens
+                        exist, they are already the blue this wants, and they
+                        already have a dark-mode half that clears contrast. */}
+                    <span className="flex items-center gap-2">
                       <span
-                        className="mt-0.5 block truncate text-[13px] leading-tight"
-                        style={{ color: muted }}
+                        className="min-w-0 truncate text-[17px] font-medium leading-tight"
+                        style={{ color: ink }}
                       >
-                        {t("finder.outlet")}
+                        {location.name}
                       </span>
-                    ) : null}
+                      {location.outlet ? (
+                        <span className={`shrink-0 ${OUTLET_CHIP}`}>{t("finder.outlet")}</span>
+                      ) : null}
+                    </span>
                     <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
                       {location.address}
                     </span>

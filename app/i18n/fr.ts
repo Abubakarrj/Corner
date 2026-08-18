@@ -41,7 +41,8 @@ export const fr: Table = {
 
   // ——— The finder ———
   "finder.pickup": "À emporter",
-  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outlet": "Point de vente",
+  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "Bagels, schmear et boissons. Pas de sandwichs.",
   "finder.delivery": "Livraison",
   "finder.catering": "Traiteur",

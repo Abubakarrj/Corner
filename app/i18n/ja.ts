@@ -40,7 +40,8 @@ export const ja: Table = {
   "consent.label": "クッキーの同意",
 
   "finder.pickup": "受け取り",
-  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outlet": "アウトレット",
+  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "ベーグル、シュメア、ドリンク。サンドイッチはありません。",
   "finder.delivery": "配達",
   "finder.catering": "ケータリング",

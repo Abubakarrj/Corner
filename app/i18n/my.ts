@@ -40,7 +40,8 @@ export const my: Table = {
   "consent.label": "ကွတ်ကီး သဘောတူညီချက်",
 
   "finder.pickup": "လာယူရန်",
-  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outlet": "ဆိုင်ခွဲ",
+  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "ဘေဂယ်၊ ရှမီးယားနှင့် အဖျော်ယမကာများ။ ဆန်းဒဝစ်ချ် မရှိပါ။",
   "finder.delivery": "ပို့ဆောင်ရန်",
   "finder.catering": "ကေတာရင်",

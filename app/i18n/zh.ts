@@ -42,7 +42,8 @@ export const zh: Table = {
   "consent.label": "Cookie 同意",
 
   "finder.pickup": "自取",
-  "finder.outlet": "Corner Bagel Outlet",
+  "finder.outlet": "外卖点",
+  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "贝果、抹酱与饮品。不供应三明治。",
   "finder.delivery": "配送",
   "finder.catering": "餐饮服务",

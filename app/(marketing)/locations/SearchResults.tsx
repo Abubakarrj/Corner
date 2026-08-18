@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useServerText, useT } from "../../i18n";
-import { PALETTE } from "../../shop/shopControls";
+import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN, nearestLocations, type StoreLocation } from "./locations";
 import { searchBias } from "../../geolocate";
@@ -314,19 +314,19 @@ export default function SearchResults({
                     style={{ borderColor: controlBorder }}
                   >
                     <span className="min-w-0 flex-1">
-                      {/* Same two lines the map card carries, and this list is
-                          the other half of the same choice: a row picked here
-                          sets the fulfillment outright. Somebody choosing
-                          between two counters a few blocks apart has to be
-                          able to see which one is the full store. */}
-                      <span className="block truncate text-[15px]" style={{ color: ink }}>
-                        {store.name}
-                      </span>
-                      {store.outlet ? (
-                        <span className="block truncate text-[13px]" style={{ color: muted }}>
-                          {t("finder.outlet")}
+                      {/* Same label the map card carries, and this list is the
+                          other half of the same choice: a row picked here sets
+                          the fulfillment outright. Somebody choosing between
+                          two counters a few blocks apart has to be able to see
+                          which one is the full store. */}
+                      <span className="flex items-center gap-2">
+                        <span className="min-w-0 truncate text-[15px]" style={{ color: ink }}>
+                          {store.name}
                         </span>
-                      ) : null}
+                        {store.outlet ? (
+                          <span className={`shrink-0 ${OUTLET_CHIP}`}>{t("finder.outlet")}</span>
+                        ) : null}
+                      </span>
                       <span className="block truncate text-[13px]" style={{ color: muted }}>
                         {store.address}, {store.city}
                       </span>
