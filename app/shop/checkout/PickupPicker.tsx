@@ -86,25 +86,20 @@ export default function PickupPicker({
 }) {
   const t = useT();
   const [at, setAt] = useState<[number, number] | null>(null);
-  // Starts true rather than being set true by the effect. Setting state
-  // synchronously inside an effect body is a cascading render, and the reason
-  // it is avoidable here is that this component only exists while the sheet
-  // is open: the caller mounts it on open and unmounts it on close, so "just
-  // opened" and "just mounted" are the same moment and the initial value can
-  // simply say so.
+  // No "finding you" state. The sheet used to announce that it was looking
+  // and then announce that it had finished, which is two sentences for
+  // something that resolves in about a second and shows its own result: the
+  // distances appear on the rows, or they do not. Asking is the only part
+  // that needs code.
   //
-  // Which also gets the behaviour right for free. Somebody who declined,
-  // walked a block and opened it again is asked again, because they get a
-  // fresh mount. The browser remembers a refusal and will not re-prompt, so
-  // that costs nothing when the answer is still no.
-  const [locating, setLocating] = useState(true);
-
+  // Mounted only while open, so this runs once per opening. Somebody who
+  // declined, walked a block and opened it again is asked again — the browser
+  // remembers a refusal and will not re-prompt, so that costs nothing when
+  // the answer is still no.
   useEffect(() => {
     let live = true;
     void locateMe().then((result) => {
-      if (!live) return;
-      setLocating(false);
-      if (result.ok) setAt(result.fix.point);
+      if (live && result.ok) setAt(result.fix.point);
     });
     return () => {
       live = false;
@@ -112,6 +107,8 @@ export default function PickupPicker({
   }, []);
 
   const now = new Date();
+  // Whether any counter falls short of the basket, which decides both the
+  // line under the heading and the marker on the row.
   const rows = sortRows(
     pickupStores().map((store) => ({
       store,
@@ -123,6 +120,8 @@ export default function PickupPicker({
         .map((product) => product!.name),
     })),
   );
+
+  const anyMissing = rows.some((row) => row.missing.length > 0);
 
   function choose(store: StoreLocation) {
     setFulfillment({
@@ -143,13 +142,17 @@ export default function PickupPicker({
         >
           {t("checkout.choosePickup")}
         </h2>
-        <p className="m-0 mt-1.5 text-[14px] leading-[1.5]" style={{ color: muted }}>
-          {locating && at === null
-            ? t("checkout.findingYou")
-            : at === null
-              ? t("checkout.pickupNoDistance")
-              : t("checkout.pickupNearYou")}
-        </p>
+        {/* One line, and only when it is telling somebody something.
+            It said "Nearest first", which the distances on the rows already
+            say, and "Finding you…", which resolves in a second and leaves a
+            sentence behind. A subtitle that describes the list is furniture.
+            This one is the only fact here somebody might not know: that part
+            of their basket cannot be collected everywhere. */}
+        {anyMissing ? (
+          <p className="m-0 mt-1.5 text-[14px] leading-[1.5]" style={{ color: muted }}>
+            {t("checkout.someNotEligible")}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4 flex flex-col gap-2">
@@ -198,9 +201,14 @@ export default function PickupPicker({
               </span>
             )}
 
+            {/* Which counter, not which items. The line under the heading
+                has already said that something in the basket is affected;
+                spelling the names out again per row turned two short rows
+                into a paragraph, and the basket is one tap away for anybody
+                who wants to know which. */}
             {missing.length > 0 ? (
               <span className="mt-1.5 block text-[12px] text-brand-red">
-                {t("checkout.notMadeHere", { items: missing.join(", ") })}
+                {t("checkout.notMadeHere")}
               </span>
             ) : null}
           </button>
