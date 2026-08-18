@@ -219,7 +219,7 @@ export const ur: Table = {
   "checkout.milesAway": "{miles} میل دور",
   "checkout.opensAt": "{time} پر کھلتا ہے",
   "checkout.notMadeHere": "یہاں دستیاب نہیں",
-  "checkout.someNotEligible": "آپ کی ٹوکری کی کچھ اشیاء ہمارے آؤٹ لیٹس سے پک اپ کے لیے دستیاب نہیں",
+  "checkout.someNotEligible": "آپ کی ٹوکری کی کچھ اشیاء پک اپ کے لیے دستیاب نہیں",
   "checkout.allSet": "سب تیار ہے",
   "checkout.done": "ہو گیا",
   "checkout.orderNumber": "آرڈر {id}",

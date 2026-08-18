@@ -216,7 +216,7 @@ export const my: Table = {
   "checkout.milesAway": "{miles} မိုင် အကွာ",
   "checkout.opensAt": "{time} တွင် ဖွင့်သည်",
   "checkout.notMadeHere": "ဤဆိုင်တွင် မရရှိနိုင်ပါ",
-  "checkout.someNotEligible": "သင့်ခြင်းတောင်းရှိ အချို့ပစ္စည်းများကို ကျွန်ုပ်တို့၏ ဆိုင်ခွဲများတွင် လာယူ၍ မရပါ",
+  "checkout.someNotEligible": "သင့်ခြင်းတောင်းရှိ အချို့ပစ္စည်းများကို လာယူ၍ မရပါ",
   "checkout.allSet": "အားလုံး အဆင်သင့်ပါပြီ",
   "checkout.done": "ပြီးပါပြီ",
   "checkout.orderNumber": "အော်ဒါ {id}",
