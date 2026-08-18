@@ -49,7 +49,6 @@ export const en = {
   // ——— The finder ———
   "finder.pickup": "Pickup",
   "finder.outlet": "Outlet",
-  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "Bagels, Schmear, Drinks. No Sandwiches",
   "finder.delivery": "Delivery",
   "finder.catering": "Catering",

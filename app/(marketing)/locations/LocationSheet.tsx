@@ -164,30 +164,26 @@ export default function LocationSheet({
             <span className={OUTLET_CHIP}>{t("finder.outlet")}</span>
           ) : null}
         </div>
-        {/* The sheet has room to say what the card only had space to label,
-            and this is where somebody who tapped the name to find out more is
-            asking the question. Above the address on purpose: it changes what
-            the address is good for.
-
-            The full name lives here rather than on the card. "Corner Bagel
-            Outlet" beside "Western Ave" is two names for one place on a line
-            that also has to fit a street; here it is a heading's worth of
-            space and it can be said properly. */}
+        {/* What this counter makes, and nothing else about what it is called.
+            The chip beside the heading has already said it is an outlet, and
+            a line under it repeating that in longer words is the same fact
+            twice. This line is the part the chip cannot carry. */}
         {location.outlet ? (
-          <>
-            <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
-              {t("finder.outletFull")}
-            </p>
-            <p className="m-0 mt-1 text-[15px] leading-[1.5]" style={{ color: muted }}>
-              {t("finder.outletNote")}
-            </p>
-          </>
+          <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
+            {t("finder.outletNote")}
+          </p>
         ) : null}
-        <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
-          {location.address}
-          <br />
-          {location.city}
-        </p>
+        {/* ——— No address here ———
+
+            It was printed in full, and then the row of chips below offers
+            Directions and Copy address, which are the two things anybody
+            actually does with it. Printing it as well was a third copy that
+            could only be read, on the one screen where reading it is the
+            least useful thing you can do with it. The map card behind this
+            sheet still shows it for anyone who wants to see it.
+
+            `full` is still built below: Copy address and the directions link
+            both need the string, they just do not need it on screen. */}
         {/* This counter's hours, not the shop's. They were the same number
             for both until the outlet opened at 11, and a sheet about one
             address printing the other one's opening time is the kind of wrong

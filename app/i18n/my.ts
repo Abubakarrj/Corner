@@ -41,7 +41,6 @@ export const my: Table = {
 
   "finder.pickup": "လာယူရန်",
   "finder.outlet": "ဆိုင်ခွဲ",
-  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "ဘေဂယ်၊ ရှမီးယား၊ အဖျော်ယမကာ။ ဆန်းဒဝစ်ချ် မရှိပါ",
   "finder.delivery": "ပို့ဆောင်ရန်",
   "finder.catering": "ကေတာရင်",

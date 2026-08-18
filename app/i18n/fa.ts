@@ -50,7 +50,6 @@ export const fa: Table = {
   // ——— The finder ———
   "finder.pickup": "تحویل حضوری",
   "finder.outlet": "باجه",
-  "finder.outletFull": "Corner Bagel Outlet",
   "finder.outletNote": "بیگل، اشمیر، نوشیدنی. بدون ساندویچ",
   "finder.delivery": "ارسال",
   "finder.catering": "پذیرایی",
