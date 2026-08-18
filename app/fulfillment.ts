@@ -111,9 +111,31 @@ function getSnapshot() {
 function getServerSnapshot(): Fulfillment | null {
   return null;
 }
+// ——— A second tab is a second copy of this module ———
+//
+// The cart has listened to `storage` since the day two tabs could disagree
+// about it. This did not, and the gap stopped being harmless when the
+// basket's contents started depending on the counter: choose the outlet in
+// one tab and the sandwich is pruned everywhere, because the cart *does*
+// sync — leaving the other tab showing a shorter basket under a bar that
+// still says Wilshire Blvd, with nothing on screen accounting for either.
+//
+// The event fires only in the *other* documents on the origin, which is
+// exactly the ones that need to hear it: the tab that made the change already
+// knows.
+function onStorage(event: StorageEvent) {
+  if (event.key !== null && event.key !== STORAGE_KEY) return;
+  current = read();
+  listeners.forEach((listener) => listener());
+}
+
 function subscribe(callback: () => void) {
+  if (listeners.size === 0) window.addEventListener("storage", onStorage);
   listeners.add(callback);
-  return () => listeners.delete(callback);
+  return () => {
+    listeners.delete(callback);
+    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
+  };
 }
 
 /** The same subscription, for a module rather than a component.

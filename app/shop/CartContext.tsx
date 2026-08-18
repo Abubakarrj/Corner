@@ -207,13 +207,35 @@ export function clearDroppedForCounter(): void {
   notifyDropped();
 }
 
+/** Whether the counter this basket is going to can make this. */
+function servesAtCurrentCounter(product: Product): boolean {
+  const fulfillment = peekFulfillment();
+  const at =
+    fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  return servesProduct(at, product);
+}
+
+/** Say that an add was refused, through the same channel a counter change
+ *  uses. One message, whichever way the item failed to make it in. */
+function noteRefused(name: string) {
+  dropped = [...new Set([...dropped, name])];
+  notifyDropped();
+}
+
 function pruneForCounter() {
   const fulfillment = peekFulfillment();
   // Delivery narrows nothing: it leaves from whichever kitchen can make the
   // order, and that is settled at order time from the basket itself.
   const at =
     fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
-  if (!at || lines.length === 0) return;
+  // A change that takes nothing out clears the last one's message. Without
+  // this the notice outlives the change it describes: switch to the outlet,
+  // lose the sandwich, switch back to the store, and "The Veggie Stack
+  // removed" is still sitting over a basket at a counter that makes it.
+  if (!at || lines.length === 0) {
+    clearDroppedForCounter();
+    return;
+  }
 
   const keep: CartLine[] = [];
   const lost: string[] = [];
@@ -228,7 +250,10 @@ function pruneForCounter() {
     }
     lost.push(product.name);
   }
-  if (lost.length === 0) return;
+  if (lost.length === 0) {
+    clearDroppedForCounter();
+    return;
+  }
 
   commit(keep);
   dropped = [...new Set(lost)];
@@ -274,6 +299,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // that hasn't heard. See Offsite in products.ts for what putting one of
       // these in a food order did.
       if (product.offsite) return;
+      // Nor made at the counter this basket is going to. The catalog, the
+      // search, the cross-sell rail and Riley's list all hide these already —
+      // and this is the guard that holds, for the same reason the offsite one
+      // above it does: it covers the paths that do not go through a list.
+      //
+      // A product page reached by a direct link is the one somebody actually
+      // hits; reordering a past order and repeating a usual are the two that
+      // would have quietly put a sandwich in an outlet basket, because a
+      // reorder does not consult the catalog at all.
+      //
+      // Refused rather than added-and-pruned. Adding then removing on the
+      // next fulfillment change would leave a line that checkout blocks and
+      // nothing explains, which is what the prune exists to avoid.
+      if (!servesAtCurrentCounter(product)) {
+        noteRefused(product.name);
+        return;
+      }
       // Here rather than on each button, because there are five of them now —
       // the tile, the product page, Riley's cards, the in-chat picker, the
       // basket's own stepper — and a confirmation that only some of them give

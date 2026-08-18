@@ -12,6 +12,8 @@ import {
   unitPriceCents,
 } from "../../products";
 import { useSoldOut } from "../../soldOutStore";
+import { useFulfillment } from "../../../fulfillment";
+import { servesProduct } from "../../storeMenu";
 import OptionPicker from "../../OptionPicker";
 import useOptionPrompt from "../../useOptionPrompt";
 import { requestOpenBasket } from "../../openBasket";
@@ -45,6 +47,9 @@ export default function AddToCartForm({
   // still sitting there while somebody picks a different flavour is a tick
   // about an order they have stopped thinking about.
   const [added, setAdded] = useState(false);
+  const fulfillment = useFulfillment();
+  const at = fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  const madeHere = product ? servesProduct(at, product) : true;
   // Above the early return: a hook cannot be called conditionally, and this
   // component returns null for an unknown slug.
   const isGone = useSoldOut();
@@ -115,7 +120,7 @@ export default function AddToCartForm({
 
         <button
           type="button"
-          disabled={!ready}
+          disabled={!ready || !madeHere}
           onClick={() => {
             addItem(product.slug, quantity, selected);
             setQuantity(1);
@@ -145,6 +150,26 @@ export default function AddToCartForm({
           <span>{formatPrice(unit * quantity)}</span>
         </button>
       </div>
+
+      {/* ——— Why the button is grey ———
+
+          The catalog does not list this item at this counter, so the only way
+          to be looking at it is a direct link, a bookmark, or a counter
+          changed in another tab. addItem refuses it either way; without this
+          line the refusal is a button that does nothing.
+
+          Named as the counter's limit rather than the item's fault: the
+          sandwich is perfectly real, and it is one counter away.
+
+          "Not at this counter", not the checkout's "items in your cart" line
+          — nothing is in the cart yet, and that is the whole point of the
+          button being grey. */}
+      {madeHere ? null : (
+        <p className="m-0 mt-3 text-[13px] leading-[1.5] text-brand-red">
+          {t("cart.notAtCounter")}
+        </p>
+      )}
+
     </div>
   );
 }
