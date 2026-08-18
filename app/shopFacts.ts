@@ -13,6 +13,30 @@
 // scrub but does not match the shop's own signage, which is what this is.
 export const SHOP_HOURS = "Everyday • 7 AM - 4 PM";
 
+/** The same line for a counter that opens at a different hour.
+ *
+ *  Built rather than typed, so a counter's hours line and the clock that
+ *  decides whether it will take an order cannot say different things — which
+ *  is the whole reason the times were moved out of prose in the first place.
+ *  See the note above clockLabel. */
+export function hoursLine(opensAt: number = OPEN_HOUR): string {
+  if (opensAt === OPEN_HOUR) return SHOP_HOURS;
+  return `Everyday • ${clockLabel(opensAt)} - ${clockLabel(CLOSE_HOUR)}`;
+}
+
+// The hour the counters open by default, and the hour they all close.
+//
+// ——— Why opening is a parameter below and closing is not ———
+//
+// The counters do not open together: Wilshire Blvd from 7, the Western Ave
+// outlet from 11. They do close together, at 4, and until that stops being
+// true a second parameter would be a knob nothing turns.
+//
+// So OPEN_HOUR is the default rather than the rule, and every function that
+// answers a question about the clock takes the hour it should answer for.
+// Called without one they answer for a counter that opens at 7, which is what
+// every existing caller means: the shop, generally, on a screen that is not
+// about one address.
 export const OPEN_HOUR = 7;
 export const CLOSE_HOUR = 16;
 
@@ -214,30 +238,36 @@ export function closeLabel(): string {
   return clockLabel(closeHour() % 24);
 }
 
-export function isOpenNow(now: Date = new Date()): boolean {
+export function isOpenNow(now: Date = new Date(), opensAt: number = OPEN_HOUR): boolean {
   if (alwaysOpen()) return true;
   const { day, hour } = shopClock(now);
-  return OPEN_DAYS.includes(day) && hour >= OPEN_HOUR && hour < closeHour();
+  return OPEN_DAYS.includes(day) && hour >= opensAt && hour < closeHour();
 }
 
 // Minutes left before the counter closes, or 0 if it's already shut. What the
 // order flow actually needs: not "are you open" but "is there time to make
 // this". Ordering at 1:58pm is technically inside opening hours and still no
 // use to anybody.
-export function minutesUntilClose(now: Date = new Date()): number {
-  if (!isOpenNow(now)) return 0;
+export function minutesUntilClose(now: Date = new Date(), opensAt: number = OPEN_HOUR): number {
+  if (!isOpenNow(now, opensAt)) return 0;
   const { hour, minute } = shopClock(now);
   return (closeHour() - hour) * 60 - minute;
 }
 
 // When the window opens next, phrased for a person: "tomorrow at 7am", "at
 // 7am", "Wednesday at 7am". Returns null while it's open.
-export function nextOpening(now: Date = new Date()): string | null {
-  if (isOpenNow(now)) return null;
+export function nextOpening(
+  now: Date = new Date(),
+  opensAt: number = OPEN_HOUR,
+): string | null {
+  if (isOpenNow(now, opensAt)) return null;
   const { day, hour } = shopClock(now);
+  // The label follows the hour being asked about, so "opens at 11 AM" is what
+  // somebody waiting outside the outlet is told rather than the shop's usual 7.
+  const label = clockLabel(opensAt);
 
   // Later today, if today is an open day and it hasn't started yet.
-  if (OPEN_DAYS.includes(day) && hour < OPEN_HOUR) return `at ${OPEN_LABEL}`;
+  if (OPEN_DAYS.includes(day) && hour < opensAt) return `at ${label}`;
 
   // Otherwise walk forward to the next open day. With every day open this
   // always lands on tomorrow, and the loop stays because the shop closing on
@@ -245,9 +275,7 @@ export function nextOpening(now: Date = new Date()): string | null {
   for (let ahead = 1; ahead <= 7; ahead += 1) {
     const next = (day + ahead) % 7;
     if (!OPEN_DAYS.includes(next)) continue;
-    return ahead === 1
-      ? `tomorrow at ${OPEN_LABEL}`
-      : `${DAY_LONG[next]} at ${OPEN_LABEL}`;
+    return ahead === 1 ? `tomorrow at ${label}` : `${DAY_LONG[next]} at ${label}`;
   }
   return null;
 }
@@ -262,11 +290,14 @@ export type NextOpening = {
   hour: number;
 };
 
-export function nextOpeningAt(now: Date = new Date()): NextOpening | null {
-  if (isOpenNow(now)) return null;
+export function nextOpeningAt(
+  now: Date = new Date(),
+  opensAt: number = OPEN_HOUR,
+): NextOpening | null {
+  if (isOpenNow(now, opensAt)) return null;
   const { day, hour } = shopClock(now);
-  if (OPEN_DAYS.includes(day) && hour < OPEN_HOUR) {
-    return { when: "today", day, hour: OPEN_HOUR };
+  if (OPEN_DAYS.includes(day) && hour < opensAt) {
+    return { when: "today", day, hour: opensAt };
   }
   for (let ahead = 1; ahead <= 7; ahead += 1) {
     const next = (day + ahead) % 7;
@@ -274,7 +305,7 @@ export function nextOpeningAt(now: Date = new Date()): NextOpening | null {
     return {
       when: ahead === 1 ? "tomorrow" : "day",
       day: next,
-      hour: OPEN_HOUR,
+      hour: opensAt,
     };
   }
   return null;
@@ -286,11 +317,14 @@ export function nextOpeningAt(now: Date = new Date()): NextOpening | null {
 // English, and that's deliberate: this one goes into Riley's briefing and the
 // order endpoint's log, neither of which has a visitor attached. The screens
 // build the same sentence from nextOpeningAt() and the string tables.
-export function openingStatus(now: Date = new Date()): {
+export function openingStatus(
+  now: Date = new Date(),
+  opensAt: number = OPEN_HOUR,
+): {
   open: boolean;
   label: string;
 } {
-  if (isOpenNow(now)) return { open: true, label: `Open until ${CLOSE_LABEL}` };
-  const next = nextOpening(now);
+  if (isOpenNow(now, opensAt)) return { open: true, label: `Open until ${CLOSE_LABEL}` };
+  const next = nextOpening(now, opensAt);
   return { open: false, label: next ? `Closed · opens ${next}` : "Closed" };
 }

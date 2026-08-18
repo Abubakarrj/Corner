@@ -7,9 +7,9 @@ import { useCapabilities } from "../../capabilities";
 import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
-import { OPEN_HOUR, clockLabel, closeHour } from "../../shopFacts";
+import { clockLabel, closeHour } from "../../shopFacts";
 import KitchenLoad from "./KitchenLoad";
-import type { StoreLocation } from "./locations";
+import { opensAt, type StoreLocation } from "./locations";
 
 const { ink, muted, controlBorder } = PALETTE;
 
@@ -188,9 +188,13 @@ export default function LocationSheet({
           <br />
           {location.city}
         </p>
+        {/* This counter's hours, not the shop's. They were the same number
+            for both until the outlet opened at 11, and a sheet about one
+            address printing the other one's opening time is the kind of wrong
+            that sends somebody to a shut door. */}
         <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: muted }}>
           {t("finder.hoursEveryDay", {
-            open: clockLabel(OPEN_HOUR, tag),
+            open: clockLabel(opensAt(location), tag),
             close: clockLabel(closeHour() % 24, tag),
           })}
         </p>

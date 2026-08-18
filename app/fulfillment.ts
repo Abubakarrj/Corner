@@ -116,6 +116,16 @@ function subscribe(callback: () => void) {
   return () => listeners.delete(callback);
 }
 
+/** The same subscription, for a module rather than a component.
+ *
+ *  useOpening needs it: the counters open at different hours, so which one is
+ *  chosen decides what "are we open" means, and that store is module state
+ *  rather than a hook argument. Exported one way — this module does not know
+ *  about the clock, and should not. */
+export function subscribeFulfillment(callback: () => void): () => void {
+  return subscribe(callback);
+}
+
 export function setFulfillment(next: Fulfillment) {
   current = next;
   try {

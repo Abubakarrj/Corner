@@ -1,4 +1,4 @@
-import { SHOP_HOURS } from "../../shopFacts";
+import { OPEN_HOUR, SHOP_HOURS, hoursLine } from "../../shopFacts";
 
 // The two kinds of place an order can come out of, which is what the Pickup /
 // Catering split in the finder is: a shop is a counter you walk up to, a
@@ -69,6 +69,14 @@ export type StoreLocation = {
   // caller that filters by hand is a caller that will forget to.
   pickup?: boolean;
   delivery?: boolean;
+  // The hour this counter opens, when it is not the shop's usual one. They all
+  // close together, so there is no closing field: see the note on OPEN_HOUR.
+  //
+  // Undefined is 7, so a counter keeping the usual hours says nothing. Read
+  // through opensAt() below rather than directly — the point of that function
+  // is that "when does this open" has one answer whether or not the record
+  // bothered to say.
+  opensAt?: number;
   // A counter rather than a full store: somewhere to collect from that is not
   // the kitchen and does not cater.
   //
@@ -182,7 +190,12 @@ export const WESTERN: StoreLocation = {
   outlet: true,
   address: "355 S Western Ave #101",
   city: "Los Angeles, CA 90020",
-  hours: SHOP_HOURS,
+  // Opens at 11, four hours after the store. The line below is built from
+  // that number rather than typed beside it, so the hours somebody reads and
+  // the clock that decides whether the counter will take their order cannot
+  // disagree.
+  opensAt: 11,
+  hours: hoursLine(11),
   // Western between 3rd and 4th.
   position: [34.0685, -118.3092],
   // An outlet is smaller, not narrower in what it will do for you: it
@@ -236,6 +249,17 @@ export const WESTERN: StoreLocation = {
 // where a delivery leaves from when nothing better is known, so the store
 // comes first and the outlet second.
 export const LOCATIONS: StoreLocation[] = [WILSHIRE, WESTERN];
+
+/** When a counter opens, as an hour of the day.
+ *
+ *  One question, one answer, whether or not the record says. Every caller
+ *  that has a counter in hand should go through this rather than reading the
+ *  field, because a caller reading the field has to remember the default and
+ *  a caller that forgets gets 7 for a counter that opens at 11 — which is an
+ *  app telling somebody a shut door is open. */
+export function opensAt(store: StoreLocation | null | undefined): number {
+  return store?.opensAt ?? OPEN_HOUR;
+}
 
 /** A shop's address split the way a courier API wants it.
  *

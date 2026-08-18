@@ -5,9 +5,12 @@ import {
   isOpenNow,
   minutesUntilClose,
   nextOpeningAt,
+  OPEN_HOUR,
   PREP_MINUTES,
   type NextOpening,
 } from "./shopFacts";
+import { LOCATIONS } from "./(marketing)/locations/locations";
+import { peekFulfillment, subscribeFulfillment, type Fulfillment } from "./fulfillment";
 
 // Whether the counter is open, as something a component can render.
 //
@@ -39,12 +42,28 @@ export type Opening = {
 // ⚠️ See openPreview() in shopFacts.ts and the warning above it.
 let previewing = false;
 
+// ——— Which counter this is about ———
+//
+// The counters do not open together: Wilshire Blvd from 7, the Western Ave
+// outlet from 11. So "are we open" has no single answer any more, and the
+// screens asking it — the checkout, the fulfillment gate — are always asking
+// about the one the visitor chose.
+//
+// Module state rather than a hook argument, for the same reason `previewing`
+// is: getSnapshot has to return an identity-stable value, and a per-caller
+// argument would mean a snapshot per caller. The fulfillment is a module
+// store too, so this is one store subscribing to another.
+//
+// Defaults to the shop's usual hour, which is the honest answer before a
+// counter has been chosen and on every screen that is not about one.
+let opensAt = OPEN_HOUR;
+
 function compute(): Opening {
-  const minutesLeft = minutesUntilClose();
-  const open = previewing || isOpenNow();
+  const minutesLeft = minutesUntilClose(new Date(), opensAt);
+  const open = previewing || isOpenNow(new Date(), opensAt);
   return {
     open,
-    next: nextOpeningAt(),
+    next: nextOpeningAt(new Date(), opensAt),
     minutesLeft,
     // The prep-time check is skipped while previewing: five minutes before
     // close it would otherwise refuse the order the preview exists to place.
@@ -69,6 +88,41 @@ export function setOpenPreview(on: boolean): void {
   for (const listener of listeners) listener();
 }
 
+
+/** Point the clock at the counter the visitor has chosen.
+ *
+ *  Called on every fulfillment change, including the first read at load.
+ *  Delivery has no counter and no hours of its own — it leaves from a kitchen
+ *  the server picks at order time — so it falls back to the usual hour, which
+ *  is also what an unrecognised id gets. Both are the cautious direction here:
+ *  7 is the earliest any counter opens, so the browser never claims a counter
+ *  is open earlier than it is, and the endpoint refuses anything the browser
+ *  lets through regardless. */
+export function setOpeningCounter(locationId: string | null): void {
+  const store = locationId ? LOCATIONS.find((l) => l.id === locationId) : null;
+  const next = store?.opensAt ?? OPEN_HOUR;
+  if (next === opensAt) return;
+  opensAt = next;
+  snapshot = compute();
+  for (const listener of listeners) listener();
+}
+
+// Wired once, at module load, on the client only. The fulfillment store has
+// already read localStorage by the time this runs, so the first call sets the
+// clock to the counter the visitor left off on rather than to the default.
+if (typeof window !== "undefined") {
+  const follow = () => setOpeningCounter(counterOf(peekFulfillment()));
+  follow();
+  subscribeFulfillment(follow);
+}
+
+// Delivery has no counter of its own. It leaves from a kitchen the server
+// picks at order time, from the basket and the address, and neither of those
+// is known here.
+function counterOf(fulfillment: Fulfillment | null): string | null {
+  if (!fulfillment || fulfillment.mode === "delivery") return null;
+  return fulfillment.locationId;
+}
 
 function refresh() {
   const next = compute();

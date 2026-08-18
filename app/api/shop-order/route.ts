@@ -27,9 +27,10 @@ import {
   structuredAddress,
 } from "../../uberDirect";
 import { deliveryOrigin, deliveryStoreFor } from "../../storePlaces";
-import { notServedAt } from "../../shop/storeMenu";
+import { notServedAt, storeById } from "../../shop/storeMenu";
 import {
   addressParts,
+  opensAt,
   type StoreLocation,
 } from "../../(marketing)/locations/locations";
 import { joinQueue } from "../../kitchenQueue";
@@ -171,14 +172,48 @@ export async function POST(request: Request) {
   // Null for a guest, which is fine and common — see the note on Order.email.
   const account = await readSession((await cookies()).get(SESSION_COOKIE)?.value);
 
+  // ——— Which counter this is going to ———
+  //
+  // Read before the loop because every line is checked against it. Only
+  // pickup and catering name a counter: a delivery leaves from the kitchen,
+  // which makes everything, so its absence here is the correct answer rather
+  // than a missing field.
+  //
+  // This is the half of the counter's menu that a customer cannot skip. The
+  // catalog hiding a sandwich at the outlet is a courtesy; a request can be
+  // typed by hand, replayed from a basket filled at the other counter, or
+  // built by a client that has not caught up with the menu, and the kitchen
+  // has to be able to make whatever this returns 200 for.
+  const orderAt = (() => {
+    const raw = (payload as { fulfillment?: { mode?: unknown; locationId?: unknown } })
+      ?.fulfillment;
+    if (raw?.mode !== "pickup" && raw?.mode !== "catering") return null;
+    return typeof raw.locationId === "string" ? raw.locationId : null;
+  })();
+
   // Closed means closed. The checkout disables its own button, but that is a
   // courtesy to the person using it — this is the rule, and it's here because
   // a request doesn't have to come from the form.
   //
   // PREP_MINUTES of headroom, because being open at 1:58pm is not the same as
   // being able to make something before 2.
-  if (!isOpenNow() || minutesUntilClose() < PREP_MINUTES) {
-    const next = nextOpening();
+  //
+  // Against the chosen counter's own hours, not the shop's. Wilshire Blvd
+  // opens at 7 and the Western Ave outlet at 11, so a pickup from Western at
+  // 8am is a request for a shut door — and the four hours between them is
+  // long enough that somebody really would stand outside one.
+  //
+  // A delivery has no counter here and falls back to the usual hour. That is
+  // the right answer rather than a gap: which kitchen a delivery leaves from
+  // is decided further down from the basket and the address, and the earliest
+  // any of them opens is the honest bound on whether an order can be made at
+  // all.
+  const counterOpensAt = opensAt(storeById(orderAt));
+  if (
+    !isOpenNow(new Date(), counterOpensAt) ||
+    minutesUntilClose(new Date(), counterOpensAt) < PREP_MINUTES
+  ) {
+    const next = nextOpening(new Date(), counterOpensAt);
     return Response.json(
       {
         error: next
@@ -205,25 +240,6 @@ export async function POST(request: Request) {
   // unanswered is filled in, so nothing downstream sees a half-specified
   // item. A bagel with no kind chosen would otherwise reach the kitchen as a
   // question rather than an order.
-  // ——— Which counter this is going to ———
-  //
-  // Read before the loop because every line is checked against it. Only
-  // pickup and catering name a counter: a delivery leaves from the kitchen,
-  // which makes everything, so its absence here is the correct answer rather
-  // than a missing field.
-  //
-  // This is the half of the counter's menu that a customer cannot skip. The
-  // catalog hiding a sandwich at the outlet is a courtesy; a request can be
-  // typed by hand, replayed from a basket filled at the other counter, or
-  // built by a client that has not caught up with the menu, and the kitchen
-  // has to be able to make whatever this returns 200 for.
-  const orderAt = (() => {
-    const raw = (payload as { fulfillment?: { mode?: unknown; locationId?: unknown } })
-      ?.fulfillment;
-    if (raw?.mode !== "pickup" && raw?.mode !== "catering") return null;
-    return typeof raw.locationId === "string" ? raw.locationId : null;
-  })();
-
   const items: OrderItem[] = [];
   for (const raw of rawItems) {
     const slug = (raw as { slug?: unknown })?.slug;

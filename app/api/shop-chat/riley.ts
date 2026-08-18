@@ -8,7 +8,6 @@ import { DELIVERY_RADIUS_MILES, LOCATIONS } from "../../(marketing)/locations/lo
 import {
   SHOP_EMAIL,
   shopPhoneLabel,
-  SHOP_HOURS,
   openingStatus,
 } from "../../shopFacts";
 import {
@@ -131,7 +130,12 @@ function counterLines(): string {
     if (store.catering) does.push("catering");
     const what = does.length > 0 ? does.join(", ") : "not taking orders";
     const kind = store.outlet ? "outlet, not a full store" : "store";
-    return `- ${store.name} (${kind}): ${store.address}, ${store.city}. ${what}.`;
+    // Its own hours. They differ between counters now, so a single line above
+    // the list saying they all open together would be false for one of them.
+    return (
+      `- ${store.name} (${kind}): ${store.address}, ${store.city}. ` +
+      `${store.hours}. ${what}.`
+    );
   }).join("\n");
 }
 
@@ -145,7 +149,8 @@ export function buildSystemPrompt(): string {
 Everything under this line comes from the app itself and is current. Where it
 disagrees with anything above, this wins.
 
-Corner Bagel counters, all open ${SHOP_HOURS}:
+Corner Bagel counters. They do not all open at the same hour, so quote the one
+they are ordering from:
 ${counterLines()}
 
 Right now: ${openingStatus().label}. If somebody wants to order and the shop is
