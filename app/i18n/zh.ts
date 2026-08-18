@@ -40,6 +40,8 @@ export const zh: Table = {
   "consent.label": "Cookie 同意",
 
   "finder.pickup": "自取",
+  "finder.outlet": "外卖点",
+  "finder.outletNote": "仅供自取的柜台。配送与宴会餐点由 Wilshire 店提供。",
   "finder.delivery": "配送",
   "finder.catering": "餐饮服务",
   "finder.searchPlaceholder": "搜索门店、城市、州或邮编",

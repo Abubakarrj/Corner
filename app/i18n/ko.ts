@@ -38,6 +38,8 @@ export const ko: Table = {
   "consent.label": "쿠키 동의",
 
   "finder.pickup": "픽업",
+  "finder.outlet": "간이 매장",
+  "finder.outletNote": "픽업 전용 매장입니다. 배달과 케이터링은 Wilshire 매장에서 진행됩니다.",
   "finder.delivery": "배달",
   "finder.catering": "케이터링",
   "finder.searchPlaceholder": "매장, 도시, 주 또는 우편번호 검색",

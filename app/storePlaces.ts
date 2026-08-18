@@ -22,7 +22,7 @@ import {
 //   the pickup point handed to the courier            (api/shop-order)
 //
 // A courier collecting from the middle of the block instead of the counter is
-// a real minute of somebody walking up and down S Catalina Street with a bag,
+// a real minute of somebody walking up and down Wilshire with a bag,
 // and a radius measured from the wrong end of a block quietly moves the
 // boundary for everyone near it. "Roughly right" stops being good enough the
 // moment a number leaves the building.

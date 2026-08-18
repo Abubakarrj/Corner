@@ -39,6 +39,8 @@ export const it: Table = {
 
   // ——— The finder ———
   "finder.pickup": "Ritiro",
+  "finder.outlet": "Punto vendita",
+  "finder.outletNote": "Un banco per il ritiro. Consegne e catering partono da Wilshire.",
   "finder.delivery": "Consegna",
   "finder.catering": "Catering",
   "finder.searchPlaceholder": "Cerca negozio, città, stato o CAP",

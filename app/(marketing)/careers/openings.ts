@@ -61,11 +61,15 @@ export type Opening = {
 /** How long a job wears the "New" badge. */
 export const NEW_FOR_DAYS = 30;
 
+// All four at the Wilshire store, which is the one with a kitchen behind the
+// counter. The outlet on Western is not hiring here — that is a decision for
+// the shop to make and add a row for, not something to infer from a second
+// address appearing on the map.
 export const OPENINGS: Opening[] = [
-  { role: "counter", location: "Koreantown" },
-  { role: "kitchen", location: "Koreantown" },
-  { role: "shift-lead", location: "Koreantown" },
-  { role: "manager", location: "Koreantown" },
+  { role: "counter", location: "Wilshire" },
+  { role: "kitchen", location: "Wilshire" },
+  { role: "shift-lead", location: "Wilshire" },
+  { role: "manager", location: "Wilshire" },
 ];
 
 /** Whether a job still counts as new, as of `now`.

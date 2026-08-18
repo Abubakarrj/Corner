@@ -867,7 +867,7 @@ export function progressFor(
   // ——— A guessed stage does not get to talk like a reported one ———
   //
   // The stage list is the same four rows either way, and the detail under the
-  // active row is where the page makes its claim. "Heading to 650 S Catalina
+  // active row is where the page makes its claim. "Heading to 3450 Wilshire
   // St." says a courier has the bag. "Waiting for you at the counter." says
   // somebody can leave the house. Both were printed off a clock the moment
   // enough minutes had passed, with no provider having said anything — and the

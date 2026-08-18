@@ -74,20 +74,25 @@ export const PREP_MINUTES = 12;
 // a Monday off.
 export const OPEN_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
-export const SHOP_ADDRESS = "650 S Catalina St";
-export const SHOP_CITY = "Los Angeles, CA 90005";
+// The store's address, which is the Wilshire counter — not the outlet on
+// Western. Two counters now, and this constant is singular by design: it is
+// the fallback a courier gets when no store was resolved, and the address
+// Riley reads out. Falling back to the kitchen every delivery leaves from is
+// the safe direction. Anything that needs *which* counter reads LOCATIONS.
+export const SHOP_ADDRESS = "3450 Wilshire Blvd, Suite R3452H";
+export const SHOP_CITY = "Los Angeles, CA 90010";
 export const SHOP_EMAIL = "cornerbagel@publicentity.co";
 
 // The same address broken into fields, and the number a courier calls when
 // they're outside. A courier dispatch API wants the parts, not the sentence:
-// "650 S Catalina St" on its own names no city, and a free-text address is
+// "3450 Wilshire Blvd" on its own names no city, and a free-text address is
 // where a delivery ends up in the wrong Los Angeles. Derived from the two
 // lines above so they can't drift apart.
 export const SHOP_ADDRESS_PARTS = {
   street: SHOP_ADDRESS,
   city: "Los Angeles",
   state: "CA",
-  zip: "90005",
+  zip: "90010",
 };
 
 // The shop's phone, in E.164 because that is what Uber Direct wants and it is

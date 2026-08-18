@@ -4,10 +4,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { isToastConfigured } from "../../toast";
-import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
+import { DELIVERY_RADIUS_MILES, LOCATIONS } from "../../(marketing)/locations/locations";
 import {
-  SHOP_ADDRESS,
-  SHOP_CITY,
   SHOP_EMAIL,
   shopPhoneLabel,
   SHOP_HOURS,
@@ -118,6 +116,25 @@ function renderChoices(): string {
   );
 }
 
+// Every counter, read off the same list the finder draws from, so this can
+// never quietly name an address the shop has moved off.
+//
+// What each one can do is stated rather than implied. A customer asking "can I
+// get a tray from Western" has to be told no, and Riley cannot work that out
+// from an address — it is the flags on the record, and they are the same flags
+// that decide what the app actually accepts.
+function counterLines(): string {
+  return LOCATIONS.map((store) => {
+    const does: string[] = [];
+    if (store.pickup !== false) does.push("collection");
+    if (store.delivery !== false) does.push("deliveries leave from here");
+    if (store.catering) does.push("catering");
+    const what = does.length > 0 ? does.join(", ") : "not taking orders";
+    const kind = store.outlet ? "outlet, not a full store" : "store";
+    return `- ${store.name} (${kind}): ${store.address}, ${store.city}. ${what}.`;
+  }).join("\n");
+}
+
 export function buildSystemPrompt(): string {
   return `${GUIDE}
 
@@ -128,7 +145,8 @@ export function buildSystemPrompt(): string {
 Everything under this line comes from the app itself and is current. Where it
 disagrees with anything above, this wins.
 
-Corner Bagel, ${SHOP_ADDRESS}, ${SHOP_CITY}. Hours: ${SHOP_HOURS}.
+Corner Bagel counters, all open ${SHOP_HOURS}:
+${counterLines()}
 
 Right now: ${openingStatus().label}. If somebody wants to order and the shop is
 shut, say so and tell them when it opens. Don't take the order and don't let

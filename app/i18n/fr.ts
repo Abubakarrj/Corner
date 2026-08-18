@@ -39,6 +39,8 @@ export const fr: Table = {
 
   // ——— The finder ———
   "finder.pickup": "À emporter",
+  "finder.outlet": "Point de vente",
+  "finder.outletNote": "Un comptoir pour le retrait. La livraison et les commandes de groupe partent de Wilshire.",
   "finder.delivery": "Livraison",
   "finder.catering": "Traiteur",
   "finder.searchPlaceholder": "Boutique, ville, état ou code postal",

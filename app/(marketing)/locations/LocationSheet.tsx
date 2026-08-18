@@ -159,6 +159,15 @@ export default function LocationSheet({
         >
           {location.name}
         </h2>
+        {/* The sheet has room to say what the card only had space to label,
+            and this is where somebody who tapped the name to find out more is
+            asking the question. Above the address on purpose: it changes what
+            the address is good for. */}
+        {location.outlet ? (
+          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: muted }}>
+            {t("finder.outletNote")}
+          </p>
+        ) : null}
         <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
           {location.address}
           <br />

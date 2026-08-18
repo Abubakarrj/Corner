@@ -111,8 +111,8 @@ async function call(
 }
 
 // Uber takes addresses either as a plain string or as a structured object
-// serialised into one. Structured is better — "650 S Catalina St" alone names
-// no city, and there is a Catalina St in more than one of them — and the
+// serialised into one. Structured is better — "3450 Wilshire Blvd" alone names
+// no city, and there is a Wilshire Blvd in more than one of them — and the
 // structured form is what the shop's own address is written as below.
 export function structuredAddress(parts: {
   street: string;

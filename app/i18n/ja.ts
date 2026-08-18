@@ -38,6 +38,8 @@ export const ja: Table = {
   "consent.label": "クッキーの同意",
 
   "finder.pickup": "受け取り",
+  "finder.outlet": "アウトレット店",
+  "finder.outletNote": "お受け取り専用のカウンターです。配達とケータリングは Wilshire 店から承ります。",
   "finder.delivery": "配達",
   "finder.catering": "ケータリング",
   "finder.searchPlaceholder": "店舗、市、州、郵便番号で検索",

@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
   // Resolved from the shop's address rather than the pair typed beside it.
   // This is the point a courier collects from; a block's worth of error in it
-  // is somebody walking up and down S Catalina Street with a bag. See
+  // is somebody walking up and down Wilshire with a bag. See
   // storePlaces.ts.
   //
   // Chosen against the destination when there is a pin, so the kitchen that

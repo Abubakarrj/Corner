@@ -69,92 +69,147 @@ export type StoreLocation = {
   // caller that filters by hand is a caller that will forget to.
   pickup?: boolean;
   delivery?: boolean;
+  // A counter rather than a full store: somewhere to collect from that is not
+  // the kitchen and does not cater.
+  //
+  // Purely how the place is described. What it can actually do is the flags
+  // above, and this does not set them or read them — an outlet that starts
+  // delivering says so by changing `delivery`, and the word on the card is
+  // still true. Kept apart on purpose: a label that silently switched
+  // behaviour would be a label somebody edits for tone and changes an order
+  // route by accident.
+  outlet?: boolean;
 };
 
-// The shop, and the kitchen every delivery leaves from.
+// ——— The two counters ———
 //
-// 650 S Catalina St, Los Angeles, CA 90005 — given by the shop with the city
-// and the ZIP, which is how an address should arrive. It replaces 3064 W 8th
-// St, a few blocks south, which the shop moved off; anything still saying W
-// 8th St anywhere in this codebase is stale and should be corrected rather
-// than worked around. Same neighbourhood, same ZIP, same city sales-tax rate,
-// so nothing downstream of the address changes except the address.
+// Both given by the shop with the city, which is how an address should
+// arrive. They replace 650 S Catalina St, which the shop moved off; anything
+// still saying Catalina St, or 3064 W 8th St before it, is stale and should be
+// corrected rather than worked around. Same neighbourhood and the same city
+// sales-tax rate as both of the addresses before them, so nothing downstream
+// of the address changes except the address.
 //
-// The coordinates are approximate — the block, not the doorway — and they are
-// now the fallback rather than the answer. app/storePlaces.ts resolves this
-// address through Geocoding on the server; the map merges the result over
-// what's written here (see useStoreLocations), and the delivery radius and the
-// courier's pickup point are measured from it directly.
+// The coordinates on each are approximate — the block, not the doorway — and
+// they are the fallback rather than the answer. app/storePlaces.ts resolves
+// each address through Geocoding on the server; the map merges the result over
+// what is written here (see useStoreLocations), and the delivery radius and the
+// courier's pickup point are measured from it directly. These pairs only have
+// to be close enough to bias that lookup onto the right block and to draw a
+// reasonable map when there is no key. They are inside the half-mile drift
+// guard in storePlaces.ts, so a good geocode is accepted rather than refused —
+// which is the check to re-run if either address is ever corrected.
 //
-// Which makes the address above the thing to keep true. These two numbers only
-// have to be close enough to bias the lookup toward the right block and to
-// draw a reasonable map when there is no key, and they are both.
-export const KOREATOWN: StoreLocation = {
-  id: "koreatown",
-  // The shop's own spelling, set by the owner. The neighbourhood is
-  // conventionally "Koreatown"; this is what the counter calls itself, and a
-  // shop gets to name itself. "koreatown" is in the aliases below so a search
-  // for the usual spelling still finds it.
-  //
-  // The id stays `koreatown` on purpose. It is written into stored
-  // fulfillments, order records and the OPENINGS rows, so changing it would
-  // orphan every one of them; only the display name moves.
-  name: "Koreantown",
+// Neither has a `door` yet. Both need one, and the Wilshire suite needs it
+// most: see the note on the field above, and the note on that record.
+
+// The store, and the kitchen every delivery leaves from.
+export const WILSHIRE: StoreLocation = {
+  id: "wilshire",
+  name: "Wilshire",
   kind: "shop",
-  address: "650 S Catalina St",
-  city: "Los Angeles, CA 90005",
+  // The suite is part of the address, not a note about it. R3452H is how the
+  // building numbers the unit, and a courier reading "3450 Wilshire Blvd" with
+  // no suite is a courier standing in a lobby with a phone in their hand.
+  address: "3450 Wilshire Blvd, Suite R3452H",
+  city: "Los Angeles, CA 90010",
   hours: SHOP_HOURS,
-  // Catalina St just south of Wilshire. Close enough to bias the lookup in
-  // storePlaces.ts onto the right block, which is all this pair has to do —
-  // and inside the half-mile drift guard there, so a good geocode is accepted
-  // rather than refused.
-  position: [34.0612, -118.2933],
+  // Wilshire just west of Normandie.
+  position: [34.0617, -118.3006],
   catering: true,
+  // ⚠️ A suite inside a larger building is exactly the case `door` exists for.
+  // A rooftop geocode here is the middle of the building, and the counter is
+  // one unit inside it: every delivery leaves from this doorway, so the error
+  // is not one bad trip but a constant added to every quote and every ETA the
+  // shop gives. Drop a pin on the actual door in Google Maps and put the pair
+  // in `door` above.
+  // Its own ZIP and no others. Both counters are in Koreatown and the
+  // neighbourhood words below find both, which is right; a ZIP is exact and
+  // listing a neighbour's would make "90020" a coin toss decided by array
+  // order.
   aliases: [
+    "wilshire",
+    "wilshire blvd",
+    "wilshire boulevard",
+    "3450 wilshire",
+    "mid wilshire",
+    "wilshire center",
+    "normandie",
     "ktown",
     "k town",
     "k-town",
     "kt",
-    // The neighbourhood's usual spelling, which is not the shop's. Anybody
-    // typing it means this counter.
     "koreatown",
     "korea town",
     "korean town",
     "la",
     "los angeles",
-    "90005",
-    "90006",
-    "90020",
-    "wilshire center",
-    "mid wilshire",
-    "catalina",
-    "catalina street",
-    "catalina st",
-    "s catalina",
-    "wilshire",
+    "90010",
     "downtown la",
     "dtla",
   ],
 };
 
-// ⚠️ One shop today, and everything below is written for several.
+// The outlet: a counter, not a full store.
 //
-// That is deliberate rather than speculative. The shop's stated plan is to
-// hold a ten-mile radius until it opens more counters, and the work that has
-// to happen when it does is the work that is easy to get wrong under time
-// pressure: which kitchen a delivery leaves from, which counters can be
-// collected from, and what "how far away are you" means when the answer
-// depends on which shop you meant.
+// It is `outlet` rather than a second `kind` because it is not a different
+// sort of place from a shop, it is a smaller one — the same counter doing less
+// of the job. Kind answers "what happens here", and the honest answers for
+// this address are the two flags below: it can be collected from, and it does
+// not cater and is not a kitchen a delivery leaves from. Anyone reading the
+// finder gets told which it is rather than working it out from a shorter list
+// of buttons.
+export const WESTERN: StoreLocation = {
+  id: "western",
+  name: "Western",
+  kind: "shop",
+  outlet: true,
+  address: "355 S Western Ave #101",
+  city: "Los Angeles, CA 90020",
+  hours: SHOP_HOURS,
+  // Western between 3rd and 4th.
+  position: [34.0685, -118.3092],
+  // Deliveries leave from the Wilshire kitchen, and this counter does not
+  // cater. Both stated rather than left to default, because the defaults are
+  // "yes" and an outlet quietly inheriting them is how a tray for forty gets
+  // promised from a counter that cannot build one.
+  delivery: false,
+  catering: false,
+  aliases: [
+    "western",
+    "western ave",
+    "western avenue",
+    "s western",
+    "355 western",
+    "outlet",
+    "ktown",
+    "k town",
+    "k-town",
+    "kt",
+    "koreatown",
+    "korea town",
+    "korean town",
+    "la",
+    "los angeles",
+    "90020",
+    "wilshire center",
+    "mid wilshire",
+  ],
+};
+
+// Two counters, and everything around them is written for several.
 //
-// So adding a second shop is adding a record to this array. Nothing else in
-// the codebase names KOREATOWN as "the shop" any more — see nearestDelivering
-// below, and deliveryOrigin in storePlaces.ts, both of which already do the
-// right thing for a list of one.
+// That generality was here before the second address arrived, on the shop's
+// stated plan to hold a ten-mile radius until it opened more counters, and it
+// is what made this a small change: adding a shop is adding a record to this
+// array. Nothing names one location as "the shop" — see nearestDelivering
+// above and deliveryOrigin in storePlaces.ts, both of which take the list as
+// it is.
 //
-// What is *not* built is a store picker on screen. A list of nearby shops with
-// one row in it reads as a list that lost its other rows, and the choice it
-// offers does not exist yet.
-export const LOCATIONS: StoreLocation[] = [KOREATOWN];
+// Order matters slightly and only as a fallback: deliveringStores()[0] is
+// where a delivery leaves from when nothing better is known, so the store
+// comes first and the outlet second.
+export const LOCATIONS: StoreLocation[] = [WILSHIRE, WESTERN];
 
 /** A shop's address split the way a courier API wants it.
  *
@@ -211,7 +266,7 @@ export function nearestDelivering(to: [number, number]): StoreLocation | null {
 
 // What every shop answers to, regardless of which one it is. Kept apart from
 // each location's own aliases so a second shop inherits them instead of
-// copying them — "corner bagel koreatown" should find the Koreatown shop,
+// copying them — "corner bagel wilshire" should find the Wilshire store,
 // and so should "corner bagel" plus whatever comes next.
 const BRAND_ALIASES = ["corner", "corner bagel", "bagel", "bagels", "cornerbagel"];
 
@@ -228,7 +283,7 @@ export function searchLocations(
   kind: LocationKind,
   pool: StoreLocation[] = LOCATIONS,
 ): StoreLocation[] {
-  // Catering matches on capability rather than kind: the Koreatown shop
+  // Catering matches on capability rather than kind: the Wilshire store
   // caters, and searching for it under Catering has to find it.
   const wanted = (location: StoreLocation) =>
     kind === "catering" ? location.catering === true : location.kind === kind;
@@ -285,7 +340,7 @@ export type NearbyLocation = { location: StoreLocation; miles: number };
 // search below can only find a shop by something written on it: its name, its
 // address, or an alias somebody thought to list. That works for "ktown" and
 // for "90005", and it fails for every other way of naming the same patch of
-// city. "Beverly Hills" is not in the Koreatown shop's aliases and never will
+// city. "Beverly Hills" is in neither counter's aliases and never will
 // be, because the list of places near a shop is not a list anybody can finish.
 //
 // Distance doesn't need the list. Once a searched place has coordinates, which
@@ -341,7 +396,7 @@ export function withinBounds(
 // Deliveries leave from the shop, so the radius is measured from its door.
 // If a second kitchen ever delivers, this becomes a per-location decision
 // rather than one origin.
-export const DELIVERY_ORIGIN = KOREATOWN;
+export const DELIVERY_ORIGIN = WILSHIRE;
 
 // How far we'll deliver, in driving miles from the shop. Named here rather
 // than buried in the check, and it's the one number to change when the shop

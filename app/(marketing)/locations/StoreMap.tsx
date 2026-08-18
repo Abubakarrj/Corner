@@ -534,11 +534,28 @@ export default function StoreMap({
                     onClick={() => order(location)}
                     className="min-w-0 flex-1 cursor-pointer text-left"
                   >
-                    <span
-                      className="block truncate text-[17px] font-medium leading-tight"
-                      style={{ color: ink }}
-                    >
-                      {location.name}
+                    {/* The name, and what kind of counter it is.
+                        A row on this rail is a choice between counters, so
+                        "not a full store" belongs where the choice is made
+                        rather than a tap further in — somebody picking the
+                        nearest pin should not find out at checkout that it
+                        cannot cater. Sized down and set in muted so it reads
+                        as a qualifier on the name and not as a second name. */}
+                    <span className="flex items-baseline gap-1.5">
+                      <span
+                        className="min-w-0 truncate text-[17px] font-medium leading-tight"
+                        style={{ color: ink }}
+                      >
+                        {location.name}
+                      </span>
+                      {location.outlet ? (
+                        <span
+                          className="shrink-0 text-[12px] leading-tight"
+                          style={{ color: muted }}
+                        >
+                          {t("finder.outlet")}
+                        </span>
+                      ) : null}
                     </span>
                     <span className="mt-1 block truncate text-[14px]" style={{ color: muted }}>
                       {location.address}
