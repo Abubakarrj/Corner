@@ -215,6 +215,7 @@ export const my: Table = {
   "checkout.placing": "အော်ဒါ ပို့နေသည်…",
   "checkout.switchToPickup": "လာယူရန် ပြောင်းမည်",
   "checkout.choosePickup": "ယူဆောင်ရန် ဆိုင်ရွေးပါ",
+  "checkout.whereIsThisGoing": "ဤအမှာစာ ဘယ်ကိုသွားမလဲ？",
   "checkout.milesAway": "{miles} မိုင် အကွာ",
   "checkout.opensAt": "{time} တွင် ဖွင့်သည်",
   "checkout.notMadeHere": "ဤဆိုင်တွင် မရရှိနိုင်ပါ",

@@ -215,6 +215,7 @@ export const ja: Table = {
   "checkout.placing": "注文を送信中…",
   "checkout.switchToPickup": "受け取りに変更",
   "checkout.choosePickup": "受け取り店舗を選ぶ",
+  "checkout.whereIsThisGoing": "どちらでお受け取りですか？",
   "checkout.milesAway": "{miles} マイル",
   "checkout.opensAt": "{time} 開店",
   "checkout.notMadeHere": "この店舗では取り扱いなし",

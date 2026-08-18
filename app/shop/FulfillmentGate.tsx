@@ -1,13 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { useT } from "../i18n";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { describeFulfillment, peekFulfillment, useFulfillment } from "../fulfillment";
 import { ButtonLink } from "../ui/Button";
 import { PALETTE } from "./shopControls";
 import { useOpening } from "../useOpening";
+import { useCart } from "./CartContext";
+import ChangeFulfillment from "./checkout/ChangeFulfillment";
 
 const { ink, cream, border, muted, controlBorder } = PALETTE;
 
@@ -99,11 +100,23 @@ export function FulfillmentBanner() {
   const t = useT();
   const fulfillment = useFulfillment();
   const opening = useOpening();
+  const { lines } = useCart();
+  const [changing, setChanging] = useState(false);
   if (!fulfillment) return null;
 
   const { mode, where } = describeFulfillment(fulfillment);
 
   return (
+    <>
+    {changing ? (
+      <ChangeFulfillment
+        // Opens on what the order already is: the tap said "change this",
+        // not "change to the other thing".
+        initial={fulfillment.mode === "delivery" ? "delivery" : "pickup"}
+        slugs={lines.map((line) => line.slug)}
+        onClose={() => setChanging(false)}
+      />
+    ) : null}
     <div
       className="flex items-center gap-2 border-b px-4 py-2 sm:gap-3 sm:px-6"
       style={{ backgroundColor: cream, borderColor: border }}
@@ -131,13 +144,19 @@ export function FulfillmentBanner() {
           {t("shop.closed")}
         </span>
       ) : null}
-      <Link
-        href="/locations"
-        className="shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
+      {/* Opens the sheet over whatever page this bar is sitting on, rather
+          than navigating to the finder. This bar is on the catalog, the
+          basket and the checkout, and on the last two leaving means losing a
+          filled-in form to answer a question with two answers. */}
+      <button
+        type="button"
+        onClick={() => setChanging(true)}
+        className="cb-press shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
         style={{ color: ink }}
       >
         {t("shop.change")}
-      </Link>
+      </button>
     </div>
+    </>
   );
 }

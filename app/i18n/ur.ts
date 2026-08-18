@@ -218,6 +218,7 @@ export const ur: Table = {
   "checkout.placing": "آپ کا آرڈر بھیجا جا رہا ہے…",
   "checkout.switchToPickup": "پک اپ پر جائیں",
   "checkout.choosePickup": "پک اپ کاؤنٹر منتخب کریں",
+  "checkout.whereIsThisGoing": "یہ آرڈر کہاں جائے گا؟",
   "checkout.milesAway": "{miles} میل دور",
   "checkout.opensAt": "{time} پر کھلتا ہے",
   "checkout.notMadeHere": "یہاں دستیاب نہیں",

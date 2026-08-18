@@ -217,6 +217,7 @@ export const es: Table = {
   "checkout.placing": "Enviando tu pedido…",
   "checkout.switchToPickup": "Cambiar a recoger",
   "checkout.choosePickup": "Elige dónde recoger",
+  "checkout.whereIsThisGoing": "¿Adónde va el pedido?",
   "checkout.milesAway": "a {miles} mi",
   "checkout.opensAt": "Abre a las {time}",
   "checkout.notMadeHere": "No disponible aquí",

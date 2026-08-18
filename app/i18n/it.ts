@@ -243,6 +243,7 @@ export const it: Table = {
   "checkout.placing": "Invio dell'ordine…",
   "checkout.switchToPickup": "Passa al ritiro",
   "checkout.choosePickup": "Scegli dove ritirare",
+  "checkout.whereIsThisGoing": "Dove va questo ordine?",
   "checkout.milesAway": "a {miles} mi",
   "checkout.opensAt": "Apre alle {time}",
   "checkout.notMadeHere": "Non disponibile qui",

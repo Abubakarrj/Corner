@@ -217,6 +217,7 @@ export const zh: Table = {
   "checkout.placing": "正在提交订单…",
   "checkout.switchToPickup": "改为自取",
   "checkout.choosePickup": "选择自取门店",
+  "checkout.whereIsThisGoing": "订单送到哪里？",
   "checkout.milesAway": "{miles} 英里",
   "checkout.opensAt": "{time} 开门",
   "checkout.notMadeHere": "本店不供应",

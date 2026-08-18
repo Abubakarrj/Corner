@@ -246,6 +246,7 @@ export const en = {
   "checkout.placing": "Placing your order…",
   "checkout.switchToPickup": "Switch to pickup",
   "checkout.choosePickup": "Choose a pickup counter",
+  "checkout.whereIsThisGoing": "Where is this going?",
   "checkout.milesAway": "{miles} mi away",
   "checkout.opensAt": "Opens at {time}",
   "checkout.notMadeHere": "Not available here",

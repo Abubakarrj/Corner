@@ -215,6 +215,7 @@ export const ko: Table = {
   "checkout.placing": "주문을 보내는 중…",
   "checkout.switchToPickup": "픽업으로 변경",
   "checkout.choosePickup": "픽업 매장 선택",
+  "checkout.whereIsThisGoing": "어디로 받으시겠어요?",
   "checkout.milesAway": "{miles}마일 거리",
   "checkout.opensAt": "{time}에 엽니다",
   "checkout.notMadeHere": "이곳에서는 제공되지 않음",

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "../CartContext";
-import PickupPicker from "./PickupPicker";
+import ChangeFulfillment from "./ChangeFulfillment";
 import AdjustPinModal from "./AdjustPinModal";
 import { useT } from "../../i18n";
 import { useOpening } from "../../useOpening";
@@ -134,7 +134,8 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
   return (
     <>
     {picking ? (
-      <PickupPicker
+      <ChangeFulfillment
+        initial="pickup"
         slugs={lines.map((line) => line.slug)}
         onClose={() => setPicking(false)}
       />

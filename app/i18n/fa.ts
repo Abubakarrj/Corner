@@ -245,6 +245,7 @@ export const fa: Table = {
   "checkout.placing": "در حال ثبت سفارش شما…",
   "checkout.switchToPickup": "تغییر به تحویل حضوری",
   "checkout.choosePickup": "محل تحویل حضوری را انتخاب کنید",
+  "checkout.whereIsThisGoing": "این سفارش کجا برود؟",
   "checkout.milesAway": "{miles} مایل فاصله",
   "checkout.opensAt": "ساعت {time} باز می‌شود",
   "checkout.notMadeHere": "اینجا موجود نیست",
