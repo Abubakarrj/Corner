@@ -51,7 +51,7 @@ export const fa: Table = {
   "finder.pickup": "تحویل حضوری",
   "finder.outlet": "باجه",
   "finder.outletFull": "Corner Bagel Outlet",
-  "finder.outletNote": "بیگل، اشمیر و نوشیدنی. ساندویچ نداریم.",
+  "finder.outletNote": "بیگل، اشمیر، نوشیدنی. بدون ساندویچ",
   "finder.delivery": "ارسال",
   "finder.catering": "پذیرایی",
   "finder.searchPlaceholder": "جست‌وجوی شعبه، شهر، ایالت یا کد پستی",

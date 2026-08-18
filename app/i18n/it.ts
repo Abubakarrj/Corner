@@ -43,7 +43,7 @@ export const it: Table = {
   "finder.pickup": "Ritiro",
   "finder.outlet": "Punto vendita",
   "finder.outletFull": "Corner Bagel Outlet",
-  "finder.outletNote": "Bagel, schmear e bevande. Niente panini.",
+  "finder.outletNote": "Bagel, Schmear, Bevande. Niente Panini",
   "finder.delivery": "Consegna",
   "finder.catering": "Catering",
   "finder.searchPlaceholder": "Cerca negozio, città, stato o CAP",

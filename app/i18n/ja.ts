@@ -42,7 +42,7 @@ export const ja: Table = {
   "finder.pickup": "受け取り",
   "finder.outlet": "アウトレット",
   "finder.outletFull": "Corner Bagel Outlet",
-  "finder.outletNote": "ベーグル、シュメア、ドリンク。サンドイッチはありません。",
+  "finder.outletNote": "ベーグル、シュメア、ドリンク。サンドイッチなし",
   "finder.delivery": "配達",
   "finder.catering": "ケータリング",
   "finder.searchPlaceholder": "店舗、市、州、郵便番号で検索",

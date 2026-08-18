@@ -45,7 +45,7 @@ export const ur: Table = {
   "finder.pickup": "پک اپ",
   "finder.outlet": "آؤٹ لیٹ",
   "finder.outletFull": "Corner Bagel Outlet",
-  "finder.outletNote": "بیگل، شمیئر اور مشروبات۔ سینڈوچ نہیں۔",
+  "finder.outletNote": "بیگل، شمیئر، مشروبات۔ سینڈوچ نہیں",
   "finder.delivery": "ڈیلیوری",
   "finder.catering": "کیٹرنگ",
   "finder.searchPlaceholder": "اسٹور، شہر، ریاست یا زپ کوڈ تلاش کریں",
