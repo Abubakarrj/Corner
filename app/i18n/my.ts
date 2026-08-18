@@ -24,6 +24,8 @@ export const my: Table = {
   "common.checkout": "ငွေရှင်းရန်",
   "common.soldOutToday": "ယနေ့ ကုန်သွားပြီ",
   "cart.notAtCounter": "ဤဆိုင်တွင် မရရှိနိုင်ပါ",
+  "cart.droppedForCounter": "{items} ကို ဖယ်ရှားလိုက်သည် — ဤဆိုင်တွင် မလုပ်ပါ",
+  "checkout.switchToDeliveryTitle": "ပို့ဆောင်မှုသို့ ပြောင်းရန်",
   "api.notAtCounter": "သင်ရွေးချယ်ထားသော ဆိုင်တွင် ဤပစ္စည်းအချို့ကို မလုပ်ပေးပါ။ Wilshire Blvd တွင် ယူဆောင်ပါ သို့မဟုတ် ခြင်းတောင်းမှ ဖယ်ရှားပါ။",
   "common.soldOut": "ကုန်သွားပြီ",
   "common.sendAnother": "နောက်တစ်ခု ပို့ရန်",

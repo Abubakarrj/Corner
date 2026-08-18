@@ -24,6 +24,8 @@ export const fr: Table = {
   "common.checkout": "Commander",
   "common.soldOutToday": "Épuisé aujourd'hui",
   "cart.notAtCounter": "Pas dans ce point de vente",
+  "cart.droppedForCounter": "{items} retiré : pas préparé dans ce point de vente",
+  "checkout.switchToDeliveryTitle": "Passer en livraison",
   "api.notAtCounter": "Le point de vente choisi ne prépare pas certains de ces articles. Récupérez-les à Wilshire Blvd, ou retirez-les de votre panier.",
   "common.soldOut": "Épuisé",
   "common.sendAnother": "En envoyer une autre",

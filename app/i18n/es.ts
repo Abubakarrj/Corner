@@ -24,6 +24,8 @@ export const es: Table = {
   "common.checkout": "Pagar",
   "common.soldOutToday": "Agotado por hoy",
   "cart.notAtCounter": "No en este local",
+  "cart.droppedForCounter": "{items} eliminado: no se prepara en este local",
+  "checkout.switchToDeliveryTitle": "Cambiar a entrega",
   "api.notAtCounter": "El local que elegiste no prepara algunos de estos. Recógelos en Wilshire Blvd o quítalos de tu cesta.",
   "common.soldOut": "Agotado",
   "common.sendAnother": "Enviar otro",

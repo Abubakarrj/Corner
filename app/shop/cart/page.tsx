@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useT } from "../../i18n";
 import { useMenu } from "../../i18n/menu";
 import { useBasketMoved, useCart, useCartRows, MAX_PER_LINE } from "../CartContext";
+import DroppedNotice from "../DroppedNotice";
 import OptionPicker from "../OptionPicker";
 import { formatPrice } from "../products";
 import { Button, ButtonLink } from "../../ui/Button";
@@ -37,6 +38,7 @@ export default function CartPage() {
         </p>
       ) : null}
 
+      <DroppedNotice className="mb-4" />
       {rows.length === 0 ? (
         <div>
           <p className="text-[14px] text-muted">{t("cart.empty")}</p>

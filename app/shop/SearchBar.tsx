@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useT } from "../i18n";
+import { useFulfillment } from "../fulfillment";
+import { servesProduct } from "./storeMenu";
 import { useMenu } from "../i18n/menu";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice, searchProducts } from "./products";
@@ -54,7 +56,16 @@ export default function SearchBar({
   const [highlighted, setHighlighted] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const suggestions = useMemo(() => searchProducts(query), [query]);
+  // Narrowed to the counter, like the catalog behind it. A search that
+  // surfaces a sandwich at the outlet is the catalog's hidden row coming back
+  // through a different door, and it is one tap from a basket that would then
+  // refuse to check out.
+  const fulfillment = useFulfillment();
+  const at = fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  const suggestions = useMemo(
+    () => searchProducts(query).filter((product) => servesProduct(at, product)),
+    [query, at],
+  );
 
   // Focus only — no setState in here. Clearing the query on close is handled
   // by ShopHeader remounting this component when `open` flips (see the key

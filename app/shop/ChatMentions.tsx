@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useT } from "../i18n";
 import { useMenu } from "../i18n/menu";
 import ProductImage from "./ProductImage";
 import { formatPrice, PRODUCTS, searchProducts, type Product } from "./products";
+import { useFulfillment } from "../fulfillment";
+import { servesProduct } from "./storeMenu";
 
 // Typing @ in the chat, and getting the menu.
 //
@@ -64,14 +66,29 @@ export function useMentions(
   const token = TOKEN.exec(draft.slice(0, at));
   const query = token ? token[2] : null;
 
+  // ——— Only what this counter makes ———
+  //
+  // add_to_basket refuses an item the counter cannot make, so offering one
+  // here is offering a refusal — and it is the customer who gets told no,
+  // having picked from a list the app drew for them.
+  //
+  // Named `counter` rather than `at`, which in this file is already the caret.
+  const fulfillment = useFulfillment();
+  const counter =
+    fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  const onMenu = useCallback(
+    (list: Product[]) => list.filter((product) => servesProduct(counter, product)),
+    [counter],
+  );
+
   const results = useMemo(() => {
     if (query === null) return [];
     const trimmed = query.trim().toLowerCase();
     // A bare @ opens on the first few, the way any mention picker does — it is
     // a menu, and a menu that needs a letter typed before it shows anything is
     // a search box wearing a menu's clothes.
-    if (trimmed.length === 0) return PRODUCTS.slice(0, 6);
-    const found = searchProducts(trimmed, 6);
+    if (trimmed.length === 0) return onMenu(PRODUCTS).slice(0, 6);
+    const found = onMenu(searchProducts(trimmed, 6));
     if (found.length >= 6) return found;
     // The English index missed some, so try what's actually on screen.
     const seen = new Set(found.map((product) => product.slug));
@@ -80,7 +97,7 @@ export function useMentions(
         !seen.has(product.slug) && menu.name(product).toLowerCase().includes(trimmed),
     );
     return [...found, ...translated].slice(0, 6);
-  }, [query, menu]);
+  }, [query, menu, onMenu]);
 
   function choose(product: Product) {
     if (!token) return;

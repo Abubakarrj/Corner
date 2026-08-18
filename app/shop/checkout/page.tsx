@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { useMenu } from "../../i18n/menu";
@@ -12,6 +14,10 @@ import { PREP_MINUTES } from "../../account";
 import { Button } from "../../ui/Button";
 import { DISPLAY_FONT } from "../shopControls";
 import StepSlide from "./StepSlide";
+import { useCart } from "../CartContext";
+import { useDeliverSwitch } from "./DeliverSwitch";
+import PickupPicker from "./PickupPicker";
+import DroppedNotice from "../DroppedNotice";
 import MergingDots from "../../ui/MergingDots";
 import { Check, Disclosure, Field, Section } from "./CheckoutSections";
 import { useCheckout } from "./useCheckout";
@@ -48,6 +54,8 @@ export default function CheckoutPage() {
   const menu = useMenu();
   const tag = localeById(useLocale()).tag;
   const opening = useOpening();
+  const deliverSwitch = useDeliverSwitch();
+  const [pickingCounter, setPickingCounter] = useState(false);
   const { payments } = useCapabilities();
 
   // Everything this page *is* lives in useCheckout — the courier quote, the
@@ -55,6 +63,7 @@ export default function CheckoutPage() {
   // same hook, which is the only thing keeping the two from quietly becoming
   // two different transactions. See the note at the top of useCheckout.ts.
   const checkout = useCheckout();
+  const { lines } = useCart();
   const {
     step,
     rows,
@@ -126,6 +135,14 @@ export default function CheckoutPage() {
   }
 
   return (
+    <>
+    {deliverSwitch.sheet}
+    {pickingCounter ? (
+      <PickupPicker
+        slugs={lines.map((line) => line.slug)}
+        onClose={() => setPickingCounter(false)}
+      />
+    ) : null}
     <form
       onSubmit={onSubmit}
       noValidate
@@ -141,6 +158,11 @@ export default function CheckoutPage() {
       >
         {t("checkout.title")}
       </h1>
+
+      {/* Said here as well as on the basket page, because the counter can now
+          be changed from this screen: the total would otherwise drop while
+          somebody was reading it, with nothing to explain the difference. */}
+      <DroppedNotice className="mb-5" />
 
       {/* Where you are, in two words. Not a numbered wizard rail: there are
           two steps, both are named, and the second one is not somewhere you
@@ -264,12 +286,17 @@ export default function CheckoutPage() {
               <Section
                 title={t("checkout.pickupDetails")}
                 aside={
-                  <Link
-                    href="/locations"
-                    className="cursor-pointer text-[13px] text-ink underline underline-offset-2"
+                  // Opens the pin step over this screen. Going the other way
+                  // is a choice between two counters and is a list; coming
+                  // this way needs a street, a building and a door, and there
+                  // is no list of those. See DeliverSwitch.
+                  <button
+                    type="button"
+                    onClick={deliverSwitch.open}
+                    className="cb-press cursor-pointer text-[13px] text-ink underline underline-offset-2"
                   >
                     {t("checkout.switchToDelivery")}
-                  </Link>
+                  </button>
                 }
               >
                 <div className="rounded-xl border border-line-soft">
@@ -306,7 +333,7 @@ export default function CheckoutPage() {
 
                   <div className="flex items-start gap-3 p-4">
                     <PinIcon />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="m-0 text-[14px] text-ink">
                         {where?.where ?? "Corner Bagel"}
                       </p>
@@ -315,6 +342,19 @@ export default function CheckoutPage() {
                           {fulfillment.detail}
                         </p>
                       ) : null}
+                      {/* Changing which counter, in the same place the
+                          delivery card puts "Adjust pin": next to the thing
+                          being changed. It used to be the header's "Change",
+                          which reopens the finder — a map of the country to
+                          pick between two shops half a mile apart, with the
+                          form left behind. */}
+                      <button
+                        type="button"
+                        onClick={() => setPickingCounter(true)}
+                        className="cb-press mt-1.5 cursor-pointer text-[12px] text-ink underline underline-offset-2"
+                      >
+                        {t("checkout.choosePickup")}
+                      </button>
                     </div>
                   </div>
 
@@ -509,6 +549,7 @@ export default function CheckoutPage() {
         }
       />
     </form>
+    </>
   );
 }
 

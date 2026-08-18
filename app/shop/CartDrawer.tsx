@@ -7,9 +7,11 @@ import Drawer from "./Drawer";
 import ProductImage from "./ProductImage";
 import FreeDeliveryBar from "./FreeDeliveryBar";
 import CrossSellStrip from "./CrossSellStrip";
+import DroppedNotice from "./DroppedNotice";
 import { useCart, useCartRows, MAX_PER_LINE } from "./CartContext";
 import OptionPicker from "./OptionPicker";
 import { formatPrice, getCrossSellProducts } from "./products";
+import { servesProduct } from "./storeMenu";
 import { Button, ButtonLink } from "../ui/Button";
 import { DISPLAY_FONT } from "./shopControls";
 import { useFulfillment } from "../fulfillment";
@@ -54,6 +56,13 @@ function EmptyBasketIcon() {
 // The slide-over basket. Opens from the header's basket button and — via
 // OPEN_BASKET_EVENT — whenever an item is added, so the confirmation for
 // "add to cart" is seeing the thing sitting in the basket, not a toast.
+// Which counter this basket is going to, or null for a delivery and for
+// somebody who has not chosen. Same derivation as ShopCatalog's.
+function counterOf(fulfillment: ReturnType<typeof useFulfillment>): string | null {
+  if (!fulfillment || fulfillment.mode === "delivery") return null;
+  return fulfillment.locationId;
+}
+
 export default function CartDrawer({
   open,
   onClose,
@@ -68,6 +77,7 @@ export default function CartDrawer({
     useCart();
 
   const rows = useCartRows();
+  const at = counterOf(fulfillment);
 
   return (
     <Drawer open={open} onClose={onClose} side="right" label={t("shop.basket")} width="wide">
@@ -215,8 +225,18 @@ export default function CartDrawer({
             ))}
           </div>
 
+          {/* Narrowed to the counter, like the catalog and the tabs. This
+              rail was the one surface still offering the whole menu, so the
+              outlet's basket suggested a sandwich under "you might also
+              like" — a recommendation the counter cannot fill, one tap from
+              a basket it would then block. */}
+          <DroppedNotice className="mx-6 mb-3" />
           <CrossSellStrip
-            products={getCrossSellProducts(lines.map((line) => line.slug))}
+            products={getCrossSellProducts(
+              lines.map((line) => line.slug),
+              4,
+              (product) => servesProduct(at, product),
+            )}
             onNavigate={onClose}
           />
 

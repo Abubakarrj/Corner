@@ -31,6 +31,8 @@ export const en = {
   "common.checkout": "Checkout",
   "common.soldOutToday": "Sold out today",
   "cart.notAtCounter": "Not at this counter",
+  "cart.droppedForCounter": "{items} removed — not made at this counter",
+  "checkout.switchToDeliveryTitle": "Deliver instead",
   "api.notAtCounter": "The counter you chose doesn’t make some of these. Pick them up at Wilshire Blvd, or take them out of your basket.",
   "common.soldOut": "Sold out",
   "common.sendAnother": "Send another",

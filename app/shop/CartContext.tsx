@@ -7,7 +7,7 @@ import {
   useMemo,
   useSyncExternalStore,
 } from "react";
-import { peekFulfillment, useFulfillment } from "../fulfillment";
+import { peekFulfillment, subscribeFulfillment, useFulfillment } from "../fulfillment";
 import { servesProduct } from "./storeMenu";
 import { confirmed } from "../haptics";
 import {
@@ -157,6 +157,89 @@ function commit(next: CartLine[]) {
     // Private browsing or blocked storage — the cart just doesn't persist.
   }
   listeners.forEach((listener) => listener());
+}
+
+// ——— Lines the chosen counter cannot make ———
+//
+// Choosing the Western Ave outlet with a sandwich in the basket used to leave
+// the sandwich there, greyed out, blocking checkout until it was deleted by
+// hand. The reasoning was that the customer might rather switch counters back
+// than lose it — and in practice it is a dead row that has to be cleared
+// before anything can be paid for, which is a chore dressed up as a choice.
+//
+// So it goes, and it is said. Removing silently would be worse than leaving
+// it: somebody would pay for a shorter order than the one they read. The
+// names are kept here for whichever screen is on top to show, and cleared
+// once it has.
+//
+// Runs wherever the counter is set — the finder, the checkout's picker, the
+// tab bar — because it hangs off the fulfillment store rather than off any
+// screen that writes to it.
+let dropped: string[] = [];
+const droppedListeners = new Set<() => void>();
+
+function notifyDropped() {
+  droppedListeners.forEach((listener) => listener());
+}
+
+function getDropped() {
+  return dropped;
+}
+function getDroppedServer(): string[] {
+  return EMPTY_NAMES;
+}
+const EMPTY_NAMES: string[] = [];
+
+function subscribeDropped(callback: () => void) {
+  droppedListeners.add(callback);
+  return () => droppedListeners.delete(callback);
+}
+
+/** What the last counter change took out of the basket, so a screen can say
+ *  so. Empty once it has been acknowledged. */
+export function useDroppedForCounter(): string[] {
+  return useSyncExternalStore(subscribeDropped, getDropped, getDroppedServer);
+}
+
+export function clearDroppedForCounter(): void {
+  if (dropped.length === 0) return;
+  dropped = EMPTY_NAMES;
+  notifyDropped();
+}
+
+function pruneForCounter() {
+  const fulfillment = peekFulfillment();
+  // Delivery narrows nothing: it leaves from whichever kitchen can make the
+  // order, and that is settled at order time from the basket itself.
+  const at =
+    fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  if (!at || lines.length === 0) return;
+
+  const keep: CartLine[] = [];
+  const lost: string[] = [];
+  for (const line of lines) {
+    const product = getProduct(line.slug);
+    // An unknown slug is not this function's to judge. It is already handled
+    // as a gone line everywhere else, and deleting it here would be a second
+    // rule about the same row.
+    if (!product || servesProduct(at, product)) {
+      keep.push(line);
+      continue;
+    }
+    lost.push(product.name);
+  }
+  if (lost.length === 0) return;
+
+  commit(keep);
+  dropped = [...new Set(lost)];
+  notifyDropped();
+}
+
+if (typeof window !== "undefined") {
+  subscribeFulfillment(pruneForCounter);
+  // And once at load, for a basket saved against one counter and reopened
+  // under another — a tab left open overnight, or a second device.
+  pruneForCounter();
 }
 
 // The price of one of this line, choices included.

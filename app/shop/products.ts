@@ -1104,9 +1104,19 @@ export function getProduct(slug: string): Product | undefined {
 export function getCrossSellProducts(
   excludeSlugs: string[],
   limit = 4,
+  /** An extra test each suggestion has to pass — the chosen counter's menu,
+   *  at the one call site that has one.
+   *
+   *  Taken here rather than applied to the result, and that is the whole
+   *  point of the parameter: the limit is applied last. Filtering four
+   *  suggestions down to what a counter can make left the outlet with none,
+   *  because the four that sort first are the tagged ones and the tagged ones
+   *  are sandwiches — so the rail vanished instead of suggesting the spreads
+   *  and drinks it could have. */
+  keep: (product: Product) => boolean = () => true,
 ): Product[] {
   const excluded = new Set(excludeSlugs);
-  return PRODUCTS.filter((product) => !excluded.has(product.slug))
+  return PRODUCTS.filter((product) => !excluded.has(product.slug) && keep(product))
     .sort((a, b) => Number(Boolean(b.tag)) - Number(Boolean(a.tag)))
     .slice(0, limit);
 }
