@@ -47,7 +47,7 @@ export default function CartPage() {
       ) : (
         <>
           <div className="flex flex-col divide-y divide-line">
-            {rows.map(({ line, product, key, unitCents, lineCents, chosen, complete, gone }) => (
+            {rows.map(({ line, product, key, unitCents, lineCents, chosen, complete, gone, elsewhere }) => (
               <div key={key} className="flex gap-4 py-4">
                 <Link href={`/shop/product/${product.slug}`} className="shrink-0 cursor-pointer">
                   <ProductImage
@@ -81,6 +81,14 @@ export default function CartPage() {
                   {gone ? (
                     <span className="mt-1 w-fit rounded-full bg-sun-soft px-2 py-[3px] text-[11px] font-medium leading-none text-sun-ink">
                       {t("common.soldOutToday")}
+                    </span>
+                  ) : elsewhere ? (
+                    /* Only when it is not also sold out. Two badges on one row
+                       is two reasons for the same refusal, and the one that
+                       cannot be fixed by switching counters is the one worth
+                       reading. */
+                    <span className="mt-1 w-fit rounded-full bg-sun-soft px-2 py-[3px] text-[11px] font-medium leading-none text-sun-ink">
+                      {t("cart.notAtCounter")}
                     </span>
                   ) : null}
                   {/* A line that arrived without its choices — from a
@@ -149,7 +157,7 @@ export default function CartPage() {
           {/* Held back while a line is still missing a choice, rather than
               letting someone press through to a checkout that turns them
               around. The picker they need is a few pixels above. */}
-          {rows.some((row) => !row.complete || row.gone) ? (
+          {rows.some((row) => !row.complete || row.gone || row.elsewhere) ? (
             <Button block disabled className="mt-4">
               {t("common.checkout")}
             </Button>

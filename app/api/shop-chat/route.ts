@@ -476,6 +476,7 @@ export async function POST(request: Request) {
   const tools: ToolContext = {
     quotesLeft: () => !QUOTES.exceeded(caller),
     destination: context?.destination,
+    orderAt: context?.orderAt,
   };
 
   const messages: Anthropic.Beta.BetaMessageParam[] = turns.map((turn) => ({

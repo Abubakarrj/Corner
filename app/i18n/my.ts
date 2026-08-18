@@ -23,6 +23,8 @@ export const my: Table = {
   "common.total": "စုစုပေါင်း",
   "common.checkout": "ငွေရှင်းရန်",
   "common.soldOutToday": "ယနေ့ ကုန်သွားပြီ",
+  "cart.notAtCounter": "ဤဆိုင်တွင် မရရှိနိုင်ပါ",
+  "api.notAtCounter": "သင်ရွေးချယ်ထားသော ဆိုင်တွင် ဤပစ္စည်းအချို့ကို မလုပ်ပေးပါ။ Wilshire Blvd တွင် ယူဆောင်ပါ သို့မဟုတ် ခြင်းတောင်းမှ ဖယ်ရှားပါ။",
   "common.soldOut": "ကုန်သွားပြီ",
   "common.sendAnother": "နောက်တစ်ခု ပို့ရန်",
 

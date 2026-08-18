@@ -23,6 +23,8 @@ export const es: Table = {
   "common.total": "Total",
   "common.checkout": "Pagar",
   "common.soldOutToday": "Agotado por hoy",
+  "cart.notAtCounter": "No en este local",
+  "api.notAtCounter": "El local que elegiste no prepara algunos de estos. Recógelos en Wilshire Blvd o quítalos de tu cesta.",
   "common.soldOut": "Agotado",
   "common.sendAnother": "Enviar otro",
 

@@ -23,6 +23,8 @@ export const ja: Table = {
   "common.total": "合計",
   "common.checkout": "お会計",
   "common.soldOutToday": "本日分は完売",
+  "cart.notAtCounter": "この店舗では取り扱いなし",
+  "api.notAtCounter": "お選びの店舗では一部の商品をご用意していません。Wilshire Blvd 店でお受け取りいただくか、カートから外してください。",
   "common.soldOut": "完売",
   "common.sendAnother": "もう一度送る",
 

@@ -26,6 +26,8 @@ export const ur: Table = {
   "common.total": "کل",
   "common.checkout": "چیک آؤٹ",
   "common.soldOutToday": "آج ختم ہو گیا",
+  "cart.notAtCounter": "اس کاؤنٹر پر دستیاب نہیں",
+  "api.notAtCounter": "آپ نے جو کاؤنٹر منتخب کیا ہے وہ ان میں سے کچھ نہیں بناتا۔ انہیں Wilshire Blvd سے لے لیں یا اپنی ٹوکری سے نکال دیں۔",
   "common.soldOut": "ختم ہو گیا",
   "common.sendAnother": "ایک اور بھیجیں",
 

@@ -31,6 +31,8 @@ export const fa: Table = {
   "common.total": "جمع کل",
   "common.checkout": "تسویه حساب",
   "common.soldOutToday": "امروز تمام شد",
+  "cart.notAtCounter": "در این شعبه موجود نیست",
+  "api.notAtCounter": "شعبه‌ای که انتخاب کرده‌اید برخی از این موارد را آماده نمی‌کند. آن‌ها را از Wilshire Blvd تحویل بگیرید یا از سبد خود حذف کنید.",
   "common.soldOut": "تمام شد",
   "common.sendAnother": "یکی دیگر بفرست",
 

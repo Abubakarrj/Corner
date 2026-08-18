@@ -242,7 +242,7 @@ export default function CartDrawer({
             {/* Held back while a line still needs a choice — the picker for
                 it is up in the list, so there's nowhere useful to send
                 someone who presses this. */}
-            {rows.some((row) => !row.complete || row.gone) ? (
+            {rows.some((row) => !row.complete || row.gone || row.elsewhere) ? (
               <Button block disabled className="mt-3">
                 {t("common.checkout")}
               </Button>

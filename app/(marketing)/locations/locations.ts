@@ -79,6 +79,22 @@ export type StoreLocation = {
   // behaviour would be a label somebody edits for tone and changes an order
   // route by accident.
   outlet?: boolean;
+  // The menu categories this counter makes, when it does not make all of
+  // them. Undefined is the full menu, so a shop that serves everything says
+  // nothing — which keeps the common case the quiet one and makes the
+  // restriction the thing you have to write down.
+  //
+  // Categories rather than slugs on purpose. A counter that does bagels does
+  // every bagel, and listing slugs would mean editing a location record every
+  // time the menu gains an item — which is exactly the edit that gets
+  // forgotten, leaving a new sandwich quietly orderable from a counter that
+  // cannot make it.
+  //
+  // Read through servesProduct() in app/shop/storeMenu.ts rather than
+  // directly. It is one question — "can this counter make this" — asked by the
+  // catalog, the basket, Riley and the order endpoint, and four copies of it
+  // is three chances to disagree with the kitchen.
+  menu?: readonly string[];
 };
 
 // ——— The two counters ———
@@ -106,7 +122,7 @@ export type StoreLocation = {
 // The store, and the kitchen every delivery leaves from.
 export const WILSHIRE: StoreLocation = {
   id: "wilshire",
-  name: "Wilshire",
+  name: "Wilshire Blvd",
   kind: "shop",
   // The suite is part of the address, not a note about it. R3452H is how the
   // building numbers the unit, and a courier reading "3450 Wilshire Blvd" with
@@ -161,7 +177,7 @@ export const WILSHIRE: StoreLocation = {
 // of buttons.
 export const WESTERN: StoreLocation = {
   id: "western",
-  name: "Western",
+  name: "Western Ave Outlet",
   kind: "shop",
   outlet: true,
   address: "355 S Western Ave #101",
@@ -175,6 +191,10 @@ export const WESTERN: StoreLocation = {
   // promised from a counter that cannot build one.
   delivery: false,
   catering: false,
+  // Bagels, spreads and drinks. No sandwiches: this counter has no line to
+  // build one on, and a sandwich orderable here is a customer standing at a
+  // counter being told no by a person rather than by the app.
+  menu: ["Bagels", "Spreads", "Drinks"],
   aliases: [
     "western",
     "western ave",

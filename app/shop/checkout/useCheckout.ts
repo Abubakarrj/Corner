@@ -328,7 +328,10 @@ export function useCheckout(): Checkout {
   const incomplete = rows.filter((row) => !row.complete);
   // Sold out since the basket was filled. A basket outlives the morning, so
   // this is ordinary rather than exceptional — it just can't be ordered.
-  const unavailable = rows.filter((row) => row.gone);
+  // Sold out, or not made at the counter this order is going to. Both stop
+  // the order and neither is an error the customer made, so they are one list
+  // for the button and told apart on the row itself.
+  const unavailable = rows.filter((row) => row.gone || row.elsewhere);
 
   const totals = totalsFor({
     subtotalCents,
@@ -449,6 +452,24 @@ export function useCheckout(): Checkout {
             if (gone.includes(line.slug)) removeItem(lineKey(line.slug, line.options));
           }
           setSoldOutNow(names);
+          setStatus("idle");
+          return;
+        }
+        // ——— Not made at the counter this order is going to ———
+        //
+        // Deliberately NOT the same treatment as sold out. Sold out empties
+        // the line because the item no longer exists anywhere and there is
+        // nothing to keep; this one is "not here", and the item is perfectly
+        // real one counter away. Deleting somebody's sandwich because they
+        // picked the nearer shop takes the decision off them — switching to
+        // Wilshire Blvd is a fix they might prefer, and it is only available
+        // while the sandwich is still in the basket.
+        //
+        // So the basket is left alone and the message says both ways out. The
+        // rows are already badged, so what arrives here is the sentence, not
+        // the news.
+        if (Array.isArray(result?.notAtCounter)) {
+          setError(st(result?.error) || t("checkout.somethingWentWrong"));
           setStatus("idle");
           return;
         }

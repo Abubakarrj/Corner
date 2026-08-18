@@ -66,7 +66,7 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
   // Held back for the same reason the basket page holds it back: a line
   // missing its bagel can't be made, and the endpoint refuses it. Better to
   // say so next to the picker than at the end of a form.
-  const blocked = rows.some((row) => !row.complete || row.gone);
+  const blocked = rows.some((row) => !row.complete || row.gone || row.elsewhere);
 
   return (
     <div className="flex flex-col">

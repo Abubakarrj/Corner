@@ -27,6 +27,7 @@ import {
   structuredAddress,
 } from "../../uberDirect";
 import { deliveryOrigin, deliveryStoreFor } from "../../storePlaces";
+import { notServedAt } from "../../shop/storeMenu";
 import {
   addressParts,
   type StoreLocation,
@@ -204,6 +205,25 @@ export async function POST(request: Request) {
   // unanswered is filled in, so nothing downstream sees a half-specified
   // item. A bagel with no kind chosen would otherwise reach the kitchen as a
   // question rather than an order.
+  // ——— Which counter this is going to ———
+  //
+  // Read before the loop because every line is checked against it. Only
+  // pickup and catering name a counter: a delivery leaves from the kitchen,
+  // which makes everything, so its absence here is the correct answer rather
+  // than a missing field.
+  //
+  // This is the half of the counter's menu that a customer cannot skip. The
+  // catalog hiding a sandwich at the outlet is a courtesy; a request can be
+  // typed by hand, replayed from a basket filled at the other counter, or
+  // built by a client that has not caught up with the menu, and the kitchen
+  // has to be able to make whatever this returns 200 for.
+  const orderAt = (() => {
+    const raw = (payload as { fulfillment?: { mode?: unknown; locationId?: unknown } })
+      ?.fulfillment;
+    if (raw?.mode !== "pickup" && raw?.mode !== "catering") return null;
+    return typeof raw.locationId === "string" ? raw.locationId : null;
+  })();
+
   const items: OrderItem[] = [];
   for (const raw of rawItems) {
     const slug = (raw as { slug?: unknown })?.slug;
@@ -244,6 +264,28 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
+    // Not made at this counter. 409 for the same reason sold-out is: the
+    // request is well-formed and the world it was built against is not the
+    // one it arrived in — a basket filled at Wilshire, then pointed at the
+    // outlet on Western.
+    //
+    // The whole list at once, and the slugs with it, exactly as above. The
+    // client clears them in one step and does not have to match a sentence
+    // back against its own lines in ten languages.
+    const notHere = notServedAt(orderAt, [
+      ...new Set(
+        rawItems
+          .map((line) => (line as { slug?: unknown })?.slug)
+          .filter((value): value is string => typeof value === "string"),
+      ),
+    ]);
+    if (notHere.length > 0) {
+      return Response.json(
+        { error: "api.notAtCounter", notAtCounter: notHere },
+        { status: 409 },
+      );
+    }
+
     const rawOptions = (raw as { options?: unknown })?.options;
     const options = normalizeOptions(
       product,

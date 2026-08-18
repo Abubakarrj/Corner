@@ -30,6 +30,8 @@ export const en = {
   "common.total": "Total",
   "common.checkout": "Checkout",
   "common.soldOutToday": "Sold out today",
+  "cart.notAtCounter": "Not at this counter",
+  "api.notAtCounter": "The counter you chose doesn’t make some of these. Pick them up at Wilshire Blvd, or take them out of your basket.",
   "common.soldOut": "Sold out",
   "common.sendAnother": "Send another",
 

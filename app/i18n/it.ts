@@ -23,6 +23,8 @@ export const it: Table = {
   "common.total": "Totale",
   "common.checkout": "Vai alla cassa",
   "common.soldOutToday": "Esaurito per oggi",
+  "cart.notAtCounter": "Non in questo punto vendita",
+  "api.notAtCounter": "Il punto vendita scelto non prepara alcuni di questi articoli. Ritirali in Wilshire Blvd, oppure toglili dal carrello.",
   "common.soldOut": "Esaurito",
   "common.sendAnother": "Inviane un'altra",
 

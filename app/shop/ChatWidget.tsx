@@ -51,12 +51,16 @@ function describeContext(fulfillment: Fulfillment): {
   where: string;
   lat?: number;
   lng?: number;
+  locationId?: string;
 } {
   const { where } = describeFulfillment(fulfillment);
   if (fulfillment.mode === "delivery") {
     return { mode: "delivery", where, lat: fulfillment.lat, lng: fulfillment.lng };
   }
-  return { mode: fulfillment.mode, where };
+  // Which counter, not just its name. The label is prose for the prompt; the
+  // id is what decides whether Riley can put a sandwich in the basket, and
+  // the route checks it against the real list rather than taking it on trust.
+  return { mode: fulfillment.mode, where, locationId: fulfillment.locationId };
 }
 
 const ERROR_RED = "var(--cb-red)";

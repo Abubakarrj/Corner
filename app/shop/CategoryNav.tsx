@@ -5,6 +5,8 @@ import { useT } from "../i18n";
 import { useMenu } from "../i18n/menu";
 import { useEffect, useRef } from "react";
 import { CATEGORIES, type Product, type SortValue } from "./products";
+import { useFulfillment } from "../fulfillment";
+import { servesCategory } from "./storeMenu";
 
 // Underline tabs, matching the reference catalog: a horizontal row of
 // category names over a hairline, with the active one darkened and
@@ -23,6 +25,12 @@ export default function CategoryNav({
 }) {
   const t = useT();
   const menu = useMenu();
+  const fulfillment = useFulfillment();
+  // A tab for a category this counter does not make leads to an empty page,
+  // and an empty page under a heading reads as a fault rather than as a
+  // shorter menu. Same narrowing as ShopCatalog, from the same answer.
+  const at = fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  const categories = CATEGORIES.filter((category) => servesCategory(at, category));
   const scrollerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
@@ -98,7 +106,7 @@ export default function CategoryNav({
         >
           {t("shop.all")}
         </Link>
-        {CATEGORIES.map((category) => (
+        {categories.map((category) => (
           <Link
             key={category}
             ref={category === activeCategory ? activeRef : undefined}

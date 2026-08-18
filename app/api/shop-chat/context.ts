@@ -1,4 +1,5 @@
 import type { Destination } from "./tools";
+import { LOCATIONS } from "../../(marketing)/locations/locations";
 
 // ——— Where the order is going, said by us rather than by the caller ———
 //
@@ -36,6 +37,13 @@ export type ChatContext = {
    *  they dropped on it. Handed to the tools so a delivery check about *this*
    *  address doesn't re-derive a coordinate the customer already gave us. */
   destination?: Destination;
+  /** The counter they are collecting from, if it is one of ours.
+   *
+   *  Enumerable, so it is checked rather than trusted — the same treatment
+   *  the mode gets above, and for the same reason. An id that names no
+   *  counter is dropped, which lands on the full menu; see the note on
+   *  failing open in app/shop/storeMenu.ts. */
+  orderAt?: string;
 };
 
 export function readContext(raw: unknown): ChatContext | null {
@@ -52,7 +60,38 @@ export function readContext(raw: unknown): ChatContext | null {
   if (!label) return null;
 
   const sentence = MODE_SENTENCE[mode as keyof typeof MODE_SENTENCE](label);
-  if (mode !== "delivery") return { sentence };
+
+  if (mode !== "delivery") {
+    const { locationId } = raw as { locationId?: unknown };
+    const store =
+      typeof locationId === "string"
+        ? (LOCATIONS.find((location) => location.id === locationId) ?? null)
+        : null;
+    if (!store) return { sentence };
+
+    // ——— And what that counter makes, when it is not everything ———
+    //
+    // This sentence, and not the briefing. The briefing carries the whole
+    // menu and is cached across every visitor; putting a counter's menu
+    // inside it would give each counter its own copy of the entire cache
+    // entry, and the store — which needs no instruction at all — would pay
+    // for the machinery on every request. Here it is a line of text after
+    // the breakpoint, which is what varying per visitor is supposed to cost.
+    //
+    // Belt to the brace on add_to_basket. The tool refuses regardless, so
+    // this is not what makes the rule hold; it is what stops her offering
+    // something first and being refused second, which reads to a customer as
+    // the shop changing its mind.
+    const restricted = store.menu
+      ? ` This counter only makes ${store.menu.join(", ").toLowerCase()}. ` +
+        `Do not offer anything else from it; if they want something it does ` +
+        `not make, say so and offer collection from ${
+          LOCATIONS.find((location) => !location.menu)?.name ?? "our other counter"
+        } instead.`
+      : "";
+
+    return { sentence: sentence + restricted, orderAt: store.id };
+  }
 
   // Range-checked rather than trusted. A pair outside these bounds is not a
   // place, and passing one on would send a distance calculation somewhere odd

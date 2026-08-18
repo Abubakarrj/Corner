@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { peekFulfillment, useFulfillment } from "../fulfillment";
+import { servesProduct } from "./storeMenu";
 import { confirmed } from "../haptics";
 import {
   describeOptions,
@@ -351,6 +352,14 @@ export type CartRow = {
   // A basket outlives the morning it was filled in, so this is a normal
   // state, not an error: the row says so and checkout refuses it.
   gone: boolean;
+  // True when this counter does not make it — a sandwich in a basket that has
+  // since been pointed at the Western Ave outlet.
+  //
+  // Separate from `gone` because the two are different sentences and the fix
+  // is different: sold out is "not today, anywhere", and this is "not here",
+  // which somebody can undo by switching counters instead of by giving the
+  // item up. Both stop checkout.
+  elsewhere: boolean;
 };
 
 export function useCartRows(): CartRow[] {
@@ -358,6 +367,10 @@ export function useCartRows(): CartRow[] {
   // Subscribes this hook to the board as well as to the basket, so a line goes
   // grey the moment the kitchen runs out rather than at the next navigation.
   const isGone = useSoldOut();
+  // And to the chosen counter, so switching from Wilshire to the outlet marks
+  // the sandwich in the basket immediately rather than at checkout.
+  const fulfillment = useFulfillment();
+  const at = fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
   return useMemo(
     () =>
       currentLines.flatMap<CartRow>((line) => {
@@ -374,10 +387,11 @@ export function useCartRows(): CartRow[] {
             chosen: describeOptions(product, line.options),
             complete: optionsComplete(product, line.options),
             gone: isGone(line.slug),
+            elsewhere: !servesProduct(at, product),
           },
         ];
       }),
-    [currentLines, isGone],
+    [currentLines, isGone, at],
   );
 }
 

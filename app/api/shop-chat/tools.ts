@@ -23,6 +23,7 @@ import {
   type Product,
   type SelectedOptions,
 } from "../../shop/products";
+import { servesProduct } from "../../shop/storeMenu";
 import { totalsFor } from "../../shop/money";
 import type { ChatAttachments, Phrase, ProductCard } from "../../shop/chatTypes";
 import {
@@ -346,6 +347,14 @@ export type ToolContext = {
   quotesLeft: () => boolean;
   /** Where their order is already going, when they've chosen. */
   destination?: Destination;
+  /** The counter they are collecting from, when they have picked one.
+   *
+   *  Absent for delivery, which leaves from the kitchen and can have
+   *  anything. Present so Riley does not offer a sandwich to somebody
+   *  standing at a counter that cannot make one — the order endpoint refuses
+   *  it either way, but being told no by the shop after being offered it by
+   *  the shop is worse than not being offered it. */
+  orderAt?: string;
 };
 
 // Two addresses are the same address if they're the same words. Deliberately
@@ -891,6 +900,20 @@ export async function runTool(
       if (!product) return { forModel: { error: "No item with that slug." } };
       if (soldOut(product.slug)) {
         return { forModel: { error: `${product.name} sold out today.` } };
+      }
+      // Not made at the counter this order is going to. The same refusal
+      // /api/shop-order gives, given here so the basket never holds a line
+      // that checkout will bounce — and phrased so Riley can say what the
+      // alternative is rather than only that she failed.
+      if (!servesProduct(context.orderAt ?? null, product)) {
+        return {
+          forModel: {
+            error:
+              `${product.name} is not made at the counter this order is going to. ` +
+              `Offer to collect it from Wilshire Blvd instead, or suggest something ` +
+              `this counter does make.`,
+          },
+        };
       }
 
       // The counter has to be open. Riley is told this in her briefing and

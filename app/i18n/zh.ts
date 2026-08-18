@@ -25,6 +25,8 @@ export const zh: Table = {
   "common.total": "合计",
   "common.checkout": "结账",
   "common.soldOutToday": "今日售罄",
+  "cart.notAtCounter": "本店不供应",
+  "api.notAtCounter": "您选择的门店不供应其中部分商品。请改到 Wilshire Blvd 取餐，或将它们从购物袋中移除。",
   "common.soldOut": "售罄",
   "common.sendAnother": "再发一份",
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useT } from "../i18n";
+import { useFulfillment } from "../fulfillment";
+import { servesProduct } from "./storeMenu";
 import type { Product, SortValue } from "./products";
 import ProductCard from "./ProductCard";
 import ProductListRow from "./ProductListRow";
@@ -46,6 +48,27 @@ export default function ShopCatalog({
 }) {
   const t = useT();
   const [view, setView] = useState<"grid" | "list">("grid");
+  const fulfillment = useFulfillment();
+
+  // ——— The menu is the counter's, not the company's ———
+  //
+  // The list arrives from the server, which cannot know which counter this
+  // visitor chose — that is in their browser — so the narrowing happens here.
+  // The Western Ave outlet makes bagels, spreads and drinks, and a sandwich
+  // on its catalog is a promise the counter cannot keep.
+  //
+  // Hiding, not disabling. A greyed-out sandwich under a heading that says
+  // Sandwiches is a shop apologising on every row; a shorter menu is just the
+  // menu. The order endpoint refuses these too, so this is the polite half of
+  // a rule that holds either way.
+  //
+  // Delivery narrows nothing: it leaves from the kitchen, which makes
+  // everything, and there is no locationId on a delivery to narrow by.
+  const at = fulfillment && fulfillment.mode !== "delivery" ? fulfillment.locationId : null;
+  const shown = useMemo(
+    () => products.filter((product) => servesProduct(at, product)),
+    [products, at],
+  );
 
   return (
     <div>
@@ -89,9 +112,9 @@ export default function ShopCatalog({
         </div>
 
         <p className="text-[11px] text-faint">
-          {products.length === 1
+          {shown.length === 1
             ? t("checkout.itemCountOne")
-            : t("checkout.itemCount", { count: products.length })}
+            : t("checkout.itemCount", { count: shown.length })}
         </p>
       </div>
 
@@ -121,13 +144,13 @@ export default function ShopCatalog({
         // 5.6k scroll, 336 by 133; that drift is the scrollbar creeping while
         // you read.
         <div className="cb-stagger grid grid-cols-2 gap-x-5 gap-y-12 [&>*]:[content-visibility:auto] [&>*]:[contain-intrinsic-size:auto_317px] sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
-          {products.map((product) => (
+          {shown.map((product) => (
             <ProductCard key={product.slug} product={product} />
           ))}
         </div>
       ) : (
         <div className="cb-stagger flex flex-col">
-          {products.map((product) => (
+          {shown.map((product) => (
             <ProductListRow key={product.slug} product={product} />
           ))}
         </div>

@@ -23,6 +23,8 @@ export const ko: Table = {
   "common.total": "합계",
   "common.checkout": "결제",
   "common.soldOutToday": "오늘 품절",
+  "cart.notAtCounter": "이 매장에는 없음",
+  "api.notAtCounter": "선택하신 매장에서는 일부 품목을 만들지 않습니다. Wilshire Blvd 매장에서 받으시거나 장바구니에서 빼 주세요.",
   "common.soldOut": "품절",
   "common.sendAnother": "다시 보내기",
 
