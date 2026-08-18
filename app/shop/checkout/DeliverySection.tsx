@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useCart } from "../CartContext";
 import PickupPicker from "./PickupPicker";
 import { useT } from "../../i18n";
@@ -35,9 +35,28 @@ import type { Checkout, Handoff } from "./useCheckout";
 //
 // A window rather than a single minute. Uber returns one dropoff_eta and the
 // old copy printed it as "Delivery around 11:37", which reads as a promise
-// nobody made — a courier is a person in traffic. The reference app shows
-// 11:37–11:47, and the range is the honest shape of the same estimate.
-const WINDOW_MINUTES = 10;
+// nobody made — a courier is a person in traffic. A range is the honest shape
+// of the same estimate.
+//
+// ——— Five minutes, down from ten ———
+//
+// The window trails the estimate rather than straddling it: it runs from
+// Uber's number upward, never below. So its midpoint — the time somebody
+// actually reads off a range — sat five minutes past what Uber said, and the
+// top sat ten past. That was a systematic pessimism on top of an estimate
+// that already includes the kitchen, and it is the reason a twenty-five
+// minute delivery advertised itself as thirty-five.
+//
+// Half of it goes. Five keeps the range honest about a courier in traffic
+// while putting the number somebody reads within a couple of minutes of the
+// one Uber gave us.
+//
+// The rest of the wait is not padding and is not adjustable from here.
+// PREP_MINUTES is how long the kitchen takes and it is sent to Uber as the
+// ready time, so the courier is scheduled against it rather than kept
+// waiting; shortening it here would not make a bagel faster, it would just
+// send a driver to stand at the counter. That number belongs to the kitchen.
+const WINDOW_MINUTES = 5;
 
 // ——— The window, from the instant rather than from a stopwatch ———
 //
@@ -84,7 +103,31 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
 
   const aptId = useId();
   const noteId = useId();
-  const etaAt = quote?.etaAt ?? null;
+  // ——— And a window that has already been and gone ———
+  //
+  // Now that the instant is fixed rather than recomputed, a checkout left
+  // open long enough will reach it. Printing "arriving 11:42" at 11:58 is
+  // worse than the drift it replaced: the drift was late, this is a time that
+  // has already happened. Past its own top end, the quote has stopped
+  // describing anything and the pending line is the honest thing to show —
+  // the endpoint re-quotes at order time regardless, so nothing downstream
+  // depends on this number.
+  const quotedAt = quote?.etaAt ?? null;
+  // Which quote has outlived its own window. Held as the instant rather than
+  // as a boolean, so a fresh quote is live again without anything having to
+  // remember to clear a flag.
+  const [lapsed, setLapsed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!quotedAt) return;
+    // One timer that fires at the moment it matters, rather than a poll
+    // asking every minute whether the moment has arrived. Date.now() belongs
+    // here and not in the render: reading the clock while rendering makes the
+    // same component produce different output from the same props.
+    const ms = Date.parse(quotedAt) + WINDOW_MINUTES * 60_000 - Date.now();
+    const timer = window.setTimeout(() => setLapsed(quotedAt), Math.max(0, ms));
+    return () => window.clearTimeout(timer);
+  }, [quotedAt]);
+  const etaAt = quotedAt && lapsed !== quotedAt ? quotedAt : null;
 
   return (
     <>
