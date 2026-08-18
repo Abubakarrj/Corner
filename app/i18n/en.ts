@@ -50,6 +50,7 @@ export const en = {
   "finder.pickup": "Pickup",
   "finder.outlet": "Outlet",
   "finder.outletNote": "Bagels, Schmear, Drinks. No Sandwiches",
+  "finder.storeNote": "Bagels, Schmear, Sandwiches, Drinks",
   "finder.delivery": "Delivery",
   "finder.catering": "Catering",
   "finder.searchPlaceholder": "Search store, city, state, or zip",

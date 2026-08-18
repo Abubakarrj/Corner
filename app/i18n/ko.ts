@@ -42,6 +42,7 @@ export const ko: Table = {
   "finder.pickup": "픽업",
   "finder.outlet": "간이 매장",
   "finder.outletNote": "베이글, 슈미어, 음료. 샌드위치 없음",
+  "finder.storeNote": "베이글, 슈미어, 샌드위치, 음료",
   "finder.delivery": "배달",
   "finder.catering": "케이터링",
   "finder.searchPlaceholder": "매장, 도시, 주 또는 우편번호 검색",

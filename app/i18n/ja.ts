@@ -42,6 +42,7 @@ export const ja: Table = {
   "finder.pickup": "受け取り",
   "finder.outlet": "アウトレット",
   "finder.outletNote": "ベーグル、シュメア、ドリンク。サンドイッチなし",
+  "finder.storeNote": "ベーグル、シュメア、サンドイッチ、ドリンク",
   "finder.delivery": "配達",
   "finder.catering": "ケータリング",
   "finder.searchPlaceholder": "店舗、市、州、郵便番号で検索",

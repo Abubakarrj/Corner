@@ -51,6 +51,7 @@ export const fa: Table = {
   "finder.pickup": "تحویل حضوری",
   "finder.outlet": "باجه",
   "finder.outletNote": "بیگل، اشمیر، نوشیدنی. بدون ساندویچ",
+  "finder.storeNote": "بیگل، اشمیر، ساندویچ، نوشیدنی",
   "finder.delivery": "ارسال",
   "finder.catering": "پذیرایی",
   "finder.searchPlaceholder": "جست‌وجوی شعبه، شهر، ایالت یا کد پستی",

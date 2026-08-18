@@ -42,6 +42,7 @@ export const my: Table = {
   "finder.pickup": "လာယူရန်",
   "finder.outlet": "ဆိုင်ခွဲ",
   "finder.outletNote": "ဘေဂယ်၊ ရှမီးယား၊ အဖျော်ယမကာ။ ဆန်းဒဝစ်ချ် မရှိပါ",
+  "finder.storeNote": "ဘေဂယ်၊ ရှမီးယား၊ ဆန်းဒဝစ်ချ်၊ အဖျော်ယမကာ",
   "finder.delivery": "ပို့ဆောင်ရန်",
   "finder.catering": "ကေတာရင်",
   "finder.searchPlaceholder": "ဆိုင်၊ မြို့၊ ပြည်နယ် သို့မဟုတ် ဇစ်ကုဒ် ရှာပါ",

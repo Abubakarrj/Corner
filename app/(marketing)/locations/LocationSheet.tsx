@@ -164,15 +164,21 @@ export default function LocationSheet({
             <span className={OUTLET_CHIP}>{t("finder.outlet")}</span>
           ) : null}
         </div>
-        {/* What this counter makes, and nothing else about what it is called.
-            The chip beside the heading has already said it is an outlet, and
-            a line under it repeating that in longer words is the same fact
-            twice. This line is the part the chip cannot carry. */}
-        {location.outlet ? (
-          <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
-            {t("finder.outletNote")}
-          </p>
-        ) : null}
+        {/* What this counter makes. Every counter says it now, not only the
+            shorter one: a line that appears on one sheet and not the other
+            reads as a caveat about that one, and the store's menu is a fact
+            about the store rather than an apology from the outlet.
+
+            Keyed off `outlet` rather than off the `menu` field, and that is a
+            copy decision rather than an oversight. The categories are
+            "Spreads" and the shop says "Schmear", and a list built from the
+            data would be in the catalog's order rather than the order the
+            shop reads them out in. Two counters, two written lines; a third
+            takes the line of whichever kind it is, which is the same way the
+            chip beside the heading works. */}
+        <p className="m-0 mt-2.5 text-[15px] leading-[1.5]" style={{ color: muted }}>
+          {t(location.outlet ? "finder.outletNote" : "finder.storeNote")}
+        </p>
         {/* ——— No address here ———
 
             It was printed in full, and then the row of chips below offers
