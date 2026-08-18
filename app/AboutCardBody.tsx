@@ -1,7 +1,6 @@
 "use client";
 
 import BagelMark from "./BagelMark";
-import { openDropList } from "./dropList";
 import { useT } from "./i18n";
 import { SHOP_EMAIL } from "./shopFacts";
 
@@ -118,22 +117,6 @@ export default function AboutCardBody() {
       >
         {SHOP_EMAIL}
       </a>
-
-      {/* And the list, on the page where somebody is reading about the shop
-          rather than ordering from it — which is the state of mind the ask
-          suits. The pop-up may well have already asked on this route; it will
-          not ask again for days after that, and this is what somebody who
-          changes their mind in between has instead of nothing.
-          self-center for the same reason as the email above it: in a flex
-          column a button stretches to the full width and becomes a tap band
-          running under the bagel. */}
-      <button
-        type="button"
-        onClick={openDropList}
-        className="cb-press mt-[1.2em] self-center underline whitespace-nowrap"
-      >
-        {t("droplist.joinLink")}
-      </button>
 
       {/* The bagel, on phones only.
           Above sm it's the fixed corner mark instead, which has room there and

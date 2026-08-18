@@ -521,7 +521,6 @@ export const ur: Table = {
   "droplist.already": "پہلے سے فہرست میں ہیں",
   "droplist.email": "ای میل ایڈریس",
   "droplist.terms": "سروس کی شرائط",
-  "droplist.joinLink": "فہرست میں شامل ہوں",
   "footer.privacy": "پرائیویسی پالیسی",
 
   "about.tagline": "بالکل کونے کے پاس",
