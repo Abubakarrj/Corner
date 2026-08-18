@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 import { useCart } from "../CartContext";
 import PickupPicker from "./PickupPicker";
+import AdjustPinModal from "./AdjustPinModal";
 import { useT } from "../../i18n";
 import { useOpening } from "../../useOpening";
 import { formatPrice } from "../products";
@@ -80,6 +81,7 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
   const opening = useOpening();
   const { lines } = useCart();
   const [picking, setPicking] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
   const {
     where,
     quote,
@@ -135,6 +137,16 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
       <PickupPicker
         slugs={lines.map((line) => line.slug)}
         onClose={() => setPicking(false)}
+      />
+    ) : null}
+    {/* Narrowed here rather than inside the modal: there is no pin to adjust
+        on a pickup, and the component should not have to defend against being
+        handed one. */}
+    {adjusting && pinned && fulfillment?.mode === "delivery" ? (
+      <AdjustPinModal
+        fulfillment={fulfillment}
+        start={[fulfillment.lat as number, fulfillment.lng as number]}
+        onClose={() => setAdjusting(false)}
       />
     ) : null}
     <Section
@@ -218,12 +230,34 @@ export default function DeliverySection({ checkout }: { checkout: Checkout }) {
                 somebody there keeps one answer to "where does this go". */}
             <p className="m-0 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted">
               <span>{pinned ? t("pin.pinned") : t("delivery.noPinYet")}</span>
-              <Link
-                href="/locations?for=menu"
-                className="cursor-pointer text-ink underline underline-offset-2"
-              >
-                {pinned ? t("pin.adjust") : t("pin.title")}
-              </Link>
+              {/* Opens the picker over this screen rather than navigating to
+                  the finder. Correcting a pin is not choosing a destination:
+                  somebody reading their own address back before paying has
+                  spotted that the point is on the wrong side of the building,
+                  and the fix for that used to be leaving a half-filled form
+                  and re-entering the finder through its search and its tabs
+                  to reach the same map. */}
+              {pinned ? (
+                <button
+                  type="button"
+                  onClick={() => setAdjusting(true)}
+                  className="cb-press cursor-pointer text-ink underline underline-offset-2"
+                >
+                  {t("pin.adjust")}
+                </button>
+              ) : (
+                /* Still a link, and it has to be. Adjusting a pin needs a pin
+                   to open the map over; placing a first one needs the address
+                   resolved to coordinates before a map can be shown at all,
+                   and resolving an address is what the finder is for. Only a
+                   delivery set up before the pin step existed lands here. */
+                <Link
+                  href="/locations?for=menu"
+                  className="cursor-pointer text-ink underline underline-offset-2"
+                >
+                  {t("pin.title")}
+                </Link>
+              )}
             </p>
             {/* The unit, under the street it belongs to rather than in a
                 separate section — it is one address, and splitting it across

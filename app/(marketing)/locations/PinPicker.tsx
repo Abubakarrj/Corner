@@ -117,6 +117,8 @@ export default function PinPicker({
   start,
   startAddress,
   startFix,
+  startUnit,
+  startInstructions,
   onConfirm,
   onCancel,
 }: {
@@ -143,6 +145,11 @@ export default function PinPicker({
    *  handed over the coordinates, and this screen opened at a fixed zoom 18
    *  with nothing on it. */
   startFix?: Fix;
+  /** The apartment already on the order, when this is reopened to correct a
+   *  pin rather than to place the first one. */
+  startUnit?: string;
+  /** Likewise the courier note. */
+  startInstructions?: string;
   onConfirm: (result: PinResult) => void;
   onCancel: () => void;
 }) {
@@ -181,8 +188,16 @@ export default function PinPicker({
   const [chosen, setChosen] = useState<NearbyPlace | null>(
     startAddress ? { address: startAddress } : null,
   );
-  const [unit, setUnit] = useState("");
-  const [instructions, setInstructions] = useState("");
+  // Seeded from what the order already has, not blank.
+  //
+  // Blank was right while this screen only ever ran once, at the point a
+  // delivery was first set up: there was nothing to prefill. It is wrong now
+  // that the checkout can open it again to nudge a pin — the fields would
+  // come up empty over an apartment number the customer had already given,
+  // and confirming would write that emptiness back over it. An adjustment
+  // screen has to open showing the thing it is adjusting.
+  const [unit, setUnit] = useState(startUnit ?? "");
+  const [instructions, setInstructions] = useState(startInstructions ?? "");
   const label = chosen?.address ?? "";
   const [moving, setMoving] = useState(false);
   const [locating, setLocating] = useState(false);
