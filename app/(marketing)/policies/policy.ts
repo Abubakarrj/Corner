@@ -271,7 +271,29 @@ const enPrivacy: Policy = {
             "Time spent on our website",
             "Referring websites",
             "Cookies and similar technologies",
+            "Precise location, only when you ask us to find you",
           ],
+        },
+      ],
+    },
+    // Precise location is sensitive personal information under California law
+    // and it has to be described on its own, not left as one bullet in a list
+    // between "Operating system" and "Cookies". Two screens ask for it, it
+    // leaves for Google when they do, and the section says both plainly.
+    {
+      heading: "Location",
+      blocks: [
+        {
+          kind: "p",
+          text: "Two screens can use your device’s location: the store finder, when you press the locate button, and the delivery map, which asks when you open it. Your browser asks your permission first, and if you decline, nothing is collected — both screens work from an address you type instead.",
+        },
+        {
+          kind: "p",
+          text: "When you do allow it, the coordinates are sent to Google Maps Platform so we can name what is at that spot and work out whether it falls inside our delivery area. Google’s handling of that request is governed by Google’s own privacy policy. We do not store the coordinates, we do not attach them to your account, and we do not use them for advertising or to build a profile of you. Only a delivery address you confirm is kept, and only as part of the order it belongs to.",
+        },
+        {
+          kind: "p",
+          text: "On iPhone and iPad, Location Services keeps a separate Precise Location switch for each website. With it turned off your device reports a neighbourhood rather than a street, which we will tell you when it happens. You can leave it off and place your delivery pin yourself.",
         },
       ],
     },
@@ -376,6 +398,7 @@ const enPrivacy: Policy = {
             "Email marketing platforms",
             "Website hosting providers",
             "Analytics providers",
+            "Mapping and address lookup providers",
           ],
         },
         {
@@ -425,6 +448,7 @@ const enPrivacy: Policy = {
             "Request deletion of personal information",
             "Request a copy of your information",
             "Opt out of certain marketing communications",
+            "Limit our use of sensitive personal information, such as precise location",
           ],
         },
         { kind: "p", text: "To exercise these rights, please contact us at {email}." },

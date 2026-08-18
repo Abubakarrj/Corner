@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { loadMaps } from "../../googleMapsPublic";
-import { locateMe, type Fix } from "../../geolocate";
+import { locateMe, searchBias, type Fix } from "../../geolocate";
 import { useLocale, useT } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { Button } from "../../ui/Button";
@@ -815,7 +815,7 @@ function PinSearch({ onPick }: { onPick: (point: [number, number]) => void }) {
     // A pause, not a request per character. Places bills per session and per
     // keystroke is a lot of both.
     const timer = window.setTimeout(() => {
-      void suggestAddresses(typed, "address", DELIVERY_ORIGIN.position, controller.signal)
+      void suggestAddresses(typed, "address", searchBias(DELIVERY_ORIGIN.position), controller.signal)
         .then((items) => {
           setFound({ forQuery: typed, items });
           setOpen(true);

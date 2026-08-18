@@ -25,6 +25,7 @@ import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from
 import { codeFor, matchStates } from "./states";
 import { suggestAddresses } from "../../googleMapsPublic";
 import { DELIVERY_ORIGIN } from "../locations/locations";
+import { searchBias } from "../../geolocate";
 
 // The job application.
 //
@@ -1476,7 +1477,7 @@ function CityBox({
     }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void suggestAddresses(input, "city", DELIVERY_ORIGIN.position, controller.signal)
+      void suggestAddresses(input, "city", searchBias(DELIVERY_ORIGIN.position), controller.signal)
         .then((items) => setChoices(items))
         // No key, no network, no Places: the box stays a plain text field and
         // the form works exactly as it did. Suggestions are a convenience and

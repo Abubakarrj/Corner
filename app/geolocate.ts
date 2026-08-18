@@ -1,5 +1,7 @@
 "use client";
 
+import { milesBetween } from "./(marketing)/locations/locations";
+
 // Finding the visitor, and being honest about how well we found them.
 //
 // ——— Why this is not one getCurrentPosition call ———
@@ -55,6 +57,61 @@ export type LocateResult = { ok: true; fix: Fix } | { ok: false; why: LocateFail
 // fix that cannot.
 const COARSE_METRES = 1500;
 
+// ——— The last fix, kept so a second question does not need a second ask ———
+//
+// Only ever written by a locateMe() that succeeded, which means somebody has
+// already granted the permission for something they asked for. Nothing here
+// requests a position: a module that quietly triggered the browser's location
+// prompt to improve a dropdown would be exactly the behaviour the prompt
+// exists to prevent.
+//
+// In memory only. It is not written to storage, so it dies with the tab.
+let last: { fix: Fix; at: number } | null = null;
+
+// After this the fix is a place the visitor used to be. Half an hour, the same
+// span visits.ts calls "away", and for the same reason: it is long enough to
+// cover a phone in a pocket and short enough that this morning is not now.
+const STALE_MS = 30 * 60 * 1000;
+
+/** The most recent fix, if one was taken recently enough to still describe
+ *  where the visitor is. Never asks for a new one. */
+export function recentFix(): Fix | null {
+  if (!last) return null;
+  return Date.now() - last.at < STALE_MS ? last.fix : null;
+}
+
+// How far from the shop a fix can be and still be the better centre to search
+// around. Fifteen miles, a little beyond the ten-mile delivery radius, so
+// somebody standing just outside the zone typing an address inside it still
+// gets a circle that covers the whole of it.
+const BIAS_MILES = 15;
+
+/** Where to centre an address search.
+ *
+ *  ——— Why this is not simply "wherever the visitor is" ———
+ *
+ *  The search is biased, not restricted: a centre only decides what ranks
+ *  first. Centring on the visitor is right when they are in the neighbourhood,
+ *  because "300 W" then means their own block rather than the identically
+ *  named street on the other side of the city, and Los Angeles has plenty of
+ *  those.
+ *
+ *  It is wrong when they are not. Somebody in New York sending bagels to a
+ *  friend in Koreatown is typing a Los Angeles address, and a circle drawn
+ *  around Manhattan ranks it nowhere. Their position is real and still the
+ *  worse answer, so it is the distance to the shop that decides, not whether
+ *  we happen to know where they are.
+ *
+ *  A coarse fix is fine here. This picks a centre for a twelve-mile circle,
+ *  and a kilometre of doubt does not move that circle in any way that changes
+ *  what ranks first — which is why it is used where the delivery pin refuses
+ *  it. */
+export function searchBias(fallback: [number, number]): [number, number] {
+  const fix = recentFix();
+  if (!fix) return fallback;
+  return milesBetween(fix.point, fallback) <= BIAS_MILES ? fix.point : fallback;
+}
+
 function once(options: PositionOptions): Promise<GeolocationPosition | GeolocationPositionError> {
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(resolve, resolve, options);
@@ -67,11 +124,15 @@ function isError(value: unknown): value is GeolocationPositionError {
 
 function toFix(position: GeolocationPosition): Fix {
   const accuracyMeters = position.coords.accuracy;
-  return {
+  const fix: Fix = {
     point: [position.coords.latitude, position.coords.longitude],
     accuracyMeters,
     coarse: !Number.isFinite(accuracyMeters) || accuracyMeters > COARSE_METRES,
   };
+  // Every success passes through here, so this is the one place the cache
+  // needs writing. See recentFix() above for what reads it.
+  last = { fix, at: Date.now() };
+  return fix;
 }
 
 /** Where the visitor is, as well as the phone will say.
