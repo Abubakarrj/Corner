@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "check:maps": "node scripts/check-maps.mjs"
+    "check:maps": "node scripts/check-maps.mjs",
+    "test": "node tests/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
