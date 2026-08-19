@@ -328,6 +328,30 @@ async function main() {
   ok("an unreadable one is simply absent, and the order still stands",
      unreadable.ok === true && unreadable.readyAt === undefined, JSON.stringify(unreadable));
 
+  // ——— The two handles an update needs ———
+  //
+  // Square versions an order and gives each fulfillment its own uid. Neither is
+  // derivable from the order id, and this response is the only place they come
+  // for free, so anything that changes the order later depends on catching them
+  // here.
+  reset({
+    order: { id: "sq-6", version: 1, fulfillments: [{ uid: "uYJmomsp8OjA2iY8PZR2IC" }] },
+  });
+  const handles = await createSquareOrder(draft);
+  ok("the order's version is kept", handles.ok === true && handles.version === 1,
+     JSON.stringify(handles));
+  ok("and the fulfillment's uid",
+     handles.ok === true && handles.fulfillmentUid === "uYJmomsp8OjA2iY8PZR2IC",
+     JSON.stringify(handles));
+
+  // A till with no such notion says nothing rather than inventing a zero, which
+  // an update would send as a stale version and have refused.
+  reset({ order: { id: "sq-7" } });
+  const bare = await createSquareOrder(draft);
+  ok("and neither is invented when the response has none",
+     bare.ok === true && bare.version === undefined && bare.fulfillmentUid === undefined,
+     JSON.stringify(bare));
+
   // ——— Reading an order back ———
   reset({ order: { id: "sq-4", state: "OPEN", fulfillments: [{ state: "PREPARED" }] } });
   const state = await fetchSquareOrder("sq-4");

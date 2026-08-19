@@ -92,6 +92,12 @@ export function foodStageOf(status: string | null): FoodStage | undefined {
     case "FAILED":
       // A cancelled order is not a later stage, it is a different
       // conversation — which is exactly what "voided" means here.
+      //
+      // FAILED reads like something broke, and it is not: Square sets it from
+      // `rejected_at`, which is somebody at the counter turning the order
+      // down. CANCELED comes from `canceled_at`, the customer's side of the
+      // same thing. Both mean no food is coming, which is the only distinction
+      // the tracker needs to draw.
       return "voided";
 
     default:

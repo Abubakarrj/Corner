@@ -155,7 +155,14 @@ type SquareOrderResponse = {
   order?: {
     id?: string;
     state?: string;
+    /** Square's optimistic-concurrency counter. An update that names a stale
+     *  version is refused rather than silently overwriting somebody else's
+     *  change, which on a live till is the counter's own edit. */
+    version?: number;
     fulfillments?: {
+      /** Square's handle for this fulfillment within the order. An update
+       *  addresses a fulfillment by this, not by position. */
+      uid?: string;
       state?: string;
       pickup_details?: { pickup_at?: string };
       delivery_details?: { deliver_at?: string };
@@ -339,6 +346,15 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
     ok: true,
     orderId: order.id,
     ...(Number.isNaN(readyAt) ? {} : { readyAt }),
+    // Kept so this order can be changed later without reading it back first.
+    // The courier's id is the case in view: the bag is booked after this call
+    // returns, so `external_delivery_id` cannot be set at creation and has to
+    // be written afterwards, and an update needs the version to be allowed and
+    // the fulfillment's uid to know what to change.
+    ...(typeof order.version === "number" ? { version: order.version } : {}),
+    ...(typeof order.fulfillments?.[0]?.uid === "string"
+      ? { fulfillmentUid: order.fulfillments[0].uid }
+      : {}),
   };
 }
 

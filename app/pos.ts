@@ -75,8 +75,15 @@ export type PosOrderDraft = {
 };
 
 export type PosOrderResult =
-  /** `readyAt` is the till's own estimate as epoch ms, when it gave one. */
-  | { ok: true; orderId: string; readyAt?: number }
+  /** `readyAt` is the till's own estimate as epoch ms, when it gave one.
+   *
+   *  `version` and `fulfillmentUid` are what it takes to change this order
+   *  afterwards. Square versions an order for optimistic concurrency and
+   *  addresses a fulfillment by its own uid, so an update needs both and
+   *  neither can be derived from the order id. Captured at creation because
+   *  this is the only response that carries them for free — the alternative is
+   *  a read before every write. Absent on a till that has no such notion. */
+  | { ok: true; orderId: string; readyAt?: number; version?: number; fulfillmentUid?: string }
   // `reason` is for the log, not the customer. A failure here means the
   // kitchen never heard about the order, so the caller has to say so plainly
   // rather than showing a confirmation.
