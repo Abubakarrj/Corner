@@ -7,7 +7,7 @@ import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "./db";
 // ⚠️ Toast answers this better, and /api/kitchen-load prefers it. Orders Hub
 // is the till: it sees every ticket the kitchen has whatever channel it came
 // through, it is read rather than accumulated so nothing drifts, and there is
-// no row to close or sweep. See countOpenOrders() in app/toast.ts.
+// no row to close or sweep. See countOpenPosOrders() in app/toast.ts.
 //
 // This exists for the deployment where Toast is not wired up yet, which is the
 // state this shop is in today. It counts what passed through /api/shop-order —

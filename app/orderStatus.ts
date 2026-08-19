@@ -2,27 +2,37 @@
 //
 // Two feeds, because an order has two halves and nobody owns both:
 //
-//   Toast   the food. RECEIVED → IN_PREPARATION → READY_FOR_PICKUP → CLOSED,
-//           driven by somebody pressing Order Ready in Orders Hub.
-//   Uber    the courier, on a delivery. pending → pickup → dropoff →
-//           delivered.
+//   the till   the food. Square's PROPOSED → RESERVED → PREPARED → COMPLETED,
+//              or Toast's RECEIVED → IN_PREPARATION → READY_FOR_PICKUP →
+//              CLOSED, driven by somebody pressing a button at the counter.
+//              Which till is answering is app/pos.ts's business, not this
+//              file's; both vocabularies land on the same stages in
+//              app/orderStages.ts.
+//   Uber       the courier, on a delivery. pending → pickup → dropoff →
+//              delivered.
 //
 // A pickup order only ever has the first. A delivery has both, and they run in
 // sequence: the food is ready, then a courier collects it.
 //
+// The kind below is still spelled "toast". It means "the till" now, for the
+// same reason `toastGuid` does: it selects a persisted column (`toast_guid` in
+// the push subscriptions table), so renaming it is a migration rather than a
+// rename. See the note at the top of app/pos.ts.
+//
 // ——— Webhooks are a doorbell, not a delivery ———
 //
-// The endpoints in app/api/toast/fulfillment and app/api/uber/delivery verify
-// the signature and then throw the body away. All they do is call refresh()
-// below, which asks the provider's authenticated API what the status actually
-// is.
+// The endpoints in app/api/square/order, app/api/toast/fulfillment and
+// app/api/uber/delivery verify the signature and then throw the body away. All
+// they do is call refresh() below, which asks the provider's authenticated API
+// what the status actually is.
 //
 // That is deliberate and it is worth being clear about why, because the
 // obvious implementation — read the status out of the POST body — is one line
 // shorter and considerably worse.
 //
 // Uber documents its signature exactly: HMAC-SHA256 of the raw body, hex,
-// against X-Postmates-Signature. Toast's is HMAC-SHA256 too, but the string it
+// against X-Postmates-Signature. Square's is documented too, and its endpoint
+// verifies the real scheme. Toast's is HMAC-SHA256 as well, but the string it
 // signs is the body concatenated with a timestamp from the payload, and the
 // exact form of that concatenation is not something I could pin down from the
 // documentation available to me. A signature check written against a guess is
@@ -30,9 +40,10 @@
 //
 // So the signature is verified — it costs nothing and rejects junk early — but
 // it is not what the status rests on. Get the scheme subtly wrong and the
-// worst an attacker achieves is making this server call Toast about an order
-// id it already knew. They cannot make a customer's phone say READY. The thing
-// that says READY is Toast, over an authenticated connection, every time.
+// worst an attacker achieves is making this server call the till about an
+// order id it already knew. They cannot make a customer's phone say READY. The
+// thing that says READY is the till, over an authenticated connection, every
+// time.
 //
 // ——— Memory, and why that is survivable ———
 //
@@ -42,16 +53,16 @@
 // What makes that acceptable here rather than merely cheap is that the store
 // is a cache and never the record. Every read that misses, or finds something
 // old, goes and asks the provider. A restart costs one extra API call per
-// order being watched, not a customer staring at a stale screen. Toast asks
-// integrations to poll a fallback API in case a webhook is missed, and this is
-// that fallback — the same path serves both.
+// order being watched, not a customer staring at a stale screen. Both tills
+// ask integrations to poll a fallback API in case a webhook is missed, and
+// this is that fallback — the same path serves both.
 //
 // Swapping this for Redis later means replacing read() and write(). Nothing
 // above them needs to know.
 
 import { announce } from "./push/announce";
 import { leaveQueue } from "./kitchenQueue";
-import { fetchToastOrder } from "./toast";
+import { fetchPosOrder } from "./pos";
 import { fetchDelivery } from "./uberDirect";
 import {
   courierStageOf,
@@ -70,7 +81,7 @@ const TTL_MS = 6 * 60 * 60 * 1000;
 const MAX_ENTRIES = 5000;
 // How long a status is served before it is worth asking again. The tracker
 // polls per customer; this is what stops ten people watching one order from
-// becoming ten calls to Toast.
+// becoming ten calls to the till.
 const FRESH_MS = 15_000;
 
 type Key = `toast:${string}` | `uber:${string}`;
@@ -108,7 +119,7 @@ export async function refresh(
   now: number = Date.now(),
 ): Promise<LiveStatus | undefined> {
   if (kind === "toast") {
-    const state = await fetchToastOrder(id);
+    const state = await fetchPosOrder(id);
     const food = foodStageOf(state?.fulfillment ?? null);
     if (!state || food === undefined) return undefined;
     const was = read(`toast:${id}`, now)?.food;

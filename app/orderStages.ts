@@ -53,8 +53,9 @@ export type LiveStatus = {
  *  Unknown values deliberately return undefined rather than a guess. A status
  *  we do not recognise means the tracker keeps running on its estimate, which
  *  is the behaviour it had before any of this existed. */
-export function foodStageOf(toastStatus: string | null): FoodStage | undefined {
-  switch (toastStatus?.toUpperCase()) {
+export function foodStageOf(status: string | null): FoodStage | undefined {
+  switch (status?.toUpperCase()) {
+    // ——— Toast ———
     case "RECEIVED":
       return "received";
     case "IN_PREPARATION":
@@ -65,6 +66,34 @@ export function foodStageOf(toastStatus: string | null): FoodStage | undefined {
       return "done";
     case "VOIDED":
       return "voided";
+
+    // ——— Square ———
+    //
+    // One function for both tills, because the vocabularies do not overlap:
+    // no word means one thing to Toast and another to Square, so a single
+    // switch cannot be ambiguous and two switches would be two places to
+    // forget.
+    //
+    // Worth noting that this half is better founded than the half above. The
+    // Toast mapping was a guess nobody had watched a real order confirm;
+    // Square publishes these six states with defined meanings, and a sandbox
+    // to walk an order through them.
+    case "PROPOSED":
+      // Sent, not yet accepted by anyone at the counter.
+      return "received";
+    case "RESERVED":
+      // Accepted and being made.
+      return "cooking";
+    case "PREPARED":
+      return "ready";
+    case "COMPLETED":
+      return "done";
+    case "CANCELED":
+    case "FAILED":
+      // A cancelled order is not a later stage, it is a different
+      // conversation — which is exactly what "voided" means here.
+      return "voided";
+
     default:
       return undefined;
   }

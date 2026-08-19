@@ -4,7 +4,7 @@ import { canSignIn } from "../../auth/auth0";
 import { isEmailConfigured } from "../../email";
 import { googleMapsKey } from "../../googleMaps";
 import { pushProblem } from "../../push/send";
-import { isToastConfigured, toastReachable } from "../../toast";
+import { isPosConfigured, posName, posReachable } from "../../pos";
 import { isUberConfigured } from "../../uberDirect";
 
 // What is actually switched on, in one request.
@@ -71,8 +71,8 @@ async function databaseCheck(): Promise<Check> {
   }
 }
 
-async function toastCheck(): Promise<Check> {
-  if (!isToastConfigured()) {
+async function posCheck(): Promise<Check> {
+  if (!isPosConfigured()) {
     return {
       on: false,
       how: "checked",
@@ -81,7 +81,7 @@ async function toastCheck(): Promise<Check> {
         " queue falls back to counting what this app placed.",
     };
   }
-  const reachable = await toastReachable();
+  const reachable = await posReachable();
   return reachable.ok
     ? { on: true, how: "checked" }
     : { on: false, how: "checked", without: reachable.why };
@@ -91,11 +91,14 @@ export async function GET(request: Request) {
   if (!authorized(request)) return notFound();
 
   const push = pushProblem();
-  const [database, toast] = await Promise.all([databaseCheck(), toastCheck()]);
+  const [database, pos] = await Promise.all([databaseCheck(), posCheck()]);
 
   const checks: Record<string, Check> = {
     database,
-    toast,
+    // Keyed by the till that is actually switched on, so the status page names
+    // the thing somebody would go and look at rather than a vendor this
+    // deployment stopped using.
+    [posName() ?? "pos"]: pos,
     uber: {
       on: isUberConfigured(),
       how: "configured",

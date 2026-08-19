@@ -221,8 +221,11 @@ export type ToastOrderDraft = {
 
 export type ToastOrderResult =
   /** `readyAt` is Toast's estimatedFulfillmentDate as epoch ms, when it sent
-      one. See the note where it is parsed. */
-  | { ok: true; orderGuid: string; readyAt?: number }
+      one. See the note where it is parsed.
+      `orderId` rather than `orderGuid`: the shape is shared with Square now
+      through app/pos.ts, and one of the two had to stop using its vendor's
+      word for the same thing. */
+  | { ok: true; orderId: string; readyAt?: number }
   // `reason` is for the log, not the customer. A failure here means the
   // kitchen never heard about the order, so the caller has to say so plainly
   // rather than showing a confirmation.
@@ -337,13 +340,13 @@ export async function createToastOrder(
     : NaN;
   return {
     ok: true,
-    orderGuid: body.guid,
+    orderId: body.guid,
     ...(Number.isNaN(estimated) ? {} : { readyAt: estimated }),
   };
 }
 
 export type ToastOrderState = {
-  guid: string;
+  id: string;
   // Toast's own words for where the order is. Passed through rather than
   // mapped onto our tracker's stages, because the mapping is a guess until
   // somebody has watched a real order move through it.
@@ -375,7 +378,7 @@ export async function fetchToastOrder(guid: string): Promise<ToastOrderState | n
   };
   if (!body.guid) return null;
   return {
-    guid: body.guid,
+    id: body.guid,
     status: body.checks?.[0]?.paymentStatus ?? null,
     fulfillment: body.guestOrderStatus ?? derivedFulfillment(body),
   };

@@ -1,0 +1,346 @@
+// What an order actually looks like on the wire to Square.
+//
+// ——— Why this exists ———
+//
+// There is no Square sandbox wired into this checkout yet, so nothing here has
+// ever been sent to a real till. That is exactly the condition under which an
+// integration is most likely to be confidently wrong, and Square has three
+// traps that a reading of the code does not catch:
+//
+//   1. `quantity` is a *string*. A number is a 400 whose message complains
+//      about something else entirely.
+//   2. An order with no `fulfillments` is accepted, appears in reporting, and
+//      never appears on anybody's screen as something to make. This was a real
+//      bug in this file — the fulfillment was built and never attached — and
+//      ESLint caught it, which is luck rather than a process.
+//   3. The wire is snake_case while every type Square publishes is camelCase.
+//      A `locationId` on the body is a silently ignored field.
+//
+// So the transport is stubbed and the payload is inspected. That does not prove
+// Square accepts it. It proves the app sends what it claims to send, which is
+// the half that is ours.
+
+import {
+  createSquareOrder,
+  fetchSquareOrder,
+  countOpenSquareOrders,
+  squareLocationFor,
+} from "../app/square";
+
+let failures = 0;
+const ok = (what: string, cond: boolean, detail = "") => {
+  if (cond) console.log("pass ", what);
+  else { failures += 1; console.log("FAIL ", what, detail); }
+};
+
+process.env.SQUARE_ACCESS_TOKEN = "token";
+process.env.SQUARE_LOCATION_ID = "L-default";
+process.env.SQUARE_LOCATION_FIGUEROA = "L-figueroa";
+// Left unset on purpose: SQUARE_LOCATION_WILSHIRE. The fallback is the case
+// that goes wrong quietly on a real account, so it is the one under test.
+delete process.env.SQUARE_LOCATION_WILSHIRE;
+delete process.env.SQUARE_ENV;
+
+type Wire = Record<string, unknown>;
+
+let sent: Wire | null = null;
+let sentUrl = "";
+let sentHeaders: Record<string, string> = {};
+let reply: { status: number; body: unknown } = {
+  status: 200,
+  body: { order: { id: "sq-order-1" } },
+};
+
+// Read through functions rather than off the variables: `sent` is only written
+// from inside the stubbed fetch, which the compiler cannot see running, so
+// after `sent = null` it narrows to null and every field read becomes an error
+// on `never`.
+const wire = () => (sent ?? {}) as Wire;
+const order = () => (wire().order ?? {}) as Wire;
+const fulfillments = () => (order().fulfillments ?? []) as Wire[];
+const first = () => fulfillments()[0] ?? {};
+const pickup = () => (first().pickup_details ?? {}) as Wire;
+const delivery = () => (first().delivery_details ?? {}) as Wire;
+const lines = () => (order().line_items ?? []) as Wire[];
+
+const realFetch = globalThis.fetch;
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  sentUrl = String(input);
+  sentHeaders = (init?.headers ?? {}) as Record<string, string>;
+  if (init?.body) sent = JSON.parse(String(init.body));
+  return new Response(JSON.stringify(reply.body), {
+    status: reply.status,
+    headers: { "Content-Type": "application/json" },
+  });
+}) as typeof fetch;
+
+const draft = {
+  customer: { firstName: "Ada", lastName: "Lovelace", email: "ada@example.com", phone: "2135550147" },
+  diningOption: "pickup" as const,
+  items: [
+    { slug: "single-bagel", name: "Bagel", quantity: 2, unitCents: 300, modifiers: ["Plain", "Toasted"] },
+  ],
+  subtotalCents: 600,
+  tipCents: 0,
+  utensils: false,
+};
+
+function reset(body: unknown = { order: { id: "sq-order-1" } }, status = 200) {
+  sent = null;
+  sentUrl = "";
+  sentHeaders = {};
+  reply = { status, body };
+}
+
+async function main() {
+  // ——— An ordinary order ———
+  reset();
+  const now = await createSquareOrder(draft);
+  ok("the order went", now.ok === true, JSON.stringify(now));
+  ok("to the sandbox, because SQUARE_ENV is unset",
+     sentUrl === "https://connect.squareupsandbox.com/v2/orders", sentUrl);
+  ok("with the API version pinned",
+     sentHeaders["Square-Version"] === "2026-08-19", JSON.stringify(sentHeaders["Square-Version"]));
+  ok("and the token as a bearer",
+     sentHeaders.Authorization === "Bearer token", JSON.stringify(sentHeaders.Authorization));
+
+  // The one that was actually broken. Without this an order reaches Square as a
+  // bare sale and nobody in the kitchen ever sees it.
+  ok("a fulfillment is attached", fulfillments().length === 1,
+     JSON.stringify(order().fulfillments));
+  ok("it is a pickup", first().type === "PICKUP", String(first().type));
+  ok("proposed, not already reserved", first().state === "PROPOSED", String(first().state));
+  ok("asked for as soon as possible", pickup().schedule_type === "ASAP",
+     String(pickup().schedule_type));
+  ok("with no pickup_at pinned on it", !("pickup_at" in pickup()),
+     JSON.stringify(pickup().pickup_at));
+  ok("and a prep time in ISO 8601 duration form",
+     pickup().prep_time_duration === "P0DT0H12M0S", String(pickup().prep_time_duration));
+  ok("not curbside", pickup().is_curbside_pickup === false,
+     String(pickup().is_curbside_pickup));
+
+  const recipient = (pickup().recipient ?? {}) as Wire;
+  ok("the customer's name is on it", recipient.display_name === "Ada Lovelace",
+     String(recipient.display_name));
+  ok("with their phone, so the counter can call", recipient.phone_number === "2135550147",
+     String(recipient.phone_number));
+  ok("and their email", recipient.email_address === "ada@example.com",
+     String(recipient.email_address));
+
+  // ——— snake_case, which is the whole difference between the SDK and the wire ———
+  ok("nothing camelCase leaked into the body",
+     !("locationId" in order()) && !("lineItems" in order()) && !("pickupAt" in pickup()),
+     JSON.stringify(Object.keys(order())));
+  ok("the location is location_id", order().location_id === "L-default",
+     String(order().location_id));
+
+  // ——— The line items ———
+  ok("one line", lines().length === 1, JSON.stringify(lines()));
+  // A number here is a 400 that reads like a complaint about something else.
+  ok("quantity is a string, not a number", lines()[0].quantity === "2",
+     `${typeof lines()[0].quantity} ${JSON.stringify(lines()[0].quantity)}`);
+  ok("the name is ours", lines()[0].name === "Bagel", String(lines()[0].name));
+  ok("priced in cents", JSON.stringify(lines()[0].base_price_money) ===
+     JSON.stringify({ amount: 300, currency: "USD" }),
+     JSON.stringify(lines()[0].base_price_money));
+  // The choices are what a bagel arrives without when they are dropped.
+  ok("the choices ride along on the line", lines()[0].note === "Plain, Toasted",
+     String(lines()[0].note));
+
+  // ——— A catalog id, when there is one ———
+  reset();
+  await createSquareOrder({
+    ...draft,
+    items: [{ ...draft.items[0], posItemId: "CAT-123" }],
+  });
+  ok("a mapped item goes up by catalog id", lines()[0].catalog_object_id === "CAT-123",
+     String(lines()[0].catalog_object_id));
+  ok("and then carries no ad-hoc name or price",
+     !("name" in lines()[0]) && !("base_price_money" in lines()[0]),
+     JSON.stringify(lines()[0]));
+
+  // ——— A scheduled order ———
+  //
+  // 7:15 AM in Los Angeles on Thursday 2026-08-20. In August that is UTC-7, so
+  // the instant is 14:15Z — and the two numbers being different is the point: a
+  // label built in the runtime's zone reads 2:15 PM on this server, and every
+  // ticket in the shop would be seven hours wrong.
+  const slot = new Date(Date.UTC(2026, 7, 20, 14, 15));
+  reset();
+  const later = await createSquareOrder({ ...draft, promisedAt: slot, reference: "sched-abc" });
+  ok("the scheduled order went", later.ok === true, JSON.stringify(later));
+  ok("it is SCHEDULED", pickup().schedule_type === "SCHEDULED",
+     String(pickup().schedule_type));
+  ok("with the exact instant, in ISO",
+     pickup().pickup_at === "2026-08-20T14:15:00.000Z", String(pickup().pickup_at));
+
+  const note = String(pickup().note ?? "");
+  ok("the ticket note says it is for later", note.startsWith("FOR "), JSON.stringify(note));
+  ok("in the shop's own zone, not the server's", /7:15/.test(note), JSON.stringify(note));
+  ok("with the day on it, since it is not today", /Thu/.test(note), JSON.stringify(note));
+
+  const ticket = String(order().ticket_name ?? "");
+  ok("and the open ticket leads with the time", ticket.startsWith("FOR "), JSON.stringify(ticket));
+  ok("then says who it is for", /Ada/.test(ticket), JSON.stringify(ticket));
+  ok("within Square's 30 characters", ticket.length <= 30, `${ticket.length}: ${ticket}`);
+
+  ok("our handle is on Square's copy", order().reference_id === "sched-abc",
+     String(order().reference_id));
+  ok("and is the idempotency key, so a retry cannot become two orders",
+     wire().idempotency_key === "sched-abc", String(wire().idempotency_key));
+
+  // ——— And an ordinary order is unchanged ———
+  //
+  // The other half of the risk: a field added for scheduling must not appear on
+  // every order, or Square schedules the whole shop for the moment it was
+  // opened.
+  reset();
+  await createSquareOrder(draft);
+  ok("an ordinary order is still ASAP", pickup().schedule_type === "ASAP",
+     String(pickup().schedule_type));
+  ok("and its ticket carries no FOR", !String(order().ticket_name).startsWith("FOR "),
+     String(order().ticket_name));
+  ok("and no note at all when there is nothing to say", !("note" in pickup()),
+     JSON.stringify(pickup().note));
+
+  // ——— Curbside, utensils and the customer's note ———
+  reset();
+  await createSquareOrder({
+    ...draft, diningOption: "curbside", utensils: true, note: "no onions", promisedAt: slot,
+  });
+  const full = String(pickup().note ?? "");
+  ok("curbside is set on the fulfillment", pickup().is_curbside_pickup === true,
+     String(pickup().is_curbside_pickup));
+  ok("the scheduled time still comes first on a crowded ticket",
+     full.startsWith("FOR "), JSON.stringify(full));
+  ok("and curbside, utensils and the note all survive beside it",
+     /CURBSIDE/.test(full) && /Utensils/.test(full) && /no onions/.test(full),
+     JSON.stringify(full));
+
+  // ——— Delivery ———
+  reset();
+  await createSquareOrder({
+    ...draft,
+    diningOption: "delivery",
+    deliveryAddress: "123 S Main St, Los Angeles, CA 90013",
+  });
+  ok("a delivery is a DELIVERY fulfillment", first().type === "DELIVERY", String(first().type));
+  ok("and carries no pickup_details", !("pickup_details" in first()),
+     JSON.stringify(Object.keys(first())));
+  // Uber Direct carries the bag. Square arranging a courier of its own would be
+  // two couriers for one order.
+  ok("Square is told not to arrange the courier", delivery().managed_delivery === false,
+     String(delivery().managed_delivery));
+  const to = ((delivery().recipient ?? {}) as Wire).address as Wire | undefined;
+  ok("the address is on it", to?.address_line_1 === "123 S Main St, Los Angeles, CA 90013",
+     JSON.stringify(to));
+
+  // ——— Which counter is which Square location ———
+  reset();
+  await createSquareOrder({ ...draft, counter: "figueroa" });
+  ok("a mapped counter goes to its own Square location",
+     order().location_id === "L-figueroa", String(order().location_id));
+
+  reset();
+  await createSquareOrder({ ...draft, counter: "wilshire" });
+  ok("an unmapped counter falls back to the default location",
+     order().location_id === "L-default", String(order().location_id));
+  ok("squareLocationFor agrees", squareLocationFor("figueroa") === "L-figueroa",
+     String(squareLocationFor("figueroa")));
+
+  // ——— Production is opt-in ———
+  process.env.SQUARE_ENV = "production";
+  reset();
+  await createSquareOrder(draft);
+  ok("SQUARE_ENV=production reaches the real host",
+     sentUrl === "https://connect.squareup.com/v2/orders", sentUrl);
+  process.env.SQUARE_ENV = "sandbox";
+  reset();
+  await createSquareOrder(draft);
+  ok("anything else stays in the sandbox",
+     sentUrl === "https://connect.squareupsandbox.com/v2/orders", sentUrl);
+  delete process.env.SQUARE_ENV;
+
+  // ——— When Square says no ———
+  reset({ errors: [{ code: "INVALID_REQUEST_ERROR", detail: "quantity is required", field: "line_items[0].quantity" }] }, 400);
+  const refused = await createSquareOrder(draft);
+  ok("a refusal is not ok", refused.ok === false, JSON.stringify(refused));
+  ok("and the reason carries Square's own code and detail",
+     refused.ok === false &&
+       /INVALID_REQUEST_ERROR/.test(refused.reason) &&
+       /quantity is required/.test(refused.reason) &&
+       /line_items\[0\]\.quantity/.test(refused.reason),
+     refused.ok === false ? refused.reason : "");
+
+  // A 200 with no order id is a success that is not one. Claiming an order was
+  // placed on the strength of it is the worst outcome in this file.
+  reset({ order: {} });
+  const empty = await createSquareOrder(draft);
+  ok("a 200 with no order id is a failure", empty.ok === false, JSON.stringify(empty));
+
+  // ——— The till's own estimate ———
+  reset({
+    order: { id: "sq-2", fulfillments: [{ pickup_details: { pickup_at: "2026-08-20T14:27:00Z" } }] },
+  });
+  const timed = await createSquareOrder(draft);
+  ok("Square's own ready time comes back as epoch ms",
+     timed.ok === true && timed.readyAt === Date.parse("2026-08-20T14:27:00Z"),
+     JSON.stringify(timed));
+
+  reset({ order: { id: "sq-3", fulfillments: [{ pickup_details: { pickup_at: "not a date" } }] } });
+  const unreadable = await createSquareOrder(draft);
+  ok("an unreadable one is simply absent, and the order still stands",
+     unreadable.ok === true && unreadable.readyAt === undefined, JSON.stringify(unreadable));
+
+  // ——— Reading an order back ———
+  reset({ order: { id: "sq-4", state: "OPEN", fulfillments: [{ state: "PREPARED" }] } });
+  const state = await fetchSquareOrder("sq-4");
+  ok("the state comes back as the till's own words",
+     state?.status === "OPEN" && state?.fulfillment === "PREPARED", JSON.stringify(state));
+  ok("read by GET, with the id escaped into the path",
+     sentUrl === "https://connect.squareupsandbox.com/v2/orders/sq-4", sentUrl);
+
+  reset({ order: { id: "sq-5", state: "OPEN" } });
+  const noFulfillment = await fetchSquareOrder("sq-5");
+  ok("an order with no fulfillment reports null rather than guessing",
+     noFulfillment?.fulfillment === null, JSON.stringify(noFulfillment));
+
+  // ——— Counting what is on the counter ———
+  reset({ order_entries: [{}, {}, {}] });
+  const open = await countOpenSquareOrders();
+  ok("the open orders are counted", open === 3, String(open));
+  const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;
+  ok("only OPEN orders are asked for",
+     JSON.stringify((filter.state_filter as Wire)?.states) === JSON.stringify(["OPEN"]),
+     JSON.stringify(filter.state_filter));
+  ok("and only ones nobody has handed over yet",
+     JSON.stringify((filter.fulfillment_filter as Wire)?.fulfillment_states) ===
+       JSON.stringify(["PROPOSED", "RESERVED", "PREPARED"]),
+     JSON.stringify(filter.fulfillment_filter));
+  // Three counters, two distinct Square locations: figueroa is mapped, the
+  // other two fall back to the default. Asking about one location would
+  // undercount a shop with three tills.
+  ok("every counter's location is searched, deduplicated",
+     JSON.stringify(wire().location_ids) === JSON.stringify(["L-default", "L-figueroa"]),
+     JSON.stringify(wire().location_ids));
+
+  // ⚠️ Null and zero are different answers. A confident zero tells the next
+  // customer the kitchen is empty on the morning Square is down.
+  reset({ errors: [{ code: "UNAUTHORIZED" }] }, 401);
+  const unknown = await countOpenSquareOrders();
+  ok("a failed count is null and never zero", unknown === null, String(unknown));
+
+  // ——— And nothing goes anywhere without configuration ———
+  delete process.env.SQUARE_ACCESS_TOKEN;
+  reset();
+  const unconfigured = await createSquareOrder(draft);
+  ok("no token, no order", unconfigured.ok === false, JSON.stringify(unconfigured));
+  ok("and nothing was sent", sentUrl === "", sentUrl);
+  process.env.SQUARE_ACCESS_TOKEN = "token";
+
+  globalThis.fetch = realFetch;
+  console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
+  process.exit(failures === 0 ? 0 : 1);
+}
+
+void main();

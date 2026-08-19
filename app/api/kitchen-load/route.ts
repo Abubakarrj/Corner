@@ -1,6 +1,6 @@
 import { ordersAhead, ordersAheadOf } from "../../kitchenQueue";
 import { isOpenNow } from "../../shopFacts";
-import { countOpenOrders, isToastConfigured } from "../../toast";
+import { countOpenPosOrders, isPosConfigured } from "../../pos";
 
 // How busy the counter is, for the line under the Order button.
 //
@@ -46,7 +46,7 @@ let cached: { at: number; ahead: number | null } | null = null;
 
 async function currentCount(): Promise<number | null> {
   if (cached && Date.now() - cached.at < TTL_MS) return cached.ahead;
-  const ahead = isToastConfigured() ? await countOpenOrders() : await ordersAhead();
+  const ahead = isPosConfigured() ? await countOpenPosOrders() : await ordersAhead();
   // Failures are cached too, briefly. A Toast outage would otherwise mean
   // every sheet open waits on a call that is going to fail anyway.
   cached = { at: Date.now(), ahead };

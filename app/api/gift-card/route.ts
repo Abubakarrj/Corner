@@ -7,7 +7,7 @@ import {
   isValidAmount,
   type DeliveryMethod,
 } from "../../(marketing)/gift/buy/giftOrder";
-import { isToastConfigured } from "../../toast";
+import { isPosConfigured } from "../../pos";
 
 // Gift card intake.
 //
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   // after it says nothing has been charged and no card has been sent, and
   // that stays true until Toast is connected and this flips.
   return Response.json(
-    { ok: true, issued: false, paid: false, toast: isToastConfigured() },
+    { ok: true, issued: false, paid: false, toast: isPosConfigured() },
     { status: 200 },
   );
 }

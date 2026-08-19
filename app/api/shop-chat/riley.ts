@@ -3,7 +3,7 @@ import { TABLES as MENU_TABLES } from "../../i18n/menuTables";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { isToastConfigured } from "../../toast";
+import { isPosConfigured } from "../../pos";
 import { DELIVERY_RADIUS_MILES, LOCATIONS } from "../../(marketing)/locations/locations";
 import {
   SHOP_EMAIL,
@@ -305,7 +305,7 @@ The delivery fee is quoted per address when they reach checkout. It is not a
 flat rate, so don't name a figure. If somebody asks what delivery costs, tell
 them the checkout quotes it for their address before they place the order.
 
-${isToastConfigured()
+${isPosConfigured()
   ? "Card payment is available at checkout, and an order placed with one is charged when the shop confirms it. Cash and the wallets are taken at the window."
   : "Payment happens at the window, not online. Somebody places the order in the app and pays when they collect, so the card list in the guide is what the window accepts, not what the app charges."}
 

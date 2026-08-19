@@ -18,7 +18,7 @@ import {
   SHOP_ADDRESS_PARTS,
   SHOP_PHONE,
 } from "../../shopFacts";
-import { createToastOrder, isToastConfigured } from "../../toast";
+import { createPosOrder, isPosConfigured, posName } from "../../pos";
 import { geocode } from "../../googleMaps";
 import {
   createDelivery,
@@ -52,10 +52,10 @@ import { refreshSoldOut } from "../../soldOut";
 // app/shop/money.ts, and the tip is the one number taken as given — because
 // it is genuinely the customer's to name — clamped to something sane.
 //
-// When Toast is configured the order goes to it. When it isn't, the order is
-// logged and the shop is told by other means, which is what happens today.
-// Either way the response says which, so nobody has to guess whether the
-// kitchen actually heard about it.
+// When a till is configured — Square or Toast, see app/pos.ts — the order goes
+// to it. When it isn't, the order is logged and the shop is told by other
+// means, which is what happens today. Either way the response says which, so
+// nobody has to guess whether the kitchen actually heard about it.
 
 function isNonEmptyString(input: unknown): input is string {
   return typeof input === "string" && input.trim().length > 0;
@@ -64,7 +64,7 @@ function isNonEmptyString(input: unknown): input is string {
 
 /** A free-text field off the request: trimmed, capped, and "" for anything
  *  that isn't a string. The cap is here rather than at the field's own call
- *  site because these end up in somebody else's system — Toast's ticket, an
+ *  site because these end up in somebody else's system — the till's ticket, an
  *  Uber dropoff note — and both have limits of their own. */
 function readText(body: unknown, key: string, max: number): string {
   const value = (body as Record<string, unknown> | null)?.[key];
@@ -467,14 +467,14 @@ export async function POST(request: Request) {
   // point the courier is sent to.
   let pickupPoint: [number, number] | null = null;
   // The one handle this order is known by, written onto Uber's copy of it as
-  // external_id. Toast's guid where Toast is connected, the queue id where it
-  // isn't — the same string the client polls the tracker with and the kitchen
-  // queue is keyed on, so a delivery on Uber's dashboard can be traced back to
-  // an order here without a fourth identifier to keep in step.
+  // external_id. The till's id where a till is connected, the queue id where
+  // it isn't — the same string the client polls the tracker with and the
+  // kitchen queue is keyed on, so a delivery on Uber's dashboard can be traced
+  // back to an order here without a fourth identifier to keep in step.
   //
   // Set on both paths before bookCourier() runs. It cannot read `queueId`
-  // directly: that const is declared after the Toast branch returns, and the
-  // Toast path calls bookCourier() above it.
+  // directly: that const is declared after the till branch returns, and the
+  // till path calls bookCourier() above it.
   let reference: string | null = null;
 
   // ——— What the driver is told ———
@@ -597,7 +597,7 @@ export async function POST(request: Request) {
   // printed on it.
   //
   // The id is this order's own handle, generated here because neither the
-  // Toast guid nor the queue id exists yet — and it is what the seat is
+  // till's id nor the queue id exists yet — and it is what the seat is
   // released by if the kitchen refuses the order below.
   const scheduleId = `sched-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   let scheduledFor: Date | null = null;
@@ -626,12 +626,12 @@ export async function POST(request: Request) {
     scheduledFor = held.at;
   }
 
-  // Toast, when it's there. The draft is built from the repriced order, never
-  // from the request, so what the kitchen is told and what the customer was
-  // shown come from the same numbers.
-  if (isToastConfigured()) {
+  // The till, when it's there. The draft is built from the repriced order,
+  // never from the request, so what the kitchen is told and what the customer
+  // was shown come from the same numbers.
+  if (isPosConfigured()) {
     const [firstName, ...rest] = order.name.split(/\s+/);
-    const sent = await createToastOrder({
+    const sent = await createPosOrder({
       customer: {
         firstName: firstName ?? "",
         lastName: rest.join(" "),
@@ -651,19 +651,24 @@ export async function POST(request: Request) {
       tipCents: order.tipCents,
       utensils: order.utensils,
       note: order.note || undefined,
-      // A scheduled order, told to Toast twice on purpose: as promisedDate,
-      // which is the field its own scheduling reads, and in the ticket note,
-      // which is what the person at the counter reads. Either one alone is a
-      // single point of failure for the one fact that matters — that this bag
-      // is not for now.
-      ...(scheduledFor ? { promisedAt: scheduledFor } : {}),
+      // A scheduled order, told to the till twice on purpose: as the pickup
+      // time its own scheduling reads, and in the ticket note, which is what
+      // the person at the counter reads. Either one alone is a single point of
+      // failure for the one fact that matters — that this bag is not for now.
+      //
+      // The reference goes up with it, and only here: it is the handle the
+      // seat is held under, so a ticket for a time slot can be matched back to
+      // the slot it occupies. An ordinary order has no such handle before the
+      // till answers, and the till's own id becomes it.
+      ...(scheduledFor ? { promisedAt: scheduledFor, reference: scheduleId } : {}),
+      ...(orderAt ? { counter: orderAt } : {}),
     });
 
     if (!sent.ok) {
       // The order did not reach the kitchen. Saying "you're all set" here
       // would send somebody to a counter that has never heard of them, so
       // this fails loudly instead.
-      console.error(`[shop-order] Toast submission failed: ${sent.reason}`);
+      console.error(`[shop-order] ${posName() ?? "pos"} submission failed: ${sent.reason}`);
       // And give the time back. A seat held for an order the kitchen refused
       // is a slot nobody can buy and nobody is coming for.
       if (scheduledFor) await releaseSlot(scheduleId);
@@ -674,15 +679,15 @@ export async function POST(request: Request) {
     }
 
     // On the counter now, for the busyness line the next customer sees. After
-    // the kitchen has accepted it, never before — an order that Toast refused
-    // is not work anybody is doing.
+    // the kitchen has accepted it, never before — an order the till refused is
+    // not work anybody is doing.
     //
-    // Written even though this branch means Toast is connected, and
-    // /api/kitchen-load therefore reads the count from Orders Hub instead. One
+    // Written even though this branch means a till is connected, and
+    // /api/kitchen-load therefore reads the count from the till instead. One
     // insert per order to keep the fallback table true rather than empty: a
     // fallback that has been silently accumulating nothing is not a fallback,
     // it is a second outage waiting behind the first.
-    await joinQueue(sent.orderGuid, sent.orderGuid);
+    await joinQueue(sent.orderId, sent.orderId);
     await countDemand();
     // Points, on the subtotal, keyed to this order so a retry cannot pay
     // twice. Awaited but incapable of failing the order — see earn().
@@ -690,48 +695,52 @@ export async function POST(request: Request) {
     // Only for a signed-in customer. A guest has no account to credit, and
     // inventing one from a typed-in address is exactly what this stopped
     // doing.
-    if (order.email) await earn(order.email, sent.orderGuid, subtotalCents);
-    reference = sent.orderGuid;
+    if (order.email) await earn(order.email, sent.orderId, subtotalCents);
+    reference = sent.orderId;
 
     return Response.json(
       {
         ok: true,
         totals,
-        orderGuid: sent.orderGuid,
+        orderGuid: sent.orderId,
         // Same value as orderGuid here, and named separately on purpose: the
         // client asks about its place in the line with this, and it should
-        // not have to know that the queue happens to be keyed by Toast's id
+        // not have to know that the queue happens to be keyed by the till's id
         // on one path and by something we made up on the other.
-        queueId: sent.orderGuid,
-        // When the shop says it will be ready, from Toast rather than from
-        // our own fixed estimate. Absent when Toast didn't send one, and the
-        // client falls back exactly as before.
+        queueId: sent.orderId,
+        // When the shop says it will be ready, from the till rather than from
+        // our own fixed estimate. Absent when the till didn't send one, and
+        // the client falls back exactly as before.
         ...(sent.readyAt === undefined ? {} : { readyAt: sent.readyAt }),
         // The time the shop agreed to, for an order placed while the counter
         // was shut. Absent on every ordinary order, which is what tells the
         // confirmation screen to talk about minutes rather than about a
         // morning.
         ...(scheduledFor ? { scheduledFor: scheduledFor.toISOString() } : {}),
-        submitted: "toast",
+        // Which till heard about it, by name. "toast" until this line, which
+        // was true when Toast was the only one and is a lie the moment Square
+        // is connected — and this field exists precisely so nobody has to
+        // guess where an order went.
+        submitted: posName() ?? "pos",
         ...(await bookCourier()),
       },
       { status: 200 },
     );
   }
 
-  // No Toast, so no guid and nothing to close this row later — it ages out on
-  // the clock instead. Still counted: the food is being made either way, and a
-  // queue that only works once Toast is connected is a queue that reads clear
-  // through the exact period the shop is running on this path.
+  // No till, so no id from one and nothing to close this row later — it ages
+  // out on the clock instead. Still counted: the food is being made either
+  // way, and a queue that only works once a till is connected is a queue that
+  // reads clear through the exact period the shop is running on this path.
   // Handed back, unlike before. This id used to be generated here and thrown
   // away, which meant the row existed and nothing could ever point at it —
   // fine while the only question was how many rows there were, useless the
-  // moment a customer wants to know where *theirs* sits. On the Toast path
-  // the guid does this job and is already returned.
+  // moment a customer wants to know where *theirs* sits. On the till path the
+  // till's own id does this job and is already returned.
   const queueId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await joinQueue(queueId);
   await countDemand();
-  // Same on this path. The ref is the queue id rather than a Toast guid,
+  // Same on this path. The ref is the queue id rather than the till's id,
   // which is the only handle this branch has — and it is the one the client
   // gets back, so the two agree about which order was paid for.
   if (order.email) await earn(order.email, queueId, subtotalCents);
@@ -840,7 +849,7 @@ export async function POST(request: Request) {
           .filter(Boolean)
           .join(" · ")
           .slice(0, 280) || undefined,
-      // The choices travel with the item. Toast has always had them as
+      // The choices travel with the item. The till has always had them as
       // modifiers; Uber was getting the bare product name, so a courier's
       // screen read "Egg & Schmear" for an order that specified a bagel and a
       // spread. priceCents already includes the upcharge, so the manifest was
@@ -862,10 +871,10 @@ export async function POST(request: Request) {
       ...(booked.delivery.trackingUrl
         ? { trackingUrl: booked.delivery.trackingUrl }
         : {}),
-      // Uber's id for the courier's job. Kept for the same reason as Toast's
-      // order guid: it is the handle the delivery half of the tracker asks
-      // about, and it was being dropped here exactly as the guid was dropped
-      // in the checkout.
+      // Uber's id for the courier's job. Kept for the same reason as the
+      // till's order id: it is the handle the delivery half of the tracker
+      // asks about, and it was being dropped here exactly as that id was
+      // dropped in the checkout.
       deliveryId: booked.delivery.deliveryId,
     };
   }
