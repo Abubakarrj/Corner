@@ -939,26 +939,36 @@ export async function runTool(
         };
       }
 
-      // The counter has to be open. Riley is told this in her briefing and
-      // /api/shop-order refuses at the far end, so nothing was ever *sold* out
-      // of hours. What was missing is the bit in between: at 3am she would
-      // cheerfully fill a basket, and the refusal arrived several screens
-      // later at checkout, by which point somebody has picked a bagel, picked
-      // a spread and pressed a button for nothing. Refusing here is the same
-      // answer given at the point the question was asked.
+      // ——— The clock, and what it now stops ———
       //
-      // The next opening time comes with it so she has something to say
-      // instead of just no.
-      if (!isOpenNow()) {
+      // This used to refuse everything out of hours. The reason was sound: at
+      // 3am Riley would cheerfully fill a basket and the refusal arrived
+      // several screens later at checkout, by which point somebody has picked
+      // a bagel, picked a spread and pressed a button for nothing.
+      //
+      // A shut counter is no longer a refusal for a **pickup** — the checkout
+      // gives it a collection time and the order goes through. So the gate is
+      // narrowed to the case that is still genuinely refused: a delivery
+      // outside opening hours, which has no courier to book and no way to be
+      // scheduled. Leaving it as it was would mean Riley refusing to fill a
+      // basket the app is perfectly willing to take.
+      //
+      // Against the chosen counter's own hours, not the shop's. Wilshire opens
+      // at 7 and the outlet at 11, and this was asking the default question of
+      // both.
+      const scheduledPickup = typeof context.orderAt === "string";
+      if (!isOpenNow(new Date(), opensAt(storeById(context.orderAt ?? null))) && !scheduledPickup) {
         return {
           forModel: {
             added: false,
             openNow: false,
             nextOpening: nextOpening(),
             message:
-              "The counter is shut, so nothing can go in a basket yet. Tell them " +
-              "when it opens and offer to help them decide in the meantime. Do not " +
-              "say anything was added.",
+              "We're shut, and this order is a delivery, which cannot be " +
+              "scheduled — a courier can't be booked for the morning. Tell them " +
+              "when we open, and offer a pickup instead, which can be ordered now " +
+              "and collected at a time they choose at the checkout. Do not say " +
+              "anything was added.",
           },
         };
       }
@@ -1007,6 +1017,13 @@ export async function runTool(
       }
 
       const quantity = Math.max(1, Math.min(Number(args.quantity) || 1, 20));
+      // Added while the counter is shut, which is now allowed and is not the
+      // same as added at noon. Riley cannot see which slots are free, so she
+      // is told that a time gets chosen rather than told a time — a minute
+      // from her that the checkout then contradicts is worse than no minute.
+      const forLater =
+        scheduledPickup &&
+        !isOpenNow(new Date(), opensAt(storeById(context.orderAt ?? null)));
       return {
         forModel: {
           added: true,
@@ -1014,6 +1031,15 @@ export async function runTool(
           quantity,
           chosen: describeOptions(product, chosen),
           each: formatPrice(unitPriceCents(product, chosen)),
+          ...(forLater
+            ? {
+                collectLater: true,
+                message:
+                  "We're shut, so this one is for collection later. They pick the " +
+                  "time at the checkout, where the earliest available is already " +
+                  "selected. Say that rather than naming a time yourself.",
+              }
+            : {}),
         },
         attach: {
           actions: [

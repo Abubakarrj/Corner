@@ -1,6 +1,19 @@
 import "server-only";
 
 import { foodStageOf } from "./orderStages";
+import { SHOP_TIME_ZONE } from "./shopFacts";
+
+/** A scheduled time as the counter reads it: shop time, English, and short
+ *  enough to survive a ticket header. Not translated — this prints in the
+ *  kitchen, not on the customer's phone. */
+function scheduledLabel(at: Date): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(at);
+}
 
 // Toast — the POS the shop actually runs on.
 //
@@ -201,6 +214,9 @@ export type ToastOrderDraft = {
   tipCents: number;
   utensils: boolean;
   note?: string;
+  /** When a scheduled order is due, for an order placed while the counter was
+   *  shut. Absent on an ordinary order, which Toast times itself. */
+  promisedAt?: Date;
 };
 
 export type ToastOrderResult =
@@ -235,6 +251,10 @@ export async function createToastOrder(
   // whatever the customer typed. It prints on the ticket, which is where the
   // person making the order will actually read it.
   const notes = [
+    // First, and in capitals, because it is the one fact that changes what
+    // the counter does with the ticket. A scheduled order made on arrival is
+    // a cold bagel sitting on a shelf until its owner turns up.
+    draft.promisedAt ? `FOR ${scheduledLabel(draft.promisedAt)}` : null,
     draft.diningOption === "curbside" ? "CURBSIDE" : null,
     draft.utensils ? "Utensils" : null,
     draft.note,
@@ -252,6 +272,11 @@ export async function createToastOrder(
   const payload = {
     entityType: "Order",
     diningOption: { behavior: BEHAVIOUR[draft.diningOption] },
+    // Toast's own field for a future order. Sent alongside the note above
+    // rather than instead of it: this is what its scheduling reads, the note
+    // is what a person reads, and an order that is early on one and on time
+    // on the other is the failure worth two lines of redundancy.
+    ...(draft.promisedAt ? { promisedDate: draft.promisedAt.toISOString() } : {}),
     ...(draft.deliveryAddress
       ? { deliveryInfo: { address1: draft.deliveryAddress } }
       : {}),

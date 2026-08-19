@@ -114,6 +114,14 @@ export type PlacedOrder = {
   // Optional, and read through prepMinutesFor() rather than directly, which
   // falls back to the constant rather than showing a blank or a nonsense.
   readyAt?: number;
+  /** The slot a scheduled pickup was given, as epoch ms.
+   *
+   *  Present only on an order placed while the counter was shut. Everything
+   *  that measures this order measures from here rather than from placedAt:
+   *  an order placed at 4am for 7:15 is not four hours late, it is three
+   *  hours early, and every screen that dates it from when it was paid for
+   *  says the first thing. */
+  scheduledFor?: number;
   // "pickup" | "delivery" | "catering", as it was when the order went in.
   // A mode, not a label: this is read back to decide what the tracker shows,
   // and it has to mean the same thing in every language and in every version
@@ -807,7 +815,25 @@ export function progressFor(
   // The courier's drive is still ours to estimate — Toast's number is when the
   // food is ready, not when it reaches a doorstep.
   const totalMinutes = prep + (delivery ? DELIVERY_MINUTES : 0);
-  const elapsed = Math.max(0, (now - order.placedAt) / 60000);
+  // ——— When the clock starts ———
+  //
+  // For an ordinary order, when it was placed. For a scheduled one, when the
+  // kitchen would begin it: its slot, less the time it takes to make.
+  //
+  // Dating a scheduled order from placedAt is the whole failure. An order
+  // placed at 4am for a 7:15 pickup would be three hours past a twelve minute
+  // estimate before the ovens were on — so the bar is full, the stage reads
+  // "ready", and the tracker tells somebody asleep in bed that their bagel is
+  // waiting on a counter in a shut shop. Every screen here reads elapsed, so
+  // this is the one place to fix it.
+  //
+  // Negative until then, clamped to zero: before the kitchen starts, an order
+  // is placed and nothing more, and that is exactly what stage 0 says.
+  const startedAt =
+    order.scheduledFor === undefined
+      ? order.placedAt
+      : order.scheduledFor - prep * 60000;
+  const elapsed = Math.max(0, (now - startedAt) / 60000);
 
   const guessed = elapsed < 2 ? 0 : elapsed < prep ? 1 : 2;
 

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useServerText, useT } from "../../i18n";
+import { useLocale, useServerText, useT } from "../../i18n";
+import { localeById } from "../../localeScript";
+import { slotLabel } from "../../shopFacts";
+import { usePickupSchedule, type PickupSchedule } from "./usePickupSchedule";
 import { useCart, useCartRows } from "../CartContext";
 import { getProduct, lineKey } from "../products";
 import { totalsFor, type OrderTotals } from "../money";
@@ -121,6 +124,16 @@ export type Checkout = {
   /** True while the courier is still pricing a delivery. */
   quoting: boolean;
 
+  // ——— When it's for ———
+  //
+  // A pickup at a counter that is shut is not refused any more; it is given a
+  // time. `scheduling` is what tells the screen to ask for one, and
+  // `schedule.chosen` is the time the customer will be held to — which is why
+  // it is on screen before the button says Pay rather than after.
+  /** This order needs a time chosen before it can go. */
+  scheduling: boolean;
+  schedule: PickupSchedule;
+
   // ——— The delivery itself ———
   //
   // These three exist because a courier needs different things from a kitchen,
@@ -184,6 +197,7 @@ export type Checkout = {
 export function useCheckout(): Checkout {
   const t = useT();
   const st = useServerText();
+  const tag = localeById(useLocale()).tag;
   const { lines, removeItem, subtotalCents, clear } = useCart();
   const rows = useCartRows();
   const fulfillment = useFulfillment();
@@ -248,6 +262,20 @@ export function useCheckout(): Checkout {
 
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
   const isDelivery = fulfillment?.mode === "delivery";
+
+  // ——— Scheduling ———
+  //
+  // Only a pickup, and only at a counter this browser can name. A delivery is
+  // still refused when the shop is shut, and deliberately: an Uber quote is
+  // minutes-fresh and a courier cannot be booked for tomorrow morning, so
+  // there is nothing here to schedule. See the note at the gate in
+  // /api/shop-order.
+  // Pickup only, not catering. A catering order is a tray for twenty arranged
+  // days ahead by a person, and dropping one into a ten minute slot meant for
+  // a bagel would be scheduling in name and overbooking in fact.
+  const counterId = fulfillment?.mode === "pickup" ? fulfillment.locationId : null;
+  const scheduling = !opening.acceptingOrders && !isDelivery && counterId !== null;
+  const schedule = usePickupSchedule(counterId, scheduling);
   const deliveryAddress = fulfillment?.mode === "delivery" ? fulfillment.address : null;
   // The point the customer dropped a pin on, when there is one. Sent with the
   // address so the quote is priced to the doorway they chose rather than to
@@ -378,10 +406,15 @@ export function useCheckout(): Checkout {
     rows.length > 0 &&
     incomplete.length === 0 &&
     unavailable.length === 0 &&
-    // Nothing gets made outside opening hours, so nothing gets ordered. The
-    // app used to take the order at 3am on a Monday and promise it for
-    // 3:12am, which sends somebody to a locked window.
-    opening.acceptingOrders &&
+    // Nothing gets made outside opening hours, so nothing gets ordered *for
+    // now*. The app used to take the order at 3am on a Monday and promise it
+    // for 3:12am, which sends somebody to a locked window.
+    //
+    // A pickup at a shut counter is the one way past this, and only once a
+    // time has come back from the shop. Not "the shop is shut, so pick a
+    // time and we'll see" — the time on screen is a slot the server has, and
+    // the order is checked against it again when it lands.
+    (opening.acceptingOrders || (scheduling && schedule.chosen !== null)) &&
     // A delivery order can't be placed until a courier has priced it. Placing
     // it anyway would mean promising a delivery nobody has agreed to make.
     (!isDelivery || quote !== null) &&
@@ -424,6 +457,12 @@ export function useCheckout(): Checkout {
           curbside: curbside && !isDelivery,
           utensils,
           note,
+          // The time on screen, sent back so the server holds *that* minute
+          // rather than whichever one it would pick on its own. Absent on an
+          // ordinary order, and the endpoint refuses a scheduled one without
+          // it — the whole point is that nobody pays for a time they have
+          // not read.
+          ...(scheduling && schedule.chosen ? { scheduledFor: schedule.chosen } : {}),
           // Only on a delivery, and kept apart from `note` above. The kitchen
           // reads one and the driver reads the other; sending both to both is
           // what this replaced.
@@ -489,6 +528,33 @@ export function useCheckout(): Checkout {
           setStatus("idle");
           return;
         }
+        // ——— The time went while they were typing ———
+        //
+        // Somebody else took the last seat at 7:15 between this screen being
+        // drawn and this button being pressed. Not a mistake the customer
+        // made and not a reason to send them back to the basket: the shop
+        // sends the next time it can do, the chips redraw around it, and one
+        // more press places the order.
+        //
+        // Deliberately not placed automatically at the new time. That is a
+        // different order from the one they agreed to, however close the
+        // minutes are, and the whole point of scheduling is that the time is
+        // read before it is paid for.
+        if (typeof result?.scheduledFor === "string") {
+          const slots = Array.isArray(result?.slots)
+            ? (result.slots as unknown[]).filter(
+                (value): value is string => typeof value === "string",
+              )
+            : [];
+          schedule.correct(result.scheduledFor, slots);
+          setError(
+            t("checkout.scheduleMoved", {
+              time: slotLabel(new Date(result.scheduledFor), tag),
+            }),
+          );
+          setStatus("idle");
+          return;
+        }
         throw new Error(st(result?.error) || t("checkout.somethingWentWrong"));
       }
 
@@ -542,6 +608,15 @@ export function useCheckout(): Checkout {
         // screen asking should not have to know which shop it is standing in.
         ...(typeof result?.queueId === "string" ? { queueId: result.queueId } : {}),
         ...(typeof result?.readyAt === "number" ? { readyAt: result.readyAt } : {}),
+        // The slot the shop agreed to. Kept because every screen that talks
+        // about this order afterwards — the confirmation, the tracker, the
+        // history — would otherwise date it from when it was placed, and an
+        // order placed at 4am and collected at 7:15 is nine stages of wrong
+        // if the clock starts at 4.
+        ...(typeof result?.scheduledFor === "string" &&
+        !Number.isNaN(Date.parse(result.scheduledFor))
+          ? { scheduledFor: Date.parse(result.scheduledFor) }
+          : {}),
         ...(typeof result?.deliveryId === "string" ? { deliveryId: result.deliveryId } : {}),
         // The card, as a receipt describes one. Brand and four digits, on this
         // device only — `summary()` is structurally incapable of handing over
@@ -592,6 +667,9 @@ export function useCheckout(): Checkout {
     quote,
     quoteError,
     quoting: isDelivery && quote === null && !quoteError,
+
+    scheduling,
+    schedule,
 
     deliveryDetail,
     setDeliveryDetail,

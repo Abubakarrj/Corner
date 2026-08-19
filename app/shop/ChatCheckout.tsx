@@ -5,6 +5,7 @@ import { useMenu } from "../i18n/menu";
 import { useCapabilities } from "../capabilities";
 import { formatPrice } from "./products";
 import { Button } from "../ui/Button";
+import SchedulePicker from "./checkout/SchedulePicker";
 import { Check, Disclosure, Field } from "./checkout/CheckoutSections";
 import OrderSummary from "./checkout/OrderSummary";
 import SecureNote from "./checkout/SecureNote";
@@ -244,6 +245,23 @@ export default function ChatCheckout({
             <p className="mb-2 text-[12px] text-muted">{t("checkout.addTip")}</p>
             <TipPicker subtotalCents={subtotalCents} tipCents={tipCents} onTip={setTipCents} />
           </div>
+
+          {/* When, for an order placed while the counter is shut.
+              This sheet had no closed state at all: the button simply refused
+              and said nothing, which was survivable while a shut shop meant
+              no order was possible. It is not survivable now — Riley fills a
+              basket at 4am and sends somebody here, and a button that does
+              nothing is the whole feature failing silently on the surface she
+              points at. Same component as the page, so the two sheets cannot
+              offer different times. */}
+          {checkout.scheduling ? (
+            <div className="rounded-xl bg-sun-soft px-3 py-2.5">
+              <p className="m-0 text-[12px] font-medium text-sun-ink">
+                {t("checkout.orderForLater")}
+              </p>
+              <SchedulePicker schedule={checkout.schedule} />
+            </div>
+          ) : null}
 
           {/* A delivery can't be placed until the courier has priced it —
               placing it anyway promises a delivery nobody agreed to make. */}

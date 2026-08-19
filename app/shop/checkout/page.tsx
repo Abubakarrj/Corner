@@ -8,7 +8,7 @@ import { useMenu } from "../../i18n/menu";
 import Link from "next/link";
 import { formatPrice } from "../products";
 import { useOpening } from "../../useOpening";
-import { clockLabel, closeHour, weekdayLabel } from "../../shopFacts";
+import { clockLabel, closeHour, slotLabel, weekdayLabel } from "../../shopFacts";
 import { useCapabilities } from "../../capabilities";
 import { PREP_MINUTES } from "../../account";
 import { Button } from "../../ui/Button";
@@ -16,6 +16,7 @@ import { DISPLAY_FONT } from "../shopControls";
 import StepSlide from "./StepSlide";
 import { useCart } from "../CartContext";
 import ChangeFulfillment from "./ChangeFulfillment";
+import SchedulePicker from "./SchedulePicker";
 import DroppedNotice from "../DroppedNotice";
 import MergingDots from "../../ui/MergingDots";
 import { Check, Disclosure, Field, Section } from "./CheckoutSections";
@@ -214,27 +215,39 @@ export default function CheckoutPage() {
       {!opening.acceptingOrders ? (
         <div className="mb-6 rounded-2xl border border-line-soft bg-sun-soft px-4 py-3">
           <p className="m-0 text-[14px] font-medium text-sun-ink">
-            {opening.open ? t("checkout.closingSoon") : t("checkout.closedNow")}
+            {/* Shut is not the news any more when the order can still be
+                placed. "We're closed right now" over a row of times somebody
+                is about to choose from reads as a refusal that has been
+                overruled; the heading says what the box is for instead. */}
+            {checkout.scheduling
+              ? t("checkout.orderForLater")
+              : opening.open
+                ? t("checkout.closingSoon")
+                : t("checkout.closedNow")}
           </p>
-          <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
-            {opening.open
-              ? t("checkout.noTimeBefore", {
-                  time: clockLabel(closeHour() % 24, tag),
-                })
-              : opening.next
-                ? t(
-                    opening.next.when === "today"
-                      ? "checkout.opensToday"
-                      : opening.next.when === "tomorrow"
-                        ? "checkout.opensTomorrow"
-                        : "checkout.opensDay",
-                    {
-                      time: clockLabel(opening.next.hour, tag),
-                      day: weekdayLabel(opening.next.day, tag),
-                    },
-                  )
-                : t("checkout.basketKeeps")}
-          </p>
+          {checkout.scheduling ? (
+            <SchedulePicker schedule={checkout.schedule} />
+          ) : (
+            <p className="m-0 mt-1 text-[13px] leading-[1.5] text-sun-ink">
+              {opening.open
+                ? t("checkout.noTimeBefore", {
+                    time: clockLabel(closeHour() % 24, tag),
+                  })
+                : opening.next
+                  ? t(
+                      opening.next.when === "today"
+                        ? "checkout.opensToday"
+                        : opening.next.when === "tomorrow"
+                          ? "checkout.opensTomorrow"
+                          : "checkout.opensDay",
+                      {
+                        time: clockLabel(opening.next.hour, tag),
+                        day: weekdayLabel(opening.next.day, tag),
+                      },
+                    )
+                  : t("checkout.basketKeeps")}
+            </p>
+          )}
         </div>
       ) : null}
 
@@ -312,21 +325,32 @@ export default function CheckoutPage() {
                     twelve minutes before close are the same problem: the shop
                     is open, the order cannot be made, and a pickup time would
                     be promising otherwise. */}
-                  {opening.acceptingOrders ? (
+                  {opening.acceptingOrders || checkout.schedule.chosen ? (
                     <div className="flex items-start gap-3 border-b border-line-faint p-4">
                       <ClockIcon />
                       <div className="min-w-0">
                         <p className="m-0 text-[14px] text-ink">
-                          {t("checkout.pickupAround", {
-                            time: readyAt(PREP_MINUTES),
-                          })}
+                          {checkout.schedule.chosen
+                            ? t("checkout.pickupAt", {
+                                time: slotLabel(new Date(checkout.schedule.chosen), tag),
+                              })
+                            : t("checkout.pickupAround", {
+                                time: readyAt(PREP_MINUTES),
+                              })}
                         </p>
                         {/* "Estimated" is doing real work here: nothing in this
                           app can see the kitchen, so this is arithmetic on the
                           clock, and saying otherwise would be a promise the
-                          shop didn't make. */}
+                          shop didn't make.
+                          A scheduled time is not an estimate and does not get
+                          that word. The shop is holding that minute — one of a
+                          fixed number it will hold for that slot — which is a
+                          stronger claim than the clock can make and the only
+                          reason it is safe to print a time on a shut shop. */}
                         <p className="m-0 text-[12px] text-muted">
-                          {t("checkout.estimatedShop")}
+                          {checkout.schedule.chosen
+                            ? t("checkout.heldForYou")
+                            : t("checkout.estimatedShop")}
                         </p>
                       </div>
                     </div>
@@ -483,7 +507,11 @@ export default function CheckoutPage() {
                 status === "sending" ||
                 incomplete.length > 0 ||
                 unavailable.length > 0 ||
-                !opening.acceptingOrders ||
+                // Shut is only a stop when there is no time to be had. A
+                // scheduled pickup with a slot on screen is a placeable
+                // order, and a button that stays grey over one is the app
+                // refusing something it just offered.
+                !(opening.acceptingOrders || checkout.schedule.chosen) ||
                 (isDelivery && quote === null)
               }
             >
@@ -517,7 +545,7 @@ export default function CheckoutPage() {
                 </span>
                 {status === "sending"
                   ? t("checkout.placingOrder")
-                  : !opening.acceptingOrders
+                  : !(opening.acceptingOrders || checkout.schedule.chosen)
                     ? t("shop.closed")
                     : isDelivery && quote === null
                       ? quoteError

@@ -37,6 +37,8 @@ import {
   opensAt,
   type StoreLocation,
 } from "../../(marketing)/locations/locations";
+import { claim } from "../../pickupSchedule";
+import { releaseSlot } from "../../scheduledPickups";
 import { joinQueue } from "../../kitchenQueue";
 import { earn } from "../../rewards";
 import { refreshSoldOut } from "../../soldOut";
@@ -239,10 +241,43 @@ export async function POST(request: Request) {
   const counterOpensAt = isDelivery
     ? earliestDeliveryHour(orderSlugs)
     : opensAt(storeById(orderAt));
-  if (
-    !isOpenNow(new Date(), counterOpensAt) ||
-    minutesUntilClose(new Date(), counterOpensAt) < PREP_MINUTES
-  ) {
+
+  // ——— Shut is no longer the end of the conversation ———
+  //
+  // For a pickup at a named counter it is the start of a different one: the
+  // order is taken and given a time, rather than refused. See
+  // app/pickupSlots.ts for why that time is handed out rather than accepted,
+  // and app/pickupSchedule.ts for where the two halves meet.
+  //
+  // The seat is claimed further down — after the basket has been priced and
+  // checked, and immediately before the order goes to the kitchen — so a
+  // request that is going to be refused for a sold-out bagel does not take a
+  // slot on the way past. This is only the decision that it is going to be
+  // scheduled.
+  //
+  // ⚠️ Delivery is still refused, and that is not an oversight.
+  //
+  // A courier cannot be booked for tomorrow morning from here: Uber quotes
+  // are minutes-fresh and the whole delivery path — quote, fee comparison,
+  // dispatch — is built around a ride that starts now. Scheduling a delivery
+  // means holding an order overnight and quoting at dawn, which is a piece of
+  // machinery this endpoint does not have. Somebody who wants breakfast
+  // tomorrow can schedule a pickup; somebody who wants it delivered orders in
+  // the morning.
+  //
+  // Pickup only, not catering. A catering order is a tray for twenty arranged
+  // days ahead by a person; putting one in a ten minute slot meant for a bagel
+  // would be scheduling in name and overbooking in fact. orderAt covers both
+  // modes, so the mode is read again here rather than inferred from it.
+  const isPickup =
+    (payload as { fulfillment?: { mode?: unknown } })?.fulfillment?.mode === "pickup";
+  const counterStore = isPickup ? storeById(orderAt) : null;
+  const openNow =
+    isOpenNow(new Date(), counterOpensAt) &&
+    minutesUntilClose(new Date(), counterOpensAt) >= PREP_MINUTES;
+  const scheduling = !openNow && counterStore !== null;
+
+  if (!openNow && !scheduling) {
     const next = nextOpening(new Date(), counterOpensAt);
     return Response.json(
       {
@@ -253,6 +288,15 @@ export async function POST(request: Request) {
       { status: 409 },
     );
   }
+
+  // The time the customer was shown and agreed to. Absent is answered with a
+  // time rather than with an order — see claim() in pickupSchedule.ts.
+  const wantedSlot = (() => {
+    const raw = (body as { scheduledFor?: unknown })?.scheduledFor;
+    if (typeof raw !== "string") return null;
+    const at = new Date(raw);
+    return Number.isNaN(at.getTime()) ? null : at;
+  })();
 
   const rawItems = body?.items;
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
@@ -543,6 +587,44 @@ export async function POST(request: Request) {
 
   onOrder(order);
 
+  // ——— The seat ———
+  //
+  // Taken here: after everything that could refuse this order has had its
+  // say, and before the kitchen hears about it. Earlier would hold a time for
+  // an order about to be turned away for a sold-out bagel; later would mean
+  // the confirmation screen was written before the shop agreed to the minute
+  // printed on it.
+  //
+  // The id is this order's own handle, generated here because neither the
+  // Toast guid nor the queue id exists yet — and it is what the seat is
+  // released by if the kitchen refuses the order below.
+  const scheduleId = `sched-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  let scheduledFor: Date | null = null;
+  if (scheduling && counterStore) {
+    const held = await claim(scheduleId, counterStore, wantedSlot);
+    if (!held.ok) {
+      if (held.reason === "full") {
+        return Response.json({ error: "api.scheduleFull" }, { status: 409 });
+      }
+      if (held.reason === "unreadable") {
+        return Response.json({ error: "api.scheduleUnavailable" }, { status: 503 });
+      }
+      // Moved. Not an error the customer did anything to cause — the time
+      // they were shown went while they were typing a card number — so it
+      // goes back with the new one attached and the checkout redraws rather
+      // than saying no.
+      return Response.json(
+        {
+          error: "api.scheduleChanged",
+          scheduledFor: held.at.toISOString(),
+          slots: held.slots.map((at) => at.toISOString()),
+        },
+        { status: 409 },
+      );
+    }
+    scheduledFor = held.at;
+  }
+
   // Toast, when it's there. The draft is built from the repriced order, never
   // from the request, so what the kitchen is told and what the customer was
   // shown come from the same numbers.
@@ -568,6 +650,12 @@ export async function POST(request: Request) {
       tipCents: order.tipCents,
       utensils: order.utensils,
       note: order.note || undefined,
+      // A scheduled order, told to Toast twice on purpose: as promisedDate,
+      // which is the field its own scheduling reads, and in the ticket note,
+      // which is what the person at the counter reads. Either one alone is a
+      // single point of failure for the one fact that matters — that this bag
+      // is not for now.
+      ...(scheduledFor ? { promisedAt: scheduledFor } : {}),
     });
 
     if (!sent.ok) {
@@ -575,6 +663,9 @@ export async function POST(request: Request) {
       // would send somebody to a counter that has never heard of them, so
       // this fails loudly instead.
       console.error(`[shop-order] Toast submission failed: ${sent.reason}`);
+      // And give the time back. A seat held for an order the kitchen refused
+      // is a slot nobody can buy and nobody is coming for.
+      if (scheduledFor) await releaseSlot(scheduleId);
       return Response.json(
         { error: "api.orderSendFailed" },
         { status: 502 },
@@ -614,6 +705,11 @@ export async function POST(request: Request) {
         // our own fixed estimate. Absent when Toast didn't send one, and the
         // client falls back exactly as before.
         ...(sent.readyAt === undefined ? {} : { readyAt: sent.readyAt }),
+        // The time the shop agreed to, for an order placed while the counter
+        // was shut. Absent on every ordinary order, which is what tells the
+        // confirmation screen to talk about minutes rather than about a
+        // morning.
+        ...(scheduledFor ? { scheduledFor: scheduledFor.toISOString() } : {}),
         submitted: "toast",
         ...(await bookCourier()),
       },
@@ -639,7 +735,14 @@ export async function POST(request: Request) {
   reference = queueId;
 
   return Response.json(
-    { ok: true, totals, submitted: "logged", queueId, ...(await bookCourier()) },
+    {
+      ok: true,
+      totals,
+      submitted: "logged",
+      queueId,
+      ...(scheduledFor ? { scheduledFor: scheduledFor.toISOString() } : {}),
+      ...(await bookCourier()),
+    },
     { status: 200 },
   );
 

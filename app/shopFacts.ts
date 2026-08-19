@@ -158,9 +158,14 @@ const DAY_LONG = [
 // hour, because at 11pm Monday in Los Angeles it is already Tuesday in London
 // and asking the visitor's Date for its weekday would close the shop a day
 // early.
-function shopClock(now: Date): { day: number; hour: number; minute: number } {
+// The shop's zone, named once. Everything that reads or builds a shop-local
+// time goes through it, so a second shop in a second zone is one field on a
+// location record rather than a search for string literals.
+export const SHOP_TIME_ZONE = "America/Los_Angeles";
+
+export function shopClock(now: Date): { day: number; hour: number; minute: number } {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Los_Angeles",
+    timeZone: SHOP_TIME_ZONE,
     hour: "numeric",
     minute: "numeric",
     hour12: false,
@@ -176,6 +181,43 @@ function shopClock(now: Date): { day: number; hour: number; minute: number } {
     minute: value("minute"),
     day: DAY_NAMES.indexOf(parts.find((part) => part.type === "weekday")?.value ?? ""),
   };
+}
+
+/** The instant at which it is `hour:minute` in the shop's zone, on the shop's
+ *  calendar day containing `on`.
+ *
+ *  ——— Why this is not `setHours` ———
+ *
+ *  setHours works in the *runtime's* zone. On a laptop in Los Angeles that is
+ *  the same answer and the bug is invisible; on a server in UTC — which is
+ *  every server this will ever run on — "7 AM" becomes midnight Pacific, and
+ *  the whole schedule slides eight hours into the night.
+ *
+ *  Built by measuring rather than by arithmetic on offsets: take a guess at
+ *  the instant, ask what o'clock that is in the shop's zone, and correct by
+ *  the difference. Two passes settle it even across a daylight-saving jump,
+ *  which is the case an offset table gets wrong twice a year.
+ */
+export function shopInstant(on: Date, hour: number, minute = 0): Date {
+  // Start from the same calendar day as `on`, as the shop reckons days.
+  const dayParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: SHOP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(on);
+  const part = (type: string) => dayParts.find((p) => p.type === type)?.value ?? "01";
+  const isoDay = `${part("year")}-${part("month")}-${part("day")}`;
+
+  // A first guess in UTC, then two corrections against the shop's own clock.
+  let guess = new Date(`${isoDay}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00Z`);
+  for (let pass = 0; pass < 2; pass += 1) {
+    const seen = shopClock(guess);
+    const driftMinutes = (seen.hour - hour) * 60 + (seen.minute - minute);
+    if (driftMinutes === 0) break;
+    guess = new Date(guess.getTime() - driftMinutes * 60_000);
+  }
+  return guess;
 }
 
 // ——— ⚠️ Testing outside opening hours ———
@@ -278,6 +320,38 @@ export function nextOpening(
     return ahead === 1 ? `tomorrow at ${label}` : `${DAY_LONG[next]} at ${label}`;
   }
   return null;
+}
+
+/** A scheduled pickup time, as a customer reads it.
+ *
+ *  ——— Shop time, in the visitor's language ———
+ *
+ *  Both halves matter and they pull opposite ways. The zone is the shop's,
+ *  always: somebody ordering from a hotel in Seoul for a friend in Koreatown
+ *  must be shown the minute the door opens in Los Angeles, not the minute
+ *  their own phone would call it. The words are theirs — the weekday comes out
+ *  of Intl, so no new string has to be translated ten times for this to read
+ *  correctly in ten languages.
+ *
+ *  ——— And why today has no weekday on it ———
+ *
+ *  "Ready Wednesday at 7:15 AM" on a Wednesday morning reads like next week.
+ *  A time on its own is unambiguous when it is today and ambiguous when it is
+ *  not, so the weekday appears exactly when it is doing work. */
+export function slotLabel(at: Date, tag = "en-US"): string {
+  const today = shopClock(new Date()).day === shopClock(at).day;
+  try {
+    return new Intl.DateTimeFormat(tag, {
+      timeZone: SHOP_TIME_ZONE,
+      ...(today ? {} : { weekday: "short" }),
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(at);
+  } catch {
+    // An unusable locale tag, which is a thing a URL can carry. The time is
+    // the part that must survive.
+    return slotLabel(at);
+  }
 }
 
 // When the window opens next, as parts rather than a sentence — the same

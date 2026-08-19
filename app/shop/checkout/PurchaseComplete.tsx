@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useT, type StringKey } from "../../i18n";
+import { useLocale, useT, type StringKey } from "../../i18n";
+import { localeById } from "../../localeScript";
+import { slotLabel } from "../../shopFacts";
 import { formatPrice } from "../products";
 import { orderTotals, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
@@ -62,6 +64,7 @@ export default function PurchaseComplete({
   onTrack?: () => void;
 }) {
   const t = useT();
+  const tag = localeById(useLocale()).tag;
   const bill = order ? orderTotals(order) : null;
 
   return (
@@ -105,13 +108,18 @@ export default function PurchaseComplete({
 
         <p className="mx-auto mt-2 max-w-xs text-[14px] leading-[1.5] text-muted">
           {where ? (
-            <>
-              {t("checkout.fromWhere", { mode: t(where.mode), where: where.where })}{" "}
-              {t("checkout.weWillHaveItReady")}
-            </>
-          ) : (
-            <>{t("checkout.weWillHaveItReady")}</>
-          )}
+            <>{t("checkout.fromWhere", { mode: t(where.mode), where: where.where })} </>
+          ) : null}
+          {/* A scheduled order says its minute. "We'll have it ready" is the
+              right sentence for an order the kitchen is starting now and the
+              wrong one for an order placed at 4am: this screen is the last
+              thing somebody reads before they close the app, and it is where
+              the time has to be plain enough to remember. */}
+          {order?.scheduledFor === undefined
+            ? t("checkout.weWillHaveItReady")
+            : t("checkout.readyAtScheduled", {
+                time: slotLabel(new Date(order.scheduledFor), tag),
+              })}
         </p>
 
         {/* Where this order sits in the line. Under the timing sentence and
