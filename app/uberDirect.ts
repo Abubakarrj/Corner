@@ -48,6 +48,22 @@ export function isUberConfigured(): boolean {
   return uberConfig() !== null;
 }
 
+/** Who the courier is, for the till's copy of the order.
+ *
+ *  Square records a delivery it did not arrange by provider name and support
+ *  number, so this is what the counter's screen shows when somebody asks where
+ *  the driver is. The number is Uber Direct's merchant support line for this
+ *  account, which is account-specific and therefore configuration rather than a
+ *  constant.
+ *
+ *  Null without one. Naming a provider and then giving staff no number to call
+ *  is worse than the till simply not knowing. */
+export function uberCourier(): { provider: string; supportPhone: string } | null {
+  const supportPhone = process.env.UBER_DIRECT_SUPPORT_PHONE?.trim();
+  if (!isUberConfigured() || !supportPhone) return null;
+  return { provider: "Uber Direct", supportPhone };
+}
+
 // Tokens last 30 days, so minting one per request would be both slow and
 // rude. Cached in module scope with a minute of slack against the clock —
 // which is per-instance, and that's fine: the worst case is a few instances

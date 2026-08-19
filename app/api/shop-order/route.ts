@@ -25,6 +25,7 @@ import {
   isUberConfigured,
   quoteDelivery,
   structuredAddress,
+  uberCourier,
 } from "../../uberDirect";
 import {
   deliveryOrigin,
@@ -661,6 +662,10 @@ export async function POST(request: Request) {
       // the slot it occupies. An ordinary order has no such handle before the
       // till answers, and the till's own id becomes it.
       ...(scheduledFor ? { promisedAt: scheduledFor, reference: scheduleId } : {}),
+      // Who is driving, on a delivery. The till records a courier somebody else
+      // arranged rather than arranging one, so without this its copy of the
+      // order describes a delivery the shop is making itself.
+      ...(forDelivery && uberCourier() ? { courier: uberCourier()! } : {}),
       ...(orderAt ? { counter: orderAt } : {}),
     });
 

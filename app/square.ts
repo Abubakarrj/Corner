@@ -34,6 +34,15 @@ import type { PosOrderDraft, PosOrderResult, PosOrderState } from "./pos";
 // and is deliberately not folded into this change, because it is the first code
 // in this app that would move money and it deserves its own testing pass.
 //
+// Couriers. Square records a delivery; it does not dispatch one. There is no
+// endpoint here that books a driver, and `managed_delivery` is a declaration
+// that somebody else is carrying the bag rather than a request that Square
+// find somebody. Square's own on-demand delivery — DoorDash Drive, or Nash
+// picking a local courier — belongs to Square Online, their hosted storefront,
+// and is not reachable from an app driving the Orders API. Uber Direct stays
+// ours. What this file can do is tell Square who the courier is, so the
+// counter's screen has a provider and a number to call.
+//
 // Catalog. products.ts stays the source of truth — it carries allergens, option
 // groups, mix-and-match packs and ten languages, none of which Square's catalog
 // holds well. Lines go up as ad-hoc items with our name and our price. Setting
@@ -202,9 +211,34 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
             schedule_type: scheduled ? "SCHEDULED" : "ASAP",
             ...(scheduled ? { deliver_at: draft.promisedAt!.toISOString() } : {}),
             prep_time_duration: duration(PREP_MINUTES),
-            // Uber Direct carries the bag, not Square. Saying so is what stops
-            // Square offering or expecting to arrange a courier of its own.
-            managed_delivery: false,
+            // ⚠️ This field reads backwards from the obvious guess, and the
+            // obvious guess is what this code shipped with.
+            //
+            // `managed_delivery` does not ask Square to arrange a courier.
+            // Square's own type calls it "the flag to indicate the delivery is
+            // managed by a third party (ie DoorDash), which means we may not
+            // receive all recipient information for PII purposes" — it is how
+            // you *declare* that somebody else is carrying the bag, and it is
+            // why `courier_provider_name` and `courier_support_phone_number`
+            // are the fields that come with it. Square has no endpoint that
+            // dispatches a courier at all.
+            //
+            // So true is the honest answer for this shop: Uber Direct carries
+            // it. False said the shop drives its own deliveries, which put a
+            // wrong description of every delivery order onto the till.
+            //
+            // Only when there is a courier to name, though. Square documents
+            // the provider and the support number as required alongside a true
+            // here, and a 400 on every delivery order is a worse failure than
+            // an imprecise flag — so an unconfigured courier keeps the old
+            // value and the checkout keeps working.
+            ...(draft.courier
+              ? {
+                  managed_delivery: true,
+                  courier_provider_name: draft.courier.provider,
+                  courier_support_phone_number: draft.courier.supportPhone,
+                }
+              : { managed_delivery: false }),
             ...(notes ? { note: notes.slice(0, 500) } : {}),
           },
         }

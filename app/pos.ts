@@ -64,6 +64,14 @@ export type PosOrderDraft = {
   /** Our handle for this order, written onto the till's copy so a ticket can be
    *  traced back here without a fourth identifier to keep in step. */
   reference?: string;
+  /** Who is carrying the bag, when it is not the shop itself.
+   *
+   *  A till records a delivery somebody else arranged; it does not arrange one.
+   *  Naming the courier here is what puts a provider and a number to call on
+   *  the counter's screen, instead of a delivery the till believes staff are
+   *  driving themselves. Absent on pickup, and absent when no courier is
+   *  configured. */
+  courier?: { provider: string; supportPhone: string };
 };
 
 export type PosOrderResult =

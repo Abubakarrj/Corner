@@ -227,13 +227,49 @@ async function main() {
   ok("a delivery is a DELIVERY fulfillment", first().type === "DELIVERY", String(first().type));
   ok("and carries no pickup_details", !("pickup_details" in first()),
      JSON.stringify(Object.keys(first())));
-  // Uber Direct carries the bag. Square arranging a courier of its own would be
-  // two couriers for one order.
-  ok("Square is told not to arrange the courier", delivery().managed_delivery === false,
-     String(delivery().managed_delivery));
+  // ⚠️ managed_delivery reads backwards from the obvious guess, and this file
+  // asserted the guess. It declares that a third party is carrying the bag; it
+  // does not ask Square to find one. With no courier named there is nothing to
+  // declare, so false is right here and wrong the moment one is.
+  ok("with no courier named, the delivery is not declared as somebody else's",
+     delivery().managed_delivery === false, String(delivery().managed_delivery));
+  ok("and no provider is claimed", !("courier_provider_name" in delivery()),
+     JSON.stringify(delivery().courier_provider_name));
   const to = ((delivery().recipient ?? {}) as Wire).address as Wire | undefined;
   ok("the address is on it", to?.address_line_1 === "123 S Main St, Los Angeles, CA 90013",
      JSON.stringify(to));
+
+  // ——— And with a courier named ———
+  //
+  // The bug this replaced: every delivery went up as one the shop was driving
+  // itself, so the counter's screen had no provider and no number to call on an
+  // order a stranger was carrying.
+  reset();
+  await createSquareOrder({
+    ...draft,
+    diningOption: "delivery",
+    deliveryAddress: "123 S Main St, Los Angeles, CA 90013",
+    courier: { provider: "Uber Direct", supportPhone: "8005550199" },
+  });
+  ok("a named courier is declared as a third party's delivery",
+     delivery().managed_delivery === true, String(delivery().managed_delivery));
+  ok("by name", delivery().courier_provider_name === "Uber Direct",
+     String(delivery().courier_provider_name));
+  // Naming a provider and leaving staff no number to call is the half-done
+  // version of this, and Square asks for both together.
+  ok("with a number the counter can ring",
+     delivery().courier_support_phone_number === "8005550199",
+     String(delivery().courier_support_phone_number));
+
+  // A pickup never carries any of it, whatever is configured.
+  reset();
+  await createSquareOrder({
+    ...draft,
+    courier: { provider: "Uber Direct", supportPhone: "8005550199" },
+  });
+  ok("a pickup names no courier, even when one is configured",
+     !("courier_provider_name" in pickup()) && !("managed_delivery" in pickup()),
+     JSON.stringify(pickup()));
 
   // ——— Which counter is which Square location ———
   reset();
