@@ -6,7 +6,7 @@ import { driveBetween, geocode } from "../../../googleMaps";
 import { PREP_MINUTES } from "../../../shopFacts";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../../uberDirect";
 import { deliveryOrigin, deliveryStoreFor } from "../../../storePlaces";
-import { recordMiss } from "../../../demandMisses";
+import { recordMiss } from "../../../demand";
 
 // What a courier will charge to take this order to this address, and when
 // they'll have it there.

@@ -20,6 +20,40 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Scheduled jobs
+
+Nothing in this app runs on a timer. One job needs to, and it is one
+authenticated request a day.
+
+### The daily demand digest
+
+Where demand came from yesterday — pickup by counter, delivery by
+neighbourhood, catering enquiries, and every address the delivery radius turned
+away — emailed to the shop. Point a Render Cron Job (or a GitHub Action, or
+anything that can make a request on a schedule) at:
+
+```sh
+curl -fsS -X POST https://thecornerbagel.com/api/digest \
+     -H "Authorization: Bearer $KITCHEN_TOKEN"
+```
+
+`0 15 * * *` is 7am in Los Angeles for most of the year, so the mail is there
+when the shop opens.
+
+It sends once per day whatever the schedule does: the first call claims the day
+and a second is answered `already-sent`, so a cron that retries on a timeout
+cannot mail two copies. To send one again on purpose — a digest lost when the
+mail itself failed — name the day, which skips the claim:
+
+```sh
+curl -fsS -X POST "https://thecornerbagel.com/api/digest?day=2026-08-19" \
+     -H "Authorization: Bearer $KITCHEN_TOKEN"
+```
+
+Needs `KITCHEN_TOKEN`, `RESEND_API_KEY` and `CORNER_DATABASE_URL`. Without the
+database nothing is counted and the endpoint says so rather than mailing a page
+of zeroes.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

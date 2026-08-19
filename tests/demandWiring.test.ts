@@ -74,14 +74,19 @@ async function main() {
   }
   const client = db();
   if (!client) { console.log("\nno database"); process.exit(1); }
+  // Both tables, because the digest's once-a-day claim is a row that outlives
+  // a test run exactly as it is meant to outlive a cron retry. Leaving it
+  // behind made this suite pass on a fresh database and fail on the second
+  // run, which is the worst kind of test.
   await client.query(
     `CREATE SCHEMA IF NOT EXISTS ${SCHEMA};
-     DROP TABLE IF EXISTS ${SCHEMA}.demand_misses`,
+     DROP TABLE IF EXISTS ${SCHEMA}.demand_daily;
+     DROP TABLE IF EXISTS ${SCHEMA}.digest_sent`,
   );
 
   // Create the table before anything reads it. ready() makes it lazily on
   // first use, and the first thing this test does is count rows.
-  const { demandMap } = await import("../app/demandMisses");
+  const { demandMap } = await import("../app/demand");
   await demandMap();
 
   const { POST } = await import("../app/api/delivery-area/route");
@@ -93,9 +98,9 @@ async function main() {
     }));
   const counted = async () => {
     const { rows } = await client.query<{ n: string; miles: string }>(
-      `SELECT coalesce(sum(misses),0)::text AS n,
+      `SELECT coalesce(sum(n),0)::text AS n,
               coalesce(sum(sum_miles),0)::text AS miles
-         FROM ${SCHEMA}.demand_misses`,
+         FROM ${SCHEMA}.demand_daily WHERE outcome = 'refused'`,
     );
     return { n: Number(rows[0].n), miles: Number(rows[0].miles) };
   };
@@ -124,19 +129,20 @@ async function main() {
      Math.abs(after.miles - farBody.miles) < 0.2, `${after.miles} vs ${farBody.miles}`);
 
   // ——— The cell, not the address ———
-  const { rows: cells } = await client.query<{ cell_lat: string; cell_lng: string; source: string }>(
-    `SELECT cell_lat::text, cell_lng::text, source FROM ${SCHEMA}.demand_misses`,
+  const { rows: cells } = await client.query<{ cell_lat: string; cell_lng: string; channel: string }>(
+    `SELECT cell_lat::text, cell_lng::text, channel FROM ${SCHEMA}.demand_daily
+      WHERE outcome = 'refused'`,
   );
   ok("stored as a rounded cell", cells[0].cell_lat === "34.02" && cells[0].cell_lng === "-118.49",
      `${cells[0].cell_lat},${cells[0].cell_lng}`);
-  ok("tagged as the area check", cells[0].source === "area", cells[0].source);
+  ok("tagged as the area check", cells[0].channel === "area", cells[0].channel);
 
   // A second refusal on the same block increments rather than adding a row —
   // which is what makes the table a tally and not a log of visits.
   answerAt = [34.0199, -118.4915];
   await ask("Another door on the same block");
   const { rows: still } = await client.query<{ n: string }>(
-    `SELECT count(*)::text AS n FROM ${SCHEMA}.demand_misses`,
+    `SELECT count(*)::text AS n FROM ${SCHEMA}.demand_daily WHERE outcome = 'refused'`,
   );
   ok("a neighbour increments the same row rather than adding one", still[0].n === "1",
      still[0].n);
@@ -158,6 +164,71 @@ async function main() {
   const body = await right.json();
   ok("and the cell is below the threshold, so it is not shown",
      body.known === true && body.cells.length === 0, JSON.stringify(body).slice(0, 160));
+
+  // ——— Catering interest, the one thing that flow can be seen doing ———
+  //
+  // A catering order leaves through a mailto and never comes back, so this
+  // endpoint counting the button press is the entire catering signal. If it
+  // stops firing, the digest reports nothing under Catering and reads as a
+  // dead market rather than a blind spot.
+  const interest = await import("../app/api/demand/interest/route");
+  const tap = (locationId: unknown) =>
+    interest.POST(new Request("http://localhost/api/demand/interest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-forwarded-for": "203.0.113.9" },
+      body: JSON.stringify({ locationId }),
+    }));
+  await tap("figueroa");
+  const { rows: cater } = await client.query<{ n: string; mode: string; outcome: string }>(
+    `SELECT n::text, mode, outcome FROM ${SCHEMA}.demand_daily WHERE mode = 'catering'`,
+  );
+  ok("a catering tap is counted", cater[0]?.n === "1", JSON.stringify(cater));
+  ok("as interest, never as an order", cater[0]?.outcome === "interest", cater[0]?.outcome);
+  // A counter we do not have, or one that does not cater, counts nothing —
+  // otherwise the number is whatever a script feels like sending.
+  await tap("not-a-shop");
+  const { rows: caterAfter } = await client.query<{ n: string }>(
+    `SELECT coalesce(sum(n),0)::text AS n FROM ${SCHEMA}.demand_daily WHERE mode = 'catering'`,
+  );
+  ok("an unknown counter counts nothing", caterAfter[0].n === "1", caterAfter[0].n);
+
+  // ——— The digest is sent once ———
+  //
+  // A cron that retries, two instances waking together, somebody curling it to
+  // see what it looks like: all three send a second copy of the same morning
+  // unless the claim holds. A duplicate daily report is how a daily report
+  // stops being read.
+  process.env.KITCHEN_TOKEN = "secret";
+  const digest = await import("../app/api/digest/route");
+  const fire = () =>
+    digest.POST(new Request("http://localhost/api/digest", {
+      method: "POST",
+      headers: { authorization: "Bearer secret" },
+    }));
+  const first = await fire();
+  const firstBody = await first.json();
+  const second = await fire();
+  const secondBody = await second.json();
+  // RESEND_API_KEY is unset here, so the send reports not-configured rather
+  // than mailing anybody. What is being tested is the claim, not the mail.
+  ok("the first call takes the day", firstBody.reason !== "already-sent",
+     JSON.stringify(firstBody));
+  ok("and the second is refused as already sent", secondBody.reason === "already-sent",
+     JSON.stringify(secondBody));
+  ok("both name the same day", firstBody.day === secondBody.day,
+     `${firstBody.day} vs ${secondBody.day}`);
+  // An explicit day is a deliberate resend and skips the claim, which is how a
+  // digest lost to a failed send gets recovered.
+  const again = await digest.POST(new Request(
+    `http://localhost/api/digest?day=${firstBody.day}`,
+    { method: "POST", headers: { authorization: "Bearer secret" } },
+  ));
+  ok("an explicit ?day= can resend", (await again.json()).reason !== "already-sent");
+  const unauthed = await digest.POST(
+    new Request("http://localhost/api/digest", { method: "POST" }),
+  );
+  ok("and the digest endpoint is not public", unauthed.status === 404,
+     String(unauthed.status));
 
   await client.end();
   console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);

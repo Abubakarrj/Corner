@@ -6,7 +6,7 @@ import {
   suggest,
 } from "../../googleMaps";
 import { deliveryOrigin, deliveryReach } from "../../storePlaces";
-import { recordMiss } from "../../demandMisses";
+import { recordMiss } from "../../demand";
 
 // Resolving an address, and deciding whether we'll deliver to it.
 //

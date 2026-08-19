@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
-import { KEEP_DAYS, MIN_CELL, demandMap } from "../../demandMisses";
+import { KEEP_DAYS, MIN_CELL, demandMap } from "../../demand";
 
 // Where people wanted delivery and could not have it, for whoever is deciding
 // where to open next.

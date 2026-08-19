@@ -335,20 +335,19 @@ const enPrivacy: Policy = {
         },
       ],
     },
-    // Counted refusals. Its own section rather than a line in "what we
-    // collect", because it is the one thing here that records anything about
-    // somebody who never placed an order, and burying that would be the
-    // problem rather than the disclosure.
+    // The daily demand tallies. Its own section rather than a line in "what
+    // we collect", because part of it records people who never placed an
+    // order, and burying that would be the problem rather than the disclosure.
     {
-      heading: "Where We Cannot Deliver Yet",
+      heading: "What We Count",
       blocks: [
         {
           kind: "p",
-          text: "When an address turns out to be outside our delivery area, we add one to a count of how many times that has happened in that part of the city. It is how we work out where to open next, and it comes from the people it would actually help.",
+          text: "We keep a daily count of how much was ordered, in what shape, and roughly where — a delivery counted against the part of the city it went to, a collection or a catering enquiry counted against the shop it was for. When an address turns out to be outside our delivery area we count that too. It is how we work out where to open next, and it comes from the people it would actually help.",
         },
         {
           kind: "p",
-          text: "The address itself is not kept. What is written down is a tally for a square of roughly one kilometre, for that day, and how far outside the area the refusals in it were on average — no address, no name, no account, and no record of any individual request. A square that size tells us one neighbourhood from another, which is the question, and not one home from another, which is not. Squares with fewer than five refusals in them are never shown to anybody, so the smallest thing this can describe is a group.",
+          text: "No address is kept. What is written down is a tally for a square of roughly one kilometre, for that day, and how far outside the area the refusals in it were on average — no address, no name, no account, and no record of any individual order or request. A square that size tells us one neighbourhood from another, which is the question, and not one home from another, which is not. Squares with fewer than five refusals in them are never shown to anybody, so the smallest thing this can describe is a group. Collections and catering enquiries are counted against the shop's own address, so they describe our premises rather than yours.",
         },
         {
           kind: "p",

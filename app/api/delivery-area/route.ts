@@ -2,7 +2,7 @@ import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
 import { deliveryArea } from "../../deliveryArea";
 import { geocode } from "../../googleMaps";
 import { deliveryOrigin, deliveryReach } from "../../storePlaces";
-import { recordMiss } from "../../demandMisses";
+import { recordMiss } from "../../demand";
 
 // The boundary of where we deliver, for the map that draws it.
 //

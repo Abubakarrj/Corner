@@ -7,7 +7,7 @@
 // about what is in it.
 
 import { cellOf, demandMap, recordMiss, CELL_DEGREES, MIN_CELL, KEEP_DAYS }
-  from "../app/demandMisses";
+  from "../app/demand";
 import { SCHEMA, db, isDatabaseConfigured } from "../app/db";
 
 let failures = 0;
@@ -26,7 +26,7 @@ async function main() {
   if (!client) { console.log("\nno database"); process.exit(1); }
   await client.query(
     `CREATE SCHEMA IF NOT EXISTS ${SCHEMA};
-     DROP TABLE IF EXISTS ${SCHEMA}.demand_misses`,
+     DROP TABLE IF EXISTS ${SCHEMA}.demand_daily`,
   );
 
   // ——— The coarsening, which is the privacy argument ———
@@ -53,11 +53,10 @@ async function main() {
   let map = await demandMap();
   ok("a cell under the threshold is not reported", (map ?? []).length === 0,
      JSON.stringify(map));
-  const { rows: under } = await client.query<{ misses: string }>(
-    `SELECT misses::text FROM ${SCHEMA}.demand_misses`,
+  const { rows: under } = await client.query<{ n: string }>(
+    `SELECT n::text FROM ${SCHEMA}.demand_daily`,
   );
-  ok("though it is being counted", under[0]?.misses === String(MIN_CELL - 1),
-     under[0]?.misses);
+  ok("though it is being counted", under[0]?.n === String(MIN_CELL - 1), under[0]?.n);
 
   await recordMiss(santaMonica, 14.6, "checkout");
   map = await demandMap();
@@ -76,19 +75,20 @@ async function main() {
   // that can be checked once and stay checked.
   const { rows: columns } = await client.query<{ column_name: string }>(
     `SELECT column_name FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = 'demand_misses'`,
+      WHERE table_schema = $1 AND table_name = 'demand_daily'`,
     [SCHEMA],
   );
   const names = columns.map((c) => c.column_name).sort();
-  ok("the columns are only a cell, a day, a source and two numbers",
-     names.join(",") === "cell_lat,cell_lng,day,misses,source,sum_miles", names.join(","));
+  ok("the columns are only a cell, a day, what happened, and two numbers",
+     names.join(",") === "cell_lat,cell_lng,channel,counter,day,mode,n,outcome,sum_miles",
+     names.join(","));
   for (const forbidden of ["address", "email", "phone", "name", "ip", "session", "account"]) {
     ok(`no ${forbidden} column`, !names.some((n) => n.includes(forbidden)));
   }
   // And no row is finer-grained than a day, so nothing here is a timeline.
   const { rows: shape } = await client.query<{ data_type: string }>(
     `SELECT data_type FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = 'demand_misses' AND column_name = 'day'`,
+      WHERE table_schema = $1 AND table_name = 'demand_daily' AND column_name = 'day'`,
     [SCHEMA],
   );
   ok("the clock is a date, not a timestamp", shape[0]?.data_type === "date",
@@ -103,7 +103,7 @@ async function main() {
   // and the column's scale has to be asserted or it can be widened by accident.
   const { rows: scale } = await client.query<{ column_name: string; numeric_scale: number }>(
     `SELECT column_name, numeric_scale FROM information_schema.columns
-      WHERE table_schema = $1 AND table_name = 'demand_misses'
+      WHERE table_schema = $1 AND table_name = 'demand_daily'
         AND column_name IN ('cell_lat', 'cell_lng')
       ORDER BY column_name`,
     [SCHEMA],
@@ -125,29 +125,29 @@ async function main() {
 
   // ——— Retention is a real deletion, not a filter ———
   await client.query(
-    `UPDATE ${SCHEMA}.demand_misses SET day = current_date - $1::int`, [KEEP_DAYS + 5],
+    `UPDATE ${SCHEMA}.demand_daily SET day = current_date - $1::int`, [KEEP_DAYS + 5],
   );
   map = await demandMap();
   ok("anything past the window is not reported", (map ?? []).length === 0,
      JSON.stringify(map));
   // The sweep is probabilistic on write, so drive it rather than wait for it.
   for (let i = 0; i < 2000 && (await client.query(
-    `SELECT count(*)::int AS n FROM ${SCHEMA}.demand_misses`,
+    `SELECT count(*)::int AS n FROM ${SCHEMA}.demand_daily`,
   )).rows[0].n > 0; i += 1) {
     await recordMiss(santaMonica, 12, "search");
   }
   const { rows: left } = await client.query<{ n: number }>(
-    `SELECT count(*)::int AS n FROM ${SCHEMA}.demand_misses WHERE day < current_date - ${KEEP_DAYS}`,
+    `SELECT count(*)::int AS n FROM ${SCHEMA}.demand_daily WHERE day < current_date - ${KEEP_DAYS}`,
   );
   ok("and is eventually deleted rather than kept out of sight", left[0].n === 0,
      String(left[0].n));
 
   // ——— A refusal never fails the request that caused it ———
-  await client.query(`ALTER TABLE ${SCHEMA}.demand_misses RENAME TO gone`);
+  await client.query(`ALTER TABLE ${SCHEMA}.demand_daily RENAME TO gone`);
   let threw = false;
   try { await recordMiss(santaMonica, 11, "checkout"); } catch { threw = true; }
   ok("a broken table does not throw into the customer's request", !threw);
-  await client.query(`ALTER TABLE ${SCHEMA}.gone RENAME TO demand_misses`);
+  await client.query(`ALTER TABLE ${SCHEMA}.gone RENAME TO demand_daily`);
 
   await client.end();
   console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);

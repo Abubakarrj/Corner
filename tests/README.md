@@ -26,8 +26,9 @@ the shop will drive.
 | `deliveryReach` | The radius as a reach around every counter. |
 | `deliveryArea` | The published boundary contour, driving the real measurement. |
 | `toastScheduled` | What a scheduled order looks like on the wire to Toast. |
-| `demandMisses` | The refused-address counter, and what it refuses to store. **Needs Postgres.** |
-| `demandWiring` | That a refusal actually reaches the counter, through a real route handler. **Needs Postgres.** |
+| `demand` | The demand counter, and what it refuses to store. **Needs Postgres.** |
+| `demandDigest` | The daily email: its sentences, its caveats, and a quiet day. |
+| `demandWiring` | That demand reaches the counter and the digest sends once, through real route handlers. **Needs Postgres.** |
 | `policyPacks` | Every locale's privacy policy still rebuilds, section for section. |
 
 Not covered here: anything that needs a live third party to answer. Google's
@@ -39,7 +40,7 @@ internally consistent, not that Google agreed.
 
 ## The database suites
 
-`scheduledPickups`, `demandMisses` and `demandWiring` skip, loudly, without a
+`scheduledPickups`, `demand` and `demandWiring` skip, loudly, without a
 database.
 
 `scheduledPickups` is the only place the seat constraint can actually be
@@ -57,8 +58,7 @@ hold an address and the coordinate columns cannot hold a precise fix.
 CORNER_DATABASE_URL=postgres://localhost/corner_test npm test
 ```
 
-`demandMisses` is worth reading before changing anything in
-`app/demandMisses.ts`: most of its assertions are about what the table must
+`demand` is worth reading before changing anything in `app/demand.ts`: most of its assertions are about what the table must
 *not* contain, and several of them check the schema rather than behaviour,
 because "we do not store the address" is a promise about a shape.
 

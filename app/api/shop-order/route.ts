@@ -37,6 +37,7 @@ import {
   opensAt,
   type StoreLocation,
 } from "../../(marketing)/locations/locations";
+import { recordDemand } from "../../demand";
 import { claim } from "../../pickupSchedule";
 import { releaseSlot } from "../../scheduledPickups";
 import { joinQueue } from "../../kitchenQueue";
@@ -682,6 +683,7 @@ export async function POST(request: Request) {
     // fallback that has been silently accumulating nothing is not a fallback,
     // it is a second outage waiting behind the first.
     await joinQueue(sent.orderGuid, sent.orderGuid);
+    await countDemand();
     // Points, on the subtotal, keyed to this order so a retry cannot pay
     // twice. Awaited but incapable of failing the order — see earn().
     //
@@ -728,6 +730,7 @@ export async function POST(request: Request) {
   // the guid does this job and is already returned.
   const queueId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await joinQueue(queueId);
+  await countDemand();
   // Same on this path. The ref is the queue id rather than a Toast guid,
   // which is the only handle this branch has — and it is the one the client
   // gets back, so the two agree about which order was paid for.
@@ -745,6 +748,39 @@ export async function POST(request: Request) {
     },
     { status: 200 },
   );
+
+  // ——— Counted, once the kitchen has it ———
+  //
+  // After the order is real and never before: an order Toast refused is not
+  // demand that was served, and counting it would put a phantom on the map the
+  // shop plans from.
+  //
+  // A delivery is filed where it went. A pickup and a catering order are filed
+  // at the counter's own coordinates — the customer never says where they
+  // live and this does not ask, so the honest location of that demand is the
+  // shop it was collected from. See app/demand.ts.
+  async function countDemand(): Promise<void> {
+    if (forDelivery) {
+      if (!dropoff) return;
+      await recordDemand({
+        mode: "delivery",
+        outcome: "placed",
+        channel: "order",
+        at: [dropoff.lat, dropoff.lng],
+        ...(pickupStore ? { counter: pickupStore.id } : {}),
+      });
+      return;
+    }
+    const store = storeById(orderAt);
+    if (!store) return;
+    await recordDemand({
+      mode: fulfillment?.mode === "catering" ? "catering" : "pickup",
+      outcome: "placed",
+      channel: "order",
+      at: store.position,
+      counter: store.id,
+    });
+  }
 
   // Booking the courier is the last thing, deliberately.
   //

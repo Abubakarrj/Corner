@@ -12,7 +12,7 @@ const ok = (what: string, cond: boolean, detail = "") => {
 };
 
 const en = EN_POLICIES.privacy;
-const enAt = en.sections.findIndex((s) => s.heading === "Where We Cannot Deliver Yet");
+const enAt = en.sections.findIndex((s) => s.heading === "What We Count");
 ok("English has the section", enAt >= 0);
 ok("with three paragraphs", en.sections[enAt]?.blocks.length === 3,
    String(en.sections[enAt]?.blocks.length));
@@ -30,7 +30,7 @@ for (const [id, pack] of Object.entries(POLICY_PACKS)) {
   ok(`${id}: it has three paragraphs`, section?.blocks.length === 3,
      String(section?.blocks.length));
   ok(`${id}: and is translated rather than left in English`,
-     section?.heading !== "Where We Cannot Deliver Yet", section?.heading);
+     section?.heading !== "What We Count", section?.heading);
   const text = (section?.blocks ?? []).map((b) => ("text" in b ? b.text : "")).join(" ");
   ok(`${id}: it says the address is not kept`, text.length > 200, String(text.length));
 }

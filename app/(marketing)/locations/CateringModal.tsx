@@ -45,7 +45,29 @@ export default function CateringModal({
       <p className="m-0 mt-3 text-[14px] leading-[1.55] text-muted">
         {t("catering.blurb")}
       </p>
-      <ButtonAnchor href={mailto} block className="mt-6">
+      {/* The one thing about catering the app can honestly observe.
+          A catering order never comes back through here — it becomes an email
+          in the shop's inbox — so without this the daily digest would report
+          nothing under Catering and be read as "nobody asked", which is a
+          different and much more expensive thing to believe. See
+          /api/demand/interest.
+          keepalive, because the browser is navigating to a mail client in the
+          same breath and an ordinary fetch would be cancelled on the way out.
+          Nothing waits for it and nothing breaks if it never lands. */}
+      <ButtonAnchor
+        href={mailto}
+        block
+        className="mt-6"
+        onClick={() => {
+          if (!location) return;
+          void fetch("/api/demand/interest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ locationId: location.id }),
+            keepalive: true,
+          }).catch(() => {});
+        }}
+      >
         {t("catering.request")}
       </ButtonAnchor>
 
