@@ -166,6 +166,29 @@ export async function countOpenPosOrders(): Promise<number | null> {
   }
 }
 
+/** Write the courier's id onto the till's copy of a delivery order.
+ *
+ *  A sixth question, and the only one that is not asked of every till: it
+ *  exists because the courier is booked after the order is placed, so the two
+ *  records cannot point at each other at creation. Toast has no equivalent and
+ *  says so by declining.
+ *
+ *  Best effort by contract. The caller has already told the customer their
+ *  order is placed and the courier is already on the way; nothing here can
+ *  change either, and the boolean is for the log. */
+export async function attachPosCourier(
+  draft: PosOrderDraft,
+  placed: { orderId: string; version?: number; fulfillmentUid?: string },
+  deliveryId: string,
+): Promise<boolean> {
+  switch (chosen()) {
+    case "square":
+      return square.attachSquareCourier(draft, placed, deliveryId);
+    default:
+      return false;
+  }
+}
+
 export async function posReachable(): Promise<{ ok: true } | { ok: false; why: string }> {
   switch (chosen()) {
     case "square":

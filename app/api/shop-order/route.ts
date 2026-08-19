@@ -18,7 +18,13 @@ import {
   SHOP_ADDRESS_PARTS,
   SHOP_PHONE,
 } from "../../shopFacts";
-import { createPosOrder, isPosConfigured, posName } from "../../pos";
+import {
+  attachPosCourier,
+  createPosOrder,
+  isPosConfigured,
+  posName,
+  type PosOrderDraft,
+} from "../../pos";
 import { geocode } from "../../googleMaps";
 import {
   createDelivery,
@@ -632,7 +638,10 @@ export async function POST(request: Request) {
   // was shown come from the same numbers.
   if (isPosConfigured()) {
     const [firstName, ...rest] = order.name.split(/\s+/);
-    const sent = await createPosOrder({
+    // Held in a const rather than passed inline: the courier is booked after
+    // the order is placed, and attaching its id to the till's copy means
+    // rebuilding the same fulfillment rather than a partial patch of it.
+    const posDraft: PosOrderDraft = {
       customer: {
         firstName: firstName ?? "",
         lastName: rest.join(" "),
@@ -667,7 +676,8 @@ export async function POST(request: Request) {
       // order describes a delivery the shop is making itself.
       ...(forDelivery && uberCourier() ? { courier: uberCourier()! } : {}),
       ...(orderAt ? { counter: orderAt } : {}),
-    });
+    };
+    const sent = await createPosOrder(posDraft);
 
     if (!sent.ok) {
       // The order did not reach the kitchen. Saying "you're all set" here
@@ -727,7 +737,7 @@ export async function POST(request: Request) {
         // is connected — and this field exists precisely so nobody has to
         // guess where an order went.
         submitted: posName() ?? "pos",
-        ...(await bookCourier()),
+        ...(await courierFor(posDraft, sent)),
       },
       { status: 200 },
     );
@@ -807,6 +817,28 @@ export async function POST(request: Request) {
   // order is placed and something still went wrong — because it did go
   // through, it is being made, and the honest answer is "it's coming, we're
   // sorting out the ride" rather than throwing away a real order.
+  /** bookCourier, then tell the till who is driving.
+   *
+   *  Two records that each knew half the delivery is what this closes: after
+   *  it, Square's copy of the order names Uber's job and Uber's copy names the
+   *  order. Only on the till path, because it is the only one with an order id
+   *  and a version to update against.
+   *
+   *  Not awaited, and it must not be. The customer is waiting on this response,
+   *  the order is already placed and the courier is already booked; a slow or
+   *  refused write to Square cannot be allowed to hold up or change any of
+   *  that. It logs and that is all. */
+  async function courierFor(
+    draft: PosOrderDraft,
+    placed: { orderId: string; version?: number; fulfillmentUid?: string },
+  ): Promise<{ trackingUrl?: string; deliveryId?: string; deliveryBooked?: boolean }> {
+    const booked = await bookCourier();
+    if (booked.deliveryId) {
+      void attachPosCourier(draft, placed, booked.deliveryId).catch(() => false);
+    }
+    return booked;
+  }
+
   async function bookCourier(): Promise<{
     trackingUrl?: string;
     deliveryId?: string;

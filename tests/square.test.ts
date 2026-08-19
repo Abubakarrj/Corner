@@ -21,6 +21,7 @@
 // the half that is ours.
 
 import {
+  attachSquareCourier,
   createSquareOrder,
   fetchSquareOrder,
   countOpenSquareOrders,
@@ -45,6 +46,7 @@ type Wire = Record<string, unknown>;
 
 let sent: Wire | null = null;
 let sentUrl = "";
+let sentMethod = "";
 let sentHeaders: Record<string, string> = {};
 let reply: { status: number; body: unknown } = {
   status: 200,
@@ -66,6 +68,10 @@ const lines = () => (order().line_items ?? []) as Wire[];
 const realFetch = globalThis.fetch;
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   sentUrl = String(input);
+  // Recorded because the URL alone does not distinguish creating an order from
+  // updating one: /v2/orders/{id} with POST is a different request entirely,
+  // and asserting only the path let that mutation through once.
+  sentMethod = init?.method ?? "GET";
   sentHeaders = (init?.headers ?? {}) as Record<string, string>;
   if (init?.body) sent = JSON.parse(String(init.body));
   return new Response(JSON.stringify(reply.body), {
@@ -88,6 +94,7 @@ const draft = {
 function reset(body: unknown = { order: { id: "sq-order-1" } }, status = 200) {
   sent = null;
   sentUrl = "";
+  sentMethod = "";
   sentHeaders = {};
   reply = { status, body };
 }
@@ -97,6 +104,7 @@ async function main() {
   reset();
   const now = await createSquareOrder(draft);
   ok("the order went", now.ok === true, JSON.stringify(now));
+  ok("by POST", sentMethod === "POST", sentMethod);
   ok("to the sandbox, because SQUARE_ENV is unset",
      sentUrl === "https://connect.squareupsandbox.com/v2/orders", sentUrl);
   ok("with the API version pinned",
@@ -358,7 +366,8 @@ async function main() {
   ok("the state comes back as the till's own words",
      state?.status === "OPEN" && state?.fulfillment === "PREPARED", JSON.stringify(state));
   ok("read by GET, with the id escaped into the path",
-     sentUrl === "https://connect.squareupsandbox.com/v2/orders/sq-4", sentUrl);
+     sentUrl === "https://connect.squareupsandbox.com/v2/orders/sq-4" && sentMethod === "GET",
+     `${sentMethod} ${sentUrl}`);
 
   reset({ order: { id: "sq-5", state: "OPEN" } });
   const noFulfillment = await fetchSquareOrder("sq-5");
@@ -389,6 +398,72 @@ async function main() {
   reset({ errors: [{ code: "UNAUTHORIZED" }] }, 401);
   const unknown = await countOpenSquareOrders();
   ok("a failed count is null and never zero", unknown === null, String(unknown));
+
+  // ——— Attaching the courier afterwards ———
+  //
+  // The bag is booked after the order exists, so this is the second call that
+  // makes Square's copy and Uber's copy point at each other.
+  const forDelivery = {
+    ...draft,
+    diningOption: "delivery" as const,
+    deliveryAddress: "123 S Main St, Los Angeles, CA 90013",
+    courier: { provider: "Uber Direct", supportPhone: "8005550199" },
+  };
+  reset({ order: { id: "sq-8", version: 2 } });
+  const attached = await attachSquareCourier(
+    forDelivery,
+    { orderId: "sq-8", version: 1, fulfillmentUid: "F-1" },
+    "uber-del-77",
+  );
+  ok("the courier is attached", attached === true, String(attached));
+  ok("by PUT to the order's own URL",
+     sentUrl === "https://connect.squareupsandbox.com/v2/orders/sq-8", sentUrl);
+  // The path alone does not say this is an update. POST to the same URL is a
+  // different request, and asserting only the path let that through once.
+  ok("as an update, not another create", sentMethod === "PUT", sentMethod);
+  ok("naming the version it expects, so a counter's edit is not overwritten",
+     order().version === 1, String(order().version));
+  ok("and the fulfillment by uid, not by position", first().uid === "F-1", String(first().uid));
+  ok("the courier's id is on it", delivery().external_delivery_id === "uber-del-77",
+     String(delivery().external_delivery_id));
+
+  // ⚠️ The whole fulfillment goes up, not a patch of it. Square's example shows
+  // an unnamed sibling *object* surviving an update; it does not say whether a
+  // nested object inside a named one merges or replaces. Sending everything
+  // makes that question moot, and a partial that turned out to replace would
+  // strip the recipient and the schedule off a live delivery.
+  ok("the recipient rides along rather than being left to merge",
+     ((delivery().recipient ?? {}) as Wire).display_name === "Ada Lovelace",
+     JSON.stringify(delivery().recipient));
+  ok("so does the courier declaration", delivery().managed_delivery === true,
+     String(delivery().managed_delivery));
+  ok("and the schedule", delivery().schedule_type === "ASAP",
+     String(delivery().schedule_type));
+  ok("with an idempotency key tied to this order and this delivery",
+     wire().idempotency_key === "courier-sq-8-uber-del-77", String(wire().idempotency_key));
+
+  // Nothing to update against, so nothing is sent. Guessing a version is how
+  // you overwrite somebody else's edit.
+  reset();
+  ok("no version means no call", (await attachSquareCourier(
+       forDelivery, { orderId: "sq-8", fulfillmentUid: "F-1" }, "uber-del-77")) === false);
+  ok("and none was made", sentUrl === "", sentUrl);
+  reset();
+  ok("no fulfillment uid means no call either", (await attachSquareCourier(
+       forDelivery, { orderId: "sq-8", version: 1 }, "uber-del-77")) === false);
+  ok("still nothing sent", sentUrl === "", sentUrl);
+
+  // A pickup has no courier to attach, whatever it is handed.
+  reset();
+  ok("a pickup is never given a courier", (await attachSquareCourier(
+       draft, { orderId: "sq-8", version: 1, fulfillmentUid: "F-1" }, "uber-del-77")) === false);
+  ok("and nothing was sent for it", sentUrl === "", sentUrl);
+
+  // Square refusing is survivable by construction: the order is placed and the
+  // courier is booked before this runs.
+  reset({ errors: [{ code: "VERSION_MISMATCH", detail: "stale version" }] }, 409);
+  ok("a refused update reports false rather than throwing", (await attachSquareCourier(
+       forDelivery, { orderId: "sq-8", version: 1, fulfillmentUid: "F-1" }, "uber-del-77")) === false);
 
   // ——— And nothing goes anywhere without configuration ———
   delete process.env.SQUARE_ACCESS_TOKEN;

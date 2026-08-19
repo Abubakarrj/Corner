@@ -175,7 +175,84 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
   if (!config) return { ok: false, reason: "not-configured" };
   const locationId = squareLocationFor(draft.counter);
   if (!locationId) return { ok: false, reason: "no-location" };
+  const fulfillment = fulfillmentFor(draft);
 
+  const body = {
+    // Square's own guard against a retried request becoming two orders. Ours is
+    // the order's reference where there is one, which makes the guarantee ours
+    // rather than a matter of how the network behaved.
+    idempotency_key: (draft.reference ?? `cb-${Date.now()}-${Math.random()}`).slice(0, 192),
+    order: {
+      location_id: locationId,
+      ...(draft.reference ? { reference_id: draft.reference.slice(0, 40) } : {}),
+      source: { name: "Corner Bagel" },
+      // What the order is called in the list of open tickets. A name, because
+      // that is what somebody calling out an order needs — with the scheduled
+      // time in front of it, because "is this one for now?" is the question
+      // that has to be answerable without opening the ticket.
+      //
+      // 30 characters is Square's limit, and it is short enough that the order
+      // of these two matters: the time survives the truncation, the surname
+      // does not.
+      ticket_name: ticketName(recipientFor(draft).display_name, draft.promisedAt),
+      // ⚠️ Without this an order reaches Square as a bare sale with no pickup
+      // and no delivery on it — it appears in reporting and never appears on
+      // anybody's screen as something to make. Square allows at most one
+      // fulfillment per order created through the API, which is why this is a
+      // single-element array rather than a list.
+      fulfillments: [fulfillment],
+      line_items: draft.items.map((item) => ({
+        // Quantity is a *string* in Square, and a number here is a 400 that
+        // reads like a schema complaint about something else entirely.
+        quantity: String(item.quantity),
+        ...(item.posItemId
+          ? { catalog_object_id: item.posItemId }
+          : // An ad-hoc line: Square takes the name and the price as given.
+            // See the note at the top about why the catalog stays ours.
+            {
+              name: item.name,
+              base_price_money: { amount: item.unitCents, currency: "USD" },
+            }),
+        // The choices ride in the note rather than as modifiers. An ad-hoc
+        // modifier without a catalog object is the kind of thing that is
+        // accepted in one API version and refused in the next, and a bagel
+        // arriving without its spread because a modifier was silently dropped
+        // is worse than a line of text the counter can read.
+        ...(item.modifiers.length > 0
+          ? { note: item.modifiers.join(", ").slice(0, 500) }
+          : {}),
+      })),
+    },
+  };
+
+  return await postOrder(config, body);
+}
+
+/** Everything the till needs to know about the customer. */
+function recipientFor(draft: PosOrderDraft) {
+  const [firstName, ...rest] = [draft.customer.firstName, draft.customer.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .split(/\s+/);
+  return {
+    display_name: [firstName, ...rest].join(" ").trim() || "Customer",
+    ...(draft.customer.phone ? { phone_number: draft.customer.phone } : {}),
+    ...(draft.customer.email ? { email_address: draft.customer.email } : {}),
+  };
+}
+
+/** The order's one fulfillment: who it is for, when, and how it leaves.
+ *
+ *  ⚠️ Built in one place and rebuilt whole rather than patched, because an
+ *  update to a fulfillment addresses it by uid and Square does not document
+ *  whether a nested object inside it merges or replaces. Sending the complete
+ *  object makes that question moot: either behaviour lands on the same result.
+ *  A partial `delivery_details` that turned out to replace would silently drop
+ *  the recipient, the schedule and the courier from a live delivery. */
+function fulfillmentFor(
+  draft: PosOrderDraft,
+  extra: { uid?: string; externalDeliveryId?: string } = {},
+) {
   // The ticket carries what Square has no field for: curbside, utensils, the
   // customer's note, and — first, in capitals — a scheduled time. It prints on
   // the ticket, which is where the person making the order will read it.
@@ -188,24 +265,19 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
     .filter(Boolean)
     .join(" · ");
 
-  const [firstName, ...rest] = [draft.customer.firstName, draft.customer.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .split(/\s+/);
-  const recipient = {
-    display_name: [firstName, ...rest].join(" ").trim() || "Customer",
-    ...(draft.customer.phone ? { phone_number: draft.customer.phone } : {}),
-    ...(draft.customer.email ? { email_address: draft.customer.email } : {}),
-  };
+  const recipient = recipientFor(draft);
 
   // ASAP unless the order is scheduled. Square computes an ASAP pickup_at from
   // prep_time_duration, which is why the prep time is sent rather than a time:
   // it lets Square's own answer to "when is this ready" be the one shown, the
   // same way Toast's estimatedFulfillmentDate was.
   const scheduled = draft.promisedAt !== undefined;
-  const fulfillment =
-    draft.diningOption === "delivery"
+  return draft.diningOption === "delivery"
       ? {
+          // Present only on an update, where it says which fulfillment this is.
+          // Sending one at creation would be naming something that does not
+          // exist yet.
+          ...(extra.uid ? { uid: extra.uid } : {}),
           type: "DELIVERY",
           state: "PROPOSED",
           delivery_details: {
@@ -246,10 +318,17 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
                   courier_support_phone_number: draft.courier.supportPhone,
                 }
               : { managed_delivery: false }),
+            // The courier's own id for the job. Only ever present on an update,
+            // because the bag is booked after the order is created — see
+            // attachSquareCourier below.
+            ...(extra.externalDeliveryId
+              ? { external_delivery_id: extra.externalDeliveryId }
+              : {}),
             ...(notes ? { note: notes.slice(0, 500) } : {}),
           },
         }
       : {
+          ...(extra.uid ? { uid: extra.uid } : {}),
           type: "PICKUP",
           state: "PROPOSED",
           pickup_details: {
@@ -261,59 +340,23 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
             ...(notes ? { note: notes.slice(0, 500) } : {}),
           },
         };
+}
 
-  const body = {
-    // Square's own guard against a retried request becoming two orders. Ours is
-    // the order's reference where there is one, which makes the guarantee ours
-    // rather than a matter of how the network behaved.
-    idempotency_key: (draft.reference ?? `cb-${Date.now()}-${Math.random()}`).slice(0, 192),
-    order: {
-      location_id: locationId,
-      ...(draft.reference ? { reference_id: draft.reference.slice(0, 40) } : {}),
-      source: { name: "Corner Bagel" },
-      // What the order is called in the list of open tickets. A name, because
-      // that is what somebody calling out an order needs — with the scheduled
-      // time in front of it, because "is this one for now?" is the question
-      // that has to be answerable without opening the ticket.
-      //
-      // 30 characters is Square's limit, and it is short enough that the order
-      // of these two matters: the time survives the truncation, the surname
-      // does not.
-      ticket_name: ticketName(recipient.display_name, draft.promisedAt),
-      // ⚠️ Without this an order reaches Square as a bare sale with no pickup
-      // and no delivery on it — it appears in reporting and never appears on
-      // anybody's screen as something to make. Square allows at most one
-      // fulfillment per order created through the API, which is why this is a
-      // single-element array rather than a list.
-      fulfillments: [fulfillment],
-      line_items: draft.items.map((item) => ({
-        // Quantity is a *string* in Square, and a number here is a 400 that
-        // reads like a schema complaint about something else entirely.
-        quantity: String(item.quantity),
-        ...(item.posItemId
-          ? { catalog_object_id: item.posItemId }
-          : // An ad-hoc line: Square takes the name and the price as given.
-            // See the note at the top about why the catalog stays ours.
-            {
-              name: item.name,
-              base_price_money: { amount: item.unitCents, currency: "USD" },
-            }),
-        // The choices ride in the note rather than as modifiers. An ad-hoc
-        // modifier without a catalog object is the kind of thing that is
-        // accepted in one API version and refused in the next, and a bagel
-        // arriving without its spread because a modifier was silently dropped
-        // is worse than a line of text the counter can read.
-        ...(item.modifiers.length > 0
-          ? { note: item.modifiers.join(", ").slice(0, 500) }
-          : {}),
-      })),
-    },
-  };
-
+/** POST or PUT an order body, and read the result the same way for both.
+ *
+ *  Shared because an update answers with exactly the shape a create does — the
+ *  whole order, at its new version — so the caller of either wants the same
+ *  four things out of it. */
+async function postOrder(
+  config: SquareConfig,
+  body: unknown,
+  path = "/v2/orders",
+  method: "POST" | "PUT" = "POST",
+): Promise<PosOrderResult> {
   let response: Response;
   try {
-    response = await fetch(`${config.host}/v2/orders`, {
-      method: "POST",
+    response = await fetch(`${config.host}${path}`, {
+      method,
       headers: headers(config),
       body: JSON.stringify(body),
       cache: "no-store",
@@ -356,6 +399,74 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
       ? { fulfillmentUid: order.fulfillments[0].uid }
       : {}),
   };
+}
+
+/** Write the courier's own id onto Square's copy of a delivery order.
+ *
+ *  ——— Why this is a second call ———
+ *
+ *  The bag is booked after the order is created: the checkout needs an order
+ *  before it has a courier, so `external_delivery_id` cannot be set at
+ *  creation. This is the call that closes the loop, and after it Square's
+ *  record and Uber's point at each other.
+ *
+ *  ——— Why it sends the whole fulfillment ———
+ *
+ *  An update names an object by `uid` and leaves unnamed objects alone —
+ *  Square's own example patches one line item and the order's other line
+ *  survives untouched. What that example does not settle is whether a nested
+ *  object *inside* a named one merges or replaces. Sending the complete
+ *  fulfillment makes the question moot, because both behaviours land on the
+ *  same result. A partial `delivery_details` that turned out to replace would
+ *  quietly drop the recipient, the schedule and the courier from a live
+ *  delivery, and it would do it on exactly the orders somebody is waiting on.
+ *
+ *  ——— Best effort, and it has to stay that way ———
+ *
+ *  This runs after the customer has their confirmation and after the courier is
+ *  booked. Nothing about the order depends on it. A failure is logged and
+ *  nothing else: no throw, no retry, no effect on what anybody was told. The
+ *  version comes from the create response, so a counter that edited the ticket
+ *  in the seconds in between makes Square refuse this — which is the correct
+ *  outcome, and is why it is logged rather than forced. */
+export async function attachSquareCourier(
+  draft: PosOrderDraft,
+  placed: { orderId: string; version?: number; fulfillmentUid?: string },
+  deliveryId: string,
+): Promise<boolean> {
+  const config = squareConfig();
+  // Without a version there is nothing to send that Square will accept, and
+  // without a uid there is nothing to name. Both come from the create response.
+  if (!config || placed.version === undefined || !placed.fulfillmentUid) return false;
+  if (draft.diningOption !== "delivery") return false;
+
+  const result = await postOrder(
+    config,
+    {
+      idempotency_key: `courier-${placed.orderId}-${deliveryId}`.slice(0, 192),
+      order: {
+        version: placed.version,
+        fulfillments: [
+          fulfillmentFor(draft, {
+            uid: placed.fulfillmentUid,
+            externalDeliveryId: deliveryId,
+          }),
+        ],
+      },
+    },
+    `/v2/orders/${encodeURIComponent(placed.orderId)}`,
+    "PUT",
+  );
+
+  if (!result.ok) {
+    console.error(
+      `[square] could not attach courier ${deliveryId} to order ${placed.orderId}:` +
+        ` ${result.reason}. The order stands; Square's copy simply does not name` +
+        ` the delivery job.`,
+    );
+    return false;
+  }
+  return true;
 }
 
 /** What Square currently thinks of an order. */
