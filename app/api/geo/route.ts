@@ -6,6 +6,7 @@ import {
   suggest,
 } from "../../googleMaps";
 import { deliveryOrigin, deliveryReach } from "../../storePlaces";
+import { recordMiss } from "../../demandMisses";
 
 // Resolving an address, and deciding whether we'll deliver to it.
 //
@@ -251,6 +252,21 @@ export async function POST(request: Request) {
         ` deferred to the courier quote until Routes answers again.` +
         ` googleMaps.ts logged the reason.`,
     );
+  }
+
+  // ——— Counted when a delivery address is turned away ———
+  //
+  // Only `kind === "address"`, which is the delivery layer. Pickup and
+  // catering search for a town or a ZIP to point a map at, and somebody
+  // looking up "Pasadena" to find a counter has not told us they want
+  // delivery there.
+  //
+  // And only this path, never the pin above. A pin can come from the device's
+  // own location, and the privacy policy's promise that those coordinates are
+  // not stored is one this feature must not quietly break. A typed address is
+  // a person saying where they want food sent.
+  if (kind === "address" && drive && drive.miles > DELIVERY_RADIUS_MILES) {
+    await recordMiss([place.lat, place.lng], drive.miles, "search");
   }
 
   return Response.json({

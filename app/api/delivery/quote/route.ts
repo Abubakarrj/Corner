@@ -6,6 +6,7 @@ import { driveBetween, geocode } from "../../../googleMaps";
 import { PREP_MINUTES } from "../../../shopFacts";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../../uberDirect";
 import { deliveryOrigin, deliveryStoreFor } from "../../../storePlaces";
+import { recordMiss } from "../../../demandMisses";
 
 // What a courier will charge to take this order to this address, and when
 // they'll have it there.
@@ -122,6 +123,11 @@ export async function POST(request: Request) {
   // than arithmetic we would be inventing — and it is the gate that decides
   // whether a delivery actually happens.
   if (drive && drive.miles > DELIVERY_RADIUS_MILES) {
+    // Counted, as a tally in a one-kilometre square and nothing else. This is
+    // the strongest evidence the shop will ever get about where to open next:
+    // somebody with a basket, at the payment step, turned away. See
+    // app/demandMisses.ts for what is and is not kept.
+    await recordMiss([place.lat, place.lng], drive.miles, "checkout");
     return Response.json(
       {
         error: `That address is ${drive.miles.toFixed(1)} driving miles out; we deliver within ${DELIVERY_RADIUS_MILES}.`,

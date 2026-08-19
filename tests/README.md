@@ -26,6 +26,9 @@ the shop will drive.
 | `deliveryReach` | The radius as a reach around every counter. |
 | `deliveryArea` | The published boundary contour, driving the real measurement. |
 | `toastScheduled` | What a scheduled order looks like on the wire to Toast. |
+| `demandMisses` | The refused-address counter, and what it refuses to store. **Needs Postgres.** |
+| `demandWiring` | That a refusal actually reaches the counter, through a real route handler. **Needs Postgres.** |
+| `policyPacks` | Every locale's privacy policy still rebuilds, section for section. |
 
 Not covered here: anything that needs a live third party to answer. Google's
 Routes behaviour has its own probe (`npm run check:maps`, which needs a real
@@ -34,19 +37,30 @@ The suites stub those transports and test the half that is ours — the shape we
 send and the arithmetic we do with what comes back. A green run says the app is
 internally consistent, not that Google agreed.
 
-## The database suite
+## The database suites
 
-`scheduledPickups` skips, loudly, without a database. It is the only place the
-seat constraint can actually be tested — a slot is a fixed set of seats and
-taking one is a single insert, so that two people paying in the same second get
-one booking and one conflict, and an in-memory Map cannot be wrong about
-isolation in the way a real database can.
+`scheduledPickups`, `demandMisses` and `demandWiring` skip, loudly, without a
+database.
 
-⚠️ **It drops and recreates its table.** Point it at a scratch database.
+`scheduledPickups` is the only place the seat constraint can actually be
+tested — a slot is a fixed set of seats and taking one is a single insert, so
+that two people paying in the same second get one booking and one conflict, and
+an in-memory Map cannot be wrong about isolation the way a real database can.
+
+The two `demand` suites need one because the table *is* the privacy guarantee:
+several assertions read `information_schema` to check that the columns cannot
+hold an address and the coordinate columns cannot hold a precise fix.
+
+⚠️ **They drop and recreate their tables.** Point them at a scratch database.
 
 ```sh
-CORNER_DATABASE_URL=postgres://localhost/corner_test npm test scheduledPickups
+CORNER_DATABASE_URL=postgres://localhost/corner_test npm test
 ```
+
+`demandMisses` is worth reading before changing anything in
+`app/demandMisses.ts`: most of its assertions are about what the table must
+*not* contain, and several of them check the schema rather than behaviour,
+because "we do not store the address" is a promise about a shape.
 
 ## Writing another one
 

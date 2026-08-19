@@ -2,6 +2,7 @@ import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
 import { deliveryArea } from "../../deliveryArea";
 import { geocode } from "../../googleMaps";
 import { deliveryOrigin, deliveryReach } from "../../storePlaces";
+import { recordMiss } from "../../demandMisses";
 
 // The boundary of where we deliver, for the map that draws it.
 //
@@ -92,6 +93,13 @@ export async function POST(request: Request) {
   // checkout; guessing "no" turns away a customer we can serve. The page says
   // it could not tell and points at the checkout, which asks Uber directly.
   if (miles === null) return Response.json({ known: false, address: place.address });
+
+  // Somebody asking whether we come to them, and being told no. Weaker
+  // evidence than a refused checkout and much more of it — the source is
+  // recorded alongside the count so the two are never added up as equals.
+  if (miles > DELIVERY_RADIUS_MILES) {
+    await recordMiss([place.lat, place.lng], miles, "area");
+  }
 
   return Response.json({
     known: true,
