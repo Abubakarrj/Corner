@@ -34,7 +34,7 @@ export const fa: Table = {
   "cart.notAtCounter": "در این شعبه موجود نیست",
   "cart.droppedForCounter": "{items} حذف شد — در این شعبه آماده نمی‌شود",
   "checkout.switchToDeliveryTitle": "تحویل با پیک",
-  "api.notAtCounter": "شعبه‌ای که انتخاب کرده‌اید برخی از این موارد را آماده نمی‌کند. آن‌ها را از Wilshire Blvd تحویل بگیرید یا از سبد خود حذف کنید.",
+  "api.notAtCounter": "شعبه‌ای که انتخاب کرده‌اید برخی از این موارد را آماده نمی‌کند. شعبهٔ دیگری انتخاب کنید یا آن‌ها را از سبد خود حذف کنید.",
   "common.soldOut": "تمام شد",
   "common.sendAnother": "یکی دیگر بفرست",
 

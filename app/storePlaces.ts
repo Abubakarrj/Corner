@@ -179,9 +179,24 @@ export async function deliveryOrigin(to?: [number, number]): Promise<[number, nu
 // An empty basket narrows nothing, which is right for the callers that have
 // no order in hand — pricing an address, or answering "do you deliver to me".
 // Those questions are about the area, not about food.
+/** How much further than the nearest able kitchen an outlet may be and still
+ *  be preferred over it.
+ *
+ *  A mile and a half, chosen against the two facts it sits between: the
+ *  Koreatown counters are seven tenths of a mile apart, so every delivery
+ *  around them keeps the behaviour the rule was written for; and the USC store
+ *  is three and a half miles from the outlet, so deliveries down there stop
+ *  crossing the city to save a sandwich line. Anything a customer would notice
+ *  on an ETA is too far to spend on a preference they did not ask for. */
+export const OUTLET_DETOUR_MILES = 1.5;
+
 export function kitchensFor(
   slugs: readonly string[],
   now: Date = new Date(),
+  /** Where the order is going, when it is known. Only used to bound the
+   *  outlet preference below — the open and able filters do not depend on it,
+   *  so a caller with no destination still gets a correct pool. */
+  to?: [number, number],
 ): StoreLocation[] {
   // ——— Open, first ———
   //
@@ -208,7 +223,7 @@ export function kitchensFor(
   if (slugs.length === 0) return open;
   const able = open.filter((store) => notServedAt(store.id, slugs).length === 0);
 
-  // ——— And of those, the outlets first ———
+  // ——— And of those, the outlets first, within reason ———
   //
   // Not "whichever is nearest". An order an outlet can make should leave from
   // an outlet, so that the store's line stays free for the orders only it can
@@ -220,12 +235,43 @@ export function kitchensFor(
   // alternative is a sandwich order queued behind a bagel order at the only
   // counter that can make sandwiches.
   //
+  // ——— Why "within reason" had to be added ———
+  //
+  // The trade above was priced for counters a few streets apart, and it stops
+  // being a good trade at distance. With a store by USC three and a half miles
+  // from the outlet, an unbounded preference sends every bagel delivery in
+  // that neighbourhood past a counter eight tenths of a mile away to collect
+  // from one across town. That is not a slightly longer drive: it is a longer
+  // ETA and a bigger courier fee, and under the free-delivery threshold the
+  // customer pays the difference to keep a sandwich line free at a shop they
+  // are not ordering from.
+  //
+  // So the preference survives as a preference and stops being an override.
+  // An outlet wins when it is not meaningfully further than the nearest
+  // kitchen that could do the job; otherwise the distance does. In Koreatown,
+  // where the counters are seven tenths of a mile apart, this changes nothing
+  // and the paragraph above still describes what happens.
+  //
+  // Without a destination — pricing an area, answering "do you deliver here" —
+  // there is nothing to measure, and the preference applies as it always did.
+  //
   // Reads `outlet` — the label — which is the one place in the app that does.
   // Everywhere else the label describes and the flags decide, and this is the
   // exception because the rule the shop stated is about outlets as such: any
   // outlet added later inherits it by being one.
   const outlets = able.filter((store) => store.outlet);
-  if (outlets.length > 0) return outlets;
+  if (outlets.length > 0 && (to === undefined || able.length === 0)) return outlets;
+  if (outlets.length > 0 && to !== undefined) {
+    const nearestAble = able.reduce((best, store) =>
+      milesBetween(to, store.position) < milesBetween(to, best.position) ? store : best,
+    );
+    const nearestOutlet = outlets.reduce((best, store) =>
+      milesBetween(to, store.position) < milesBetween(to, best.position) ? store : best,
+    );
+    const detour =
+      milesBetween(to, nearestOutlet.position) - milesBetween(to, nearestAble.position);
+    if (detour <= OUTLET_DETOUR_MILES) return outlets;
+  }
 
   if (able.length > 0) return able;
   // Open, but none of them makes all of it. Unreachable while the counter
@@ -267,7 +313,11 @@ export function deliveryKitchen(
   to?: [number, number],
   now: Date = new Date(),
 ): StoreLocation | null {
-  const pool = kitchensFor(slugs, now);
+  // The destination goes in as well as being used to pick out of the pool:
+  // it is what bounds the outlet preference, and a pool narrowed to one
+  // outlet before the distance is looked at leaves nothing for
+  // nearestDelivering to choose between.
+  const pool = kitchensFor(slugs, now, to);
   if (pool.length === 0) return null;
   return (to ? nearestDelivering(to, pool) : null) ?? pool[0] ?? null;
 }

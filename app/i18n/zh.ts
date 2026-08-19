@@ -28,7 +28,7 @@ export const zh: Table = {
   "cart.notAtCounter": "本店不供应",
   "cart.droppedForCounter": "已移除 {items}：本店不供应",
   "checkout.switchToDeliveryTitle": "改为配送",
-  "api.notAtCounter": "您选择的门店不供应其中部分商品。请改到 Wilshire Blvd 取餐，或将它们从购物袋中移除。",
+  "api.notAtCounter": "您选择的门店不供应其中部分商品。请改选其他门店，或将它们从购物袋中移除。",
   "common.soldOut": "售罄",
   "common.sendAnother": "再发一份",
 

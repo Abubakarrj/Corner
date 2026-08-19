@@ -26,7 +26,7 @@ export const ja: Table = {
   "cart.notAtCounter": "この店舗では取り扱いなし",
   "cart.droppedForCounter": "{items} を削除しました。この店舗では取り扱いがありません",
   "checkout.switchToDeliveryTitle": "配達に切り替える",
-  "api.notAtCounter": "お選びの店舗では一部の商品をご用意していません。Wilshire Blvd 店でお受け取りいただくか、カートから外してください。",
+  "api.notAtCounter": "お選びの店舗では一部の商品をご用意していません。別の店舗をお選びいただくか、カートから外してください。",
   "common.soldOut": "完売",
   "common.sendAnother": "もう一度送る",
 

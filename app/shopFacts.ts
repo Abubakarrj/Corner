@@ -28,7 +28,7 @@ export function hoursLine(opensAt: number = OPEN_HOUR): string {
 //
 // ——— Why opening is a parameter below and closing is not ———
 //
-// The counters do not open together: Wilshire Blvd from 7, the Western Ave
+// The counters do not open together: the full stores from 7, the Western Ave
 // outlet from 11. They do close together, at 4, and until that stops being
 // true a second parameter would be a knob nothing turns.
 //
@@ -99,10 +99,11 @@ export const PREP_MINUTES = 12;
 export const OPEN_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 // The store's address, which is the Wilshire counter — not the outlet on
-// Western. Two counters now, and this constant is singular by design: it is
-// the fallback a courier gets when no store was resolved, and the address
-// Riley reads out. Falling back to the kitchen every delivery leaves from is
-// the safe direction. Anything that needs *which* counter reads LOCATIONS.
+// Western and not the one by USC. Several counters now, and this constant is
+// singular by design: it is the fallback a courier gets when no store was
+// resolved, and the address Riley reads out. Falling back to one real, full
+// store is the safe direction. Anything that needs *which* counter reads
+// LOCATIONS.
 export const SHOP_ADDRESS = "3450 Wilshire Blvd, Suite R3452H";
 export const SHOP_CITY = "Los Angeles, CA 90010";
 export const SHOP_EMAIL = "cornerbagel@publicentity.co";

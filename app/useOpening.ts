@@ -44,7 +44,7 @@ let previewing = false;
 
 // ——— Which counter this is about ———
 //
-// The counters do not open together: Wilshire Blvd from 7, the Western Ave
+// The counters do not open together: the full stores from 7, the Western Ave
 // outlet from 11. So "are we open" has no single answer any more, and the
 // screens asking it — the checkout, the fulfillment gate — are always asking
 // about the one the visitor chose.

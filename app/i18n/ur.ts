@@ -29,7 +29,7 @@ export const ur: Table = {
   "cart.notAtCounter": "اس کاؤنٹر پر دستیاب نہیں",
   "cart.droppedForCounter": "{items} ہٹا دیا گیا — یہ اس کاؤنٹر پر نہیں بنتا",
   "checkout.switchToDeliveryTitle": "ڈیلیوری پر جائیں",
-  "api.notAtCounter": "آپ نے جو کاؤنٹر منتخب کیا ہے وہ ان میں سے کچھ نہیں بناتا۔ انہیں Wilshire Blvd سے لے لیں یا اپنی ٹوکری سے نکال دیں۔",
+  "api.notAtCounter": "آپ نے جو کاؤنٹر منتخب کیا ہے وہ ان میں سے کچھ نہیں بناتا۔ کوئی دوسرا کاؤنٹر منتخب کریں یا انہیں اپنی ٹوکری سے نکال دیں۔",
   "common.soldOut": "ختم ہو گیا",
   "common.sendAnother": "ایک اور بھیجیں",
 

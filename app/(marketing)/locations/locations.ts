@@ -105,14 +105,14 @@ export type StoreLocation = {
   menu?: readonly string[];
 };
 
-// ——— The two counters ———
+// ——— The counters ———
 //
-// Both given by the shop with the city, which is how an address should
-// arrive. They replace 650 S Catalina St, which the shop moved off; anything
-// still saying Catalina St, or 3064 W 8th St before it, is stale and should be
-// corrected rather than worked around. Same neighbourhood and the same city
-// sales-tax rate as both of the addresses before them, so nothing downstream
-// of the address changes except the address.
+// Each given by the shop with the city, which is how an address should
+// arrive. The two Koreatown ones replace 650 S Catalina St, which the shop
+// moved off; anything still saying Catalina St, or 3064 W 8th St before it, is
+// stale and should be corrected rather than worked around. All three are
+// inside Los Angeles city limits and on the same sales-tax rate, so nothing
+// downstream of an address changes except the address.
 //
 // The coordinates on each are approximate — the block, not the doorway — and
 // they are the fallback rather than the answer. app/storePlaces.ts resolves
@@ -124,7 +124,7 @@ export type StoreLocation = {
 // guard in storePlaces.ts, so a good geocode is accepted rather than refused —
 // which is the check to re-run if either address is ever corrected.
 //
-// Neither has a `door` yet. Both need one, and the Wilshire suite needs it
+// None has a `door` yet. All three need one, and the Wilshire suite needs it
 // most: see the note on the field above, and the note on that record.
 
 // The store, and the kitchen every delivery leaves from.
@@ -236,19 +236,88 @@ export const WESTERN: StoreLocation = {
   ],
 };
 
-// Two counters, and everything around them is written for several.
+// The second full store, three miles south, by USC.
+//
+// A full store rather than an outlet: it makes the whole menu, so it says
+// nothing about `menu` at all. That silence is the point of the field — the
+// common case stays quiet and a restriction is the thing somebody has to write
+// down, which is what makes a shortened counter impossible to add by accident.
+//
+// Its own neighbourhood, and the first one outside Koreatown. That is worth
+// noticing because it is the first address where "which counter is nearest"
+// has a different answer for a good part of the city: everything downstream
+// already asks that question per order rather than assuming, so nothing here
+// has to be told about it. See kitchensFor in storePlaces.ts.
+export const FIGUEROA: StoreLocation = {
+  id: "figueroa",
+  // The neighbourhood rather than the street, because that is what the shop
+  // called it and because it is what somebody near USC would recognise. The
+  // other two are streets; a name is whatever a person would say out loud
+  // standing outside, not a format the list has to keep.
+  name: "USC Neighborhood",
+  kind: "shop",
+  address: "2528 S Figueroa St",
+  city: "Los Angeles, CA 90007",
+  hours: SHOP_HOURS,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7 with the Wilshire
+  // store. `opensAt` is unset, which is how a counter says "the usual". If
+  // this one keeps different hours, that is one number here and the line
+  // people read follows it — see the Western record.
+  //
+  // Figueroa between Adams and Washington. Block-level, and the fallback
+  // rather than the answer: storePlaces.ts geocodes the address and the map
+  // merges the result over this. It only has to be close enough to bias the
+  // lookup onto the right block and to draw a sane map with no key, and it is
+  // inside the half-mile drift guard so a good geocode is accepted.
+  position: [34.0302, -118.2742],
+  catering: true,
+  aliases: [
+    "usc",
+    "u.s.c.",
+    "usc village",
+    "university of southern california",
+    "trojans",
+    "figueroa",
+    "fig",
+    "s figueroa",
+    "south figueroa",
+    "figueroa st",
+    "figueroa street",
+    "2528 figueroa",
+    "university park",
+    "north university park",
+    "exposition park",
+    "expo park",
+    "south la",
+    "south los angeles",
+    "adams",
+    "la",
+    "los angeles",
+    "90007",
+  ],
+};
+
+// Three counters, and everything around them is written for several.
 //
 // That generality was here before the second address arrived, on the shop's
 // stated plan to hold a ten-mile radius until it opened more counters, and it
-// is what made this a small change: adding a shop is adding a record to this
+// is what keeps this a small change: adding a shop is adding a record to this
 // array. Nothing names one location as "the shop" — see nearestDelivering
 // above and deliveryOrigin in storePlaces.ts, both of which take the list as
 // it is.
 //
 // Order matters slightly and only as a fallback: deliveringStores()[0] is
-// where a delivery leaves from when nothing better is known, so the store
-// comes first and the outlet second.
-export const LOCATIONS: StoreLocation[] = [WILSHIRE, WESTERN];
+// where a delivery leaves from when nothing better is known, so the full
+// stores come first and the outlet last.
+//
+// ⚠️ Three is the number deliveryOrigin() warned about. Its no-argument form
+// answers "the shop, roughly" with the first delivering store, which was
+// honest for two counters a few streets apart and is a choice now that one of
+// them is three miles south. Everything that routes a real order already
+// passes a point; what does not is the *published* delivery-area map, which
+// is drawn from one origin and therefore now draws less than the shop
+// actually serves. See app/deliveryArea.ts.
+export const LOCATIONS: StoreLocation[] = [WILSHIRE, FIGUEROA, WESTERN];
 
 /** When a counter opens, as an hour of the day.
  *

@@ -40,6 +40,7 @@ import {
   LOCATIONS,
   addressParts,
   opensAt,
+  pickupStores,
 } from "../../(marketing)/locations/locations";
 import { driveBetween, geocode } from "../../googleMaps";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../uberDirect";
@@ -929,12 +930,23 @@ export async function runTool(
       // that checkout will bounce — and phrased so Riley can say what the
       // alternative is rather than only that she failed.
       if (!servesProduct(context.orderAt ?? null, product)) {
+        // Which counters *do* make it, worked out rather than named. This
+        // said "offer to collect it from Wilshire Blvd", which was true while
+        // Wilshire was the only full store and became a wrong instruction the
+        // day a second one opened. Derived from the same menu data the refusal
+        // above comes from, so a fourth counter needs no edit here.
+        const madeAt = pickupStores()
+          .filter((store) => servesProduct(store.id, product))
+          .map((store) => store.name);
         return {
           forModel: {
             error:
               `${product.name} is not made at the counter this order is going to. ` +
-              `Offer to collect it from Wilshire Blvd instead, or suggest something ` +
-              `this counter does make.`,
+              (madeAt.length > 0
+                ? `Offer to collect it from ${madeAt.join(" or ")} instead, or suggest `
+                : `Suggest `) +
+              `something this counter does make.`,
+            ...(madeAt.length > 0 ? { madeAt } : {}),
           },
         };
       }

@@ -73,9 +73,9 @@ export const POSTS_PAY_SCALE = true;
 /** The local hourly minimum, and the day it took effect.
  *
  *  $18.42 is the City of Los Angeles citywide rate from July 1, 2026, up 55c
- *  from $17.87. The City rate is the one that applies here: both counters are
- *  in Koreatown, on Wilshire Blvd and S Western Ave, inside city limits, so
- *  neither the state floor nor the unincorporated-county rate governs. No small-employer tier — Los
+ *  from $17.87. The City rate is the one that applies here: every counter is
+ *  inside City of Los Angeles limits, so neither the state floor nor the
+ *  unincorporated-county rate governs. No small-employer tier — Los
  *  Angeles merged those schedules in 2021, so every employer is on this number.
  *  The $25 rate in the same ordinance is for hotel and airport work and has
  *  nothing to do with a bagel shop.

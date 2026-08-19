@@ -26,7 +26,7 @@ export const it: Table = {
   "cart.notAtCounter": "Non in questo punto vendita",
   "cart.droppedForCounter": "{items} rimosso: non si prepara in questo punto vendita",
   "checkout.switchToDeliveryTitle": "Passa alla consegna",
-  "api.notAtCounter": "Il punto vendita scelto non prepara alcuni di questi articoli. Ritirali in Wilshire Blvd, oppure toglili dal carrello.",
+  "api.notAtCounter": "Il punto vendita scelto non prepara alcuni di questi articoli. Scegline un altro, oppure toglili dal carrello.",
   "common.soldOut": "Esaurito",
   "common.sendAnother": "Inviane un'altra",
 

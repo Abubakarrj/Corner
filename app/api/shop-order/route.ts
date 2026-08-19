@@ -204,8 +204,8 @@ export async function POST(request: Request) {
   // PREP_MINUTES of headroom, because being open at 1:58pm is not the same as
   // being able to make something before 2.
   //
-  // Against the chosen counter's own hours, not the shop's. Wilshire Blvd
-  // opens at 7 and the Western Ave outlet at 11, so a pickup from Western at
+  // Against the chosen counter's own hours, not the shop's. The full stores
+  // open at 7 and the Western Ave outlet at 11, so a pickup from Western at
   // 8am is a request for a shut door — and the four hours between them is
   // long enough that somebody really would stand outside one.
   //
