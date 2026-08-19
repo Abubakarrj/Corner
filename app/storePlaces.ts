@@ -263,12 +263,33 @@ export function kitchensFor(
   // Only when something survives it. If every counter is beyond the radius the
   // order is out of range whichever one is picked, and the quote is where that
   // gets said with a real road distance rather than guessed at from a line.
-  const reachable = to
-    ? lit.filter((store) => milesBetween(to, store.position) <= DELIVERY_RADIUS_MILES)
-    : lit;
-  const open = reachable.length > 0 ? reachable : lit;
-  if (slugs.length === 0) return open;
-  const able = open.filter((store) => notServedAt(store.id, slugs).length === 0);
+  //
+  // ⚠️ Applied *after* the menu, and the order is the whole point.
+  //
+  // It ran before, and that was a bug with a shop-shaped trigger: narrowing to
+  // nearby counters first can leave a neighbourhood whose only nearby counter
+  // is an outlet, at which point nothing in the pool makes sandwiches, the
+  // fallback below fires, and a sandwich delivery is dispatched to a counter
+  // with no sandwich line. It showed up the moment an outlet was placed on the
+  // far side of the city as a what-if, which is exactly the move somebody
+  // would make when opening one.
+  //
+  // Can this counter make the order is not negotiable. How far away it is
+  // decides between the ones that can, and when none of them is close enough
+  // the honest answer is that the address is out of range — which the quote
+  // says, from a real road distance, rather than this guessing at it from a
+  // straight line.
+  const near = (pool: StoreLocation[]) => {
+    if (!to) return pool;
+    const within = pool.filter(
+      (store) => milesBetween(to, store.position) <= DELIVERY_RADIUS_MILES,
+    );
+    return within.length > 0 ? within : pool;
+  };
+
+  if (slugs.length === 0) return near(lit);
+  const canMake = lit.filter((store) => notServedAt(store.id, slugs).length === 0);
+  const able = near(canMake);
 
   // ——— And of those, the outlets first, within reason ———
   //
@@ -321,16 +342,18 @@ export function kitchensFor(
   }
 
   if (able.length > 0) return able;
-  // Open, but none of them makes all of it. Unreachable while the counter
-  // that serves the full menu keeps the longest hours, and not something to
-  // fail silently on if that ever stops being true: falling back to the open
-  // ones keeps the order moving and the line says what happened, which is
-  // better than a 500 nobody can read.
+  // Open, and none of them makes all of it — a real state when every counter
+  // that could is shut, and one to say out loud rather than paper over.
+  //
+  // ⚠️ Returns nothing, and that is the change. It used to fall back to the
+  // open counters, which sounds forgiving and means "hand this order to a
+  // kitchen that cannot make it" — a courier sent to collect a sandwich from a
+  // counter with no sandwich line. deliveryKitchen turns an empty pool into a
+  // refusal the customer can read, which is the honest end of this path.
   console.warn(
-    `[places] no open delivering kitchen makes all of ${JSON.stringify(slugs)}; ` +
-      `falling back to the nearest that is open.`,
+    `[places] no open delivering kitchen makes all of ${JSON.stringify(slugs)}.`,
   );
-  return open;
+  return [];
 }
 
 /** The earliest hour any kitchen that could make this basket opens.
