@@ -717,11 +717,39 @@ export async function driveMatrixMiles(
   origin: [number, number],
   destinations: readonly [number, number][],
 ): Promise<(number | null)[] | null> {
+  const drives = await driveMatrixMin([origin], destinations);
+  return drives?.map((drive) => drive?.miles ?? null) ?? null;
+}
+
+/** Road miles from the *nearest* of several origins to each destination, in a
+ *  single call.
+ *
+ *  ——— Why the minimum, and why it is one call ———
+ *
+ *  The shop's rule is a radius from a counter, and there is more than one
+ *  counter. So "how far away is this address" is not a distance, it is the
+ *  smallest of several — and measuring it against one counter is how an
+ *  address two miles from a shop gets told we do not deliver because a
+ *  different shop is eleven miles away.
+ *
+ *  Route Matrix takes origins and destinations together and returns the cross
+ *  product, so N counters against M points is still one round trip. That is
+ *  what keeps this affordable enough to use on the boundary contour, where M
+ *  is forty-eight and it runs seven times.
+ *
+ *  Null per destination means no origin can reach it — a point in the Pacific
+ *  — which is a real answer. Null for the whole array means the call failed,
+ *  so a caller can tell "we asked" from "we could not ask".
+ */
+export async function driveMatrixMin(
+  origins: readonly [number, number][],
+  destinations: readonly [number, number][],
+): Promise<(Drive | null)[] | null> {
   const key = googleMapsKey();
-  if (!key || destinations.length === 0) return null;
+  if (!key || destinations.length === 0 || origins.length === 0) return null;
 
   // The same stopover semantics as routeBetween, for the same reason: the
-  // origin here is the shop's counter on every one of the several hundred
+  // origins here are the shop's counters on every one of the several hundred
   // measurements the boundary is drawn from.
   const waypoint = (point: [number, number]) => ({ waypoint: stop(point) });
 
@@ -734,10 +762,15 @@ export async function driveMatrixMiles(
         // `condition` is not optional here the way a field mask usually is: an
         // unreachable pair comes back with no distanceMeters at all, and
         // without the condition there is no way to tell that from zero.
-        "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,condition",
+        // `duration` alongside the distance because the drive time is shown
+        // next to a searched address, and it has to come from the same element
+        // as the miles — a minimum taken on distance and a minimum taken on
+        // time are two different counters when the near one is up a hill.
+        "X-Goog-FieldMask":
+          "originIndex,destinationIndex,distanceMeters,duration,condition",
       },
       body: JSON.stringify({
-        origins: [waypoint(origin)],
+        origins: origins.map(waypoint),
         destinations: destinations.map(waypoint),
         travelMode: "DRIVE",
         // Same reasoning as routeBetween: this decides whether an address is in
@@ -769,11 +802,12 @@ export async function driveMatrixMiles(
   const body = (await response.json().catch(() => null)) as unknown;
   if (!Array.isArray(body)) return null;
 
-  const miles: (number | null)[] = destinations.map(() => null);
+  const best: (Drive | null)[] = destinations.map(() => null);
   for (const raw of body) {
     const element = raw as {
       destinationIndex?: unknown;
       distanceMeters?: unknown;
+      duration?: unknown;
       condition?: unknown;
     };
     // ——— An absent index is zero, not an absent element ———
@@ -801,7 +835,7 @@ export async function driveMatrixMiles(
     // filed under the wrong address.
     if (given !== undefined && typeof given !== "number") continue;
     const index = given ?? 0;
-    if (!Number.isInteger(index) || index < 0 || index >= miles.length) continue;
+    if (!Number.isInteger(index) || index < 0 || index >= best.length) continue;
     if (element.condition !== "ROUTE_EXISTS") continue;
     // Same rule, same reason: a route that exists and is zero metres long
     // reports no distanceMeters. Zero is a real answer here — it is what a
@@ -809,9 +843,28 @@ export async function driveMatrixMiles(
     // null would call the nearest possible address unreachable.
     const metres = element.distanceMeters;
     if (metres !== undefined && typeof metres !== "number") continue;
-    miles[index] = (metres ?? 0) / 1609.344;
+    const measured = (metres ?? 0) / 1609.344;
+    // Duration arrives as a protobuf duration string, "1234s", same as
+    // routeBetween parses. Absent is zero for the same proto3 reason the
+    // index is, and a zero-second drive is what a destination on the counter's
+    // own doorstep measures.
+    const seconds = Number.parseInt(String(element.duration ?? "0"), 10);
+    const drive: Drive = {
+      miles: measured,
+      minutes: Number.isFinite(seconds) ? Math.round(seconds / 60) : 0,
+    };
+    // The smallest across origins, because the caller asked how far this
+    // address is from the shop and the shop is several counters. Written as a
+    // running minimum rather than by collecting per-origin arrays and
+    // reducing: the elements arrive in no guaranteed order, and there is
+    // nothing else the cross product is wanted for.
+    //
+    // Compared on miles, and the whole pair is kept: the rule is a distance,
+    // so distance picks the counter, and the time reported is that counter's.
+    const held = best[index];
+    if (held === null || drive.miles < held.miles) best[index] = drive;
   }
-  return miles;
+  return best;
 }
 
 export type Suggestion = {

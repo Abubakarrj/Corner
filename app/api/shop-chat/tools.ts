@@ -42,9 +42,9 @@ import {
   opensAt,
   pickupStores,
 } from "../../(marketing)/locations/locations";
-import { driveBetween, geocode } from "../../googleMaps";
+import { geocode } from "../../googleMaps";
 import { isUberConfigured, quoteDelivery, structuredAddress } from "../../uberDirect";
-import { deliveryOrigin, deliveryStoreFor } from "../../storePlaces";
+import { deliveryOrigin, deliveryReach, deliveryStoreFor } from "../../storePlaces";
 import { noEmDashes } from "./scrub";
 import { refreshSoldOut } from "../../soldOut";
 
@@ -728,17 +728,20 @@ export async function runTool(
         };
       }
 
-      // Now the destination is known either way, settle which kitchen it
-      // leaves from. The store and not just its point, because Uber is handed
-      // an address as well as a coordinate and those two have to name the same
-      // counter. This used to be the SHOP_ADDRESS_PARTS constant, which was
-      // right while there was one kitchen and quietly wrong the day there are
-      // two: Riley would quote every address in the city from Koreatown while
-      // the checkout beside her quoted it from wherever is nearest.
-      const { store, place: pickup } = await deliveryStoreFor([place.lat, place.lng]);
-      const origin = pickup.position;
-
-      const drive = await driveBetween(origin, [place.lat, place.lng]);
+      // ——— How far, measured against every counter ———
+      //
+      // Not against one. This picked a kitchen and measured from it, which was
+      // two wrong things at once now that the counters are spread out: the
+      // kitchen was chosen by straight line rather than by road, and at an
+      // hour when none is open it fell back to the first in the list — so
+      // before 7am Riley quoted every address in the city from Koreatown.
+      //
+      // Whether we deliver somewhere is a fact about the address and the
+      // radius, not about the clock: an address near the USC counter is inside
+      // the area at 6am, the shop is simply shut. The hours are a separate
+      // answer she already has. See deliveryReach in storePlaces.ts, which is
+      // the same call /api/delivery-area and the pin picker make.
+      const drive = await deliveryReach([place.lat, place.lng]);
       const miles = drive?.miles ?? null;
       const inRadius = miles === null || miles <= DELIVERY_RADIUS_MILES;
 
@@ -807,10 +810,16 @@ export async function runTool(
         };
       }
 
+      // Which counter the courier would actually collect from. Needed here and
+      // not for the range answer above: a quote is a price for a real job
+      // leaving a real kitchen, so it names one, while "do you deliver here"
+      // is a question about the address and every counter's reach.
+      const { store, place: pickup } = await deliveryStoreFor([place.lat, place.lng]);
+
       const quote = await quoteDelivery({
         pickupAddress: structuredAddress(addressParts(store)),
-        pickupLat: origin[0],
-        pickupLng: origin[1],
+        pickupLat: pickup.position[0],
+        pickupLng: pickup.position[1],
         dropoffAddress: place.address,
         dropoffLat: place.lat,
         dropoffLng: place.lng,

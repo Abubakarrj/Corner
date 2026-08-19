@@ -1,7 +1,7 @@
 import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
 import { deliveryArea } from "../../deliveryArea";
-import { driveBetween, geocode } from "../../googleMaps";
-import { deliveryOrigin } from "../../storePlaces";
+import { geocode } from "../../googleMaps";
+import { deliveryOrigin, deliveryReach } from "../../storePlaces";
 
 // The boundary of where we deliver, for the map that draws it.
 //
@@ -66,20 +66,37 @@ export async function POST(request: Request) {
     return Response.json({ error: "api.badRequest" }, { status: 400 });
   }
 
-  const origin = await deliveryOrigin();
-  const place = await geocode(address.trim(), origin);
+  // Biasing the geocode, not measuring with it. "2528 Figueroa" typed with no
+  // city has to land in Los Angeles, and any of our own counters is a good
+  // enough hint for that.
+  const place = await geocode(address.trim(), await deliveryOrigin());
   if (!place) return Response.json({ error: "api.addressNotFound" }, { status: 404 });
 
-  const drive = await driveBetween(origin, [place.lat, place.lng]);
+  // ——— Measured against every counter, and the nearest one wins ———
+  //
+  // This asked one shop, and that was the same fact as the rule while there
+  // was one shop delivering. It stopped being the same fact the day a second
+  // counter opened somewhere else, and it fails in the direction that costs
+  // the most: an address two miles from a counter, told we do not deliver
+  // there because a different counter is eleven miles away. The checkout would
+  // have taken that order — /api/delivery/quote measures from the kitchen the
+  // order actually leaves from — so this page was turning away customers the
+  // shop can serve, and turning them away with a number.
+  //
+  // One Route Matrix call for all of them, so asking three counters costs
+  // what asking one did. See deliveryReach in storePlaces.ts, which is the one
+  // place this rule is written down.
+  const drive = await deliveryReach([place.lat, place.lng]);
+  const miles = drive?.miles ?? null;
   // No road answer, no verdict. Guessing "yes" invites an order that fails at
   // checkout; guessing "no" turns away a customer we can serve. The page says
   // it could not tell and points at the checkout, which asks Uber directly.
-  if (!drive) return Response.json({ known: false, address: place.address });
+  if (miles === null) return Response.json({ known: false, address: place.address });
 
   return Response.json({
     known: true,
-    inRange: drive.miles <= DELIVERY_RADIUS_MILES,
-    miles: Number(drive.miles.toFixed(1)),
+    inRange: miles <= DELIVERY_RADIUS_MILES,
+    miles: Number(miles.toFixed(1)),
     address: place.address,
     location: [place.lat, place.lng],
     radiusMiles: DELIVERY_RADIUS_MILES,

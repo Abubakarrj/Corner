@@ -1,12 +1,11 @@
 import { DELIVERY_RADIUS_MILES } from "../../(marketing)/locations/locations";
 import {
-  driveBetween,
   geocode,
   geocodePlaceId,
   reverseCandidates,
   suggest,
 } from "../../googleMaps";
-import { deliveryOrigin } from "../../storePlaces";
+import { deliveryOrigin, deliveryReach } from "../../storePlaces";
 
 // Resolving an address, and deciding whether we'll deliver to it.
 //
@@ -123,17 +122,19 @@ export async function POST(request: Request) {
       return Response.json({ error: "api.enterAddress" }, { status: 400 });
     }
 
-    // The origin is chosen against this pin, not fixed. With one kitchen that
-    // is the same answer either way; with two it is the difference between
-    // measuring to the shop that would serve this address and measuring to the
-    // one that would not. See deliveryOrigin in storePlaces.ts.
-    const origin = await deliveryOrigin([lat, lng]);
+    // Measured against every counter, nearest wins. This picked one counter
+    // by straight line and measured from that, which is close but not the
+    // rule: straight-line nearest and road nearest are different shops for a
+    // point with a freeway on one side of it, and the rule is the shortest
+    // *road* distance to any counter. One Route Matrix call answers all of
+    // them. See deliveryReach below.
+    //
     // Both at once. They are independent lookups against the same point and
     // the picker is waiting on the pair, so running them in sequence would
     // make a settle feel twice as slow for no reason.
     const [places, drive] = await Promise.all([
       reverseCandidates([lat, lng]),
-      driveBetween(origin, [lat, lng]),
+      deliveryReach([lat, lng]),
     ]);
     // No road answer, no verdict. See the note on the resolve path below.
     return Response.json({
@@ -225,11 +226,10 @@ export async function POST(request: Request) {
     });
   }
 
-  // The shop's real coordinates, not the ones typed next to its address —
-  // this is the centre the delivery radius is measured out of. See
-  // storePlaces.ts.
-  const origin = await deliveryOrigin([place.lat, place.lng]);
-  const drive = await driveBetween(origin, [place.lat, place.lng]);
+  // How far the nearest counter is by road. Every counter, not the one that
+  // happens to be nearest in a straight line — see deliveryReach below and
+  // the note on the pin path above.
+  const drive = await deliveryReach([place.lat, place.lng]);
 
   // ——— No road answer, no verdict ———
   //

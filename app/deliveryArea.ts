@@ -1,8 +1,11 @@
 import "server-only";
 
-import { driveMatrixMiles } from "./googleMaps";
-import { deliveryOrigin } from "./storePlaces";
-import { DELIVERY_RADIUS_MILES } from "./(marketing)/locations/locations";
+import { driveMatrixMin } from "./googleMaps";
+import { deliveryOrigins } from "./storePlaces";
+import {
+  DELIVERY_RADIUS_MILES,
+  milesBetween,
+} from "./(marketing)/locations/locations";
 
 // The shape of where we deliver, drawn from the rule that decides it.
 //
@@ -20,6 +23,27 @@ import { DELIVERY_RADIUS_MILES } from "./(marketing)/locations/locations";
 // Along each of BEARINGS directions, binary-search outward for the point whose
 // *road* distance is the radius. The result is a polygon every vertex of which
 // is a real address-sized point that a real quote would accept.
+//
+// ——— Why the radius is measured from every counter, not one ———
+//
+// The rule is ten road miles from the counter an order leaves from, and there
+// is more than one counter. So the area the shop actually serves is the union
+// of a ten-mile reach around each of them, and a contour drawn from one shop
+// is not a conservative version of that — it is a different shape that leaves
+// out a neighbourhood with a counter in it.
+//
+// Drawn as one ring rather than as one ring per shop, and the trick that
+// allows it is where the search starts: from the centroid of the counters
+// rather than from any one of them, asking at each probe how far the *nearest*
+// counter is. Route Matrix answers all the counters in the same call it was
+// already making, so the union costs what one shop cost. No polygon clipping,
+// no overlapping translucent blobs on the map, and a fourth counter changes
+// the shape without changing a line of this.
+//
+// The assumption it inherits is the one the single-shop version already made:
+// that along a ray outward, once you are out of range you stay out. That is
+// not a theorem — an arterial road can reach further than the streets either
+// side of it — and it was the shape of the answer before this change too.
 //
 // ——— Why it is affordable ———
 //
@@ -77,35 +101,60 @@ function project(
 export type DeliveryArea = {
   /** The boundary, as [lat, lng] pairs, closed by the consumer. */
   ring: [number, number][];
-  /** Where it is measured from. */
-  origin: [number, number];
+  /** The counters it is measured from — every one a delivery can leave from.
+   *  Plural because the radius is a reach around each of them, and the map
+   *  pins them all: a shape with one pin in the corner of it reads as one shop
+   *  with a very long arm, which is not what the shop is offering. */
+  origins: [number, number][];
+  /** Where the rays were cast from, which is the middle of the counters and
+   *  not a place. Carried so the map can centre on it without picking a shop. */
+  centre: [number, number];
   /** The rule it draws, so the page can say the number rather than hardcode it. */
   radiusMiles: number;
 };
 
 async function measure(): Promise<DeliveryArea | null> {
-  const origin = await deliveryOrigin();
+  // Every counter a delivery can leave from, at its resolved address rather
+  // than the coordinates typed beside it — the same points the courier is
+  // actually sent to. See storePlaces.ts.
+  const origins = await deliveryOrigins();
+  if (origins.length === 0) return null;
 
-  // Straight-line bounds for the search. The lower bound is zero and the
-  // upper bound is the radius itself, which is safe in a way worth stating:
-  // a road route is never shorter than the straight line, so the point at N
-  // road miles is never more than N straight-line miles out. The answer is
-  // always inside this interval.
+  // The centre the rays go out from. Not a counter: a point that has all of
+  // them around it, so a ray in any direction crosses the boundary once
+  // rather than clipping one shop's circle and missing another's.
+  const centre: [number, number] = [
+    origins.reduce((sum, [lat]) => sum + lat, 0) / origins.length,
+    origins.reduce((sum, [, lng]) => sum + lng, 0) / origins.length,
+  ];
+
+  // Straight-line bounds for the search. The lower bound is zero. The upper
+  // bound is the radius plus the furthest a counter sits from the centre, and
+  // it is safe for the same reason the single-shop version's was: a road route
+  // is never shorter than the straight line, so a point within N road miles of
+  // some counter is within N straight-line miles of it, and therefore within
+  // N + that counter's offset of the centre. The answer is always inside this
+  // interval.
+  const spread = origins.reduce(
+    (furthest, point) => Math.max(furthest, milesBetween(centre, point)),
+    0,
+  );
   const low = new Array<number>(BEARINGS).fill(0);
-  const high = new Array<number>(BEARINGS).fill(DELIVERY_RADIUS_MILES);
+  const high = new Array<number>(BEARINGS).fill(DELIVERY_RADIUS_MILES + spread);
 
   for (let step = 0; step < STEPS; step += 1) {
     const mids = low.map((lo, i) => (lo + high[i]) / 2);
-    const probes = mids.map((miles, i) => project(origin, (i * 360) / BEARINGS, miles));
+    const probes = mids.map((miles, i) => project(centre, (i * 360) / BEARINGS, miles));
 
-    const measured = await driveMatrixMiles(origin, probes);
+    // How far the *nearest* counter is, for each probe, in one call.
+    const measured = await driveMatrixMin(origins, probes);
     // One failed call and the whole shape is a guess. Better to have no map
     // than a boundary drawn half from measurement and half from an interval
     // that never got narrowed.
     if (!measured) return null;
 
     for (let i = 0; i < BEARINGS; i += 1) {
-      const miles = measured[i];
+      const miles = measured[i]?.miles ?? null;
       // Unreachable counts as too far. That is what pulls the western edge
       // off the water: no road route to a point in the Pacific, so the
       // search stops reaching for it.
@@ -119,8 +168,9 @@ async function measure(): Promise<DeliveryArea | null> {
   // where we deliver, erring inward means the edge cases are people we do
   // serve being told to check, rather than people we do not being told we do.
   return {
-    ring: low.map((miles, i) => project(origin, (i * 360) / BEARINGS, miles)),
-    origin,
+    ring: low.map((miles, i) => project(centre, (i * 360) / BEARINGS, miles)),
+    origins,
+    centre,
     radiusMiles: DELIVERY_RADIUS_MILES,
   };
 }
@@ -130,6 +180,9 @@ async function measure(): Promise<DeliveryArea | null> {
 // A day, because the road network does not move and the rule moves less. The
 // in-flight promise is shared as well as the result: without that, the first
 // two visitors after a deploy each start their own seven-call measurement.
+//
+// Still seven calls with three counters, not twenty-one: the counters ride in
+// as extra origins on the calls the contour was already making.
 const TTL_MS = 24 * 60 * 60 * 1000;
 
 let cached: { at: number; area: DeliveryArea } | null = null;

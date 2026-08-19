@@ -1,8 +1,9 @@
 import "server-only";
-import { geocode } from "./googleMaps";
+import { driveMatrixMin, geocode, type Drive } from "./googleMaps";
 import { notServedAt } from "./shop/storeMenu";
 import { isOpenNow, minutesUntilClose, PREP_MINUTES } from "./shopFacts";
 import {
+  DELIVERY_RADIUS_MILES,
   LOCATIONS,
   deliveringStores,
   milesBetween,
@@ -167,6 +168,37 @@ export async function deliveryOrigin(to?: [number, number]): Promise<[number, nu
   return position;
 }
 
+/** Every counter a delivery can leave from, at its resolved position.
+ *
+ *  The list the radius is measured against. Resolved rather than read off the
+ *  record, because the point a courier is sent to is the geocoded address —
+ *  see storePlace above. */
+export async function deliveryOrigins(): Promise<[number, number][]> {
+  return Promise.all(
+    deliveringStores().map(async (store) => (await storePlace(store)).position),
+  );
+}
+
+/** How far this point is from the nearest counter, by road, in miles.
+ *
+ *  ——— The rule, in one function ———
+ *
+ *  The shop delivers within DELIVERY_RADIUS_MILES of a counter, and there is
+ *  more than one counter, so the distance that decides it is the smallest of
+ *  several. Three callers ask this question — the pin picker, the address
+ *  search, and the public "do you deliver to me" check — and each of them used
+ *  to pick one counter and measure to that. Picking is the bug: an address two
+ *  miles from one shop was being told how far it is from another.
+ *
+ *  Null means no road answer, which is not the same as out of range and must
+ *  not be rounded to it. Every caller defers to the checkout, which asks Uber.
+ *
+ *  One Route Matrix call however many counters there are. */
+export async function deliveryReach(to: [number, number]): Promise<Drive | null> {
+  const measured = await driveMatrixMin(await deliveryOrigins(), [to]);
+  return measured?.[0] ?? null;
+}
+
 // ——— Which kitchens could make this order ———
 //
 // Every kitchen that delivers, narrowed to the ones that make everything in
@@ -219,7 +251,22 @@ export function kitchensFor(
   // this one's alternative is a courier sent to a locked door.
   if (lit.length === 0) return [];
 
-  const open = lit;
+  // ——— Then out of reach ———
+  //
+  // A counter further than the radius in a *straight line* is further than the
+  // radius by road — a road is never shorter than the line it follows — so it
+  // is provably out of range and can never be the right choice. Dropping it
+  // here rather than discovering it at the quote is what stops the outlet
+  // preference below from picking a counter the rule would then refuse, and it
+  // costs nothing: it is arithmetic on two coordinates.
+  //
+  // Only when something survives it. If every counter is beyond the radius the
+  // order is out of range whichever one is picked, and the quote is where that
+  // gets said with a real road distance rather than guessed at from a line.
+  const reachable = to
+    ? lit.filter((store) => milesBetween(to, store.position) <= DELIVERY_RADIUS_MILES)
+    : lit;
+  const open = reachable.length > 0 ? reachable : lit;
   if (slugs.length === 0) return open;
   const able = open.filter((store) => notServedAt(store.id, slugs).length === 0);
 

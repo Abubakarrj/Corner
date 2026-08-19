@@ -28,7 +28,10 @@ import { useT } from "../../i18n";
 type Area = {
   known: true;
   ring: [number, number][];
-  origin: [number, number];
+  /** Every counter a delivery can leave from. Plural: the area is a reach
+   *  around each of them, not one shop with a long arm. */
+  origins: [number, number][];
+  centre: [number, number];
   radiusMiles: number;
 };
 
@@ -148,7 +151,7 @@ export default function DeliveryAreaMap() {
         keyboardShortcuts: false,
         clickableIcons: false,
         gestureHandling: "greedy",
-        center: { lat: area.origin[0], lng: area.origin[1] },
+        center: { lat: area.centre[0], lng: area.centre[1] },
         zoom: 10,
         // The app's own map, like the other two. This one shipped with no
         // styles at all — Google's stock blue-and-grey, hotel ratings and
@@ -177,11 +180,19 @@ export default function DeliveryAreaMap() {
       });
       shape.setMap(instance);
 
-      const pin = new maps.Marker({
-        position: { lat: area.origin[0], lng: area.origin[1] },
-        map: instance,
-        title: "Corner Bagel",
-      });
+      // A pin per counter, because the shape is a reach around each of them.
+      // One pin on a map this wide invites the wrong reading — that a single
+      // shop drives to the far edge — when the truth is the opposite and is
+      // the good news: wherever somebody is inside this, a counter is nearer
+      // than the outline suggests.
+      const pins = area.origins.map(
+        (point) =>
+          new maps.Marker({
+            position: { lat: point[0], lng: point[1] },
+            map: instance,
+            title: "Corner Bagel",
+          }),
+      );
 
       // Fit the shape rather than trusting the zoom guess above: the contour
       // is wider east-west than north-south and a fixed zoom crops it on a
@@ -206,7 +217,7 @@ export default function DeliveryAreaMap() {
       cleanup = () => {
         watcher.disconnect();
         shape.setMap(null);
-        pin.setMap(null);
+        pins.forEach((marker) => marker.setMap(null));
         map.current = null;
       };
     })();
@@ -218,7 +229,7 @@ export default function DeliveryAreaMap() {
   }, [area]);
 
   // Follow the theme without rebuilding the map. setOptions swaps the basemap
-  // and leaves the polygon and the pin, which are separate objects on it.
+  // and leaves the polygon and the pins, which are separate objects on it.
   useEffect(() => {
     themeRef.current = theme;
     map.current?.setOptions({ styles: MAP_STYLE[theme] });

@@ -328,9 +328,9 @@ export const en = {
 
   "deliveryArea.title": "Where we deliver",
 
-  "deliveryArea.lead": "Within {miles} driving miles of the shop.",
+  "deliveryArea.lead": "Within {miles} driving miles of any of our counters.",
 
-  "deliveryArea.mapLabel": "Map of the delivery area, {miles} driving miles from the shop",
+  "deliveryArea.mapLabel": "Map of the delivery area, {miles} driving miles from any of our counters",
 
   "deliveryArea.placeholder": "Your address",
 

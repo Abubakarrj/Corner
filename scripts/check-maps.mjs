@@ -302,6 +302,12 @@ try {
 // spec whichever way Google serialises it. This says which way that is, and
 // checks that both destinations come back either way — a dropped destination
 // is a notch in the published delivery boundary and nothing else.
+//
+// Sent with two origins, because that is the shape the app sends now: the
+// delivery radius is a reach around every counter, so the boundary asks all of
+// them in one call and keeps the smallest answer per destination. A key or a
+// project that answers for one origin and not for several would draw a
+// boundary around one shop, which is exactly the bug this rebuild removed.
 try {
   const waypoint = (point) => ({ waypoint: stop(point) });
   const response = await fetch(
@@ -311,10 +317,11 @@ try {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": "originIndex,destinationIndex,distanceMeters,condition",
+        "X-Goog-FieldMask":
+          "originIndex,destinationIndex,distanceMeters,duration,condition",
       },
       body: JSON.stringify({
-        origins: [waypoint(SHOP)],
+        origins: [waypoint(SHOP), waypoint(AROUND_THE_CORNER)],
         destinations: [waypoint(NEARBY), waypoint(AROUND_THE_CORNER)],
         travelMode: "DRIVE",
         routingPreference: "TRAFFIC_UNAWARE",
@@ -330,21 +337,24 @@ try {
       `${response.status}: ${body?.error?.message ?? JSON.stringify(body).slice(0, 160)}`,
     );
   } else {
-    // The same read app/googleMaps.ts does, so this fails where the app would.
+    // The same read app/googleMaps.ts does, so this fails where the app would,
+    // including the running minimum across origins.
     const miles = [null, null];
     for (const element of body) {
       const index = element.destinationIndex ?? 0;
       if (element.condition !== "ROUTE_EXISTS") continue;
-      miles[index] = (element.distanceMeters ?? 0) / 1609.344;
+      const measured = (element.distanceMeters ?? 0) / 1609.344;
+      if (miles[index] === null || measured < miles[index]) miles[index] = measured;
     }
+    const origins = new Set(body.map((element) => element.originIndex ?? 0));
     const first = body.find((element) => (element.destinationIndex ?? 0) === 0);
     const spellsZero = first !== undefined && "destinationIndex" in first;
     record(
       "Route Matrix",
       miles[0] !== null && miles[1] !== null,
-      `${body.length} elements, destination 0 ` +
+      `${body.length} elements from ${origins.size} origins, destination 0 ` +
         (spellsZero ? "carries its index" : "omits its index (absent means 0)") +
-        ` · ${miles.map((m) => (m === null ? "none" : `${m.toFixed(1)} mi`)).join(", ")}`,
+        ` · nearest ${miles.map((m) => (m === null ? "none" : `${m.toFixed(1)} mi`)).join(", ")}`,
     );
   }
 } catch (error) {
