@@ -180,6 +180,8 @@ export const zh: Table = {
   "checkout.cardNumberInvalid": "请检查卡号。",
   "checkout.cardExpiryInvalid": "请检查有效期。",
   "checkout.cardCvcInvalid": "请检查安全码。",
+  "checkout.cardNotAccepted": "该银行卡未被接受。请检查信息后重试。",
+  "checkout.cardLoading": "正在加载银行卡输入框…",
   "checkout.cardEnding": "{brand} 尾号 {last4}",
   "checkout.editBasket": "编辑购物篮",
   "checkout.itemCount": "{count} 件商品",
@@ -597,6 +599,9 @@ export const zh: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "需要 JSON 请求体。",
+  "api.cardDeclined": "您的银行卡被拒绝。请换一张卡试试。",
+  "api.paymentFailed": "我们无法完成付款。未向您收取任何费用。请稍后再试。",
+  "api.paymentRequired": "我们无法读取您的银行卡信息。请刷新页面后重试。",
   "api.validEmailAddress": "请填写有效的邮箱地址。",
   "api.enterAddress": "请填写地址。",
   "api.enterCode": "请输入我们邮件发送的验证码。",

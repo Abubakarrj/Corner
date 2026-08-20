@@ -237,6 +237,7 @@ export default function ChatCheckout({
               onTender={setTender}
               cardEnabled={payments}
               card={checkout.card}
+              hosted={checkout.hosted}
             />
             <SecureNote />
           </div>

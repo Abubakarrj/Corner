@@ -178,6 +178,8 @@ export const ja: Table = {
   "checkout.cardNumberInvalid": "カード番号をご確認ください。",
   "checkout.cardExpiryInvalid": "有効期限をご確認ください。",
   "checkout.cardCvcInvalid": "セキュリティコードをご確認ください。",
+  "checkout.cardNotAccepted": "このカードはご利用いただけませんでした。入力内容をご確認のうえお試しください。",
+  "checkout.cardLoading": "カード入力欄を読み込んでいます…",
   "checkout.cardEnding": "{brand} 下4桁 {last4}",
   "checkout.editBasket": "カートを編集",
   "checkout.itemCount": "{count}点",
@@ -597,6 +599,9 @@ export const ja: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON 本文が必要です。",
+  "api.cardDeclined": "カードが承認されませんでした。別のカードをお試しください。",
+  "api.paymentFailed": "お支払いを処理できませんでした。請求は発生していません。少し時間をおいてお試しください。",
+  "api.paymentRequired": "カード情報を読み取れませんでした。ページを再読み込みしてお試しください。",
   "api.validEmailAddress": "有効なメールアドレスを入力してください。",
   "api.enterAddress": "住所を入力してください。",
   "api.enterCode": "メールでお送りしたコードを入力してください。",

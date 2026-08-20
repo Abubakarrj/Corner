@@ -207,6 +207,8 @@ export const fa: Table = {
   "checkout.cardNumberInvalid": "این شمارهٔ کارت را بررسی کنید.",
   "checkout.cardExpiryInvalid": "تاریخ انقضا را بررسی کنید.",
   "checkout.cardCvcInvalid": "کد امنیتی را بررسی کنید.",
+  "checkout.cardNotAccepted": "این کارت پذیرفته نشد. اطلاعات را بررسی کنید و دوباره تلاش کنید.",
+  "checkout.cardLoading": "در حال بارگذاری فیلدهای کارت…",
   "checkout.cardEnding": "{brand} با پایان {last4}",
   "checkout.editBasket": "ویرایش سبد",
   "checkout.itemCount": "{count} قلم",
@@ -638,6 +640,9 @@ export const fa: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "بدنهٔ JSON لازم است.",
+  "api.cardDeclined": "کارت شما رد شد. کارت دیگری را امتحان کنید.",
+  "api.paymentFailed": "نتوانستیم پرداخت را انجام دهیم. مبلغی از شما کسر نشده است. لحظه‌ای بعد دوباره تلاش کنید.",
+  "api.paymentRequired": "نتوانستیم کارت شما را بخوانیم. صفحه را تازه‌سازی کنید و دوباره تلاش کنید.",
   "api.validEmailAddress": "یک نشانی ایمیل معتبر وارد کنید.",
   "api.enterAddress": "یک نشانی وارد کنید.",
   "api.enterCode": "کدی که برایتان ایمیل کردیم را وارد کنید.",

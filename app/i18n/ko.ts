@@ -178,6 +178,8 @@ export const ko: Table = {
   "checkout.cardNumberInvalid": "카드 번호를 확인해 주세요.",
   "checkout.cardExpiryInvalid": "유효기간을 확인해 주세요.",
   "checkout.cardCvcInvalid": "보안 코드를 확인해 주세요.",
+  "checkout.cardNotAccepted": "이 카드는 사용할 수 없습니다. 정보를 확인한 뒤 다시 시도해 주세요.",
+  "checkout.cardLoading": "카드 입력란을 불러오는 중…",
   "checkout.cardEnding": "{brand} 끝자리 {last4}",
   "checkout.editBasket": "장바구니 수정",
   "checkout.itemCount": "{count}개 상품",
@@ -597,6 +599,9 @@ export const ko: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON 본문이 필요합니다.",
+  "api.cardDeclined": "카드가 거절되었습니다. 다른 카드로 시도해 주세요.",
+  "api.paymentFailed": "결제를 처리하지 못했습니다. 청구된 금액은 없습니다. 잠시 후 다시 시도해 주세요.",
+  "api.paymentRequired": "카드 정보를 읽지 못했습니다. 페이지를 새로 고친 뒤 다시 시도해 주세요.",
   "api.validEmailAddress": "올바른 이메일 주소를 입력해 주세요.",
   "api.enterAddress": "주소를 입력해 주세요.",
   "api.enterCode": "이메일로 보내드린 코드를 입력해 주세요.",

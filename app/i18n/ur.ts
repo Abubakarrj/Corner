@@ -181,6 +181,8 @@ export const ur: Table = {
   "checkout.cardNumberInvalid": "کارڈ نمبر دیکھ لیں۔",
   "checkout.cardExpiryInvalid": "میعاد کی تاریخ دیکھ لیں۔",
   "checkout.cardCvcInvalid": "سیکیورٹی کوڈ دیکھ لیں۔",
+  "checkout.cardNotAccepted": "یہ کارڈ قبول نہیں کیا گیا۔ تفصیلات دیکھ کر دوبارہ کوشش کریں۔",
+  "checkout.cardLoading": "کارڈ کے خانے لوڈ ہو رہے ہیں…",
   "checkout.cardEnding": "{brand} کے آخری ہندسے {last4}",
   "checkout.editBasket": "ٹوکری میں ترمیم",
   "checkout.itemCount": "{count} اشیاء",
@@ -600,6 +602,9 @@ export const ur: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON باڈی درکار ہے۔",
+  "api.cardDeclined": "آپ کا کارڈ مسترد ہو گیا۔ کوئی دوسرا کارڈ آزمائیں۔",
+  "api.paymentFailed": "ہم ادائیگی نہیں لے سکے۔ آپ سے کچھ وصول نہیں کیا گیا۔ ایک لمحے بعد دوبارہ کوشش کریں۔",
+  "api.paymentRequired": "ہم آپ کا کارڈ نہیں پڑھ سکے۔ صفحہ تازہ کریں اور دوبارہ کوشش کریں۔",
   "api.validEmailAddress": "درست ای میل ایڈریس درج کریں۔",
   "api.enterAddress": "پتہ درج کریں۔",
   "api.enterCode": "ہم نے جو کوڈ ای میل کیا وہ درج کریں۔",

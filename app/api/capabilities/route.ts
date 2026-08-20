@@ -4,6 +4,7 @@ import { isDatabaseConfigured } from "../../db";
 import { pushProblem } from "../../push/send";
 import { SHOP_PHONE, openPreview } from "../../shopFacts";
 import { isUberConfigured } from "../../uberDirect";
+import { isSquarePaymentsConfigured } from "../../squarePayments";
 
 // What's actually switched on, decided at request time.
 //
@@ -42,19 +43,24 @@ export const dynamic = "force-dynamic";
 // tap — which narrows how many people it happened to and does nothing about
 // what happened to them.
 //
-// A card can be offered when there is something to take it with. There isn't
-// yet, so this is false in production, full stop. What turns it on is not an
-// environment variable: it is mounting Toast's hosted payment element, taking
-// back a token, and applying that token to the check. card.ts describes the
-// shape of that work at the bottom of its header.
+// A card can be offered when there is something to take it with. That is now a
+// real question with a real answer rather than a flat no: Square's credentials
+// being present means the checkout can mount hosted fields, take a token, and
+// charge it — see app/squarePayments.ts and app/shop/checkout/useSquareCard.ts.
 //
-// Still true in development and under PAYMENTS_PREVIEW, because the card
-// screen is the most designed part of the checkout and the only way to review
-// it otherwise was to go live with it.
+// So in production this is exactly "is Square configured". No processor, no
+// card option, and the money moves at the counter the way it always has.
+//
+// Still true in development and under PAYMENTS_PREVIEW, because the card screen
+// is the most designed part of the checkout and reviewing it should not require
+// credentials.
 //
 // ⚠️ PAYMENTS_PREVIEW is for looking, never for a deploy real customers use.
-// It makes the checkout claim a charge that cannot happen.
+// With no processor behind it, it makes the checkout claim a charge that cannot
+// happen — somebody taps card, is told they have paid, collects breakfast, and
+// the shop is never paid.
 function paymentsEnabled(): boolean {
+  if (isSquarePaymentsConfigured()) return true;
   if (process.env.PAYMENTS_PREVIEW === "1") return true;
   return process.env.NODE_ENV !== "production";
 }

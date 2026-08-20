@@ -4,6 +4,7 @@ import { useId } from "react";
 import { useT } from "../../i18n";
 import { BRAND_LABEL, cvcDigits, type CardBrand } from "./card";
 import type { CardEntry } from "./useCard";
+import type { SquareCardEntry } from "./useSquareCard";
 
 // Card number, expiry, CVC — the shape from the reference.
 //
@@ -63,14 +64,23 @@ function Line({
   label: string;
   error?: string;
   children: React.ReactNode;
-  htmlFor: string;
+  /** Absent for Square's hosted fields, whose input lives in an iframe this
+   *  document cannot address. A <label for> pointing at an id that is not in
+   *  the page is worse than no association at all: a screen reader follows it
+   *  and lands nowhere. So the label is rendered as plain text in that case,
+   *  and the field inside carries its own labelling from Square. */
+  htmlFor?: string;
   className?: string;
 }) {
   return (
     <div className={className}>
-      <label htmlFor={htmlFor} className="mb-1 block text-[12px] text-muted">
-        {label}
-      </label>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="mb-1 block text-[12px] text-muted">
+          {label}
+        </label>
+      ) : (
+        <span className="mb-1 block text-[12px] text-muted">{label}</span>
+      )}
       {children}
       {error ? (
         <p role="alert" className="m-0 mt-1 text-[12px] text-brand-red">
@@ -81,12 +91,63 @@ function Line({
   );
 }
 
-export default function CardFields({ card }: { card: CardEntry }) {
+export default function CardFields({
+  card,
+  hosted,
+}: {
+  card: CardEntry;
+  hosted?: SquareCardEntry;
+}) {
   const t = useT();
   const base = useId();
   const numberId = `${base}-number`;
   const expiryId = `${base}-expiry`;
   const cvcId = `${base}-cvc`;
+
+  // ——— Square's fields, when this shop charges cards ———
+  //
+  // Returned before the local inputs rather than alongside them, and that is
+  // the point: when a real charge is going to happen there must be exactly one
+  // place on the page a card number can be typed, and it must not be ours. The
+  // boxes below are Square's own document inside iframes. This page cannot read
+  // what is typed into them, which is a stronger guarantee than our promise not
+  // to, and it is what keeps a PAN out of this deployment altogether.
+  // Pulled apart rather than read through `hosted` in the JSX below. The ref
+  // and the three plain values are different kinds of thing, and reading any
+  // property off an object that carries a ref trips react-hooks/refs — which is
+  // a blunt rule here but a correct instinct: `ready` and `error` drive the
+  // render and must be state, `mountRef` must not be read during it at all.
+  const hostedReady = hosted?.ready ?? false;
+  const hostedError = hosted?.error ?? null;
+  const hostedMount = hosted?.mountRef;
+
+  if (hosted?.enabled) {
+    return (
+      <div className="flex flex-col gap-3">
+        <Line label={t("checkout.cardNumber")} error={undefined}>
+          {/* Square styles the inside; this is the frame around it, matched to
+              the inputs below so the screen does not change shape depending on
+              which processor is configured. A min height holds the space while
+              the iframes load, because a form that jumps as it finishes loading
+              is a form somebody taps the wrong part of. */}
+          <div
+            ref={hostedMount}
+            className="min-h-[52px] rounded-xl border border-line-soft bg-surface px-1 transition-colors"
+          />
+        </Line>
+
+        {/* Loading and broken are different, and the difference matters: one
+            resolves on its own and the other never will. Saying "just a moment"
+            about a field that failed to load is how somebody waits at a
+            checkout that is never going to work. */}
+        {hostedError ? (
+          <p className="m-0 text-[11px] text-brand-red">{t("checkout.cardNotAccepted")}</p>
+        ) : !hostedReady ? (
+          <p className="m-0 text-[11px] text-quiet">{t("checkout.cardLoading")}</p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">

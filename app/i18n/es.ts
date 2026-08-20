@@ -180,6 +180,8 @@ export const es: Table = {
   "checkout.cardNumberInvalid": "Revisa el número de la tarjeta.",
   "checkout.cardExpiryInvalid": "Revisa la fecha de caducidad.",
   "checkout.cardCvcInvalid": "Revisa el código de seguridad.",
+  "checkout.cardNotAccepted": "Esa tarjeta no fue aceptada. Revisa los datos e inténtalo de nuevo.",
+  "checkout.cardLoading": "Cargando los campos de la tarjeta…",
   "checkout.cardEnding": "{brand} terminada en {last4}",
   "checkout.editBasket": "Editar cesta",
   "checkout.itemCount": "{count} artículos",
@@ -603,6 +605,9 @@ export const es: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "Se esperaba un cuerpo JSON.",
+  "api.cardDeclined": "Tu tarjeta fue rechazada. Prueba con otra tarjeta.",
+  "api.paymentFailed": "No pudimos procesar el pago. No se te ha cobrado nada. Inténtalo de nuevo en un momento.",
+  "api.paymentRequired": "No pudimos leer tu tarjeta. Actualiza la página e inténtalo de nuevo.",
   "api.validEmailAddress": "Escribe un correo electrónico válido.",
   "api.enterAddress": "Escribe una dirección.",
   "api.enterCode": "Escribe el código que te enviamos por correo.",

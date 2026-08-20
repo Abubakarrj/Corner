@@ -208,6 +208,8 @@ export const en = {
   "checkout.cardNumberInvalid": "Check this card number.",
   "checkout.cardExpiryInvalid": "Check the expiry date.",
   "checkout.cardCvcInvalid": "Check the security code.",
+  "checkout.cardNotAccepted": "That card wasn’t accepted. Check the details and try again.",
+  "checkout.cardLoading": "Loading the card fields…",
   "checkout.cardEnding": "{brand} ending {last4}",
   "checkout.editBasket": "Edit basket",
   "checkout.itemCount": "{count} items",
@@ -673,6 +675,9 @@ export const en = {
   // A route has no locale, so it sends the key of the sentence and the
   // screen says the sentence. See serverText() in app/i18n/index.ts.
   "api.badJson": "Expected a JSON body.",
+  "api.cardDeclined": "Your card was declined. Try another card.",
+  "api.paymentFailed": "We couldn’t take the payment. Nothing has been charged. Try again in a moment.",
+  "api.paymentRequired": "We couldn’t read your card. Refresh the page and try again.",
   "api.validEmailAddress": "Enter a valid email address.",
   "api.enterAddress": "Enter an address.",
   "api.enterCode": "Enter the code we emailed you.",

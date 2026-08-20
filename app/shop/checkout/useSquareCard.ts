@@ -1,0 +1,224 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+// Square's hosted card fields, and the token they produce.
+//
+// ——— What makes this different from useCard ———
+//
+// useCard next door holds a card number in React state. That was safe precisely
+// because nothing charged anybody: the number stayed in the browser and only a
+// brand and four digits ever left. Now that there is a charge, the number must
+// not be in our state at all — not in a variable, not in a ref, not in a form
+// field we render.
+//
+// So the fields below are not ours. Square serves them from its own origin
+// inside iframes, the digits are typed into Square's document, and the only
+// thing that crosses back is an opaque single-use token. Our JavaScript cannot
+// read the number even if it wanted to, which is a much stronger guarantee than
+// a promise not to look, and it is what keeps this deployment out of the PCI
+// scope that handling a PAN would drag it into.
+//
+// ——— Why the script is loaded here rather than in a <Script> tag ———
+//
+// The URL depends on the environment, which comes from the server at request
+// time — see /api/payments-config. A tag in the layout would have to know
+// sandbox from production at build time, which is the thing that config
+// endpoint exists to avoid, and it would load Square's SDK on every page in the
+// app rather than on the one screen that takes money.
+
+type SquareCard = {
+  attach: (selector: string | HTMLElement) => Promise<void>;
+  tokenize: () => Promise<{ status: string; token?: string; errors?: { message?: string }[] }>;
+  destroy?: () => Promise<void>;
+};
+
+type SquarePayments = {
+  card: () => Promise<SquareCard>;
+  verifyBuyer: (
+    token: string,
+    details: unknown,
+  ) => Promise<{ token?: string } | null>;
+};
+
+declare global {
+  interface Window {
+    Square?: { payments: (appId: string, locationId: string) => SquarePayments };
+  }
+}
+
+type Config = {
+  provider: "square" | null;
+  applicationId?: string;
+  locationId?: string;
+  environment?: "sandbox" | "production";
+};
+
+export type SquareCardEntry = {
+  /** Whether this shop charges cards at all. False means the checkout behaves
+   *  exactly as it did before: the money moves at the counter. */
+  enabled: boolean;
+  /** The fields are mounted and can be typed into. */
+  ready: boolean;
+  /** Something went wrong loading or mounting. The checkout says so rather than
+   *  showing an empty box where a card field should be. */
+  error: string | null;
+  /** Where the iframes go. */
+  mountRef: React.RefObject<HTMLDivElement | null>;
+  /** Hand the typed card to Square and take back a token.
+   *
+   *  Null when the card was refused or incomplete — the caller must not submit
+   *  the order in that case. Never returns anything derived from the number. */
+  tokenize: (buyer: {
+    amountCents: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  }) => Promise<{ token: string; verificationToken?: string } | null>;
+};
+
+function scriptFor(environment: "sandbox" | "production"): string {
+  return environment === "production"
+    ? "https://web.squarecdn.com/v1/square.js"
+    : "https://sandbox.web.squarecdn.com/v1/square.js";
+}
+
+/** Load Square's SDK once per page, however many times this hook runs. */
+function loadSdk(src: string): Promise<void> {
+  if (window.Square) return Promise.resolve();
+  const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("square-sdk-failed")));
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("square-sdk-failed"));
+    document.head.appendChild(script);
+  });
+}
+
+export function useSquareCard(): SquareCardEntry {
+  const [config, setConfig] = useState<Config | null>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const mountRef = useRef<HTMLDivElement | null>(null);
+  const cardRef = useRef<SquareCard | null>(null);
+  const paymentsRef = useRef<SquarePayments | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/payments-config")
+      .then((response) => (response.ok ? response.json() : { provider: null }))
+      .then((answer: Config) => {
+        if (!cancelled) setConfig(answer);
+      })
+      .catch(() => {
+        // Unreachable config is not "no card payments" — it is a broken page,
+        // and saying so beats silently falling back to a checkout that takes
+        // an order without taking the money.
+        if (!cancelled) setError("config");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (config?.provider !== "square" || !config.applicationId || !config.locationId) return;
+    // The container has to exist before Square can attach to it. It is rendered
+    // by CardFields as soon as `enabled` is true, which this effect observes on
+    // the render after the config arrives.
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    let cancelled = false;
+    let mounted: SquareCard | null = null;
+
+    (async () => {
+      try {
+        await loadSdk(scriptFor(config.environment ?? "sandbox"));
+        if (cancelled || !window.Square) return;
+        const payments = window.Square.payments(config.applicationId!, config.locationId!);
+        paymentsRef.current = payments;
+        const card = await payments.card();
+        if (cancelled) return;
+        await card.attach(mount);
+        if (cancelled) {
+          // Attached after the screen went away. Tearing it down here rather
+          // than leaving an orphaned iframe listening on a dead node.
+          await card.destroy?.().catch(() => undefined);
+          return;
+        }
+        mounted = card;
+        cardRef.current = card;
+        setReady(true);
+      } catch {
+        if (!cancelled) setError("mount");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      cardRef.current = null;
+      setReady(false);
+      void mounted?.destroy?.().catch(() => undefined);
+    };
+  }, [config]);
+
+  const tokenize = useCallback<SquareCardEntry["tokenize"]>(async (buyer) => {
+    const card = cardRef.current;
+    if (!card) return null;
+    try {
+      const result = await card.tokenize();
+      if (result.status !== "OK" || !result.token) return null;
+
+      // ——— 3-D Secure, when the card's bank asks for it ———
+      //
+      // Square calls this buyer verification, and it is what turns a
+      // liability-shifted transaction into one the shop is not on the hook for
+      // if the card turns out to be stolen. It can show a challenge, so it runs
+      // here at submit rather than while somebody is still typing.
+      //
+      // A failure is not fatal: the payment can still go through without it,
+      // and refusing an order because an optional verification step did not
+      // answer would turn a working card into a refused one.
+      let verificationToken: string | undefined;
+      try {
+        const verified = await paymentsRef.current?.verifyBuyer(result.token, {
+          // Square wants a decimal string here, not cents.
+          amount: (buyer.amountCents / 100).toFixed(2),
+          currencyCode: "USD",
+          intent: "CHARGE",
+          billingContact: {
+            givenName: buyer.firstName,
+            familyName: buyer.lastName,
+            ...(buyer.email ? { email: buyer.email } : {}),
+            ...(buyer.phone ? { phone: buyer.phone } : {}),
+          },
+        });
+        verificationToken = verified?.token;
+      } catch {
+        verificationToken = undefined;
+      }
+
+      return { token: result.token, ...(verificationToken ? { verificationToken } : {}) };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  return {
+    enabled: config?.provider === "square",
+    ready,
+    error,
+    mountRef,
+    tokenize,
+  };
+}

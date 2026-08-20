@@ -20,6 +20,7 @@
 
 import { useT } from "../../i18n";
 import CardFields from "./CardFields";
+import type { SquareCardEntry } from "./useSquareCard";
 import type { CardEntry } from "./useCard";
 
 export type Tender = "counter" | "card";
@@ -29,6 +30,7 @@ export default function PaymentSection({
   onTender,
   cardEnabled,
   card,
+  hosted,
 }: {
   tender: Tender;
   onTender: (next: Tender) => void;
@@ -37,6 +39,10 @@ export default function PaymentSection({
   // card rather than collecting a number it can't charge.
   cardEnabled: boolean;
   card: CardEntry;
+  /** Square's hosted fields, when this shop charges cards. Threaded through
+   *  rather than read here for the same reason `cardEnabled` is: the surface
+   *  owns the checkout engine, and this component renders what it is given. */
+  hosted?: SquareCardEntry;
 }) {
   const t = useT();
   return (
@@ -60,7 +66,7 @@ export default function PaymentSection({
 
       {tender === "card" && cardEnabled ? (
         <div className="mt-1">
-          <CardFields card={card} />
+          <CardFields card={card} hosted={hosted} />
         </div>
       ) : null}
     </div>

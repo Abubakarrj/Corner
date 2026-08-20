@@ -18,6 +18,7 @@ import { useOpening } from "../../useOpening";
 import { pushOrder, recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
 import { BRAND_LABEL } from "./card";
+import { useSquareCard, type SquareCardEntry } from "./useSquareCard";
 import { completed, refused } from "../../haptics";
 import { closeFunnel } from "../../navigationDepth";
 import type { Tender } from "./PaymentSection";
@@ -174,6 +175,9 @@ export type Checkout = {
   /** The card fields. Nothing on this object reaches the network but its
       brand and last four — see the note at the top of card.ts. */
   card: CardEntry;
+  /** Square's hosted fields, when this shop charges cards. `enabled` false
+   *  means the local `card` fields above are the ones on screen. */
+  hosted: SquareCardEntry;
 
   // ——— The two steps ———
   step: CheckoutStep;
@@ -259,6 +263,15 @@ export function useCheckout(): Checkout {
   // request body below. `tried` is passed in for the same reason the name and
   // phone errors read it: nothing is marked wrong before somebody tries.
   const card = useCard(tried);
+
+  // Square's hosted fields, when this shop charges cards. Alongside useCard
+  // rather than instead of it: `hosted.enabled` is false on a deployment with
+  // no Square credentials, and that deployment keeps the local fields and the
+  // behaviour it has always had, which is that the money moves at the counter.
+  //
+  // When it is true the local fields are not rendered at all, so there is no
+  // second place a card number could be typed.
+  const hosted = useSquareCard();
 
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
   const isDelivery = fulfillment?.mode === "delivery";
@@ -421,7 +434,11 @@ export function useCheckout(): Checkout {
     // Paying by card means there has to be a card. Checked here rather than in
     // the component so both surfaces get it, and so the rule sits next to the
     // other five reasons an order can't go.
-    (tender !== "card" || card.complete);
+    // Paying by card means there has to be a card. Which fields answer that
+    // question depends on who is rendering them: Square's are an iframe this
+    // page cannot inspect, so the test is that they mounted, and whether the
+    // card is any good is settled by tokenize() at submit.
+    (tender !== "card" || (hosted.enabled ? hosted.ready : card.complete));
 
   async function submit() {
     setTried(true);
@@ -435,6 +452,40 @@ export function useCheckout(): Checkout {
 
     setStatus("sending");
     setError(null);
+
+    // ——— The card, turned into a token, before anything else happens ———
+    //
+    // Square's iframes hold the number; this is the one call that asks them for
+    // something we are allowed to have. It runs first because a card that will
+    // not tokenize is a checkout that must not proceed, and because
+    // verifyBuyer() inside it can put a bank's 3-D Secure challenge on screen —
+    // which has to happen while the customer is still here, not after the
+    // order is away.
+    //
+    // ⚠️ `payment` holds a single-use token. There is no card number in this
+    // function, in this file, or in the request below.
+    let payment: { token: string; verificationToken?: string } | null = null;
+    if (hosted.enabled && tender === "card") {
+      payment = await hosted.tokenize({
+        amountCents: totals.totalCents,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        // No email: this screen deliberately does not collect one (see the
+        // note at the top), and the server reads it from the session cookie.
+        // Square treats billingContact.email as optional.
+        email: "",
+        phone,
+      });
+      if (!payment) {
+        // Square refused the card details themselves — a wrong number, a bad
+        // postcode, an expired card. Nothing has been charged and no order has
+        // been sent, so this is a correction rather than a failure.
+        setError(t("checkout.cardNotAccepted"));
+        setStatus("idle");
+        refused();
+        return;
+      }
+    }
 
     try {
       const response = await fetch("/api/shop-order", {
@@ -457,6 +508,17 @@ export function useCheckout(): Checkout {
           curbside: curbside && !isDelivery,
           utensils,
           note,
+          // The token, and Square's 3-D Secure result where the bank asked for
+          // one. Opaque, single-use, and worthless to anybody who intercepts
+          // it. The card number is not here and has no route to here.
+          ...(payment
+            ? {
+                paymentToken: payment.token,
+                ...(payment.verificationToken
+                  ? { verificationToken: payment.verificationToken }
+                  : {}),
+              }
+            : {}),
           // The time on screen, sent back so the server holds *that* minute
           // rather than whichever one it would pick on its own. Absent on an
           // ordinary order, and the endpoint refuses a scheduled one without
@@ -698,6 +760,7 @@ export function useCheckout(): Checkout {
     tender,
     setTender,
     card,
+    hosted,
 
     step,
     detailsValid,

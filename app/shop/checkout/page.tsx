@@ -468,6 +468,7 @@ export default function CheckoutPage() {
                   onTender={setTender}
                   cardEnabled={payments}
                   card={checkout.card}
+                  hosted={checkout.hosted}
                 />
                 <SecureNote />
               </div>

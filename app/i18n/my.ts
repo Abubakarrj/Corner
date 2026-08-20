@@ -178,6 +178,8 @@ export const my: Table = {
   "checkout.cardNumberInvalid": "ကတ်နံပါတ်ကို စစ်ဆေးပါ။",
   "checkout.cardExpiryInvalid": "သက်တမ်းကုန်ဆုံးရက်ကို စစ်ဆေးပါ။",
   "checkout.cardCvcInvalid": "လုံခြုံရေးကုဒ်ကို စစ်ဆေးပါ။",
+  "checkout.cardNotAccepted": "ထိုကတ်ကို လက်မခံပါ။ အချက်အလက်များကို စစ်ဆေးပြီး ထပ်စမ်းကြည့်ပါ။",
+  "checkout.cardLoading": "ကတ်အကွက်များ ဖွင့်နေသည်…",
   "checkout.cardEnding": "{brand} နောက်ဆုံးဂဏန်း {last4}",
   "checkout.editBasket": "ခြင်း ပြင်ရန်",
   "checkout.itemCount": "ပစ္စည်း {count} ခု",
@@ -598,6 +600,9 @@ export const my: Table = {
 
   // ——— What the API routes answer with ———
   "api.badJson": "JSON body လိုအပ်ပါသည်။",
+  "api.cardDeclined": "သင့်ကတ်ကို ငြင်းပယ်လိုက်ပါသည်။ အခြားကတ်တစ်ခု စမ်းကြည့်ပါ။",
+  "api.paymentFailed": "ငွေပေးချေမှုကို မဆောင်ရွက်နိုင်ပါ။ သင့်ထံမှ ငွေကောက်ခံထားခြင်း မရှိပါ။ ခဏအကြာတွင် ထပ်စမ်းကြည့်ပါ။",
+  "api.paymentRequired": "သင့်ကတ်ကို ဖတ်၍မရပါ။ စာမျက်နှာကို ပြန်လည်ဖွင့်ပြီး ထပ်စမ်းကြည့်ပါ။",
   "api.validEmailAddress": "မှန်ကန်သော အီးမေးလ်လိပ်စာ ထည့်ပါ။",
   "api.enterAddress": "လိပ်စာ ထည့်ပါ။",
   "api.enterCode": "အီးမေးလ်ဖြင့် ပို့ထားသော ကုဒ်ကို ထည့်ပါ။",

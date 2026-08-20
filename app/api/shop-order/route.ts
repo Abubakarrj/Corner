@@ -25,6 +25,7 @@ import {
   posName,
   type PosOrderDraft,
 } from "../../pos";
+import { chargeSquare, isSquarePaymentsConfigured, refundSquare } from "../../squarePayments";
 import { geocode } from "../../googleMaps";
 import {
   createDelivery,
@@ -633,6 +634,71 @@ export async function POST(request: Request) {
     scheduledFor = held.at;
   }
 
+  // ——— The money ———
+  //
+  // Here, and in this order, for a reason worth stating plainly.
+  //
+  // Charging *before* the kitchen is told means a declined card stops the order
+  // while nothing has happened yet: no ticket, no bagels, nothing to cancel. A
+  // decline is the common failure by a wide margin, and this is the ordering
+  // that makes the common failure free.
+  //
+  // The rare failure is the other way round — paid, and then the till refuses —
+  // and that one is handled below by giving the money back rather than by
+  // hoping. It is rare because everything that could refuse this order has
+  // already run: the repricing, the opening hours, the sold-out check, the
+  // delivery quote, and the seat.
+  //
+  // ⚠️ `paymentToken` is a single-use token from Square's hosted fields. The
+  // card number is not in this request and never has been. See the note at the
+  // top of app/squarePayments.ts.
+  const paymentToken = readText(body, "paymentToken", 1024);
+  const verificationToken = readText(body, "verificationToken", 2048) || undefined;
+  let payment: Awaited<ReturnType<typeof chargeSquare>> | null = null;
+
+  if (isSquarePaymentsConfigured()) {
+    if (!paymentToken) {
+      // Configured to charge and given nothing to charge. Refusing is the only
+      // honest answer: the alternative is a free bagel for anybody who posts
+      // this endpoint directly.
+      if (scheduledFor) await releaseSlot(scheduleId);
+      return Response.json({ error: "api.paymentRequired" }, { status: 402 });
+    }
+
+    payment = await chargeSquare({
+      sourceId: paymentToken,
+      // ⚠️ Our number, from totalsFor() above, never the browser's. The client
+      // sends a tip and a quote id; it does not send a total, and if it did it
+      // would not be read.
+      amountCents: order.totalCents,
+      reference: scheduleId,
+      ...(orderAt ? { counter: orderAt } : {}),
+      ...(order.email ? { buyerEmail: order.email } : {}),
+      ...(verificationToken ? { verificationToken } : {}),
+    });
+
+    if (!payment.ok) {
+      console.error(`[shop-order] payment failed: ${payment.reason}`);
+      if (scheduledFor) await releaseSlot(scheduleId);
+      // Two different sentences for two different situations. "Your card was
+      // declined" to somebody whose card is fine is how a working card gets cut
+      // up, so a failure that is ours says so.
+      return Response.json(
+        { error: payment.declined ? "api.cardDeclined" : "api.paymentFailed" },
+        { status: payment.declined ? 402 : 502 },
+      );
+    }
+  }
+
+  /** Give the money back, for the one path that can take it and then fail.
+   *
+   *  Only ever called after a successful charge whose order did not go
+   *  through. refundSquare logs loudly on its own failure, because at that
+   *  point somebody has to open the Square dashboard. */
+  async function undoPayment(): Promise<void> {
+    if (payment?.ok) await refundSquare(payment.paymentId, order.totalCents, scheduleId);
+  }
+
   // The till, when it's there. The draft is built from the repriced order,
   // never from the request, so what the kitchen is told and what the customer
   // was shown come from the same numbers.
@@ -684,6 +750,10 @@ export async function POST(request: Request) {
       // would send somebody to a counter that has never heard of them, so
       // this fails loudly instead.
       console.error(`[shop-order] ${posName() ?? "pos"} submission failed: ${sent.reason}`);
+      // And give the money back. This is the one path in the whole checkout
+      // that can have taken a payment for food nobody is going to make, which
+      // is exactly why the refund is not optional and not deferred.
+      await undoPayment();
       // And give the time back. A seat held for an order the kitchen refused
       // is a slot nobody can buy and nobody is coming for.
       if (scheduledFor) await releaseSlot(scheduleId);

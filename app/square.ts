@@ -28,11 +28,11 @@ import type { PosOrderDraft, PosOrderResult, PosOrderState } from "./pos";
 //
 // ——— What is not here yet ———
 //
-// Payments. Square is a processor as well as a till, and this app charges
-// nobody today: the checkout collects a card brand and last four, and the money
-// moves at the counter. Wiring the Web Payments SDK is the obvious next step
-// and is deliberately not folded into this change, because it is the first code
-// in this app that would move money and it deserves its own testing pass.
+// Payments live next door in app/squarePayments.ts, on the same credentials.
+// Kept out of this file because the till and the processor fail differently and
+// are read by different people: an order that does not reach the kitchen is one
+// problem, a charge that does not go through is another, and a card number is a
+// liability neither of them should be near.
 //
 // Couriers. Square records a delivery; it does not dispatch one. There is no
 // endpoint here that books a driver, and `managed_delivery` is a declaration
@@ -107,7 +107,7 @@ export function squareLocationFor(counter: string | undefined): string | null {
   return config.locationId;
 }
 
-function headers(config: SquareConfig): Record<string, string> {
+export function headers(config: SquareConfig): Record<string, string> {
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${config.token}`,
@@ -122,7 +122,7 @@ function headers(config: SquareConfig): Record<string, string> {
  *  you search for, the detail is usually the actual answer. The status alone
  *  says almost nothing — a bad token and a malformed order are both 401/400
  *  shaped and lead to very different afternoons. */
-function explainSquare(status: number, detail: string): string {
+export function explainSquare(status: number, detail: string): string {
   try {
     const body = JSON.parse(detail) as {
       errors?: { code?: string; detail?: string; field?: string }[];
