@@ -129,8 +129,12 @@ function fieldStyle(): Record<string, Record<string, string>> {
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     },
     "input::placeholder": { color: quieter },
+    // ⚠️ Border only. `.input-container` accepts borderColor, borderRadius and
+    // borderWidth and nothing else — Square's own CardClassSelectors type calls
+    // it ComponentPropertyValues — and a backgroundColor here does not get
+    // ignored, it throws, which takes the whole field off the screen. The ground
+    // belongs on `input` above, where it is.
     ".input-container": {
-      backgroundColor: surface,
       borderColor: line,
       borderRadius: "12px",
       borderWidth: "1px",
@@ -220,7 +224,28 @@ export function useSquareCard(): SquareCardEntry {
         if (cancelled || !window.Square) return;
         const payments = window.Square.payments(config.applicationId!, config.locationId!);
         paymentsRef.current = payments;
-        const card = await payments.card({ style: fieldStyle() });
+        // ⚠️ Styled if it can be, plain if it cannot.
+        //
+        // Square validates the style object and *throws* on a property it does
+        // not accept for a selector. That is the whole failure: the field never
+        // mounts, the checkout shows an error, and nobody can pay — over a
+        // colour. A white field that works beats a themed field that is not
+        // there, and this app cannot reach Square's documentation to check the
+        // allowed list against a future version of it.
+        //
+        // So the theme is an enhancement that is allowed to fail, and the log
+        // says which happened rather than leaving somebody to wonder why the
+        // colours are wrong.
+        let card: SquareCard;
+        try {
+          card = await payments.card({ style: fieldStyle() });
+        } catch (styleError) {
+          console.warn(
+            "[square] the card fields refused our styling and are rendering in" +
+              ` Square's default appearance: ${styleError instanceof Error ? styleError.message : "unknown"}`,
+          );
+          card = await payments.card();
+        }
         if (cancelled) return;
         await card.attach(mount);
         if (cancelled) {

@@ -41,7 +41,45 @@ window.Square = {
     window.__squareInit = { appId, locationId };
     return {
       async card(options) {
-        window.__squareStyle = options && options.style ? options.style : null;
+        // ——— The stub validates, because the real one does ———
+        //
+        // This used to accept any style object at all, which is why the suite
+        // passed green while the deployed checkout showed no card field: a
+        // backgroundColor on .input-container is not ignored by Square, it
+        // throws, and the field never mounts.
+        //
+        // The lists below are Square's own, from the CardClassSelectors type in
+        // @square/web-payments-sdk-types: input properties, component (border)
+        // properties, component state properties, and colour-only text and icon
+        // properties.
+        const ALLOWED = {
+          input: ["backgroundColor", "color", "fontFamily", "fontSize", "fontWeight"],
+          "input.is-focus": ["backgroundColor", "color", "fontFamily", "fontSize", "fontWeight"],
+          "input::placeholder": ["color"],
+          "input.is-focus::placeholder": ["color"],
+          "input.is-error": ["color"],
+          "input.is-error::placeholder": ["color"],
+          ".input-container": ["borderColor", "borderRadius", "borderWidth"],
+          ".input-container.is-focus": ["borderColor", "borderWidth"],
+          ".input-container.is-error": ["borderColor", "borderWidth"],
+          ".message-text": ["color"],
+          ".message-text.is-error": ["color"],
+          ".message-icon": ["color"],
+          ".message-icon.is-error": ["color"],
+        };
+        const style = options && options.style ? options.style : null;
+        if (style) {
+          for (const [selector, properties] of Object.entries(style)) {
+            const allowed = ALLOWED[selector];
+            if (!allowed) throw new Error("unsupported selector " + selector);
+            for (const property of Object.keys(properties)) {
+              if (!allowed.includes(property)) {
+                throw new Error(property + " is not supported on " + selector);
+              }
+            }
+          }
+        }
+        window.__squareStyle = style;
         return {
           async attach(target) {
             window.__squareAttached = true;
@@ -172,6 +210,13 @@ const styled =
   hex.test(style.input?.color ?? "") &&
   hex.test(style[".input-container"]?.borderColor ?? "");
 console.log("style handed to Square:", JSON.stringify(style?.input ?? null));
+// The style may legitimately be absent — the hook falls back to an unstyled
+// card rather than no card when Square refuses it. That is the right trade and
+// it is also exactly what a styling bug looks like, so it is reported loudly
+// rather than passing quietly.
+if (style === null) {
+  console.log("FAIL  Square refused the styling and the field fell back to plain");
+}
 console.log(styled ? "pass  the fields are styled with resolved colours"
                    : "FAIL  no usable colours reached Square");
 const matchesPage = style?.input?.backgroundColor === dark;
@@ -199,7 +244,7 @@ if (problems.length) console.log("console errors:", problems.slice(0, 5));
 
 const failed =
   !attached || stillLoading || !fieldVisible || !reattached ||
-  !styled || !matchesPage || !bigEnough;
+  style === null || !styled || !matchesPage || !bigEnough;
 console.log(failed ? "\nFAILED" : "\nALL PASS");
 await browser.close();
 process.exit(failed ? 1 : 0);
