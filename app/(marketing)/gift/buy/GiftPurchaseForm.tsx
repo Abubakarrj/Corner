@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatPrice } from "../../../shop/products";
+import BackButton from "../../../ui/BackButton";
 import { Button, ButtonLink } from "../../../ui/Button";
 import { PALETTE, SHOP_FONT } from "../../../shop/shopControls";
 import { useSquareCard } from "../../../shop/checkout/useSquareCard";
@@ -201,14 +202,12 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
   return (
     <div style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
       <div className="mx-auto max-w-lg px-5 pb-12 pt-6">
-        <Link
-          href="/gift"
-          className="cb-press inline-block cursor-pointer text-[13px] text-muted underline hover:text-ink"
-        >
-          ← {t("gift.allDesigns")}
-        </Link>
+        {/* The app's own back control. See the note on the balance screen: a
+            fixed link to /gift is a guess about where somebody came from, and
+            it did not look like the back control anywhere else. */}
+        <BackButton fallback="/gift" className="-ml-2.5" />
 
-        <h1 className="m-0 mt-4 text-center text-[22px] font-medium leading-tight tracking-[-0.01em] text-ink">
+        <h1 className="m-0 mt-2 text-center text-[22px] font-medium leading-tight tracking-[-0.01em] text-ink">
           {t("gift.cardTitle")}
         </h1>
 

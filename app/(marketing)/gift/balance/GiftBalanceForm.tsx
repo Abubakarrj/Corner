@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { formatPrice } from "../../../shop/products";
+import BackButton from "../../../ui/BackButton";
 import { ButtonLink, Button } from "../../../ui/Button";
 import { PALETTE, SHOP_FONT } from "../../../shop/shopControls";
 import { useServerText, useT } from "../../../i18n";
@@ -85,19 +85,15 @@ export default function GiftBalanceForm() {
   return (
     <div style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}>
       <div className="mx-auto max-w-md px-5 pb-12 pt-6">
-        <Link
-          href="/gift"
-          className="cb-press inline-block cursor-pointer text-[13px] text-muted underline hover:text-ink"
-        >
-          ← {t("gift.allDesigns")}
-        </Link>
+        {/* The app's own back control, not a link of this screen's own. It goes
+            where the visitor actually came from and falls back to /gift only on
+            a cold launch — a fixed "All designs" link is a guess, and it was a
+            different shape from the one on every other screen. */}
+        <BackButton fallback="/gift" className="-ml-2.5" />
 
-        <h1 className="m-0 mt-4 text-center text-[22px] font-medium leading-tight tracking-[-0.01em] text-ink">
+        <h1 className="m-0 mt-2 text-center text-[22px] font-medium leading-tight tracking-[-0.01em] text-ink">
           {t("gift.balanceTitle")}
         </h1>
-        <p className="m-0 mx-auto mt-2 max-w-xs text-center text-[14px] leading-[1.5] text-muted">
-          {t("gift.balanceLede")}
-        </p>
 
         <form onSubmit={check} noValidate className="mt-6">
           <input
