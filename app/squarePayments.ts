@@ -77,10 +77,49 @@ export type PaymentResult =
     }
   | { ok: false; reason: string; /** True when the customer could fix it by trying another card. */ declined: boolean };
 
+/** The application id, which is the browser's half of taking a card.
+ *
+ *  Public by design and served to the page by /api/payments-config. It is here
+ *  rather than there so that "can this shop charge a card" has one answer in
+ *  one place. */
+export function squareApplicationId(): string | null {
+  return process.env.SQUARE_APPLICATION_ID?.trim() || null;
+}
+
+/** Whether a card can be taken end to end.
+ *
+ *  ⚠️ All three, not two. This used to be `squareConfig() !== null` — the token
+ *  and the location — and that was wrong in a way that fails badly rather than
+ *  quietly:
+ *
+ *  The server needs the token and the location to charge. The *browser* needs
+ *  the application id to mount Square's fields and produce a token at all. With
+ *  the first two set and the third missing, the checkout offers "Pay now by
+ *  card", renders the local fields that cannot tokenize, and then this server —
+ *  believing itself configured — refuses every one of those orders with
+ *  "payment required". A card option that can never be completed is worse than
+ *  no card option.
+ *
+ *  So one predicate, and every gate reads it: the capability the checkout shows,
+ *  the config the browser fetches, and the branch that demands a token. */
 export function isSquarePaymentsConfigured(): boolean {
-  // The same credentials as the till. Square does not separate them, and a
-  // deployment that can create an order can charge for it.
-  return squareConfig() !== null;
+  return squareConfig() !== null && squareApplicationId() !== null;
+}
+
+/** Which of the three is missing, for the log.
+ *
+ *  Same reasoning as reportUberGap in /api/capabilities: a correct-looking
+ *  configuration with one name absent is a feature quietly off and nothing to
+ *  read. Never returned to a browser — which secrets a deployment holds is not
+ *  something to publish. */
+export function missingPaymentsConfig(): string[] {
+  return [
+    ["SQUARE_ACCESS_TOKEN", process.env.SQUARE_ACCESS_TOKEN],
+    ["SQUARE_LOCATION_ID", process.env.SQUARE_LOCATION_ID],
+    ["SQUARE_APPLICATION_ID", process.env.SQUARE_APPLICATION_ID],
+  ]
+    .filter(([, value]) => !value?.trim())
+    .map(([name]) => name as string);
 }
 
 /** Codes where the honest thing to tell the customer is "try another card".

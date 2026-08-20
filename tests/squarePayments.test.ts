@@ -16,7 +16,12 @@
 // The transport is stubbed, so this proves what the app sends and how it reads
 // what comes back. It does not prove Square accepts it — that needs the sandbox.
 
-import { chargeSquare, refundSquare, isSquarePaymentsConfigured } from "../app/squarePayments";
+import {
+  chargeSquare,
+  refundSquare,
+  isSquarePaymentsConfigured,
+  missingPaymentsConfig,
+} from "../app/squarePayments";
 
 let failures = 0;
 const ok = (what: string, cond: boolean, detail = "") => {
@@ -27,6 +32,7 @@ const ok = (what: string, cond: boolean, detail = "") => {
 process.env.SQUARE_ACCESS_TOKEN = "token";
 process.env.SQUARE_LOCATION_ID = "L-default";
 process.env.SQUARE_LOCATION_FIGUEROA = "L-figueroa";
+process.env.SQUARE_APPLICATION_ID = "sandbox-sq0idb-app";
 delete process.env.SQUARE_ENV;
 
 type Wire = Record<string, unknown>;
@@ -76,7 +82,29 @@ const charge = {
 };
 
 async function main() {
-  ok("configured when the till is", isSquarePaymentsConfigured() === true);
+  // ——— All three, not two ———
+  //
+  // ⚠️ The predicate that says "this shop can take a card" has to mean the whole
+  // round trip, not just the server's half. The server charges with the token
+  // and the location; the *browser* needs the application id to mount Square's
+  // fields and produce a token at all.
+  //
+  // With the first two set and the third missing, the checkout offers "Pay now
+  // by card", renders local fields that cannot tokenize, and the server — one
+  // predicate short — refuses every one of those orders as payment-required. A
+  // card option that can never be completed is worse than no card option, which
+  // is what these four assertions exist to stop.
+  ok("configured when all three are present", isSquarePaymentsConfigured() === true);
+  ok("and nothing is reported missing", missingPaymentsConfig().length === 0,
+     JSON.stringify(missingPaymentsConfig()));
+
+  delete process.env.SQUARE_APPLICATION_ID;
+  ok("the browser's half missing means not configured, not half-configured",
+     isSquarePaymentsConfigured() === false);
+  ok("and the log can name which one", 
+     JSON.stringify(missingPaymentsConfig()) === JSON.stringify(["SQUARE_APPLICATION_ID"]),
+     JSON.stringify(missingPaymentsConfig()));
+  process.env.SQUARE_APPLICATION_ID = "sandbox-sq0idb-app";
 
   // ——— An ordinary charge ———
   reset(good);
@@ -232,6 +260,9 @@ async function main() {
   ok("no token, no charge", (await chargeSquare(charge)).ok === false);
   ok("and no request", calls === 0, String(calls));
   ok("and the capability reads false", isSquarePaymentsConfigured() === false);
+  ok("with the token named as the gap",
+     missingPaymentsConfig().includes("SQUARE_ACCESS_TOKEN"),
+     JSON.stringify(missingPaymentsConfig()));
   process.env.SQUARE_ACCESS_TOKEN = "token";
 
   globalThis.fetch = realFetch;

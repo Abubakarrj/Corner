@@ -1,4 +1,8 @@
-import { squareConfig, squareLocationFor } from "../../square";
+import { squareLocationFor } from "../../square";
+import {
+  isSquarePaymentsConfigured,
+  squareApplicationId,
+} from "../../squarePayments";
 
 // What the browser needs to put Square's card fields on the page.
 //
@@ -31,20 +35,18 @@ import { squareConfig, squareLocationFor } from "../../square";
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  const config = squareConfig();
-  const applicationId = process.env.SQUARE_APPLICATION_ID?.trim();
-
-  // All three or nothing. A page given an application id but no location has
-  // everything it needs to render a card field and nothing it needs to
-  // tokenize, which is a form that looks like it works right up until somebody
-  // presses Pay.
-  if (!config || !applicationId) {
+  // All three or nothing, and read through the same predicate the checkout's
+  // capability gate and the order endpoint use. Three copies of "is Square set
+  // up" is how the page comes to believe one thing and the server another —
+  // which in this case would be a card option that renders and then refuses
+  // every order it takes.
+  if (!isSquarePaymentsConfigured()) {
     return Response.json({ provider: null });
   }
 
   return Response.json({
     provider: "square",
-    applicationId,
+    applicationId: squareApplicationId(),
     locationId: squareLocationFor(undefined),
     // "sandbox" or "production", so the browser loads the matching script.
     environment: process.env.SQUARE_ENV?.trim().toLowerCase() === "production"
