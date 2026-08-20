@@ -125,8 +125,41 @@ function chosen(): PosName | null {
     } else if (name) {
       console.info(`[pos] orders are going to ${name}.`);
     }
+    // ——— And whether that till will actually work ———
+    //
+    // Announcing which till was chosen and then finding out it is unusable at
+    // the moment somebody's card is charged is the wrong order to learn things
+    // in. This is the same check /api/status runs, fired once, so the answer
+    // lands in the deployment log next to the announcement — no diagnostic
+    // token, no browser console, no second place to look.
+    //
+    // Not awaited and unable to fail anything: it runs alongside the order that
+    // triggered it, and a network problem here is one line and nothing else.
+    if (name) void reportReach(name);
   }
   return name;
+}
+
+/** Say, once, whether the chosen till can do the job.
+ *
+ *  ⚠️ "Reachable" here means usable, not merely answering — see squareReachable
+ *  in app/square.ts. A token that can see a location it is not allowed to charge
+ *  is the failure this exists to name, and it is invisible from every other
+ *  vantage point until a customer is holding a phone. */
+async function reportReach(name: PosName): Promise<void> {
+  try {
+    const answer = await posReachable();
+    if (answer.ok) {
+      console.info(`[pos] ${name} answered and looks usable.`);
+    } else {
+      console.error(
+        `[pos] ${name} is configured but NOT usable: ${answer.why}` +
+          " Orders and charges will fail until this is fixed.",
+      );
+    }
+  } catch {
+    // A check that cannot run is not a fault to report as one.
+  }
 }
 
 export async function createPosOrder(draft: PosOrderDraft): Promise<PosOrderResult> {

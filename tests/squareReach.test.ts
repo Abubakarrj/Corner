@@ -18,6 +18,7 @@
 // one to have configured.
 
 import { squareReachable, countOpenSquareOrders, squareLocationFor } from "../app/square";
+import { countOpenPosOrders } from "../app/pos";
 
 let failures = 0;
 const ok = (what: string, cond: boolean, detail = "") => {
@@ -167,6 +168,32 @@ async function main() {
   await countOpenSquareOrders();
   const changed = said.filter((line) => /could not count/.test(line));
   ok("and a different failure is news", changed.length === 1, `${changed.length} lines`);
+
+  // ——— And the deployment says it on its own ———
+  //
+  // The reason this is here rather than only on /api/status: somebody debugging
+  // a deploy is reading the deploy's log. A verdict that requires a diagnostic
+  // token and a second URL is a verdict they will not see, and the failure it
+  // reports is invisible from everywhere else until a customer is at the till.
+  said.length = 0;
+  set({ errors: [{ code: "FORBIDDEN", detail: "insufficient permissions" }] }, 403);
+  await countOpenPosOrders();
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+  const verdict = said.filter((line) => /NOT usable/.test(line));
+  ok("the first use of an unusable till says so in the log",
+     verdict.length === 1, JSON.stringify(said));
+  ok("and says orders and charges will fail until it is fixed",
+     verdict.length === 1 && /Orders and charges will fail/.test(verdict[0]),
+     JSON.stringify(verdict));
+
+  // Once per process. This runs on every order; a line per order is the noise
+  // this whole pass was about removing.
+  said.length = 0;
+  await countOpenPosOrders();
+  await new Promise((resolve) => setImmediate(resolve));
+  ok("and does not repeat on the next order",
+     said.filter((line) => /NOT usable/.test(line)).length === 0, JSON.stringify(said));
 
   console.warn = realWarn;
   console.error = realError;
