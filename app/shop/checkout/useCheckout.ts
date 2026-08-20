@@ -19,6 +19,7 @@ import { pushOrder, recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
 import { BRAND_LABEL } from "./card";
 import { useSquareCard, type SquareCardEntry } from "./useSquareCard";
+import { clearDraft, readDraft, writeDraft } from "./draft";
 import { completed, refused } from "../../haptics";
 import { closeFunnel } from "../../navigationDepth";
 import type { Tender } from "./PaymentSection";
@@ -207,12 +208,18 @@ export function useCheckout(): Checkout {
   const fulfillment = useFulfillment();
   const opening = useOpening();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [curbside, setCurbside] = useState(false);
-  const [utensils, setUtensils] = useState(false);
-  const [note, setNote] = useState("");
+  // What was typed before "Edit basket" took them to the cart, or before the
+  // back button, or before the phone discarded the page. A lazy initialiser, so
+  // it is read once at mount and edited freely from then on — the same shape
+  // and the same reason as the delivery fields below. See draft.ts.
+  const saved = useState(readDraft)[0];
+
+  const [firstName, setFirstName] = useState(saved.firstName);
+  const [lastName, setLastName] = useState(saved.lastName);
+  const [phone, setPhone] = useState(saved.phone);
+  const [curbside, setCurbside] = useState(saved.curbside);
+  const [utensils, setUtensils] = useState(saved.utensils);
+  const [note, setNote] = useState(saved.note);
   // Seeded from the destination, not blank.
   //
   // The unit and the courier note were captured while the customer was looking
@@ -231,20 +238,27 @@ export function useCheckout(): Checkout {
   // time and silently drop the unit on every delivery. Same trap FulfillmentGate
   // documents, in a different disguise.
   const [deliveryDetail, setDeliveryDetail] = useState(() => {
+    // The draft wins when there is one: it is what this customer typed on this
+    // screen, and the fulfillment is what they typed on the last one.
+    if (saved.deliveryDetail) return saved.deliveryDetail;
     const known = peekFulfillment();
     return known?.mode === "delivery" ? (known.unit ?? "") : "";
   });
   // Handed over in person by default. "Leave at door" is the choice somebody
   // makes deliberately; defaulting to it would leave bags on doorsteps for
   // people who never asked.
-  const [handoff, setHandoff] = useState<Handoff>("hand");
+  const [handoff, setHandoff] = useState<Handoff>(saved.handoff);
   const [courierNote, setCourierNote] = useState(() => {
+    if (saved.courierNote) return saved.courierNote;
     const known = peekFulfillment();
     return known?.mode === "delivery" ? (known.instructions ?? "") : "";
   });
-  const [tipCents, setTipCents] = useState(0);
+  const [tipCents, setTipCents] = useState(saved.tipCents);
   const [tender, setTender] = useState<Tender>("counter");
-  const [step, setStep] = useState<CheckoutStep>("details");
+  // ⚠️ Only back to payment when the details that gate it still hold — draft.ts
+  // decides that, not this line. Landing somebody on the payment step with an
+  // empty name is a worse welcome than the first step.
+  const [step, setStep] = useState<CheckoutStep>(saved.onPayment ? "payment" : "details");
   const [status, setStatus] = useState<CheckoutStatus>("idle");
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -338,6 +352,42 @@ export function useCheckout(): Checkout {
   // a list would be a new array every render and a key that agreed with it
   // only by convention, and the two drifting is a quote that stops refreshing.
   const basketKey = [...new Set(lines.map((line) => line.slug))].sort().join(",");
+
+  // ——— Saved as it is typed ———
+  //
+  // Every field the customer can fill in, written on each change, so leaving
+  // for the cart and coming back costs nothing. Cheap: one small JSON write to
+  // sessionStorage, and only when something actually changed.
+  //
+  // The card is absent because it cannot be read — it lives in Square's iframe
+  // — and the tender is absent on purpose. See draft.ts.
+  useEffect(() => {
+    writeDraft({
+      firstName,
+      lastName,
+      phone,
+      note,
+      curbside,
+      utensils,
+      tipCents,
+      deliveryDetail,
+      handoff,
+      courierNote,
+      onPayment: step === "payment",
+    });
+  }, [
+    firstName,
+    lastName,
+    phone,
+    note,
+    curbside,
+    utensils,
+    tipCents,
+    deliveryDetail,
+    handoff,
+    courierNote,
+    step,
+  ]);
 
   useEffect(() => {
     if (!deliveryAddress) return;
@@ -695,6 +745,11 @@ export function useCheckout(): Checkout {
       // Signed out, /api/orders answers 204 and nothing happens.
       void pushOrder(record);
 
+      // Done with. Carrying a draft past the order it was written for is how
+      // somebody's note about an allergy ends up on a stranger's sandwich next
+      // week, and how a shared phone in the shop hands over the last
+      // customer's number.
+      clearDraft();
       setPlaced(record);
       setStatus("placed");
       // ——— The way back stops here ———
