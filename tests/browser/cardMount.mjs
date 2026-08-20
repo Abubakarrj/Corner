@@ -68,20 +68,34 @@ window.Square = {
           ".message-icon.is-error": ["color"],
         };
         const style = options && options.style ? options.style : null;
-        if (style) {
+        window.__squareStyle = style;
+        // ⚠️ Validated at attach, not here, because that is when the real SDK
+        // validates. This stub checked at card() and so a style Square rejects
+        // threw past the hook's fallback in production while passing here — the
+        // suite was green over a checkout with no card field on it.
+        const validate = () => {
+          if (!style) return;
           for (const [selector, properties] of Object.entries(style)) {
             const allowed = ALLOWED[selector];
             if (!allowed) throw new Error("unsupported selector " + selector);
-            for (const property of Object.keys(properties)) {
+            for (const [property, value] of Object.entries(properties)) {
               if (!allowed.includes(property)) {
                 throw new Error(property + " is not supported on " + selector);
               }
+              // Values, not just names. Square parses these itself rather than
+              // handing them to a browser: a CSS font stack is a syntax error
+              // to it, and that is what actually broke.
+              if (property === "fontFamily" && /[,'"]/.test(String(value))) {
+                throw new Error(
+                  "Invalid style value '" + value + "' for property 'fontFamily'.",
+                );
+              }
             }
           }
-        }
-        window.__squareStyle = style;
+        };
         return {
           async attach(target) {
+            validate();
             window.__squareAttached = true;
             const el = typeof target === "string" ? document.querySelector(target) : target;
             // Stand in for the real iframe, so a human looking at a screenshot

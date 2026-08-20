@@ -126,7 +126,23 @@ function fieldStyle(): Record<string, Record<string, string>> {
       backgroundColor: surface,
       color: ink,
       fontSize: "16px",
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      // ⚠️ One family name. Not a stack.
+      //
+      // This was a CSS font stack, chosen to be the safe option, and it is what
+      // took the card field off the checkout entirely:
+      //
+      //   Invalid style value '-apple-system, BlinkMacSystemFont, …'
+      //   for property 'fontFamily'
+      //
+      // Square parses this value itself rather than handing it to a browser, and
+      // it accepts a single family. Commas and nested quotes are not a fallback
+      // chain here, they are a syntax error — and the error arrives at attach
+      // time, inside an iframe, which is why it stayed invisible for days.
+      //
+      // Helvetica Neue is the value Square's own documented example uses, so it
+      // is known to be accepted. The page's own face would need to be loadable
+      // from Square's origin, which is a different piece of work.
+      fontFamily: "Helvetica Neue",
     },
     "input::placeholder": { color: quieter },
     // ⚠️ Border only. `.input-container` accepts borderColor, borderRadius and
@@ -236,18 +252,32 @@ export function useSquareCard(): SquareCardEntry {
         // So the theme is an enhancement that is allowed to fail, and the log
         // says which happened rather than leaving somebody to wonder why the
         // colours are wrong.
-        let card: SquareCard;
+        // ⚠️ Both calls, because the second is the one that validates.
+        //
+        // This wrapped payments.card() alone, on the assumption that a style is
+        // checked when it is handed over. It is not: Square validates at attach
+        // time, so an invalid style threw *past* the fallback and took the field
+        // off the page — which is exactly the failure the fallback existed to
+        // prevent, sitting one line above the call that needed it.
+        //
+        // Styled if it can be, plain if it cannot. A white field that works
+        // beats a themed field that is not there, and this app cannot check the
+        // allowed values against a future version of the SDK.
+        let card = await payments.card({ style: fieldStyle() });
+        if (cancelled) return;
         try {
-          card = await payments.card({ style: fieldStyle() });
+          await card.attach(mount);
         } catch (styleError) {
+          const why = styleError instanceof Error ? styleError.message : "unknown";
           console.warn(
             "[square] the card fields refused our styling and are rendering in" +
-              ` Square's default appearance: ${styleError instanceof Error ? styleError.message : "unknown"}`,
+              ` Square's default appearance: ${why}`,
           );
+          await card.destroy?.().catch(() => undefined);
+          if (cancelled) return;
           card = await payments.card();
+          await card.attach(mount);
         }
-        if (cancelled) return;
-        await card.attach(mount);
         if (cancelled) {
           // Attached after the screen went away. Tearing it down here rather
           // than leaving an orphaned iframe listening on a dead node.
