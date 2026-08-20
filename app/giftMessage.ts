@@ -43,8 +43,15 @@ import type { GiftDelivery } from "./giftDelivery";
 // If the buy form ever asks the buyer what the *recipient* reads, this is one
 // function to translate and a column to carry it.
 
-/** The shop's own address, said the same way in the message as on the site. */
-const SHOP = "Corner Bagel, 100 W 5th St, Los Angeles";
+/** How the message signs off.
+ *
+ *  ⚠️ Not a street address, and this used to be one — an invented one, "100 W
+ *  5th St", which is none of the three counters. Naming a street here is wrong
+ *  twice over: the card is stored value on the Square account and spends at any
+ *  counter, so pointing the recipient at one of them is pointing them away from
+ *  the other two. Where the shops are is a question the site answers properly,
+ *  with a map and opening hours per counter. */
+const SHOP = "Corner Bagel · thecornerbagel.com";
 
 /** One GSM-7 segment. See the note where the text message is assembled. */
 const SMS_LIMIT = 160;
