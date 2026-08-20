@@ -17,7 +17,7 @@
 // involved. These are the four ways a location that exists is still the wrong
 // one to have configured.
 
-import { squareReachable } from "../app/square";
+import { squareReachable, countOpenSquareOrders, squareLocationFor } from "../app/square";
 
 let failures = 0;
 const ok = (what: string, cond: boolean, detail = "") => {
@@ -130,6 +130,46 @@ async function main() {
   const off = await squareReachable();
   ok("and an unconfigured Square says so plainly", off.ok === false, JSON.stringify(off));
   process.env.SQUARE_ACCESS_TOKEN = "token";
+
+  // ——— A standing fault says itself once ———
+  //
+  // This is read three times per kitchen-load poll and on every order, so a
+  // line per call is a steady drip that buries whatever else the log has to
+  // say. That cost was not hypothetical: a real FORBIDDEN from Square arrived
+  // among dozens of copies of a configuration note.
+  const said: string[] = [];
+  const realWarn = console.warn;
+  const realError = console.error;
+  console.warn = (...args: unknown[]) => said.push(String(args[0]));
+  console.error = (...args: unknown[]) => said.push(String(args[0]));
+
+  process.env.SQUARE_LOCATION_ID = "L-ours";
+  delete process.env.SQUARE_LOCATION_WILSHIRE;
+  squareLocationFor("wilshire");
+  squareLocationFor("wilshire");
+  squareLocationFor("wilshire");
+  const aboutWilshire = said.filter((line) => /SQUARE_LOCATION_WILSHIRE/.test(line));
+  ok("an unmapped counter is mentioned once, not once per call",
+     aboutWilshire.length === 1, `${aboutWilshire.length} lines`);
+
+  // The reason is what is remembered, not the fact — so a fault that changes
+  // still gets a line of its own.
+  said.length = 0;
+  set({ errors: [{ code: "FORBIDDEN", detail: "insufficient permissions" }] }, 403);
+  await countOpenSquareOrders();
+  await countOpenSquareOrders();
+  const forbidden = said.filter((line) => /could not count/.test(line));
+  ok("a standing count failure is reported once", forbidden.length === 1,
+     `${forbidden.length} lines`);
+
+  said.length = 0;
+  set({ errors: [{ code: "RATE_LIMITED", detail: "slow down" }] }, 429);
+  await countOpenSquareOrders();
+  const changed = said.filter((line) => /could not count/.test(line));
+  ok("and a different failure is news", changed.length === 1, `${changed.length} lines`);
+
+  console.warn = realWarn;
+  console.error = realError;
 
   globalThis.fetch = realFetch;
   console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);

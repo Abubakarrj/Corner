@@ -97,7 +97,18 @@ export function squareLocationFor(counter: string | undefined): string | null {
   if (!counter) return config.locationId;
   const named = process.env[`SQUARE_LOCATION_${counter.toUpperCase()}`]?.trim();
   if (named) return named;
-  if (LOCATIONS.some((store) => store.id === counter)) {
+  if (LOCATIONS.some((store) => store.id === counter) && !warned.has(counter)) {
+    // ⚠️ Once per counter, not once per call.
+    //
+    // This is read on every order and three times on every kitchen-load poll,
+    // so warning each time produced a steady drip of three identical lines a
+    // minute. That is not diligence, it is a log nobody can read — and the cost
+    // showed up exactly when it mattered, with a real FORBIDDEN from Square
+    // buried among dozens of copies of a configuration note.
+    //
+    // A standing condition deserves one line. Something that has changed
+    // deserves a new one.
+    warned.add(counter);
     console.warn(
       `[square] no SQUARE_LOCATION_${counter.toUpperCase()} for the ${counter} counter;` +
         ` its orders are going to SQUARE_LOCATION_ID. Square's own per-location` +
@@ -106,6 +117,10 @@ export function squareLocationFor(counter: string | undefined): string | null {
   }
   return config.locationId;
 }
+
+/** Counters whose missing mapping has already been mentioned. Per process, and
+ *  so reset by a deploy — which is when somebody is most likely to be reading. */
+const warned = new Set<string>();
 
 export function headers(config: SquareConfig): Record<string, string> {
   return {
@@ -500,6 +515,9 @@ export async function fetchSquareOrder(id: string): Promise<PosOrderState | null
  *  have two hundred tickets open at once. */
 const LIMIT = 200;
 
+/** The last reason the count failed, so a standing fault is said once. */
+let lastCountFailure: string | null = null;
+
 export async function countOpenSquareOrders(): Promise<number | null> {
   const config = squareConfig();
   if (!config) return null;
@@ -541,10 +559,23 @@ export async function countOpenSquareOrders(): Promise<number | null> {
   if (!response || !response.ok) {
     if (response) {
       const detail = await response.text().catch(() => "");
-      console.error(`[square] could not count open orders: ${explainSquare(response.status, detail)}`);
+      const why = explainSquare(response.status, detail);
+      // The same reasoning as the counter warning above, with one difference:
+      // the *reason* is remembered rather than the fact. A standing FORBIDDEN
+      // says itself once; the same call starting to fail differently is news
+      // and gets its own line.
+      if (lastCountFailure !== why) {
+        lastCountFailure = why;
+        console.error(
+          `[square] could not count open orders: ${why}.` +
+            " The busyness line falls back to our own queue; this repeats" +
+            " silently until it changes.",
+        );
+      }
     }
     return null;
   }
+  lastCountFailure = null;
 
   const parsed = (await response.json().catch(() => null)) as {
     order_entries?: unknown[];
