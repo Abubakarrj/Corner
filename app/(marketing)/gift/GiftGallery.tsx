@@ -154,7 +154,15 @@ export default function GiftGallery() {
         open={redeeming || pendingCard !== null}
         intent={redeeming ? "redeem" : "send"}
         guestHref={
-          redeeming || pendingCard === null ? undefined : `/gift/buy?design=${pendingCard}`
+          // Redeeming has somewhere to go now. It used to be `undefined`,
+          // which closed the sheet on somebody holding a card and asking a
+          // reasonable question — reading a balance needed a gift card API
+          // this app did not have. It has one.
+          redeeming
+            ? "/gift/balance"
+            : pendingCard === null
+              ? undefined
+              : `/gift/buy?design=${pendingCard}`
         }
         onClose={() => {
           setRedeeming(false);

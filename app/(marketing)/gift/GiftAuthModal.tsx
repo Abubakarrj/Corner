@@ -25,9 +25,11 @@ const { cream, surface, olive, controlBorder, sage } = PALETTE;
 //
 //   {t("gift.continueAsGuest")}  goes on to the purchase flow when there is one to go
 //                      on to (`guestHref`), and otherwise closes the sheet.
-//                      Redeeming still has nowhere to continue to: reading a
-//                      card's balance needs Toast's gift card API, so that
-//                      door closes rather than pretending.
+//                      Redeeming used to have nowhere to go — reading a card's
+//                      balance needed a gift card API this app did not have —
+//                      and now goes to /gift/balance. That screen needs no
+//                      account, which is right: somebody holding a card should
+//                      not have to sign up to find out whether it is empty.
 export type GiftIntent = "send" | "redeem";
 
 // String keys rather than sentences, translated where they're rendered. This
