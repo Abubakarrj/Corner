@@ -257,7 +257,22 @@ export function useSquareCard(): SquareCardEntry {
         mounted = card;
         cardRef.current = card;
         setReady(true);
-      } catch {
+      } catch (mountError) {
+        // ⚠️ Said out loud, because the screen cannot say it.
+        //
+        // The customer gets one sentence — there is nothing useful to tell
+        // somebody who just wants a bagel — but whoever is configuring this
+        // needs the actual reason, and every way this fails looks identical
+        // from the outside: an empty box and a red line.
+        //
+        // window.Square.payments() throws when the application id and the
+        // location id are not from the same Square account, which is the same
+        // mismatch that makes the server's calls come back FORBIDDEN. One cause,
+        // two symptoms, and this is the half that was silent.
+        console.error(
+          "[square] the card fields could not be mounted:",
+          mountError instanceof Error ? mountError.message : mountError,
+        );
         if (!cancelled) setError("mount");
       }
     })();
