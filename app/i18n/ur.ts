@@ -513,6 +513,7 @@ export const ur: Table = {
   "gift.deliveryEmail": "ای میل",
   "gift.deliveryText": "ٹیکسٹ",
   "gift.deliverySelf": "پہلے آپ کو",
+  "gift.sendsOnTheDay": "آپ کی رسید بھیج دی گئی ہے۔ کارڈ اُس تاریخ کو جائے گا جو آپ نے چنی۔",
   "gift.receiptOnWay": "رسید آپ کو بھیجی جا رہی ہے۔",
   "gift.paymentLinkOnWay": "ہم آپ کو ادائیگی کا لنک ای میل کریں گے، ادائیگی ہوتے ہی کارڈ چلا جائے گا۔",
   "gift.comingToYouOn": "{date} کو آپ تک پہنچے گا۔",
@@ -530,6 +531,8 @@ export const ur: Table = {
   "gift.errCheckRecipient": "وصول کنندہ کی تفصیلات دیکھ لیں۔",
   "gift.errNotAnAmount": "یہ گفٹ کارڈ کی وہ رقم نہیں جو ہم بیچتے ہیں۔",
   "gift.errChooseSend": "بھیجنے کا طریقہ منتخب کریں۔",
+  "gift.errNoTextYet": "ابھی ہم ٹیکسٹ کے ذریعے کارڈ نہیں بھیج سکتے۔ ای میل منتخب کریں۔",
+  "gift.errCannotSend": "ابھی ہم اس طریقے سے کارڈ نہیں بھیج سکتے۔ بھیجنے کا کوئی اور طریقہ آزمائیں۔",
   "gift.errPickDesign": "کارڈ کا ڈیزائن منتخب کریں۔",
   "gift.errConfirmMismatch": "یہ آپس میں نہیں ملتے۔",
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatPrice } from "../../../shop/products";
 import { Button, ButtonLink } from "../../../ui/Button";
 import { PALETTE, SHOP_FONT } from "../../../shop/shopControls";
-import { useCapabilities } from "../../../capabilities";
+import { useSquareCard } from "../../../shop/checkout/useSquareCard";
 import { useLocale, useServerText, useT } from "../../../i18n";
 import { localeById } from "../../../localeScript";
 import { GIFT_CARDS } from "../giftCards";
@@ -39,7 +39,30 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
   const t = useT();
   // The API answers with string keys, not sentences — see serverText().
   const st = useServerText();
-  const { payments } = useCapabilities();
+  // ——— The card fields, from the checkout ———
+  //
+  // The same hook the food checkout uses, deliberately. A gift card is the one
+  // thing here that genuinely has to be paid for up front, which makes it the
+  // last place to write a second card form: two of them is two things to keep
+  // in PCI scope, two sets of styling to get wrong, and two places a number
+  // could end up in this app's own state. Neither holds one — the digits are
+  // typed into Square's document inside an iframe and the only thing that
+  // crosses back is a single-use token.
+  //
+  // ⚠️ Destructured at the call, not read through an object in the JSX below,
+  // and not for tidiness: `mountRef` is a callback ref, and the refs lint rule
+  // treats every property reached through the same object as a ref read during
+  // render. It is right to be suspicious — a value read off a ref while
+  // rendering is a value React will not re-render for — and these three are
+  // state, so saying so plainly is both correct and quiet. CardFields.tsx pulls
+  // them apart for the same reason.
+  const {
+    enabled: cardEnabled,
+    ready: cardReady,
+    error: cardError,
+    mountRef: cardMount,
+    tokenize: tokenizeCard,
+  } = useSquareCard();
   const design = useMemo(
     () => GIFT_CARDS.find((card) => card.id === designId) ?? GIFT_CARDS[0],
     [designId],
@@ -61,6 +84,10 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
+  // What actually happened, as reported by /api/gift-card. Not assumed from
+  // whether this shop can take cards: telling somebody their gift is on its way
+  // when it is not is the failure the confirmation screen exists to avoid.
+  const [issued, setIssued] = useState({ paid: false, sent: false });
 
   const order: GiftOrder = {
     designId: design.id,
@@ -102,16 +129,53 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
 
     setSending(true);
     setError(null);
+
+    // ⚠️ The card first, and everything else after.
+    //
+    // tokenize() can put a bank's 3-D Secure challenge on screen, which has to
+    // happen while the buyer is still here rather than after the request is
+    // away. A card that will not tokenize is a purchase that must not proceed:
+    // nothing has been charged and no card exists, so this is a correction
+    // rather than a failure.
+    let payment: { token: string; verificationToken?: string } | null = null;
+    if (cardEnabled) {
+      payment = await tokenizeCard({
+        amountCents: totalCents,
+        firstName: "",
+        lastName: "",
+        email: buyerEmail.trim(),
+        phone: "",
+      });
+      if (!payment) {
+        setError("checkout.cardNotAccepted");
+        setSending(false);
+        return;
+      }
+    }
+
     try {
       const response = await fetch("/api/gift-card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...order, buyerEmail }),
+        body: JSON.stringify({
+          ...order,
+          buyerEmail,
+          // ⚠️ A single-use token, never a card number. There is no PAN in this
+          // component, in this file, or in this request.
+          ...(payment ? { paymentToken: payment.token } : {}),
+          ...(payment?.verificationToken
+            ? { verificationToken: payment.verificationToken }
+            : {}),
+        }),
       });
+      const body = await response.json().catch(() => null);
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
         throw new Error(body?.error ?? "checkout.somethingWentWrong");
       }
+      // What the confirmation screen is allowed to claim, straight from the
+      // server rather than assumed. A card dated for Saturday is issued and
+      // paid for today and does not go out until Saturday.
+      setIssued({ paid: body?.paid === true, sent: body?.sent === true });
       setStep("done");
     } catch (payError) {
       setError(
@@ -123,7 +187,15 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
   }
 
   if (step === "done") {
-    return <Sent order={order} totalCents={totalCents} design={design} paid={payments} />;
+    return (
+      <Sent
+        order={order}
+        totalCents={totalCents}
+        design={design}
+        paid={issued.paid}
+        sent={issued.sent}
+      />
+    );
   }
 
   return (
@@ -371,16 +443,35 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
             </Block>
 
             <Block title={t("gift.payment")}>
-              {/* No card fields of our own, ever. A gift card is the one thing
-                  here that genuinely has to be paid for up front, which makes
-                  it the last place to hand-roll a card form — the number
-                  belongs in the processor's hosted element, not in this page.
-                  See app/toast.ts. */}
-              {payments ? (
-                <div
-                  id="toast-payment-element"
-                  className="rounded-xl border border-line-soft p-4"
-                />
+              {/* No card fields of our own, ever. The boxes below are Square's
+                  own document inside iframes: this page cannot read what is
+                  typed into them, which is a stronger guarantee than a promise
+                  not to look and is what keeps a card number out of this
+                  deployment altogether. */}
+              {cardEnabled ? (
+                <>
+                  {/* No border of our own — Square draws the field's frame from
+                      this page's own colours, and a wrapper would put a second
+                      box around the first. The reserved height is held only
+                      while the fields are loading, so the form does not jump
+                      under somebody's thumb; once the mount has failed it would
+                      be an empty box above an error, so it goes. */}
+                  <div
+                    ref={cardMount}
+                    className={cardError ? "" : "min-h-[52px]"}
+                  />
+                  {/* Loading and broken are different, and the difference
+                      matters: one resolves on its own and the other never will. */}
+                  {cardError ? (
+                    <p className="m-0 mt-2 text-[12px] text-brand-red">
+                      {t("checkout.cardNotAccepted")}
+                    </p>
+                  ) : !cardReady ? (
+                    <p className="m-0 mt-2 text-[12px] text-quiet">
+                      {t("checkout.cardLoading")}
+                    </p>
+                  ) : null}
+                </>
               ) : (
                 <div className="rounded-xl border border-line-soft p-4">
                   <p className="m-0 text-[14px] text-ink">{t("gift.payByLink")}</p>
@@ -413,7 +504,16 @@ export default function GiftPurchaseForm({ designId }: { designId: string }) {
               </p>
             ) : null}
 
-            <Button type="submit" block className="mt-5" disabled={sending}>
+            {/* ⚠️ Not clickable until the card fields are actually there.
+                Without this, a tap while they are still loading tokenizes
+                nothing, comes back null, and tells somebody their card was not
+                accepted — about a field they have not typed into yet. */}
+            <Button
+              type="submit"
+              block
+              className="mt-5"
+              disabled={sending || (cardEnabled && !cardReady)}
+            >
               {sending
                 ? t("gift.sending")
                 : t("gift.placeOrder", { total: formatPrice(totalCents) })}
@@ -438,11 +538,15 @@ function Sent({
   totalCents,
   design,
   paid,
+  sent,
 }: {
   order: GiftOrder;
   totalCents: number;
   design: (typeof GIFT_CARDS)[number];
   paid: boolean;
+  /** Whether the card has actually gone out. False for one dated later, which
+   *  is the normal case and not a problem — see the closing line below. */
+  sent: boolean;
 }) {
   const t = useT();
   const tag = localeById(useLocale()).tag;
@@ -503,9 +607,14 @@ function Sent({
 
       {/* Said plainly rather than buried: telling somebody their gift is on
           its way when it hasn't been paid for is the failure this screen has
-          to avoid. */}
+          to avoid. Three states, because there are three — paid and delivered,
+          paid and waiting for its date, and not paid at all. */}
       <p className="m-0 mx-auto mt-5 max-w-xs text-[12px] leading-[1.6] text-quiet">
-        {paid ? t("gift.receiptOnWay") : t("gift.paymentLinkOnWay")}
+        {!paid
+          ? t("gift.paymentLinkOnWay")
+          : sent
+            ? t("gift.receiptOnWay")
+            : t("gift.sendsOnTheDay")}
       </p>
 
       <ButtonLink href="/gift" className="mt-6 w-full max-w-[280px]">

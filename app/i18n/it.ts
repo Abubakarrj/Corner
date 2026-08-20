@@ -552,6 +552,7 @@ export const it: Table = {
   "gift.deliveryEmail": "E-mail",
   "gift.deliveryText": "SMS",
   "gift.deliverySelf": "Prima a te",
+  "gift.sendsOnTheDay": "La ricevuta è in arrivo. La carta partirà nella data che hai scelto.",
   "gift.receiptOnWay": "Una ricevuta è in arrivo per te.",
   "gift.paymentLinkOnWay":
     "Ti mandiamo un link di pagamento via e-mail — la carta parte appena è pagata.",
@@ -570,6 +571,8 @@ export const it: Table = {
   "gift.errCheckRecipient": "Controlla i dati del destinatario.",
   "gift.errNotAnAmount": "Non è un importo di carta regalo che vendiamo.",
   "gift.errChooseSend": "Scegli come inviarla.",
+  "gift.errNoTextYet": "Al momento non possiamo inviare una carta via SMS. Scegli l'e-mail.",
+  "gift.errCannotSend": "Al momento non possiamo inviare una carta in questo modo. Prova un altro modo di inviarla.",
   "gift.errPickDesign": "Scegli un modello di carta.",
   "gift.errConfirmMismatch": "I due non coincidono.",
 

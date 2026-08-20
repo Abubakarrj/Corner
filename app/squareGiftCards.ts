@@ -102,6 +102,49 @@ async function call(
   return { ok: true, body: parsed ?? {} };
 }
 
+/** Read one card back, by Square's id for it.
+ *
+ *  ⚠️ This is how the number is recovered at the moment of sending. The
+ *  delivery queue deliberately does not store it — see the note at the top of
+ *  giftDelivery.ts — so a card bought on Tuesday for a birthday on Saturday is
+ *  fetched from Square on Saturday morning, put in one message, and dropped.
+ *
+ *  Nothing here ever logs the result. */
+export async function giftCardById(
+  giftCardId: string,
+): Promise<{ ok: true; gan: string; balanceCents: number; state: string } | { ok: false; reason: string }> {
+  const config = squareConfig();
+  if (!config) return { ok: false, reason: "not-configured" };
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${config.host}/v2/gift-cards/${encodeURIComponent(giftCardId)}`,
+      { headers: headers(config), cache: "no-store" },
+    );
+  } catch (networkError) {
+    return {
+      ok: false,
+      reason: `network: ${networkError instanceof Error ? networkError.message : "unknown"}`,
+    };
+  }
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    return { ok: false, reason: explainSquare(response.status, detail) };
+  }
+  const parsed = (await response.json().catch(() => null)) as
+    | { gift_card?: SquareGiftCard }
+    | null;
+  const card = parsed?.gift_card;
+  if (!card?.gan) return { ok: false, reason: "no-number-on-card" };
+  return {
+    ok: true,
+    gan: card.gan,
+    balanceCents: card.balance_money?.amount ?? 0,
+    state: card.state ?? "UNKNOWN",
+  };
+}
+
 /** The order a gift card is sold on.
  *
  *  One line, typed GIFT_CARD so Square knows what it is, and no tax: a gift

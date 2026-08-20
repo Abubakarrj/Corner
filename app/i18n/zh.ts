@@ -511,6 +511,7 @@ export const zh: Table = {
   "gift.deliveryEmail": "邮件",
   "gift.deliveryText": "短信",
   "gift.deliverySelf": "先给你自己",
+  "gift.sendsOnTheDay": "收据已发送。礼品卡会在你选择的日期送出。",
   "gift.receiptOnWay": "收据已经发给你了。",
   "gift.paymentLinkOnWay": "我们会把付款链接发到你的邮箱，付款完成后卡片立即送出。",
   "gift.comingToYouOn": "将于 {date} 送达。",
@@ -528,6 +529,8 @@ export const zh: Table = {
   "gift.errCheckRecipient": "请检查收礼人的信息。",
   "gift.errNotAnAmount": "我们不出售这个金额的礼品卡。",
   "gift.errChooseSend": "请选择发送方式。",
+  "gift.errNoTextYet": "目前无法通过短信发送礼品卡。请选择电子邮件。",
+  "gift.errCannotSend": "目前无法用这种方式发送礼品卡。请换一种发送方式。",
   "gift.errPickDesign": "请选择一款卡面。",
   "gift.errConfirmMismatch": "两次填写不一致。",
 

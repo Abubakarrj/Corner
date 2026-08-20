@@ -560,6 +560,7 @@ export const en = {
   "gift.deliveryEmail": "Email",
   "gift.deliveryText": "Text",
   "gift.deliverySelf": "To you first",
+  "gift.sendsOnTheDay": "Your receipt is on its way. The card goes out on the date you picked.",
   "gift.receiptOnWay": "A receipt is on its way to you.",
   "gift.paymentLinkOnWay": "We'll email you a payment link — the card goes out as soon as it's paid.",
   "gift.comingToYouOn": "Coming to you on {date}.",
@@ -577,6 +578,8 @@ export const en = {
   "gift.errCheckRecipient": "Check the recipient details.",
   "gift.errNotAnAmount": "That isn't a gift card amount we sell.",
   "gift.errChooseSend": "Choose how to send it.",
+  "gift.errNoTextYet": "We can't send a card by text right now. Choose email instead.",
+  "gift.errCannotSend": "We can't send a card that way right now. Try another way to send it.",
   "gift.errPickDesign": "Pick a card design.",
   "gift.errConfirmMismatch": "Those don't match.",
 

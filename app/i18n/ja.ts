@@ -510,6 +510,7 @@ export const ja: Table = {
   "gift.deliveryEmail": "メール",
   "gift.deliveryText": "SMS",
   "gift.deliverySelf": "まず自分に",
+  "gift.sendsOnTheDay": "領収書をお送りしました。カードはお選びの日に届きます。",
   "gift.receiptOnWay": "領収書をお送りします。",
   "gift.paymentLinkOnWay": "お支払いリンクをメールでお送りします。お支払いが済み次第、カードをお届けします。",
   "gift.comingToYouOn": "{date}にお届けします。",
@@ -527,6 +528,8 @@ export const ja: Table = {
   "gift.errCheckRecipient": "受取人の情報をご確認ください。",
   "gift.errNotAnAmount": "当店で取り扱っているギフトカードの金額ではありません。",
   "gift.errChooseSend": "送り方を選んでください。",
+  "gift.errNoTextYet": "現在、ショートメッセージでカードをお送りできません。メールをお選びください。",
+  "gift.errCannotSend": "現在、その方法ではカードをお送りできません。別の方法をお選びください。",
   "gift.errPickDesign": "カードのデザインを選んでください。",
   "gift.errConfirmMismatch": "一致しません。",
 

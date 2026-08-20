@@ -515,6 +515,7 @@ export const es: Table = {
   "gift.deliveryEmail": "Correo",
   "gift.deliveryText": "Mensaje",
   "gift.deliverySelf": "A ti primero",
+  "gift.sendsOnTheDay": "Tu recibo va en camino. La tarjeta se enviará en la fecha que elegiste.",
   "gift.receiptOnWay": "El recibo va en camino.",
   "gift.paymentLinkOnWay": "Te enviaremos un enlace de pago por correo; la tarjeta sale en cuanto se pague.",
   "gift.comingToYouOn": "Te llega el {date}.",
@@ -532,6 +533,8 @@ export const es: Table = {
   "gift.errCheckRecipient": "Revisa los datos del destinatario.",
   "gift.errNotAnAmount": "Ese no es un importe de tarjeta que vendamos.",
   "gift.errChooseSend": "Elige cómo enviarla.",
+  "gift.errNoTextYet": "Ahora mismo no podemos enviar una tarjeta por mensaje de texto. Elige el correo electrónico.",
+  "gift.errCannotSend": "Ahora mismo no podemos enviar una tarjeta de esa forma. Prueba otra manera de enviarla.",
   "gift.errPickDesign": "Elige un diseño de tarjeta.",
   "gift.errConfirmMismatch": "No coinciden.",
 

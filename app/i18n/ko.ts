@@ -510,6 +510,7 @@ export const ko: Table = {
   "gift.deliveryEmail": "이메일",
   "gift.deliveryText": "문자",
   "gift.deliverySelf": "먼저 나에게",
+  "gift.sendsOnTheDay": "영수증을 보내드렸습니다. 카드는 선택하신 날짜에 발송됩니다.",
   "gift.receiptOnWay": "영수증을 보내드렸습니다.",
   "gift.paymentLinkOnWay": "결제 링크를 이메일로 보내드립니다. 결제가 완료되면 카드가 발송됩니다.",
   "gift.comingToYouOn": "{date}에 도착합니다.",
@@ -527,6 +528,8 @@ export const ko: Table = {
   "gift.errCheckRecipient": "받는 분 정보를 확인해 주세요.",
   "gift.errNotAnAmount": "저희가 판매하는 기프트 카드 금액이 아닙니다.",
   "gift.errChooseSend": "보낼 방법을 선택해 주세요.",
+  "gift.errNoTextYet": "지금은 문자로 카드를 보낼 수 없습니다. 이메일을 선택해 주세요.",
+  "gift.errCannotSend": "지금은 그 방법으로 카드를 보낼 수 없습니다. 다른 방법을 선택해 주세요.",
   "gift.errPickDesign": "카드 디자인을 선택해 주세요.",
   "gift.errConfirmMismatch": "일치하지 않습니다.",
 

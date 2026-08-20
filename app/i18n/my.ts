@@ -511,6 +511,7 @@ export const my: Table = {
   "gift.deliveryEmail": "အီးမေးလ်",
   "gift.deliveryText": "စာတို",
   "gift.deliverySelf": "သင့်ထံ အရင်",
+  "gift.sendsOnTheDay": "ပြေစာကို ပို့လိုက်ပါပြီ။ ကတ်ကို သင်ရွေးထားသည့်နေ့တွင် ပို့ပါမည်။",
   "gift.receiptOnWay": "ပြေစာကို သင့်ထံ ပို့နေပါသည်။",
   "gift.paymentLinkOnWay": "ငွေပေးချေရန် လင့်ခ်ကို အီးမေးလ်ဖြင့် ပို့ပါမည်။ ငွေပေးချေပြီးသည်နှင့် ကတ် ထွက်သွားပါမည်။",
   "gift.comingToYouOn": "{date} တွင် သင့်ထံ ရောက်ပါမည်။",
@@ -528,6 +529,8 @@ export const my: Table = {
   "gift.errCheckRecipient": "လက်ခံသူ၏ အချက်အလက်များကို စစ်ဆေးပါ။",
   "gift.errNotAnAmount": "ဤပမာဏဖြင့် လက်ဆောင်ကတ် ရောင်းချခြင်း မရှိပါ။",
   "gift.errChooseSend": "ပို့မည့်နည်းလမ်း ရွေးပါ။",
+  "gift.errNoTextYet": "ယခုအချိန်တွင် စာတိုဖြင့် ကတ်ပို့၍မရပါ။ အီးမေးလ်ကို ရွေးပါ။",
+  "gift.errCannotSend": "ယခုအချိန်တွင် ထိုနည်းဖြင့် ကတ်ပို့၍မရပါ။ အခြားနည်းလမ်းတစ်ခု ရွေးပါ။",
   "gift.errPickDesign": "ကတ် ဒီဇိုင်း ရွေးပါ။",
   "gift.errConfirmMismatch": "နှစ်ခု ကိုက်ညီမှု မရှိပါ။",
 

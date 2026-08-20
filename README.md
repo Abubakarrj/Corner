@@ -22,7 +22,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Scheduled jobs
 
-Nothing in this app runs on a timer. One job needs to, and it is one
+Nothing in this app runs on a timer. Two jobs need to, and each is one
 authenticated request a day.
 
 ### The daily demand digest
@@ -53,6 +53,40 @@ curl -fsS -X POST "https://thecornerbagel.com/api/digest?day=2026-08-19" \
 Needs `KITCHEN_TOKEN`, `RESEND_API_KEY` and `CORNER_DATABASE_URL`. Without the
 database nothing is counted and the endpoint says so rather than mailing a page
 of zeroes.
+
+### Gift cards dated for later
+
+A gift card bought on Tuesday for a birthday on Saturday is issued and paid for
+on Tuesday and has to arrive on Saturday. This is what sends it:
+
+```sh
+curl -fsS -X POST https://thecornerbagel.com/api/gift-send \
+     -H "Authorization: Bearer $KITCHEN_TOKEN"
+```
+
+`0 15 * * *` again, and for a better reason than the digest's: a birthday card
+should arrive with breakfast rather than at midnight. The day it compares
+against is the shop's own, so a schedule at `0 0 * * *` would be looking at
+tomorrow for everybody west of Greenwich.
+
+Safe to run more often, and safe to run twice by accident — a card that has been
+sent is no longer owed, so the second run finds nothing. To catch up after an
+outage, name the day; cards dated before it are owed too, so this only moves the
+line forward:
+
+```sh
+curl -fsS -X POST "https://thecornerbagel.com/api/gift-send?day=2026-08-19" \
+     -H "Authorization: Bearer $KITCHEN_TOKEN"
+```
+
+It answers `200` with `{ sent, failed, considered }` as long as it ran. **A run
+that answers `failed: 3` is not a success** — that is three people who have not
+got their present, each row still owed with its reason recorded, and worth
+alerting on. A cron job that goes red on one dead mailbox is a cron job somebody
+switches off, which is why the status code does not carry that.
+
+Needs `KITCHEN_TOKEN`, `CORNER_DATABASE_URL`, Square, and whichever of
+`RESEND_API_KEY` / `TWILIO_*` the queued cards are going out through.
 
 ## Learn More
 

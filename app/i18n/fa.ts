@@ -552,6 +552,7 @@ export const fa: Table = {
   "gift.deliveryEmail": "ایمیل",
   "gift.deliveryText": "پیامک",
   "gift.deliverySelf": "اول برای شما",
+  "gift.sendsOnTheDay": "رسید شما در راه است. کارت در تاریخی که انتخاب کردید فرستاده می‌شود.",
   "gift.receiptOnWay": "رسید در راه شماست.",
   "gift.paymentLinkOnWay":
     "پیوند پرداخت را برایتان ایمیل می‌کنیم — کارت به محض پرداخت ارسال می‌شود.",
@@ -570,6 +571,8 @@ export const fa: Table = {
   "gift.errCheckRecipient": "اطلاعات گیرنده را بررسی کنید.",
   "gift.errNotAnAmount": "این مبلغی نیست که برای کارت هدیه بفروشیم.",
   "gift.errChooseSend": "روش ارسال را انتخاب کنید.",
+  "gift.errNoTextYet": "در حال حاضر نمی‌توانیم کارت را با پیامک بفرستیم. ایمیل را انتخاب کنید.",
+  "gift.errCannotSend": "در حال حاضر نمی‌توانیم کارت را از این راه بفرستیم. راه دیگری برای فرستادن انتخاب کنید.",
   "gift.errPickDesign": "یک طرح کارت انتخاب کنید.",
   "gift.errConfirmMismatch": "این دو با هم نمی‌خوانند.",
 
