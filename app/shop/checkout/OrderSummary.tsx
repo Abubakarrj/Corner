@@ -113,6 +113,24 @@ export default function OrderSummary({ checkout }: { checkout: Checkout }) {
             strong
           />
         </div>
+        {/* ——— What a gift card takes off it ———
+            Under the total rather than in among the charges, because it is not
+            one: the order still comes to the total, and this is what has
+            already been paid towards it. Somebody reading their bank statement
+            later needs both numbers to make sense of each other. */}
+        {checkout.giftAppliedCents > 0 ? (
+          <div className="mt-1 border-t border-line pt-2">
+            <Money
+              label={t("checkout.giftCard")}
+              amount={`−${formatPrice(checkout.giftAppliedCents)}`}
+            />
+            <Money
+              label={t("checkout.dueNow")}
+              amount={formatPrice(checkout.dueNowCents)}
+              strong
+            />
+          </div>
+        ) : null}
       </div>
     </Disclosure>
   );

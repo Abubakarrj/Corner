@@ -219,6 +219,13 @@ export const it: Table = {
   "checkout.tenderCounterHint":
     "Lo teniamo pronto. Carta, Apple Pay, Google Pay o contanti al ritiro.",
   "checkout.tenderCard": "Paga adesso con carta",
+  "checkout.giftCard": "Carta regalo",
+  "checkout.dueNow": "Resta da pagare",
+  "checkout.giftCardNumber": "Numero della carta regalo",
+  "checkout.giftApply": "Applica",
+  "checkout.giftApplied": "Carta regalo: −{amount}",
+  "checkout.giftCoversAll": "Copre tutto l'ordine. Non resta nulla da pagare.",
+  "checkout.giftLeavesDue": "Restano {amount} da pagare.",
   "checkout.tenderCardHint": "Addebitata al momento dell’ordine.",
   "checkout.addTip": "Lascia una mancia",
   "checkout.noTip": "Nessuna mancia",

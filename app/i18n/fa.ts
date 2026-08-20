@@ -225,6 +225,13 @@ export const fa: Table = {
   "checkout.tenderCounterHint":
     "آماده نگه می‌داریم. هنگام تحویل با کارت، Apple Pay، Google Pay یا نقدی.",
   "checkout.tenderCard": "همین حالا با کارت پرداخت کنید",
+  "checkout.giftCard": "کارت هدیه",
+  "checkout.dueNow": "باقی‌ماندهٔ پرداخت",
+  "checkout.giftCardNumber": "شمارهٔ کارت هدیه",
+  "checkout.giftApply": "اعمال",
+  "checkout.giftApplied": "کارت هدیه: −{amount}",
+  "checkout.giftCoversAll": "همهٔ سفارش را پوشش می‌دهد. چیزی برای پرداخت نمانده است.",
+  "checkout.giftLeavesDue": "{amount} برای پرداخت مانده است.",
   "checkout.tenderCardHint": "هنگام ثبت سفارش کسر می‌شود.",
   "checkout.addTip": "انعام بگذارید",
   "checkout.noTip": "بدون انعام",

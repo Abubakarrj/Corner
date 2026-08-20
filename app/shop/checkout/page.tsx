@@ -469,6 +469,7 @@ export default function CheckoutPage() {
                   cardEnabled={payments}
                   card={checkout.card}
                   hosted={checkout.hosted}
+                  gift={checkout}
                 />
                 <SecureNote />
               </div>

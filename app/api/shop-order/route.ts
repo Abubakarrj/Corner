@@ -26,6 +26,14 @@ import {
   type PosOrderDraft,
 } from "../../pos";
 import { chargeSquare, isSquarePaymentsConfigured, refundSquare } from "../../squarePayments";
+import {
+  giftCardBalance,
+  isGiftCardsConfigured,
+  redeemGiftCard,
+  refundGiftCard,
+} from "../../squareGiftCards";
+import { giftSplit, spendable } from "../../giftTender";
+import { clientIp, throttle } from "../../rateLimit";
 import { geocode } from "../../googleMaps";
 import {
   createDelivery,
@@ -74,6 +82,18 @@ function isNonEmptyString(input: unknown): input is string {
  *  that isn't a string. The cap is here rather than at the field's own call
  *  site because these end up in somebody else's system — the till's ticket, an
  *  Uber dropoff note — and both have limits of their own. */
+/** ⚠️ Gift card lookups from this endpoint, per address.
+ *
+ *  The same oracle problem /api/gift-balance is built around: an endpoint that
+ *  can be asked "is this a real card" without limit is a way to find one by
+ *  guessing. This one is looser than the balance screen's ten because a real
+ *  customer can plausibly retype a number a few times while also placing an
+ *  order, and it is still nowhere near enough to search sixteen digits.
+ *
+ *  Only counted when a number is actually offered, so an ordinary card order
+ *  never touches it. */
+const giftLookups = throttle({ windowMs: 60 * 60 * 1000, max: 15 });
+
 function readText(body: unknown, key: string, max: number): string {
   const value = (body as Record<string, unknown> | null)?.[key];
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -596,6 +616,56 @@ export async function POST(request: Request) {
 
   onOrder(order);
 
+  // ——— A gift card, spent against this order ———
+  //
+  // Read here, before the seat is held and long before anything is charged: a
+  // number that turns out not to be a card should cost somebody a correction,
+  // not a held slot and a reversed payment.
+  //
+  // ⚠️ The number arrives in this request. That is unavoidable — redeeming
+  // means telling Square which card — and it is why nothing here writes it
+  // down: not in a log, not in the order, not in the queue, not in the answer.
+  // Only Square's own id for the card travels past this block, and that id is
+  // safe to carry.
+  const giftGan = readText(body, "giftCardGan", 32).replace(/\D/g, "");
+  let gift: { giftCardId: string; appliedCents: number; dueNowCents: number } | null = null;
+
+  if (giftGan) {
+    if (!isGiftCardsConfigured()) {
+      return Response.json({ error: "gift.balanceUnavailable" }, { status: 503 });
+    }
+    if (giftLookups.exceeded(clientIp(request))) {
+      // No number in this line, for the same reason as /api/gift-balance.
+      console.warn(`[shop-order] throttled gift card lookups from ${clientIp(request)}`);
+      return Response.json({ error: "api.tooManyAttempts" }, { status: 429 });
+    }
+
+    const card = await giftCardBalance(giftGan);
+    // ⚠️ One answer for every way this misses. A number nobody has, a card that
+    // has been deactivated, Square being down, and a card with nothing left on
+    // it all read the same — telling them apart tells a guesser their guess was
+    // close, and a real number is money.
+    if (!card.ok || !spendable(card)) {
+      if (card.ok === false && card.reason !== "not-found") {
+        console.error(`[shop-order] a gift card lookup failed: ${card.reason}`);
+      }
+      return Response.json({ error: "gift.cardNotFound" }, { status: 400 });
+    }
+
+    // What the card can actually cover, and what is left. See giftTender.ts —
+    // it is two numbers and a Math.min, and it is out there so the edges can be
+    // asked about rather than read off this page.
+    gift = { giftCardId: card.giftCardId, ...giftSplit(card.balanceCents, order.totalCents) };
+  }
+
+  /** What is still to be settled after the gift card has covered its part.
+   *
+   *  ⚠️ Zero is a real answer, and the one most likely to be got wrong: a card
+   *  that covers the whole order means there is nothing to charge and nothing
+   *  to pay at the counter. Treating that as "no payment was made" is how a
+   *  paid-for order gets refused. */
+  const dueNowCents = gift ? gift.dueNowCents : order.totalCents;
+
   // ——— The seat ———
   //
   // Taken here: after everything that could refuse this order has had its
@@ -669,7 +739,12 @@ export async function POST(request: Request) {
   // means to.
   const payingNow = readText(body, "tender", 16) === "card";
 
-  if (isSquarePaymentsConfigured() && payingNow) {
+  // ⚠️ `dueNowCents > 0` is the third condition, and it is not decoration. A
+  // gift card that covers the whole order leaves nothing to charge: demanding a
+  // card token here would refuse an order that is already fully paid for, which
+  // is the same shape of bug as the one that refused everybody paying at the
+  // window.
+  if (isSquarePaymentsConfigured() && payingNow && dueNowCents > 0) {
     if (!paymentToken) {
       // Says it is paying now and brought nothing to pay with. That is a broken
       // client rather than a choice, and confirming it would promise the
@@ -683,7 +758,10 @@ export async function POST(request: Request) {
       // ⚠️ Our number, from totalsFor() above, never the browser's. The client
       // sends a tip and a quote id; it does not send a total, and if it did it
       // would not be read.
-      amountCents: order.totalCents,
+      //
+      // And what is left after the gift card, not the whole total — charging
+      // the total alongside a redemption takes the money twice.
+      amountCents: dueNowCents,
       reference: scheduleId,
       ...(orderAt ? { counter: orderAt } : {}),
       ...(order.email ? { buyerEmail: order.email } : {}),
@@ -709,7 +787,55 @@ export async function POST(request: Request) {
    *  through. refundSquare logs loudly on its own failure, because at that
    *  point somebody has to open the Square dashboard. */
   async function undoPayment(): Promise<void> {
-    if (payment?.ok) await refundSquare(payment.paymentId, order.totalCents, scheduleId);
+    // ⚠️ What was charged, not what the order came to. With a gift card against
+    // it those are different numbers, and refunding the larger one hands back
+    // money that was never taken.
+    if (payment?.ok) await refundSquare(payment.paymentId, dueNowCents, scheduleId);
+    // And the other half. A gift card is redeemed before the kitchen is told,
+    // so an order the till refuses leaves a card debited for food nobody is
+    // making. refundGiftCard logs loudly on its own failure.
+    if (giftSpent && gift) {
+      await refundGiftCard({
+        giftCardId: gift.giftCardId,
+        amountCents: gift.appliedCents,
+        reference: scheduleId,
+        ...(orderAt ? { counter: orderAt } : {}),
+      });
+      giftSpent = false;
+    }
+  }
+
+  // ——— Spending the card ———
+  //
+  // After the card charge and before the kitchen, and that order is the whole
+  // design:
+  //
+  //   · after the charge, because a declined card must not leave a gift card
+  //     already emptied for an order that never happened. A decline is the
+  //     common failure and this ordering makes it free.
+  //
+  //   · before the kitchen, because a redemption that fails is still a clean
+  //     stop — nothing has been made, and the card payment can simply be given
+  //     back. Once the ticket is on the counter it is too late to say no.
+  //
+  // The balance was read a moment ago and could have moved since; a card being
+  // spent in two places at once is rare and Square refuses the second one,
+  // which lands here.
+  let giftSpent = false;
+  if (gift) {
+    const spent = await redeemGiftCard({
+      giftCardId: gift.giftCardId,
+      amountCents: gift.appliedCents,
+      reference: scheduleId,
+      ...(orderAt ? { counter: orderAt } : {}),
+    });
+    if (!spent.ok) {
+      console.error(`[shop-order] gift card redemption failed: ${spent.reason}`);
+      await undoPayment();
+      if (scheduledFor) await releaseSlot(scheduleId);
+      return Response.json({ error: "gift.cardNotFound" }, { status: 400 });
+    }
+    giftSpent = true;
   }
 
   // The till, when it's there. The draft is built from the repriced order,
@@ -804,6 +930,13 @@ export async function POST(request: Request) {
       {
         ok: true,
         totals,
+        // What the gift card covered and what was left, so the confirmation can
+        // say it rather than the customer inferring it from a total that no
+        // longer matches what their bank shows.
+        //
+        // ⚠️ Amounts, never the number. The card is a bearer instrument and this
+        // answer goes back to a browser.
+        ...(gift ? { giftAppliedCents: gift.appliedCents, dueNowCents } : {}),
         orderGuid: sent.orderId,
         // Same value as orderGuid here, and named separately on purpose: the
         // client asks about its place in the line with this, and it should
@@ -852,6 +985,13 @@ export async function POST(request: Request) {
     {
       ok: true,
       totals,
+      // What the gift card covered and what was left, so the confirmation can
+      // say it rather than the customer inferring it from a total that no
+      // longer matches what their bank shows.
+      //
+      // ⚠️ Amounts, never the number. The card is a bearer instrument and this
+      // answer goes back to a browser.
+      ...(gift ? { giftAppliedCents: gift.appliedCents, dueNowCents } : {}),
       submitted: "logged",
       queueId,
       ...(scheduledFor ? { scheduledFor: scheduledFor.toISOString() } : {}),

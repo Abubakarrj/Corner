@@ -30,12 +30,19 @@ const ok = (what: string, cond: boolean, detail = "") => {
 
 /** The gate, as the endpoint states it.
  *
- *  Kept in step with /api/shop-order by being the same two clauses in the same
- *  order. If that endpoint's condition changes and this does not, the mutation
- *  runs below stop passing. */
-function mustPayNow(tender: string, hasToken: boolean): "charge" | "refuse" | "proceed" {
+ *  Kept in step with /api/shop-order by being the same three clauses in the
+ *  same order. If that endpoint's condition changes and this does not, the
+ *  source check at the bottom of this file stops passing.
+ *
+ *  `dueNowCents` is what is left after a gift card has covered its part, and it
+ *  is the newest clause. Zero means the order is already fully paid for. */
+function mustPayNow(
+  tender: string,
+  hasToken: boolean,
+  dueNowCents = 1,
+): "charge" | "refuse" | "proceed" {
   const payingNow = tender === "card";
-  if (isSquarePaymentsConfigured() && payingNow) {
+  if (isSquarePaymentsConfigured() && payingNow && dueNowCents > 0) {
     return hasToken ? "charge" : "refuse";
   }
   return "proceed";
@@ -92,6 +99,26 @@ for (const tender of ["", "cash", "counter", "COUNTER", "Card", "window"]) {
      mustPayNow(tender, false) === "proceed", mustPayNow(tender, false));
 }
 
+// ——— A gift card that covers the whole order ———
+//
+// ⚠️ The same shape as the bug at the top of this file, one clause further
+// along. Somebody whose gift card pays for everything sends no card token,
+// correctly — there is nothing to charge. Demanding one refuses an order that
+// is already paid for.
+ok("a fully covered order needs no card, even having chosen to pay now",
+   mustPayNow("card", false, 0) === "proceed", mustPayNow("card", false, 0));
+ok("and is not charged a second time",
+   mustPayNow("card", true, 0) === "proceed", mustPayNow("card", true, 0));
+// A card that covers part of it changes nothing about the rest: there is still
+// something to settle, and a card order still has to bring a card.
+ok("a partly covered order still charges the difference",
+   mustPayNow("card", true, 250) === "charge", mustPayNow("card", true, 250));
+ok("and is still refused without a card",
+   mustPayNow("card", false, 250) === "refuse", mustPayNow("card", false, 250));
+// And the window is the window whatever the card covered.
+ok("paying the rest at the window is fine",
+   mustPayNow("counter", false, 250) === "proceed", mustPayNow("counter", false, 250));
+
 // ——— And the endpoint still asks the same question ———
 //
 // ⚠️ Everything above tests a copy of the gate, so it is only worth anything
@@ -99,14 +126,19 @@ for (const tender of ["", "cash", "counter", "COUNTER", "Card", "window"]) {
 // /api/shop-order, leaving this file alone, and getting a green suite over the
 // exact regression it was written for.
 //
-// So the endpoint's own source is checked for the two clauses that matter: that
-// the charge is gated on the tender as well as on the configuration, and that
-// the tender is read from the request rather than assumed.
+// So the endpoint's own source is checked for the three clauses that matter: that
+// the charge is gated on the tender and on there being anything left to pay as
+// well as on the configuration, and that the tender is read from the request
+// rather than assumed.
 const endpoint = readFileSync("app/api/shop-order/route.ts", "utf8");
 ok("the endpoint reads the tender off the request",
    /const payingNow = readText\(body, "tender"/.test(endpoint));
 ok("and gates the charge on it, not on configuration alone",
-   /if \(isSquarePaymentsConfigured\(\) && payingNow\)/.test(endpoint));
+   /if \(isSquarePaymentsConfigured\(\) && payingNow &&/.test(endpoint));
+// ⚠️ And on there being something left to charge. Without this clause a gift
+// card covering the whole order is answered "we couldn't read your card".
+ok("and on there being anything left to pay",
+   /if \(isSquarePaymentsConfigured\(\) && payingNow && dueNowCents > 0\)/.test(endpoint));
 ok("so no bare configuration check guards the token",
    !/if \(isSquarePaymentsConfigured\(\)\) \{\s*\n\s*if \(!paymentToken\)/.test(endpoint));
 

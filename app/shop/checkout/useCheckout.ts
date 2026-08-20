@@ -180,6 +180,28 @@ export type Checkout = {
    *  means the local `card` fields above are the ones on screen. */
   hosted: SquareCardEntry;
 
+  // ——— A gift card against this order ———
+  //
+  // ⚠️ `giftGan` is the number as typed. It is on this object because the field
+  // has to render, and it goes no further: not into the draft, not into the
+  // cart, not into the order kept against the account. Treat it like cash.
+  giftGan: string;
+  setGiftGan: (value: string) => void;
+  /** What the card holds, once a lookup has found it. Null before that, and
+   *  after a lookup that missed — every kind of miss reads the same, on purpose. */
+  giftBalanceCents: number | null;
+  /** What it pays towards this order: the balance, or the total, whichever is
+   *  smaller. A card worth more than the bill pays the bill and no more. */
+  giftAppliedCents: number;
+  /** What is left to settle. ⚠️ Zero is a real answer and means the order is
+   *  already paid for — not that no payment was made. */
+  dueNowCents: number;
+  /** A string key, translated where it is rendered. */
+  giftError: string | null;
+  giftChecking: boolean;
+  applyGift: () => void;
+  clearGift: () => void;
+
   // ——— The two steps ———
   step: CheckoutStep;
   /** Enough to move on: a name and a phone number that could be one. */
@@ -255,6 +277,24 @@ export function useCheckout(): Checkout {
   });
   const [tipCents, setTipCents] = useState(saved.tipCents);
   const [tender, setTender] = useState<Tender>("counter");
+
+  // ——— A gift card against this order ———
+  //
+  // ⚠️ Held in state and sent with the order, and that is as far as it goes:
+  // never written to the draft in sessionStorage, never to the cart, never to
+  // the placed order kept in the account. A gift account number is a bearer
+  // instrument and a shared phone is exactly how one gets spent by the wrong
+  // person, so it lives for as long as this screen does and no longer.
+  //
+  // The balance is looked up before the order is placed so the customer can see
+  // what their card covers rather than finding out from a receipt. That lookup
+  // is a convenience: /api/shop-order reads the balance again for itself and
+  // redeems against what it finds, because a number checked in a browser is a
+  // number somebody could have changed since.
+  const [giftGan, setGiftGan] = useState("");
+  const [giftBalanceCents, setGiftBalanceCents] = useState<number | null>(null);
+  const [giftError, setGiftError] = useState<string | null>(null);
+  const [giftChecking, setGiftChecking] = useState(false);
   // ⚠️ Only back to payment when the details that gate it still hold — draft.ts
   // decides that, not this line. Landing somebody on the payment step with an
   // empty name is a worse welcome than the first step.
@@ -446,6 +486,50 @@ export function useCheckout(): Checkout {
     deliveryCents: quote?.feeCents ?? 0,
   });
 
+  // What the card covers, and what is left. The same arithmetic the server
+  // does — see app/giftTender.ts — and for the same reason it is a Math.min:
+  // a card worth more than the bill pays the bill and no more.
+  const giftAppliedCents =
+    giftBalanceCents === null ? 0 : Math.min(giftBalanceCents, totals.totalCents);
+  const dueNowCents = totals.totalCents - giftAppliedCents;
+
+  /** Look up a card, so the customer sees what it covers before they commit.
+   *
+   *  Every way this can miss reads the same, because the server answers them
+   *  all the same way: a number nobody has, a deactivated card, and an empty
+   *  one are one message. See /api/gift-balance for why. */
+  async function applyGift() {
+    const digits = giftGan.replace(/\D/g, "");
+    if (digits.length < 8 || giftChecking) return;
+    setGiftChecking(true);
+    setGiftError(null);
+    setGiftBalanceCents(null);
+    try {
+      const response = await fetch("/api/gift-balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gan: digits }),
+      });
+      const body = (await response.json().catch(() => null)) as
+        | { balanceCents?: number; error?: string }
+        | null;
+      if (!response.ok || typeof body?.balanceCents !== "number") {
+        throw new Error(body?.error ?? "gift.cardNotFound");
+      }
+      setGiftBalanceCents(body.balanceCents);
+    } catch (lookupError) {
+      setGiftError(lookupError instanceof Error ? lookupError.message : "gift.cardNotFound");
+    } finally {
+      setGiftChecking(false);
+    }
+  }
+
+  function clearGift() {
+    setGiftGan("");
+    setGiftBalanceCents(null);
+    setGiftError(null);
+  }
+
   const phoneError = tried && !phoneOk(phone) ? t("checkout.validPhone") : undefined;
   const firstNameError = tried && firstName.trim().length === 0 ? t("checkout.required") : undefined;
 
@@ -488,7 +572,12 @@ export function useCheckout(): Checkout {
     // question depends on who is rendering them: Square's are an iframe this
     // page cannot inspect, so the test is that they mounted, and whether the
     // card is any good is settled by tokenize() at submit.
-    (tender !== "card" || (hosted.enabled ? hosted.ready : card.complete));
+    // ⚠️ Unless the gift card already covers it. Somebody whose card pays for
+    // everything has nothing to type into a card field, and greying out Place
+    // order until they do would refuse an order that is already paid for.
+    (tender !== "card" ||
+      dueNowCents === 0 ||
+      (hosted.enabled ? hosted.ready : card.complete));
 
   async function submit() {
     setTried(true);
@@ -515,9 +604,11 @@ export function useCheckout(): Checkout {
     // ⚠️ `payment` holds a single-use token. There is no card number in this
     // function, in this file, or in the request below.
     let payment: { token: string; verificationToken?: string } | null = null;
-    if (hosted.enabled && tender === "card") {
+    // And only for what is actually left to charge. A gift card covering the
+    // whole order means there is no card to tokenize and nothing to verify.
+    if (hosted.enabled && tender === "card" && dueNowCents > 0) {
       payment = await hosted.tokenize({
-        amountCents: totals.totalCents,
+        amountCents: dueNowCents,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         // No email: this screen deliberately does not collect one (see the
@@ -562,6 +653,13 @@ export function useCheckout(): Checkout {
           // to guess from whether a token arrived, and guessed "this order is
           // broken" for everybody paying at the window.
           tender,
+          // ⚠️ The gift card, if there is one. Sent only when the lookup above
+          // found something spendable, so a half-typed number never reaches the
+          // order endpoint and counts against its throttle. The server checks
+          // the balance again itself and redeems against what it finds.
+          ...(giftBalanceCents !== null
+            ? { giftCardGan: giftGan.replace(/\D/g, "") }
+            : {}),
           // The token, and Square's 3-D Secure result where the bank asked for
           // one. Opaque, single-use, and worthless to anybody who intercepts
           // it. The card number is not here and has no route to here.
@@ -820,6 +918,16 @@ export function useCheckout(): Checkout {
     setTender,
     card,
     hosted,
+
+    giftGan,
+    setGiftGan,
+    giftBalanceCents,
+    giftAppliedCents,
+    dueNowCents,
+    giftError,
+    giftChecking,
+    applyGift,
+    clearGift,
 
     step,
     detailsValid,

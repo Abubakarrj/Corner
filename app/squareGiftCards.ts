@@ -311,6 +311,63 @@ export async function redeemGiftCard(input: {
   return { ok: true, balanceCents: balance };
 }
 
+/** Put spent balance back on a card.
+ *
+ *  ——— When this runs ———
+ *
+ *  A gift card is redeemed against an order before the kitchen is told about
+ *  it, so the till refusing that order leaves a card debited for food nobody
+ *  is going to make. This is the other half of refundSquare(): one gives the
+ *  card payment back, this gives the gift card balance back, and an order that
+ *  paid with both needs both.
+ *
+ *  ⚠️ UNLINKED_ACTIVITY_REFUND rather than REFUND. Square's REFUND is for
+ *  reversing a redemption *it* processed and wants the payment behind it; our
+ *  redemption is made through the Gift Card Activities API with no Square
+ *  payment attached, so the unlinked form is the one that matches. The wrong
+ *  one is refused, which would leave the customer's balance gone.
+ *
+ *  Keyed to the order, so a retry restores the balance once rather than
+ *  minting money. */
+export async function refundGiftCard(input: {
+  giftCardId: string;
+  amountCents: number;
+  reference: string;
+  counter?: string;
+}): Promise<boolean> {
+  const locationId = squareLocationFor(input.counter);
+  if (!locationId) return false;
+
+  const answer = await call("/v2/gift-cards/activities", {
+    idempotency_key: `gift-unredeem-${input.reference}`.slice(0, 128),
+    gift_card_activity: {
+      type: "UNLINKED_ACTIVITY_REFUND",
+      location_id: locationId,
+      gift_card_id: input.giftCardId,
+      unlinked_activity_refund_activity_details: {
+        amount_money: { amount: input.amountCents, currency: "USD" },
+        reference_id: input.reference.slice(0, 40),
+      },
+    },
+  });
+
+  if (!answer.ok) {
+    // ⚠️ Loud, because this is a customer's own money spent on food that is not
+    // being made, and nothing downstream retries it. Somebody has to put it
+    // back from the Square dashboard.
+    //
+    // The card's id, not its number. The id is safe in a log; the number is
+    // money in a log.
+    console.error(
+      `[square] GIFT CARD REFUND FAILED for card ${input.giftCardId}` +
+        ` (${input.amountCents} cents, order ${input.reference}): ${answer.reason}.` +
+        " This balance must be put back by hand.",
+    );
+    return false;
+  }
+  return true;
+}
+
 export function isGiftCardsConfigured(): boolean {
   return squareConfig() !== null;
 }

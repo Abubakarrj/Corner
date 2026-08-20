@@ -19,7 +19,9 @@ import {
   createGiftCard,
   activateGiftCard,
   giftCardBalance,
+  giftCardById,
   redeemGiftCard,
+  refundGiftCard,
 } from "../app/squareGiftCards";
 
 let failures = 0;
@@ -191,6 +193,66 @@ async function main() {
   // Redeeming twice is the customer's money, not the shop's.
   ok("keyed to the order being paid for, so a retry spends once",
      wire().idempotency_key === "gift-redeem-sched-xyz", String(wire().idempotency_key));
+
+  // ——— Putting spent balance back ———
+  //
+  // A gift card is redeemed against an order before the kitchen is told about
+  // it, so a till that refuses leaves a card debited for food nobody is making.
+  reset({ gift_card_activity: { gift_card_balance_money: { amount: 3000 } } });
+  ok("a balance goes back on the card",
+     (await refundGiftCard({ giftCardId: "gc-1", amountCents: 3000, reference: "sched-xyz" })) === true);
+  // ⚠️ UNLINKED_ACTIVITY_REFUND, not REFUND. Square's REFUND reverses a
+  // redemption it processed and wants the payment behind it; ours goes through
+  // the Activities API with no Square payment attached. The wrong type is
+  // refused, which would leave the customer's balance gone.
+  ok("as an unlinked refund, since Square did not process the redemption",
+     activity().type === "UNLINKED_ACTIVITY_REFUND", String(activity().type));
+  ok("for the amount that was spent",
+     JSON.stringify((activity().unlinked_activity_refund_activity_details as Wire)?.amount_money) ===
+       JSON.stringify({ amount: 3000, currency: "USD" }),
+     JSON.stringify(activity().unlinked_activity_refund_activity_details));
+  // ⚠️ Keyed to the order. A retry must put the balance back once rather than
+  // mint money.
+  ok("keyed to the order, so a retry restores it once",
+     wire().idempotency_key === "gift-unredeem-sched-xyz", String(wire().idempotency_key));
+  // And it must not collide with the redemption's own key, or Square answers
+  // the second call with the first call's activity and nothing moves.
+  ok("and not with the key the redemption used",
+     wire().idempotency_key !== "gift-redeem-sched-xyz", String(wire().idempotency_key));
+
+  // ⚠️ A refusal here is a customer's own money spent on food nobody is making,
+  // and nothing retries it. It has to be reported, and loudly.
+  reset({ errors: [{ code: "NOPE", detail: "no" }] }, 400);
+  const shouted: string[] = [];
+  const realError = console.error;
+  console.error = (...args: unknown[]) => { shouted.push(args.join(" ")); };
+  const putBack = await refundGiftCard({ giftCardId: "gc-1", amountCents: 3000, reference: "sched-xyz" });
+  console.error = realError;
+  ok("a refused refund says so rather than reporting success", putBack === false);
+  ok("and is shouted about, naming the card and the order",
+     shouted.some((line) => /gc-1/.test(line) && /sched-xyz/.test(line) && /by hand/.test(line)),
+     shouted.join(" | "));
+
+  // ——— Reading a card back, by Square's id for it ———
+  //
+  // How the number is recovered at the moment of sending, since the delivery
+  // queue deliberately does not store it.
+  reset({ gift_card: { id: "gc-1", state: "ACTIVE", gan: "778332", balance_money: { amount: 2500 } } });
+  const read = await giftCardById("gc-1");
+  ok("a card reads back by id",
+     read.ok === true && read.gan === "778332" && read.state === "ACTIVE",
+     JSON.stringify(read));
+  ok("from the card's own endpoint",
+     sentUrl === "https://connect.squareupsandbox.com/v2/gift-cards/gc-1", sentUrl);
+  // An id with a slash or a space in it must not walk out of its path segment.
+  reset({ gift_card: { id: "x", gan: "1" } });
+  await giftCardById("gc/../locations");
+  ok("and an id is escaped rather than pasted into the path",
+     sentUrl.endsWith("/v2/gift-cards/gc%2F..%2Flocations"), sentUrl);
+  // A card with no number on it cannot be sent, and saying so beats sending an
+  // empty message.
+  reset({ gift_card: { id: "gc-1", state: "ACTIVE" } });
+  ok("a card with no number is a failure", (await giftCardById("gc-1")).ok === false);
 
   // ——— Per counter ———
   reset({ gift_card: { id: "gc-3", gan: "778332" } });

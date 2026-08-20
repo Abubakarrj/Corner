@@ -18,12 +18,30 @@
 // card.ts, which is also where the one function lives that changes when
 // Toast's hosted element is wired up.
 
-import { useT } from "../../i18n";
+import { useServerText, useT } from "../../i18n";
+import { formatPrice } from "../products";
 import CardFields from "./CardFields";
 import type { SquareCardEntry } from "./useSquareCard";
 import type { CardEntry } from "./useCard";
 
 export type Tender = "counter" | "card";
+
+/** The half of the checkout engine this component needs to offer a gift card.
+ *
+ *  Named separately rather than taking the whole Checkout so the chat panel can
+ *  leave it out — and so it is obvious from here what this component is allowed
+ *  to touch. */
+export type GiftEntry = {
+  giftGan: string;
+  setGiftGan: (value: string) => void;
+  giftBalanceCents: number | null;
+  giftAppliedCents: number;
+  dueNowCents: number;
+  giftError: string | null;
+  giftChecking: boolean;
+  applyGift: () => void;
+  clearGift: () => void;
+};
 
 export default function PaymentSection({
   tender,
@@ -31,6 +49,7 @@ export default function PaymentSection({
   cardEnabled,
   card,
   hosted,
+  gift,
 }: {
   tender: Tender;
   onTender: (next: Tender) => void;
@@ -43,10 +62,20 @@ export default function PaymentSection({
    *  rather than read here for the same reason `cardEnabled` is: the surface
    *  owns the checkout engine, and this component renders what it is given. */
   hosted?: SquareCardEntry;
+  /** A gift card against this order. Absent on a surface that does not offer
+   *  one — the chat panel shares this component and has no room for it. */
+  gift?: GiftEntry;
 }) {
   const t = useT();
+  const covered = gift ? gift.dueNowCents === 0 && gift.giftAppliedCents > 0 : false;
   return (
     <div className="flex flex-col gap-2">
+      {/* Above the tenders, deliberately. What a card covers changes which
+          tender is even needed — a card that pays for everything means there is
+          nothing to choose — so asking about it after the choice is asking in
+          the wrong order. */}
+      {gift ? <GiftCard gift={gift} covered={covered} /> : null}
+
       <Option
         id="counter"
         checked={tender === "counter"}
@@ -64,10 +93,86 @@ export default function PaymentSection({
         hint={t("checkout.tenderCardHint")}
       />
 
-      {tender === "card" && cardEnabled ? (
+      {/* ⚠️ No card fields when there is nothing left to charge. Showing an
+          empty card box under "the gift card covers this" is asking somebody to
+          pay twice, and the engine will not tokenize it anyway. */}
+      {tender === "card" && cardEnabled && !covered ? (
         <div className="mt-1">
           <CardFields card={card} hosted={hosted} />
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** What a gift card is worth against this order.
+ *
+ *  ⚠️ The number is typed here and goes to the server with the order. It is not
+ *  saved, not autofilled, and not restored — see the note in useCheckout.ts.
+ *  Treat it like cash. */
+function GiftCard({ gift, covered }: { gift: GiftEntry; covered: boolean }) {
+  const t = useT();
+  const st = useServerText();
+  const applied = gift.giftBalanceCents !== null;
+
+  if (applied) {
+    return (
+      <div className="mb-1 rounded-xl border border-line-soft bg-surface px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[14px] text-ink">
+            {t("checkout.giftApplied", { amount: formatPrice(gift.giftAppliedCents) })}
+          </span>
+          <button
+            type="button"
+            onClick={gift.clearGift}
+            className="cb-press cursor-pointer text-[13px] text-muted underline hover:text-ink"
+          >
+            {t("common.remove")}
+          </button>
+        </div>
+        {/* Said plainly either way. "Nothing left to pay" is the whole reason
+            the card fields disappeared, and somebody who is not told that is
+            somebody looking for where the card box went. */}
+        <p className="m-0 mt-1 text-[12px] leading-[1.5] text-muted">
+          {covered
+            ? t("checkout.giftCoversAll")
+            : t("checkout.giftLeavesDue", { amount: formatPrice(gift.dueNowCents) })}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-1">
+      <div className="flex gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          // ⚠️ Off. A card number remembered by a shared browser is a card
+          // somebody else can spend.
+          autoComplete="off"
+          aria-label={t("checkout.giftCardNumber")}
+          placeholder={t("checkout.giftCardNumber")}
+          value={gift.giftGan}
+          onChange={(event) => gift.setGiftGan(event.target.value)}
+          aria-invalid={gift.giftError ? true : undefined}
+          className={`min-w-0 flex-1 rounded-xl border bg-surface px-4 py-3 text-[16px] tracking-[0.04em] text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink ${
+            gift.giftError ? "border-brand-red" : "border-line-soft"
+          }`}
+        />
+        <button
+          type="button"
+          onClick={gift.applyGift}
+          disabled={gift.giftGan.replace(/\D/g, "").length < 8 || gift.giftChecking}
+          className="cb-press shrink-0 cursor-pointer rounded-xl border border-line-soft px-4 text-[14px] text-ink transition-colors hover:border-ink disabled:cursor-default disabled:text-quieter disabled:hover:border-line-soft"
+        >
+          {gift.giftChecking ? t("gift.checking") : t("checkout.giftApply")}
+        </button>
+      </div>
+      {gift.giftError ? (
+        <p role="alert" className="m-0 mt-1 text-[12px] text-brand-red">
+          {st(gift.giftError)}
+        </p>
       ) : null}
     </div>
   );
