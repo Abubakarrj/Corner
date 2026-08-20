@@ -75,7 +75,7 @@ const report = (body: unknown) =>
 
 async function main() {
   said.length = 0;
-  let response = await report({ where: "square-card-mount", message: "Invalid application ID" });
+  const response = await report({ where: "square-card-mount", message: "Invalid application ID" });
   ok("a mount failure reaches the log", said.some((l) => /Invalid application ID/.test(l)),
      JSON.stringify(said));
   ok("and the browser is told nothing it could use", response.status === 204,
