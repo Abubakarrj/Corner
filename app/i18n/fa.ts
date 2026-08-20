@@ -386,7 +386,7 @@ export const fa: Table = {
   "order.onTheWayGuess": "احتمالاً در راه است",
   "order.readyGuess": "احتمالاً آماده است",
   "order.deliveryCanceled": "ارسال لغو شد",
-  "order.deliveryCanceledDetail": "پیک این سفارش را نمی‌آورد. برای ادامه با فروشگاه تماس بگیرید.",
+  "order.deliveryCanceledDetail": "پیکی در دسترس نیست. برای مراحل بعد با فروشگاه تماس بگیرید.",
   "order.estimated": "{eta} · برآوردی",
   "order.courier": "{name} دارد آن را می‌آورد.",
   "order.courierWith": "{name} دارد آن را با {vehicle} می‌آورد.",

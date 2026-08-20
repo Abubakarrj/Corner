@@ -353,7 +353,7 @@ export const my: Table = {
   "order.onTheWayGuess": "လမ်းမှာ ရှိနေဖွယ်",
   "order.readyGuess": "အဆင်သင့် ဖြစ်နေဖွယ်",
   "order.deliveryCanceled": "ပို့ဆောင်မှု ပယ်ဖျက်ပြီး",
-  "order.deliveryCanceledDetail": "ပို့ဆောင်သူသည် ဤအော်ဒါကို ယူဆောင်လာမည် မဟုတ်ပါ။ ဆက်လက်ဆောင်ရွက်ရန် ဆိုင်သို့ ဖုန်းဆက်ပါ။",
+  "order.deliveryCanceledDetail": "ပို့ဆောင်သူ မရရှိနိုင်ပါ။ နောက်တစ်ဆင့်အတွက် ဆိုင်သို့ ဖုန်းဆက်ပါ။",
   "order.estimated": "{eta} · ခန့်မှန်း",
   "order.courier": "{name} က ယူလာနေပါပြီ။",
   "order.courierWith": "{name} က {vehicle} နဲ့ ယူလာနေပါပြီ။",

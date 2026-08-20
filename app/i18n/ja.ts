@@ -352,7 +352,7 @@ export const ja: Table = {
   "order.onTheWayGuess": "配達中の見込み",
   "order.readyGuess": "用意ができている見込み",
   "order.deliveryCanceled": "配達がキャンセルされました",
-  "order.deliveryCanceledDetail": "配達員はこの注文をお届けしません。今後については店舗にお電話ください。",
+  "order.deliveryCanceledDetail": "配達員を手配できませんでした。次のご案内は店舗までお問い合わせください。",
   "order.estimated": "{eta} · 目安",
   "order.courier": "{name}さんがお届けします。",
   "order.courierWith": "{name}さんが{vehicle}でお届けします。",

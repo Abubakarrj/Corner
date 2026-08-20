@@ -355,7 +355,7 @@ export const es: Table = {
   "order.onTheWayGuess": "Debería ir en camino",
   "order.readyGuess": "Debería estar listo",
   "order.deliveryCanceled": "Entrega cancelada",
-  "order.deliveryCanceledDetail": "El repartidor no va a traer este pedido. Llama a la tienda para ver qué sigue.",
+  "order.deliveryCanceledDetail": "No hay repartidor disponible. Llama a la tienda para ver cómo seguir.",
   "order.estimated": "{eta} · estimado",
   "order.courier": "{name} te lo lleva.",
   "order.courierWith": "{name} te lo lleva en {vehicle}.",

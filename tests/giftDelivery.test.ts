@@ -69,17 +69,39 @@ ok("and a card with no recipient falls back to the buyer rather than nowhere",
    destinationFor(card({ recipientContact: "" })) === "ada@example.com",
    destinationFor(card({ recipientContact: "" })));
 
-// ——— What this app cannot send ———
+// ——— What this app can send, and what it cannot ———
 //
-// ⚠️ The form offers three methods and there is no SMS provider in this
-// codebase. A text card that is issued and silently never sent is the worst
-// outcome available, because the money has already moved — so it is named.
-ok("email is deliverable", undeliverable("email") === null);
-ok("self is deliverable", undeliverable("self") === null);
+// ⚠️ This is checked before anything is charged. A text card taken payment for
+// and then discovered to be unsendable is the worst outcome available, because
+// the money has already moved.
+process.env.RESEND_API_KEY = "re-test";
+process.env.TWILIO_ACCOUNT_SID = "AC-test";
+process.env.TWILIO_AUTH_TOKEN = "secret";
+process.env.TWILIO_FROM = "+13235550000";
+ok("email is deliverable", undeliverable("email") === null, String(undeliverable("email")));
+ok("self is deliverable", undeliverable("self") === null, String(undeliverable("self")));
+ok("and with Twilio wired, so is a text",
+   undeliverable("text") === null, String(undeliverable("text")));
+
+// Twilio is optional. A shop that has not set it can still sell gift cards; it
+// just cannot text them, and the buyer has to be told so at the form.
+delete process.env.TWILIO_AUTH_TOKEN;
 const noSms = undeliverable("text");
-ok("text is not", noSms !== null, String(noSms));
-ok("and says why, and that the card still exists",
-   noSms !== null && /SMS/.test(noSms) && /issued/.test(noSms), String(noSms));
+ok("without Twilio a text is refused", noSms !== null, String(noSms));
+ok("and says why", noSms !== null && /SMS/.test(noSms), String(noSms));
+// ⚠️ Losing SMS must not take email down with it. These are separate
+// transports and a gift card sold by email should not care that Twilio is off.
+ok("but email still goes", undeliverable("email") === null, String(undeliverable("email")));
+
+// And the reverse: no Resend means no email card, however healthy Twilio is.
+process.env.TWILIO_AUTH_TOKEN = "secret";
+delete process.env.RESEND_API_KEY;
+const noMail = undeliverable("email");
+ok("without Resend an email card is refused", noMail !== null, String(noMail));
+ok("and so is a card sent to the buyer themselves",
+   undeliverable("self") !== null, String(undeliverable("self")));
+ok("while a text still goes", undeliverable("text") === null, String(undeliverable("text")));
+process.env.RESEND_API_KEY = "re-test";
 
 async function main() {
   // ⚠️ Reachability, not configuration. db() builds a pool from the URL without

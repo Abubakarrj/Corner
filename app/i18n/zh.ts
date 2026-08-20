@@ -354,7 +354,7 @@ export const zh: Table = {
   "order.onTheWayGuess": "预计已在路上",
   "order.readyGuess": "预计已做好",
   "order.deliveryCanceled": "配送已取消",
-  "order.deliveryCanceledDetail": "骑手不会配送这份订单。请致电门店了解后续安排。",
+  "order.deliveryCanceledDetail": "暂无配送员。请致电门店了解后续安排。",
   "order.estimated": "{eta} · 预计",
   "order.courier": "{name} 正在为您送达。",
   "order.courierWith": "{name} 正在骑{vehicle}为您送达。",

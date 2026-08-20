@@ -400,7 +400,7 @@ export const en = {
   "order.onTheWayGuess": "Should be on the way",
   "order.readyGuess": "Should be ready",
   "order.deliveryCanceled": "Delivery canceled",
-  "order.deliveryCanceledDetail": "The courier is not bringing this order. Call the shop to sort out what happens next.",
+  "order.deliveryCanceledDetail": "Courier unavailable. Call the shop for next steps.",
   "order.estimated": "{eta} · estimated",
   "order.courier": "{name} is bringing it over.",
   "order.courierWith": "{name} is bringing it over by {vehicle}.",

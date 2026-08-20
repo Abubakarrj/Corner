@@ -1,6 +1,8 @@
 import "server-only";
 
 import { SCHEMA, db, explainDbError, ready } from "./db";
+import { isEmailConfigured } from "./email";
+import { isSmsConfigured } from "./sms";
 import type { DeliveryMethod } from "./(marketing)/gift/buy/giftOrder";
 
 // Gift cards that have been issued, and who they still have to reach.
@@ -29,13 +31,15 @@ import type { DeliveryMethod } from "./(marketing)/gift/buy/giftOrder";
 //
 // That also means a leak of this table is embarrassing rather than expensive.
 //
-// ——— What it cannot do ———
+// ——— What it can and cannot send ———
 //
-// The form offers three methods and this app can serve two of them. Email and
-// "send to me" both go through Resend. Text has no transport at all: there is
-// no SMS provider in this codebase, and inventing one silently would be worse
-// than saying so. See `deliverable` below — a text card is issued, stored, and
-// held with its reason recorded, rather than quietly never arriving.
+// The form offers three methods. Email and "send it to me" go through Resend;
+// a text goes through Twilio, which is optional — a shop that has not set
+// TWILIO_* can still sell gift cards, it just cannot text them.
+//
+// ⚠️ `undeliverable` below is checked before anything is charged, not after.
+// Taking fifty dollars and then discovering there is no way to deliver the card
+// is the one failure this whole file exists to prevent.
 
 const DDL = `
   CREATE TABLE IF NOT EXISTS ${SCHEMA}.gift_deliveries (
@@ -80,15 +84,23 @@ export type GiftDelivery = {
 
 /** Whether this app can actually deliver by the method chosen.
  *
- *  ⚠️ Two of the form's three. "text" has no transport — there is no SMS
- *  provider here — and a card that is issued and silently never sent is the
- *  worst outcome available, because the money has already moved.
+ *  ⚠️ A card that is issued and silently never sent is the worst outcome
+ *  available, because the money has already moved. So this is checked *before*
+ *  anything is charged — see /api/gift-card — rather than discovered by a cron
+ *  job three days later.
+ *
+ *  Email and "send it to me" both go through Resend. A text needs Twilio, and
+ *  Twilio is optional: without those three variables the text option is refused
+ *  at the door rather than accepted into a queue nothing can drain.
  *
  *  Returning a reason rather than a boolean so the row can say why it is
- *  waiting, and so adding Twilio later is a change in one place. */
+ *  waiting. */
 export function undeliverable(method: DeliveryMethod): string | null {
-  if (method === "text") {
-    return "no SMS provider is configured; this card is issued and waiting to be sent by hand";
+  if (method === "text" && !isSmsConfigured()) {
+    return "no SMS provider is configured; this card cannot be sent by text";
+  }
+  if (method !== "text" && !isEmailConfigured()) {
+    return "no email provider is configured; this card cannot be sent by email";
   }
   return null;
 }

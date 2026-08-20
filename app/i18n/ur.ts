@@ -355,7 +355,7 @@ export const ur: Table = {
   "order.onTheWayGuess": "غالباً راستے میں ہے",
   "order.readyGuess": "غالباً تیار ہے",
   "order.deliveryCanceled": "ڈلیوری منسوخ",
-  "order.deliveryCanceledDetail": "کوریئر یہ آرڈر نہیں لا رہا۔ آگے کیا ہوگا، اس کے لیے دکان کو کال کریں۔",
+  "order.deliveryCanceledDetail": "کوئی کورئیر دستیاب نہیں۔ اگلے مرحلے کے لیے دکان کو کال کریں۔",
   "order.estimated": "{eta} · تخمینہ",
   "order.courier": "{name} یہ آپ تک لا رہے ہیں۔",
   "order.courierWith": "{name} یہ {vehicle} پر لا رہے ہیں۔",

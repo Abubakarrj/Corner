@@ -352,7 +352,7 @@ export const ko: Table = {
   "order.onTheWayGuess": "배달 중일 것으로 예상",
   "order.readyGuess": "준비되었을 것으로 예상",
   "order.deliveryCanceled": "배달 취소됨",
-  "order.deliveryCanceledDetail": "배달원이 이 주문을 가져가지 않습니다. 매장에 전화해 다음 절차를 확인해 주세요.",
+  "order.deliveryCanceledDetail": "배달원을 배정할 수 없습니다. 다음 절차는 매장으로 문의해 주세요.",
   "order.estimated": "{eta} · 예상",
   "order.courier": "{name} 님이 가져다드립니다.",
   "order.courierWith": "{name} 님이 {vehicle}(으)로 가져다드립니다.",
