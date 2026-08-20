@@ -86,6 +86,45 @@ export function squareApplicationId(): string | null {
   return process.env.SQUARE_APPLICATION_ID?.trim() || null;
 }
 
+/** Whether the application id belongs to the environment we are serving.
+ *
+ *  ⚠️ The failure this catches is silent and total.
+ *
+ *  Square publishes two application ids per application, and the sandbox one is
+ *  prefixed `sandbox-` while the production one is not. They authenticate
+ *  against two different SDK scripts, and SQUARE_ENV picks which script the
+ *  browser loads. Pair them wrongly and window.Square.payments() *throws* —
+ *  which means no card field at all, an error that says the card was not
+ *  accepted, and nothing anywhere to say why. It is a plausible mistake because
+ *  both ids sit on the same dashboard page and the production one is listed
+ *  first.
+ *
+ *  Returns the sentence to put in front of whoever is configuring this, or null
+ *  when the pair agree. */
+export function applicationIdMismatch(): string | null {
+  const id = squareApplicationId();
+  if (!id) return null;
+  const production = process.env.SQUARE_ENV?.trim().toLowerCase() === "production";
+  const looksSandbox = id.startsWith("sandbox-");
+
+  if (production && looksSandbox) {
+    return (
+      "SQUARE_ENV is production but SQUARE_APPLICATION_ID is a sandbox id" +
+      " (it starts with `sandbox-`). The browser will load the production SDK" +
+      " and fail to start, so no card field appears."
+    );
+  }
+  if (!production && !looksSandbox) {
+    return (
+      "SQUARE_APPLICATION_ID does not start with `sandbox-` while SQUARE_ENV is" +
+      " unset, which means sandbox. A production application id against the" +
+      " sandbox SDK fails to start, so no card field appears. Use the Sandbox" +
+      " Application ID from the same page, or set SQUARE_ENV=production."
+    );
+  }
+  return null;
+}
+
 /** Whether a card can be taken end to end.
  *
  *  ⚠️ All three, not two. This used to be `squareConfig() !== null` — the token
@@ -103,7 +142,14 @@ export function squareApplicationId(): string | null {
  *  So one predicate, and every gate reads it: the capability the checkout shows,
  *  the config the browser fetches, and the branch that demands a token. */
 export function isSquarePaymentsConfigured(): boolean {
-  return squareConfig() !== null && squareApplicationId() !== null;
+  // ⚠️ And the pair has to agree. Offering a card option whose fields cannot
+  // start is worse than offering none: the customer picks it, types nothing
+  // into an empty box, and is told their card was refused.
+  return (
+    squareConfig() !== null &&
+    squareApplicationId() !== null &&
+    applicationIdMismatch() === null
+  );
 }
 
 /** Which of the three is missing, for the log.

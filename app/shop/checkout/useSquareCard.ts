@@ -269,10 +269,23 @@ export function useSquareCard(): SquareCardEntry {
         // location id are not from the same Square account, which is the same
         // mismatch that makes the server's calls come back FORBIDDEN. One cause,
         // two symptoms, and this is the half that was silent.
-        console.error(
-          "[square] the card fields could not be mounted:",
-          mountError instanceof Error ? mountError.message : mountError,
-        );
+        const said = mountError instanceof Error ? mountError.message : String(mountError);
+        console.error("[square] the card fields could not be mounted:", said);
+        // ——— And sent where somebody will actually see it ———
+        //
+        // The console line above is invisible on a phone, which is where this
+        // shop is configured and tested from. This puts the same sentence in
+        // the deployment log, which is read. See /api/client-error for why that
+        // endpoint is as narrow as it is.
+        //
+        // Fire and forget: a checkout must not get slower, or fail differently,
+        // because a diagnostic could not be delivered.
+        void fetch("/api/client-error", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ where: "square-card-mount", message: said }),
+          keepalive: true,
+        }).catch(() => undefined);
         if (!cancelled) setError("mount");
       }
     })();

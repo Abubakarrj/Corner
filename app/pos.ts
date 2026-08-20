@@ -2,6 +2,7 @@ import "server-only";
 
 import * as square from "./square";
 import * as toast from "./toast";
+import { applicationIdMismatch, missingPaymentsConfig } from "./squarePayments";
 
 // The till, whichever one it is.
 //
@@ -139,6 +140,14 @@ function chosen(): PosName | null {
     // Not awaited and unable to fail anything: it runs alongside the order that
     // triggered it, and a network problem here is one line and nothing else.
     if (name) void reportReach(name);
+    // ——— And whether the card fields can even start ———
+    //
+    // Separate from the till, because they fail separately and are fixed
+    // separately: orders can be reaching the kitchen perfectly while the
+    // checkout shows an empty box where a card field belongs. That failure
+    // happens inside the browser, so without this line it exists only in a
+    // console nobody on a phone can open.
+    if (name === "square") reportCardFields();
   }
   return name;
 }
@@ -163,6 +172,24 @@ async function reportReach(name: PosName): Promise<void> {
   } catch {
     // A check that cannot run is not a fault to report as one.
   }
+}
+
+/** Say, once, whether the checkout can put card fields on the page. */
+function reportCardFields(): void {
+  const missing = missingPaymentsConfig();
+  if (missing.length > 0) {
+    console.warn(
+      `[pos] card payment is OFF. Missing: ${missing.join(", ")}.` +
+        " Orders still work; the checkout offers the window only.",
+    );
+    return;
+  }
+  const mismatch = applicationIdMismatch();
+  if (mismatch) {
+    console.error(`[pos] card payment is BROKEN: ${mismatch}`);
+    return;
+  }
+  console.info("[pos] card payment is on.");
 }
 
 export async function createPosOrder(draft: PosOrderDraft): Promise<PosOrderResult> {
