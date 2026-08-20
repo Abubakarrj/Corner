@@ -155,6 +155,47 @@ async function main() {
   ok("the choices ride along on the line", lines()[0].note === "Plain, Toasted",
      String(lines()[0].note));
 
+  // ——— Tax and the courier's fee ———
+  //
+  // The first real order to land in Square read $3.75 on a basket the customer
+  // is charged $4.11 for: total_tax_money 0, because nothing in this body ever
+  // mentioned tax. The ticket understated it and so did every report built on
+  // it.
+  const taxes = () => (order().taxes ?? []) as Wire[];
+  const charges = () => (order().service_charges ?? []) as Wire[];
+
+  ok("tax rides with the order", taxes().length === 1, JSON.stringify(order().taxes));
+  // A rate rather than an amount, so Square reaches the figure itself and the
+  // two cannot drift by a rounding cent.
+  ok("as our own rate", taxes()[0]?.percentage === "9.75", String(taxes()[0]?.percentage));
+  ok("added on top rather than assumed to be inside the prices",
+     taxes()[0]?.type === "ADDITIVE", String(taxes()[0]?.type));
+  ok("across the whole order, the way a receipt shows it",
+     taxes()[0]?.scope === "ORDER", String(taxes()[0]?.scope));
+
+  // A pickup has no courier and must not grow a delivery charge.
+  ok("a pickup carries no service charge", !("service_charges" in order()),
+     JSON.stringify(order().service_charges));
+
+  reset();
+  await createSquareOrder({ ...draft, diningOption: "delivery", deliveryCents: 499 });
+  ok("a delivery fee goes up as a service charge", charges().length === 1,
+     JSON.stringify(order().service_charges));
+  ok("for what the customer was charged",
+     JSON.stringify((charges()[0]?.amount_money ?? {}) as Wire) ===
+       JSON.stringify({ amount: 499, currency: "USD" }),
+     JSON.stringify(charges()[0]?.amount_money));
+  // ⚠️ Our tax is computed on food. Letting Square tax the courier as well
+  // would charge more than the customer was shown.
+  ok("and is not taxed a second time", charges()[0]?.taxable === false,
+     String(charges()[0]?.taxable));
+
+  // A waived fee is not a zero-value charge on the ticket.
+  reset();
+  await createSquareOrder({ ...draft, diningOption: "delivery", deliveryCents: 0 });
+  ok("a waived delivery fee adds nothing", !("service_charges" in order()),
+     JSON.stringify(order().service_charges));
+
   // ——— A catalog id, when there is one ———
   reset();
   await createSquareOrder({

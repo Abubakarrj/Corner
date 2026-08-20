@@ -2,6 +2,7 @@ import "server-only";
 
 import { LOCATIONS } from "./(marketing)/locations/locations";
 import { PREP_MINUTES } from "./shopFacts";
+import { TAX_RATE } from "./shop/money";
 import type { PosOrderDraft, PosOrderResult, PosOrderState } from "./pos";
 
 // Square, as the till.
@@ -216,6 +217,47 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
       // fulfillment per order created through the API, which is why this is a
       // single-element array rather than a list.
       fulfillments: [fulfillment],
+      // ——— Tax, because an order without it is the wrong number ———
+      //
+      // The first real order landed in Square reading $3.75 on a basket the
+      // customer is charged $4.11 for: total_tax_money 0, because nothing here
+      // ever mentioned tax. The ticket understated it, and so did every report
+      // built on it.
+      //
+      // Sent as a rate rather than an amount so Square arrives at the figure
+      // itself and the two cannot drift by a rounding cent. ORDER scope spreads
+      // it across the lines the way a receipt shows it, and ADDITIVE means it is
+      // added on top rather than assumed to be inside the prices — which is what
+      // is true here: app/shop/money.ts computes tax on the subtotal.
+      taxes: [
+        {
+          uid: "cb-tax",
+          name: "Sales tax",
+          percentage: (TAX_RATE * 100).toFixed(4).replace(/0+$/, "").replace(/\.$/, ""),
+          scope: "ORDER",
+          type: "ADDITIVE",
+        },
+      ],
+      // The courier's fee, when the customer is paying one. A service charge
+      // rather than a line item: it is not something the kitchen makes, and a
+      // fourth "item" on a ticket for a bag of two bagels reads as a mistake.
+      //
+      // ⚠️ Taxable false. The tax above is computed on food in
+      // app/shop/money.ts, and letting Square tax the delivery fee as well
+      // would charge more than the customer was shown.
+      ...(draft.deliveryCents && draft.deliveryCents > 0
+        ? {
+            service_charges: [
+              {
+                uid: "cb-delivery",
+                name: "Delivery",
+                amount_money: { amount: draft.deliveryCents, currency: "USD" },
+                calculation_phase: "TOTAL_PHASE",
+                taxable: false,
+              },
+            ],
+          }
+        : {}),
       line_items: draft.items.map((item) => ({
         // Quantity is a *string* in Square, and a number here is a 400 that
         // reads like a schema complaint about something else entirely.

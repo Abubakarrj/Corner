@@ -53,6 +53,9 @@ export type PosOrderDraft = {
   }[];
   subtotalCents: number;
   tipCents: number;
+  /** What the customer is charged for the courier, in cents. Zero on a pickup
+   *  and on a delivery that cleared the free-delivery threshold. */
+  deliveryCents?: number;
   utensils: boolean;
   note?: string;
   /** When a scheduled order is due. Absent on an ordinary one, which the till

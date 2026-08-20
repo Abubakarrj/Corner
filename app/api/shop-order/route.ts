@@ -738,6 +738,10 @@ export async function POST(request: Request) {
       })),
       subtotalCents: order.subtotalCents,
       tipCents: order.tipCents,
+      // What the customer pays for the courier, not what Uber bills us — those
+      // differ when the basket cleared the free-delivery threshold, and the
+      // ticket should show what was charged.
+      deliveryCents: order.deliveryCents,
       utensils: order.utensils,
       note: order.note || undefined,
       // A scheduled order, told to the till twice on purpose: as the pickup
