@@ -428,24 +428,47 @@ async function main() {
       { location_id: "L-default" },
     ],
   });
+  const shared = await countOpenSquareOrders();
+  ok("the open orders are counted", shared?.total === 3, JSON.stringify(shared));
+  // ⚠️ The bug this whole change existed to fix, one layer down.
+  //
+  // Wilshire and Western both fall back to SQUARE_LOCATION_ID here — which is
+  // what a deployment looks like before somebody fills in the per-counter
+  // names — so Square stamps their tickets with the same id and cannot say
+  // which kitchen has which. The first version handed both that location's
+  // count and called it an answer, and every sheet showed the same number
+  // again.
+  //
+  // Null, so /api/kitchen-load falls through to this app's own table, which
+  // records the counter off the order and does know.
+  ok("⚠️ a mapping that cannot tell two counters apart answers null",
+     shared?.byCounter === null, JSON.stringify(shared?.byCounter));
+
+  // ——— And when every counter has its own location ———
+  process.env.SQUARE_LOCATION_WILSHIRE = "L-wilshire";
+  process.env.SQUARE_LOCATION_WESTERN = "L-western";
+  reset({
+    order_entries: [
+      { location_id: "L-figueroa" },
+      { location_id: "L-figueroa" },
+      { location_id: "L-wilshire" },
+    ],
+  });
   const open = await countOpenSquareOrders();
-  ok("the open orders are counted", open?.total === 3, JSON.stringify(open));
-  ok("and split by the counter making them",
-     open?.byCounter?.figueroa === 2, JSON.stringify(open?.byCounter));
-  // ⚠️ Wilshire and Western both fall back to SQUARE_LOCATION_ID here, so both
-  // read that location's one ticket. That is the honest answer for a
-  // deployment that has not said they are separate kitchens — and it is what
-  // setting SQUARE_LOCATION_WILSHIRE fixes.
-  ok("counters sharing a location share its count",
-     open?.byCounter?.wilshire === 1 && open?.byCounter?.western === 1,
+  ok("with a location each, the count is split by counter",
+     open?.byCounter?.figueroa === 2 && open?.byCounter?.wilshire === 1,
      JSON.stringify(open?.byCounter));
   // A counter with nothing on the rail has to be a zero. Leaving it out would
   // render as "we cannot say", and quiet is not the same as unknown.
-  reset({ order_entries: [{ location_id: "L-figueroa" }] });
-  const oneBusy = await countOpenSquareOrders();
   ok("a quiet counter is a zero rather than missing",
-     oneBusy?.byCounter?.wilshire === 0 && oneBusy?.byCounter?.western === 0,
-     JSON.stringify(oneBusy?.byCounter));
+     open?.byCounter?.western === 0, JSON.stringify(open?.byCounter));
+  // Sorted, because which order LOCATIONS happens to be declared in is not
+  // something this assertion is about.
+  ok("and every counter's location is searched",
+     JSON.stringify([...(wire().location_ids as string[])].sort()) ===
+       JSON.stringify(["L-figueroa", "L-western", "L-wilshire"]),
+     JSON.stringify(wire().location_ids));
+
   // An entry Square declines to attribute is counted in the total and against
   // no counter — inventing one would put somebody else's ticket on this rail.
   reset({ order_entries: [{ location_id: "L-figueroa" }, {}] });
@@ -456,6 +479,10 @@ async function main() {
      orphan?.byCounter?.figueroa === 1 && orphan?.byCounter?.wilshire === 0,
      JSON.stringify(orphan?.byCounter));
 
+  // Back to the shared-location shape for the assertions below, which are
+  // about the request rather than the split.
+  delete process.env.SQUARE_LOCATION_WILSHIRE;
+  delete process.env.SQUARE_LOCATION_WESTERN;
   reset({ order_entries: [{ location_id: "L-figueroa" }] });
   await countOpenSquareOrders();
   const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;

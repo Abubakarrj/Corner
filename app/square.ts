@@ -560,6 +560,18 @@ const LIMIT = 200;
 /** The last reason the count failed, so a standing fault is said once. */
 let lastCountFailure: string | null = null;
 
+/** Notes about the configuration that are true on every request.
+ *
+ *  Said once per process rather than on every kitchen-load poll, which is
+ *  three times a minute all day — a standing condition logged that often is a
+ *  log nobody reads. */
+const said = new Set<string>();
+function sayOnce(message: string): void {
+  if (said.has(message)) return;
+  said.add(message);
+  console.warn(`[square] ${message}`);
+}
+
 export async function countOpenSquareOrders(): Promise<OpenOrderCount | null> {
   const config = squareConfig();
   if (!config) return null;
@@ -640,14 +652,37 @@ export async function countOpenSquareOrders(): Promise<OpenOrderCount | null> {
     perLocation.set(id, (perLocation.get(id) ?? 0) + 1);
   }
 
+  // ——— ⚠️ Whether Square can tell these counters apart at all ———
+  //
+  // Only when each counter has a Square location of its own. Two counters
+  // sharing one location means Square stamps both their tickets with the same
+  // id, and there is no way to say which kitchen a ticket is in.
+  //
+  // The first version of this handed both counters that shared location's
+  // count and called it honest. It is not: it is the original bug wearing a
+  // per-counter shape. A deployment with only SQUARE_LOCATION_ID set — which
+  // is what a shop looks like before somebody fills in the per-counter names —
+  // has every counter on one location, so every sheet showed the same number
+  // again and the whole change did nothing.
+  //
+  // And "Square cannot say" is not "nobody can". Our own table records the
+  // counter off the order itself and knows exactly which kitchen has it. So
+  // this returns null and lets /api/kitchen-load fall through to the source
+  // that can answer, rather than handing back a number that cannot.
+  const splittable = new Set(mapped.map((pair) => pair.locationId)).size === mapped.length;
+  if (!splittable) {
+    sayOnce(
+      "counters share a Square location, so Square cannot say which kitchen a" +
+        " ticket is in. The per-counter queue comes from this app's own table" +
+        " instead. Set SQUARE_LOCATION_WILSHIRE and the rest to have Square" +
+        " split it.",
+    );
+    return { total: entries.length, byCounter: null };
+  }
+
   // Folded back onto counters. A counter with no tickets gets a zero rather
   // than being left out: absent has to mean "we cannot say", and a quiet
   // counter is not that.
-  //
-  // Two counters sharing one Square location both get that location's count.
-  // That is the honest reading — the deployment has not told us they are
-  // separate kitchens — and it is what a shop looks like before somebody sets
-  // SQUARE_LOCATION_WILSHIRE and the rest.
   const byCounter: Record<string, number> = {};
   for (const pair of mapped) {
     byCounter[pair.counter] = perLocation.get(pair.locationId) ?? 0;
