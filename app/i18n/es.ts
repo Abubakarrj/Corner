@@ -337,7 +337,7 @@ export const es: Table = {
   "order.delivered": "Entregado",
   "order.pickedUpStage": "Recogido",
   "order.placedDetail": "Tenemos tu pedido y la tienda lo está confirmando.",
-  "order.kitchenDetail": "Se están tostando y montando los bagels.",
+  "order.kitchenDetail": "Estamos preparando tu pedido.",
   "order.headingTo": "En camino a {where}.",
   "order.atCounter": "Te espera en el mostrador.",
   "order.enjoy": "Que aproveche.",

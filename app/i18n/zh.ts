@@ -336,7 +336,7 @@ export const zh: Table = {
   "order.delivered": "已送达",
   "order.pickedUpStage": "已取走",
   "order.placedDetail": "我们已收到你的订单，门店正在确认。",
-  "order.kitchenDetail": "贝果正在烘烤和制作。",
+  "order.kitchenDetail": "正在为您准备订单。",
   "order.headingTo": "正在前往{where}。",
   "order.atCounter": "已在柜台等你。",
   "order.enjoy": "请慢用。",

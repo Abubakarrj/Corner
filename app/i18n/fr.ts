@@ -366,7 +366,7 @@ export const fr: Table = {
   "order.delivered": "Livrée",
   "order.pickedUpStage": "Retirée",
   "order.placedDetail": "Nous avons votre commande et la boutique la confirme.",
-  "order.kitchenDetail": "Les bagels sont grillés et garnis.",
+  "order.kitchenDetail": "Votre commande est en préparation.",
   "order.headingTo": "En route vers {where}.",
   "order.atCounter": "Elle vous attend au comptoir.",
   "order.enjoy": "Bon appétit.",

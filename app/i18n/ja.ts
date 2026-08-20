@@ -334,7 +334,7 @@ export const ja: Table = {
   "order.delivered": "配達済み",
   "order.pickedUpStage": "受け取り済み",
   "order.placedDetail": "ご注文をお預かりし、店舗が確認しています。",
-  "order.kitchenDetail": "ベーグルを焼いて仕上げています。",
+  "order.kitchenDetail": "ご注文をご用意しています。",
   "order.headingTo": "{where}へ向かっています。",
   "order.atCounter": "カウンターでお待ちしています。",
   "order.enjoy": "どうぞお召し上がりください。",

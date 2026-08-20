@@ -335,7 +335,7 @@ export const my: Table = {
   "order.delivered": "ပို့ဆောင်ပြီး",
   "order.pickedUpStage": "ယူသွားပြီး",
   "order.placedDetail": "သင့်အော်ဒါ ရရှိပြီး ဆိုင်မှ အတည်ပြုနေပါသည်။",
-  "order.kitchenDetail": "ဘေဂယ်များ ကင်ပြီး ပြင်ဆင်နေပါသည်။",
+  "order.kitchenDetail": "သင့်အော်ဒါကို ပြင်ဆင်နေပါသည်။",
   "order.headingTo": "{where} သို့ ထွက်နေပါပြီ။",
   "order.atCounter": "ကောင်တာတွင် စောင့်နေပါသည်။",
   "order.enjoy": "အရသာရှိရှိ သုံးဆောင်ပါ။",

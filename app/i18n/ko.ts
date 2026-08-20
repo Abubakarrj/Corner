@@ -334,7 +334,7 @@ export const ko: Table = {
   "order.delivered": "배달 완료",
   "order.pickedUpStage": "수령 완료",
   "order.placedDetail": "주문을 받았고 매장에서 확인하고 있습니다.",
-  "order.kitchenDetail": "베이글을 굽고 만들고 있습니다.",
+  "order.kitchenDetail": "주문하신 메뉴를 준비하고 있습니다.",
   "order.headingTo": "{where}(으)로 가는 중입니다.",
   "order.atCounter": "카운터에서 기다리고 있습니다.",
   "order.enjoy": "맛있게 드세요.",

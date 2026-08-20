@@ -382,7 +382,7 @@ export const en = {
   "order.delivered": "Delivered",
   "order.pickedUpStage": "Picked up",
   "order.placedDetail": "We have your order and the shop is confirming it.",
-  "order.kitchenDetail": "Bagels are being toasted and built.",
+  "order.kitchenDetail": "Your order is being put together.",
   "order.headingTo": "Heading to {where}.",
   "order.atCounter": "Waiting for you at the counter.",
   "order.enjoy": "Enjoy it.",

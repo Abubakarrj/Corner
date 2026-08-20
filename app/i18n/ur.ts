@@ -337,7 +337,7 @@ export const ur: Table = {
   "order.delivered": "پہنچا دیا",
   "order.pickedUpStage": "لے لیا گیا",
   "order.placedDetail": "آپ کا آرڈر ہمارے پاس ہے اور اسٹور تصدیق کر رہا ہے۔",
-  "order.kitchenDetail": "بیگل سینکے اور تیار کیے جا رہے ہیں۔",
+  "order.kitchenDetail": "آپ کا آرڈر تیار کیا جا رہا ہے۔",
   "order.headingTo": "{where} کی طرف روانہ۔",
   "order.atCounter": "کاؤنٹر پر آپ کا انتظار ہے۔",
   "order.enjoy": "مزے سے کھائیں۔",

@@ -367,7 +367,7 @@ export const fa: Table = {
   "order.delivered": "تحویل داده شد",
   "order.pickedUpStage": "تحویل گرفته شد",
   "order.placedDetail": "سفارش شما را داریم و شعبه دارد تأییدش می‌کند.",
-  "order.kitchenDetail": "بیگل‌ها در حال برشته شدن و آماده شدن‌اند.",
+  "order.kitchenDetail": "سفارش شما در حال آماده‌سازی است.",
   "order.headingTo": "در راه {where}.",
   "order.atCounter": "سر پیشخوان منتظر شماست.",
   "order.enjoy": "نوش جان.",
