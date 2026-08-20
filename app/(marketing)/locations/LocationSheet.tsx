@@ -237,7 +237,7 @@ export default function LocationSheet({
           a catering enquiry is a tray for a date, arranged in a conversation,
           and how many breakfast orders are on the rail this minute has nothing
           to do with it. */}
-      {queue ? <KitchenLoad /> : null}
+      {queue && location ? <KitchenLoad locationId={location.id} /> : null}
     </Modal>
   );
 }

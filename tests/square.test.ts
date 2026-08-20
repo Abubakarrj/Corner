@@ -416,9 +416,48 @@ async function main() {
      noFulfillment?.fulfillment === null, JSON.stringify(noFulfillment));
 
   // ——— Counting what is on the counter ———
-  reset({ order_entries: [{}, {}, {}] });
+  //
+  // ⚠️ Per counter, not one number for the company. Every entry Square returns
+  // carries the location it belongs to, and this used to throw that away — one
+  // count for three counters is how a queue at Wilshire showed up on the
+  // Western outlet's sheet.
+  reset({
+    order_entries: [
+      { location_id: "L-figueroa" },
+      { location_id: "L-figueroa" },
+      { location_id: "L-default" },
+    ],
+  });
   const open = await countOpenSquareOrders();
-  ok("the open orders are counted", open === 3, String(open));
+  ok("the open orders are counted", open?.total === 3, JSON.stringify(open));
+  ok("and split by the counter making them",
+     open?.byCounter?.figueroa === 2, JSON.stringify(open?.byCounter));
+  // ⚠️ Wilshire and Western both fall back to SQUARE_LOCATION_ID here, so both
+  // read that location's one ticket. That is the honest answer for a
+  // deployment that has not said they are separate kitchens — and it is what
+  // setting SQUARE_LOCATION_WILSHIRE fixes.
+  ok("counters sharing a location share its count",
+     open?.byCounter?.wilshire === 1 && open?.byCounter?.western === 1,
+     JSON.stringify(open?.byCounter));
+  // A counter with nothing on the rail has to be a zero. Leaving it out would
+  // render as "we cannot say", and quiet is not the same as unknown.
+  reset({ order_entries: [{ location_id: "L-figueroa" }] });
+  const oneBusy = await countOpenSquareOrders();
+  ok("a quiet counter is a zero rather than missing",
+     oneBusy?.byCounter?.wilshire === 0 && oneBusy?.byCounter?.western === 0,
+     JSON.stringify(oneBusy?.byCounter));
+  // An entry Square declines to attribute is counted in the total and against
+  // no counter — inventing one would put somebody else's ticket on this rail.
+  reset({ order_entries: [{ location_id: "L-figueroa" }, {}] });
+  const orphan = await countOpenSquareOrders();
+  ok("an entry with no location still counts toward the whole",
+     orphan?.total === 2, JSON.stringify(orphan));
+  ok("but is not assigned to a counter",
+     orphan?.byCounter?.figueroa === 1 && orphan?.byCounter?.wilshire === 0,
+     JSON.stringify(orphan?.byCounter));
+
+  reset({ order_entries: [{ location_id: "L-figueroa" }] });
+  await countOpenSquareOrders();
   const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;
   ok("only OPEN orders are asked for",
      JSON.stringify((filter.state_filter as Wire)?.states) === JSON.stringify(["OPEN"]),

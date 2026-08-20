@@ -3,7 +3,7 @@ import "server-only";
 import { LOCATIONS } from "./(marketing)/locations/locations";
 import { PREP_MINUTES } from "./shopFacts";
 import { TAX_RATE } from "./shop/money";
-import type { PosOrderDraft, PosOrderResult, PosOrderState } from "./pos";
+import type { OpenOrderCount, PosOrderDraft, PosOrderResult, PosOrderState } from "./pos";
 
 // Square, as the till.
 //
@@ -560,19 +560,24 @@ const LIMIT = 200;
 /** The last reason the count failed, so a standing fault is said once. */
 let lastCountFailure: string | null = null;
 
-export async function countOpenSquareOrders(): Promise<number | null> {
+export async function countOpenSquareOrders(): Promise<OpenOrderCount | null> {
   const config = squareConfig();
   if (!config) return null;
 
   // Every counter's Square location, because the question is how busy the
   // kitchen is and a shop with three tills has three sets of tickets.
-  const locations = [
-    ...new Set(
-      LOCATIONS.map((store) => squareLocationFor(store.id)).filter(
-        (id): id is string => typeof id === "string",
-      ),
-    ),
-  ];
+  //
+  // ⚠️ Kept as a pairing rather than flattened to a list of ids. The answer
+  // comes back keyed by Square's location id and has to be turned back into
+  // counters, and two counters can legitimately share a location on a
+  // deployment that has only set SQUARE_LOCATION_ID — see the fold below.
+  const mapped = LOCATIONS.map((store) => ({
+    counter: store.id,
+    locationId: squareLocationFor(store.id),
+  })).filter((pair): pair is { counter: string; locationId: string } =>
+    typeof pair.locationId === "string",
+  );
+  const locations = [...new Set(mapped.map((pair) => pair.locationId))];
 
   const response = await fetch(`${config.host}/v2/orders/search`, {
     method: "POST",
@@ -620,10 +625,35 @@ export async function countOpenSquareOrders(): Promise<number | null> {
   lastCountFailure = null;
 
   const parsed = (await response.json().catch(() => null)) as {
-    order_entries?: unknown[];
+    order_entries?: { location_id?: string | null }[];
   } | null;
   if (!parsed) return null;
-  return parsed.order_entries?.length ?? 0;
+  const entries = parsed.order_entries ?? [];
+
+  // ⚠️ Every entry carries the location it belongs to, and this used to throw
+  // that away and return a length. One number for three counters is what made
+  // a queue at Wilshire show up on the Western outlet's sheet.
+  const perLocation = new Map<string, number>();
+  for (const entry of entries) {
+    const id = entry.location_id;
+    if (typeof id !== "string") continue;
+    perLocation.set(id, (perLocation.get(id) ?? 0) + 1);
+  }
+
+  // Folded back onto counters. A counter with no tickets gets a zero rather
+  // than being left out: absent has to mean "we cannot say", and a quiet
+  // counter is not that.
+  //
+  // Two counters sharing one Square location both get that location's count.
+  // That is the honest reading — the deployment has not told us they are
+  // separate kitchens — and it is what a shop looks like before somebody sets
+  // SQUARE_LOCATION_WILSHIRE and the rest.
+  const byCounter: Record<string, number> = {};
+  for (const pair of mapped) {
+    byCounter[pair.counter] = perLocation.get(pair.locationId) ?? 0;
+  }
+
+  return { total: entries.length, byCounter };
 }
 
 /** Whether Square answers at all, for the status page. */

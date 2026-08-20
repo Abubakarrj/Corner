@@ -78,6 +78,16 @@ export type PosOrderDraft = {
   courier?: { provider: string; supportPhone: string };
 };
 
+/** How much work a till says the kitchen has.
+ *
+ *  ⚠️ `byCounter` is null when the till cannot attribute a ticket to a counter,
+ *  which is a different thing from every counter being quiet. See the note on
+ *  countOpenPosOrders(). */
+export type OpenOrderCount = {
+  total: number;
+  byCounter: Record<string, number> | null;
+};
+
 export type PosOrderResult =
   /** `readyAt` is the till's own estimate as epoch ms, when it gave one.
    *
@@ -217,13 +227,26 @@ export async function fetchPosOrder(id: string): Promise<PosOrderState | null> {
 /** How many orders the kitchen has open, or null when we cannot say.
  *
  *  Null is a real answer and must not collapse to zero — see the note in
- *  app/kitchenQueue.ts about why a confident zero is the dangerous one. */
-export async function countOpenPosOrders(): Promise<number | null> {
+ *  app/kitchenQueue.ts about why a confident zero is the dangerous one.
+ *
+ *  ——— ⚠️ Why `byCounter` can be null while `total` is a number ———
+ *
+ *  Because the two tills are not equally able to answer. Square runs a
+ *  location per counter and stamps every ticket with one, so it can split the
+ *  queue three ways. Toast is configured with a single restaurant guid and has
+ *  no counter dimension at all: it can say how much work the kitchen has and
+ *  genuinely cannot say whose.
+ *
+ *  So the shape says which. A caller asking about one counter has to notice
+ *  that null and fall back rather than divide a total by three and print it. */
+export async function countOpenPosOrders(): Promise<OpenOrderCount | null> {
   switch (chosen()) {
     case "square":
       return square.countOpenSquareOrders();
-    case "toast":
-      return toast.countOpenOrders();
+    case "toast": {
+      const total = await toast.countOpenOrders();
+      return total === null ? null : { total, byCounter: null };
+    }
     default:
       return null;
   }

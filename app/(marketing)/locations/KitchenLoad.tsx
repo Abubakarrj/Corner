@@ -17,10 +17,19 @@ import { useT } from "../../i18n";
 // know whether to leave now. "4 orders ahead" answers that. Everything else
 // was answering a question about our data model that nobody asked.
 //
-// The count is the whole queue — see app/kitchenQueue.ts — which is what makes
-// four words enough. It is also why there is no prep estimate here: checkout
-// already says what time the food is ready, and repeating a number the next
-// screen states properly is how a caption turns back into a paragraph.
+// The count is one counter's whole queue — see app/kitchenQueue.ts — which is
+// what makes four words enough. It is also why there is no prep estimate here:
+// checkout already says what time the food is ready, and repeating a number the
+// next screen states properly is how a caption turns back into a paragraph.
+//
+// ——— ⚠️ One counter's, and it used to be everybody's ———
+//
+// This asked for a single shop-wide number and rendered it on every sheet. A
+// queue at Wilshire therefore appeared on the Western outlet's sheet, under a
+// button that would send somebody to Western — where the rail might well have
+// been empty. A busyness line that describes a different address is worse than
+// no busyness line, because it is confidently wrong about the one thing it is
+// for.
 //
 // ——— And why silence is a valid state ———
 //
@@ -41,13 +50,35 @@ import { useT } from "../../i18n";
 // somebody taps a shop the answer is usually already in hand and the first
 // paint of the sheet has it.
 //
-// One request per page, cached here. The count moves slowly and every shop on
-// the map shares one kitchen, so a second fetch per sheet would be the same
-// answer bought twice. It goes stale after a while, which is what FRESH_FOR
-// is for: a sheet opened ten minutes later asks again, and shows the cached
-// number in the meantime rather than nothing.
+// One request per page, cached here — still one, even though there are now
+// three numbers in it. The endpoint answers every counter at once because both
+// sources can produce them in a single call, so a fetch per sheet would be the
+// same answer bought three times. It goes stale after a while, which is what
+// FRESH_FOR is for: a sheet opened ten minutes later asks again, and shows the
+// cached numbers in the meantime rather than nothing.
 
-type Load = { known: true; ahead: number } | { known: false };
+/** What the endpoint says: a count for each counter, or nothing it can stand
+ *  behind. */
+export type Load = { known: true; counters: Record<string, number> } | { known: false };
+
+/** This counter's number, or null when there is nothing honest to show.
+ *
+ *  ——— Why this is a function and not an expression in the JSX ———
+ *
+ *  Because the two null cases are easy to collapse into a zero and a zero here
+ *  is a sentence: "no orders ahead", under a button that sends somebody across
+ *  town. It is pulled out so it can be handed a payload and asked.
+ *
+ *  ⚠️ A counter the answer does not mention is not a quiet counter. The
+ *  endpoint returns a zero for every counter it was asked about, so an absent
+ *  key means this shop was not in that set — a new location, or an answer from
+ *  a deploy that predates it — and the honest rendering of that is nothing at
+ *  all. */
+export function countFor(load: Load | null, locationId: string): number | null {
+  if (!load || !load.known) return null;
+  const ahead = load.counters[locationId];
+  return typeof ahead === "number" ? ahead : null;
+}
 
 /** How long a count is worth showing without asking again. */
 const FRESH_FOR = 60_000;
@@ -80,7 +111,7 @@ export function warmKitchenLoad(): Promise<Load> {
   return inFlight;
 }
 
-export default function KitchenLoad() {
+export default function KitchenLoad({ locationId }: { locationId: string }) {
   const t = useT();
   // Seeded from the cache, so a warmed answer is on the first paint instead of
   // arriving a frame later and pushing the button down.
@@ -99,14 +130,15 @@ export default function KitchenLoad() {
     };
   }, []);
 
-  if (!load || !load.known) return null;
+  const ahead = countFor(load, locationId);
+  if (ahead === null) return null;
 
   return (
     <p className="m-0 mt-3 text-center text-[12px] leading-[1.5] text-muted">
-      {load.ahead === 0
+      {ahead === 0
         ? t("kitchen.clear")
-        : t(load.ahead === 1 ? "kitchen.aheadOne" : "kitchen.ahead", {
-            count: load.ahead,
+        : t(ahead === 1 ? "kitchen.aheadOne" : "kitchen.ahead", {
+            count: ahead,
           })}
     </p>
   );

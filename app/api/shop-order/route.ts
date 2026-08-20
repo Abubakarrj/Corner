@@ -616,6 +616,15 @@ export async function POST(request: Request) {
 
   onOrder(order);
 
+  /** Which counter is making this, for the queue.
+   *
+   *  ⚠️ Delivery included. `orderAt` is null on a delivery — nobody chose a
+   *  pickup counter — but the food is still made somewhere, and pickupStore is
+   *  the counter the courier collects from. Leaving it null there would have
+   *  put every delivery order into the bucket that counts at all three, which
+   *  is how a busy Wilshire would make the Western outlet look busy too. */
+  const queueCounter = orderAt ?? pickupStore?.id ?? null;
+
   // ——— A gift card, spent against this order ———
   //
   // Read here, before the seat is held and long before anything is charged: a
@@ -915,7 +924,7 @@ export async function POST(request: Request) {
     // insert per order to keep the fallback table true rather than empty: a
     // fallback that has been silently accumulating nothing is not a fallback,
     // it is a second outage waiting behind the first.
-    await joinQueue(sent.orderId, sent.orderId);
+    await joinQueue(sent.orderId, { toastGuid: sent.orderId, counter: queueCounter });
     await countDemand();
     // Points, on the subtotal, keyed to this order so a retry cannot pay
     // twice. Awaited but incapable of failing the order — see earn().
@@ -973,7 +982,7 @@ export async function POST(request: Request) {
   // moment a customer wants to know where *theirs* sits. On the till path the
   // till's own id does this job and is already returned.
   const queueId = `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  await joinQueue(queueId);
+  await joinQueue(queueId, { counter: queueCounter });
   await countDemand();
   // Same on this path. The ref is the queue id rather than the till's id,
   // which is the only handle this branch has — and it is the one the client
