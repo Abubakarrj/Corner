@@ -63,8 +63,19 @@ export type SquareCardEntry = {
   /** Something went wrong loading or mounting. The checkout says so rather than
    *  showing an empty box where a card field should be. */
   error: string | null;
-  /** Where the iframes go. */
-  mountRef: React.RefObject<HTMLDivElement | null>;
+  /** Where the iframes go.
+   *
+   *  ⚠️ A callback ref, not a RefObject, and the difference is the whole bug
+   *  this replaced. The card fields are rendered only once somebody selects
+   *  "Pay now by card", which happens well after the config has arrived. An
+   *  effect keyed on the config alone therefore ran once against a container
+   *  that did not exist yet, returned early, and was never woken again — the
+   *  node appeared later and nothing was watching for it. The screen sat on
+   *  "Loading the card fields…" forever.
+   *
+   *  A callback ref makes the node attaching an event rather than a silent
+   *  mutation, so the effect below can depend on it. */
+  mountRef: (node: HTMLDivElement | null) => void;
   /** Hand the typed card to Square and take back a token.
    *
    *  Null when the card was refused or incomplete — the caller must not submit
@@ -108,7 +119,10 @@ export function useSquareCard(): SquareCardEntry {
   const [config, setConfig] = useState<Config | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const mountRef = useRef<HTMLDivElement | null>(null);
+  // State rather than a ref, so that the container appearing re-runs the effect
+  // that mounts into it. See the note on mountRef above.
+  const [mount, setMount] = useState<HTMLDivElement | null>(null);
+  const mountRef = useCallback((node: HTMLDivElement | null) => setMount(node), []);
   const cardRef = useRef<SquareCard | null>(null);
   const paymentsRef = useRef<SquarePayments | null>(null);
 
@@ -132,10 +146,9 @@ export function useSquareCard(): SquareCardEntry {
 
   useEffect(() => {
     if (config?.provider !== "square" || !config.applicationId || !config.locationId) return;
-    // The container has to exist before Square can attach to it. It is rendered
-    // by CardFields as soon as `enabled` is true, which this effect observes on
-    // the render after the config arrives.
-    const mount = mountRef.current;
+    // The container has to exist before Square can attach to it, and it does not
+    // exist until the customer selects the card tender — long after the config
+    // lands. So this waits for the node rather than assuming it.
     if (!mount) return;
 
     let cancelled = false;
@@ -170,7 +183,7 @@ export function useSquareCard(): SquareCardEntry {
       setReady(false);
       void mounted?.destroy?.().catch(() => undefined);
     };
-  }, [config]);
+  }, [config, mount]);
 
   const tokenize = useCallback<SquareCardEntry["tokenize"]>(async (buyer) => {
     const card = cardRef.current;

@@ -112,11 +112,12 @@ export default function CardFields({
   // boxes below are Square's own document inside iframes. This page cannot read
   // what is typed into them, which is a stronger guarantee than our promise not
   // to, and it is what keeps a PAN out of this deployment altogether.
-  // Pulled apart rather than read through `hosted` in the JSX below. The ref
-  // and the three plain values are different kinds of thing, and reading any
-  // property off an object that carries a ref trips react-hooks/refs — which is
-  // a blunt rule here but a correct instinct: `ready` and `error` drive the
-  // render and must be state, `mountRef` must not be read during it at all.
+  // Pulled apart rather than read through `hosted` in the JSX below, so the two
+  // state values that drive this render are plainly state and the mount is
+  // plainly a callback ref. `hostedMount` is called by React when the container
+  // attaches, which is what starts Square mounting its fields — this component
+  // renders only once the card tender is selected, so that attach happens long
+  // after the config arrives. See the note on mountRef in useSquareCard.ts.
   const hostedReady = hosted?.ready ?? false;
   const hostedError = hosted?.error ?? null;
   const hostedMount = hosted?.mountRef;
