@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { refresh } from "../../../orderStatus";
+import { uberWebhookSecret } from "../../../uberDirect";
 
 // Uber Direct's delivery webhook.
 //
@@ -14,8 +15,6 @@ import { refresh } from "../../../orderStatus";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SECRET = process.env.UBER_WEBHOOK_SECRET;
-
 function sameSignature(a: string, b: string): boolean {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
@@ -26,14 +25,18 @@ function sameSignature(a: string, b: string): boolean {
 export async function POST(request: Request) {
   const raw = await request.text();
 
-  if (!SECRET) {
-    console.error("[uber-webhook] UBER_WEBHOOK_SECRET is not set — message rejected");
+  // Read per request and under either name — see uberWebhookSecret(). It used
+  // to be a module-scope const, which meant a value pasted into Render only
+  // took effect on the next deploy rather than the next request.
+  const secret = uberWebhookSecret();
+  if (!secret) {
+    console.error("[uber-webhook] UBER_DIRECT_WEBHOOK_SECRET is not set — message rejected");
     return new Response("not configured", { status: 503 });
   }
 
   const signature = request.headers.get("x-postmates-signature");
   if (!signature) return new Response("unsigned", { status: 401 });
-  if (!sameSignature(createHmac("sha256", SECRET).update(raw).digest("hex"), signature)) {
+  if (!sameSignature(createHmac("sha256", secret).update(raw).digest("hex"), signature)) {
     console.warn("[uber-webhook] signature did not match — message rejected");
     return new Response("bad signature", { status: 401 });
   }

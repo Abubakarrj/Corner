@@ -48,6 +48,29 @@ export function isUberConfigured(): boolean {
   return uberConfig() !== null;
 }
 
+/** The secret Uber signs its delivery webhooks with.
+ *
+ *  ⚠️ Two names, and the second is the legacy one.
+ *
+ *  Every other variable in this integration is UBER_DIRECT_*, and this one was
+ *  UBER_WEBHOOK_SECRET — an inconsistency that cost somebody a real half hour
+ *  setting the sensibly-named version and watching the log keep saying it was
+ *  missing. UBER_DIRECT_WEBHOOK_SECRET is the name to use; the old one is still
+ *  read so that a deployment already carrying it does not go quiet on an upgrade.
+ *
+ *  Same pattern, and the same reasoning, as DIAGNOSTIC_TOKEN and
+ *  MAPS_DIAGNOSTIC_TOKEN in app/diagnostics.ts.
+ *
+ *  Read per call rather than at module load, so pasting it into Render takes
+ *  effect on the next request instead of the next deploy. */
+export function uberWebhookSecret(): string | null {
+  return (
+    process.env.UBER_DIRECT_WEBHOOK_SECRET?.trim() ||
+    process.env.UBER_WEBHOOK_SECRET?.trim() ||
+    null
+  );
+}
+
 /** Who the courier is, for the till's copy of the order.
  *
  *  Square records a delivery it did not arrange by provider name and support

@@ -3,7 +3,7 @@ import { reasonOff } from "../../auth/testLogin";
 import { isDatabaseConfigured } from "../../db";
 import { pushProblem } from "../../push/send";
 import { SHOP_PHONE, openPreview } from "../../shopFacts";
-import { isUberConfigured } from "../../uberDirect";
+import { isUberConfigured, uberWebhookSecret } from "../../uberDirect";
 import { isSquarePaymentsConfigured } from "../../squarePayments";
 
 // What's actually switched on, decided at request time.
@@ -107,7 +107,7 @@ function reportUberGap(): void {
 //                  warns about, and until now nothing said it out loud.
 //
 //   the webhook    is what makes a notification arrive while the app is shut.
-//                  Without UBER_WEBHOOK_SECRET the endpoint refuses Uber's
+//                  Without UBER_DIRECT_WEBHOOK_SECRET the endpoint refuses Uber's
 //                  messages, so the only thing that ever calls refresh() is a
 //                  tracker somebody is already looking at — and a notification
 //                  to a screen in front of you is not the feature.
@@ -124,9 +124,9 @@ function pushGap(): string[] {
         " subscription. Devices will register and never be sent anything",
     );
   }
-  if (!process.env.UBER_WEBHOOK_SECRET) {
+  if (!uberWebhookSecret()) {
     gaps.push(
-      "UBER_WEBHOOK_SECRET is not set, so Uber's delivery events are refused" +
+      "UBER_DIRECT_WEBHOOK_SECRET is not set, so Uber's delivery events are refused" +
         " and nothing can reach a phone unless the tracker is open on it",
     );
   }
