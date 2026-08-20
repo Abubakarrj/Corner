@@ -508,6 +508,10 @@ export function useCheckout(): Checkout {
           curbside: curbside && !isDelivery,
           utensils,
           note,
+          // Which tender was chosen, said rather than inferred. The server used
+          // to guess from whether a token arrived, and guessed "this order is
+          // broken" for everybody paying at the window.
+          tender,
           // The token, and Square's 3-D Secure result where the bank asked for
           // one. Opaque, single-use, and worthless to anybody who intercepts
           // it. The card number is not here and has no route to here.

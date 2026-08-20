@@ -656,11 +656,24 @@ export async function POST(request: Request) {
   const verificationToken = readText(body, "verificationToken", 2048) || undefined;
   let payment: Awaited<ReturnType<typeof chargeSquare>> | null = null;
 
-  if (isSquarePaymentsConfigured()) {
+  // ⚠️ Only when the customer chose to pay now.
+  //
+  // This read `if (isSquarePaymentsConfigured())` and demanded a token from
+  // every order — which broke "pay at the window" completely the moment Square
+  // was configured. Somebody choosing to pay at the counter sends no token,
+  // correctly, and was told their card could not be read.
+  //
+  // Paying at the window is not an unpaid order; it is the tender this shop has
+  // always had, settled when the bag is handed over. The only thing that has to
+  // be true is that an order claiming it will pay *now* actually carries the
+  // means to.
+  const payingNow = readText(body, "tender", 16) === "card";
+
+  if (isSquarePaymentsConfigured() && payingNow) {
     if (!paymentToken) {
-      // Configured to charge and given nothing to charge. Refusing is the only
-      // honest answer: the alternative is a free bagel for anybody who posts
-      // this endpoint directly.
+      // Says it is paying now and brought nothing to pay with. That is a broken
+      // client rather than a choice, and confirming it would promise the
+      // customer a charge that never happened.
       if (scheduledFor) await releaseSlot(scheduleId);
       return Response.json({ error: "api.paymentRequired" }, { status: 402 });
     }
