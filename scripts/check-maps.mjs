@@ -33,8 +33,27 @@ if (!key) {
   process.exit(1);
 }
 
-// The shop, so the questions are the ones the app actually asks.
-const SHOP = [34.0612, -118.2933];
+// ——— The counters, so the questions are the ones the app actually asks ———
+//
+// ⚠️ Kept in step with app/(marketing)/locations/locations.ts by hand. Not
+// imported, because this script runs against a deployment's key with no build
+// step and locations.ts is TypeScript — and that is exactly why it drifted:
+// every one of these probes was still asking about 650 S Catalina St, an
+// address the shop moved off two moves ago. A diagnostic that checks a stale
+// address reports confidently on a question nobody is asking.
+//
+// If a counter is added, corrected or closed, correct it here too. The
+// `position` values are the typed pairs from locations.ts, which is what the
+// drift check below is measuring the geocoder against.
+const COUNTERS = [
+  { id: "wilshire", address: "3450 Wilshire Blvd, Los Angeles, CA 90010", position: [34.0617, -118.3006] },
+  { id: "western", address: "355 S Western Ave, Los Angeles, CA 90020", position: [34.0685, -118.3092] },
+  { id: "figueroa", address: "2528 S Figueroa St, Los Angeles, CA 90007", position: [34.0302, -118.2742] },
+];
+
+// The one the single-origin probes measure from. Wilshire, because it is the
+// counter shopFacts falls back to everywhere else.
+const SHOP = COUNTERS[0].position;
 const NEARBY = [34.0522, -118.2437];
 
 // The waypoint shape app/googleMaps.ts sends: a stop a vehicle can make, on
@@ -59,7 +78,7 @@ function record(api, ok, detail) {
 // ——— Geocoding API ———
 try {
   const params = new URLSearchParams({
-    address: "650 S Catalina St, Los Angeles, CA",
+    address: COUNTERS[0].address,
     key,
     components: "country:US",
   });
@@ -124,7 +143,10 @@ try {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
     body: JSON.stringify({
-      input: "650 S Catalina",
+      // A street the app really has a counter on, so a suggestion coming back
+      // means the shape of the request is right for the addresses it is asked
+      // about rather than for one it is not.
+      input: "3450 Wilshire",
       includedPrimaryTypes: ["street_address", "premise", "subpremise"],
       includedRegionCodes: ["us"],
       locationBias: { circle: { center: { latitude: SHOP[0], longitude: SHOP[1] }, radius: 20000 } },
@@ -143,7 +165,7 @@ try {
   record("Places API (New)", false, `request failed: ${error.message}`);
 }
 
-// ——— The shop's own pin ———
+// ——— Each counter's own pin ———
 //
 // Not an API check. This is the one that answers "is the address on the map
 // accurate", which is a different question from "does Geocoding answer".
@@ -162,37 +184,50 @@ try {
 // door's own coordinates off the map and set `door` on the location in
 // locations.ts. That wins over this lookup outright, because the pickup is the
 // same doorway on every delivery and an error in it is added to every quote.
-try {
-  const params = new URLSearchParams({
-    address: "650 S Catalina St, Los Angeles, CA 90005",
-    key,
-    components: "country:US",
-  });
-  const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
-  const body = await response.json();
-  const found = body.results?.[0]?.geometry?.location;
+//
+// ⚠️ Every counter, not one. This checked a single address, which made it
+// blind to exactly the failure it exists to catch: a shop whose typed pair and
+// geocoded parcel disagree is a shop whose couriers are sent to the wrong
+// place, and there is no reason that would happen only at whichever address
+// the script happened to probe.
+const miles = (from, to) => {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(to.lat - from[0]);
+  const dLon = toRad(to.lng - from[1]);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(from[0])) * Math.cos(toRad(to.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * 3958.8 * Math.asin(Math.sqrt(a));
+};
 
-  if (body.status !== "OK" || !found) {
-    record("Shop position", false, `${body.status}: ${body.error_message ?? "(no message)"}`);
-  } else {
-    const toRad = (deg) => (deg * Math.PI) / 180;
-    const dLat = toRad(found.lat - SHOP[0]);
-    const dLon = toRad(found.lng - SHOP[1]);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(SHOP[0])) * Math.cos(toRad(found.lat)) * Math.sin(dLon / 2) ** 2;
-    const drift = 2 * 3958.8 * Math.asin(Math.sqrt(a));
+for (const counter of COUNTERS) {
+  const label = `Position: ${counter.id}`;
+  try {
+    const params = new URLSearchParams({
+      address: counter.address,
+      key,
+      components: "country:US",
+    });
+    const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
+    const body = await response.json();
+    const found = body.results?.[0]?.geometry?.location;
+
+    if (body.status !== "OK" || !found) {
+      record(label, false, `${body.status}: ${body.error_message ?? "(no message)"}`);
+      continue;
+    }
+    const drift = miles(counter.position, found);
     record(
-      "Shop position",
+      label,
       drift <= 0.5,
       drift <= 0.5
         ? `${drift.toFixed(3)} mi from the typed pair — ${found.lat.toFixed(5)}, ${found.lng.toFixed(5)}`
         : `${drift.toFixed(2)} mi away, so storePlaces will refuse it and keep the typed pair. ` +
           `Check the address in locations.ts.`,
     );
+  } catch (error) {
+    record(label, false, `request failed: ${error.message}`);
   }
-} catch (error) {
-  record("Shop position", false, `request failed: ${error.message}`);
 }
 
 // ——— The distance from the counter to a doorway ———
@@ -249,7 +284,12 @@ async function roadMiles(from, to) {
 // A block east, downtown, and the pier. Coordinates rather than addresses so
 // this measures routing and not geocoding — the geocode is checked above, and
 // mixing the two makes a failure ambiguous.
-const AROUND_THE_CORNER = [34.0612, -118.2915];
+//
+// ⚠️ A block from the *Wilshire* counter. This was a block from 650 S Catalina
+// St, which the shop moved off — half a mile from where SHOP now is, so the
+// "around the corner is under a mile" check was still passing while no longer
+// measuring anything around a corner. A check that cannot fail is not a check.
+const AROUND_THE_CORNER = [34.0617, -118.2988];
 const PIER = [34.0086, -118.4977];
 const RADIUS_MILES = 10;
 

@@ -6,10 +6,10 @@
 // there is one rounding rule, here, and both the client's summary and the
 // server's repricing call the same functions.
 
-// The combined sales tax rate at both counters: 9.75%. That is
+// The combined sales tax rate at every counter: 9.75%. That is
 // California's 7.25% statewide rate (6.00% state, 1.25% local) plus 2.50% of
-// Los Angeles County district taxes. Both addresses are in the City of Los
-// Angeles, in the same county, so one rate covers both and moving off S
+// Los Angeles County district taxes. All three addresses are in the City of
+// Los Angeles, in the same county, so one rate covers them and moving off S
 // Catalina St did not change it. A counter outside the county would.
 // Prepared food is taxable in California
 // whether it's eaten in or taken away, so this applies to the whole order.
