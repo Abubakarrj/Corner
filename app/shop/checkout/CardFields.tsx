@@ -130,10 +130,14 @@ export default function CardFields({
               frame itself, from this page's own tokens — see fieldStyle() in
               useSquareCard.ts — and a wrapper with its own border would put a
               second box around the first, which is exactly what it used to do.
-              The min height holds the space while the iframes load, because a
-              form that jumps as it finishes loading is a form somebody taps the
-              wrong part of. */}
-          <div ref={hostedMount} className="min-h-[52px]" />
+
+              The reserved height is held only while the fields are loading. A
+              form that changes height as it finishes loading is one somebody
+              taps the wrong part of — but once the mount has *failed* that same
+              reservation is an empty box sitting above an error message,
+              looking like a field that should be typeable and is not. Ready
+              takes its height from Square's own iframes. */}
+          <div ref={hostedMount} className={hostedError ? "" : "min-h-[52px]"} />
         </Line>
 
         {/* Loading and broken are different, and the difference matters: one

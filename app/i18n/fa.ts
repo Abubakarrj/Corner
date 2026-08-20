@@ -225,7 +225,7 @@ export const fa: Table = {
   "checkout.tenderCounterHint":
     "آماده نگه می‌داریم. هنگام تحویل با کارت، Apple Pay، Google Pay یا نقدی.",
   "checkout.tenderCard": "همین حالا با کارت پرداخت کنید",
-  "checkout.tenderCardHint": "وقتی شعبه سفارش را تأیید کند، برداشت می‌شود.",
+  "checkout.tenderCardHint": "هنگام ثبت سفارش کسر می‌شود.",
   "checkout.addTip": "انعام بگذارید",
   "checkout.noTip": "بدون انعام",
   "checkout.enterCustomTip": "مبلغ انعام دلخواه را وارد کنید",
@@ -291,7 +291,8 @@ export const fa: Table = {
   "checkout.placingOrder": "در حال ثبت سفارش…",
   "checkout.deliveryUnavailable": "ارسال در دسترس نیست",
   "checkout.pricingDelivery": "در حال محاسبهٔ ارسال…",
-  "checkout.cardCharged": "وقتی شعبه سفارش را تأیید کند، از کارت شما برداشت می‌شود.",
+  "checkout.cardCharged": "با ثبت این سفارش، از کارت شما کسر می‌شود.",
+  "checkout.cardChargedDone": "هنگام ثبت سفارش از کارت شما کسر شد.",
   "checkout.payAtWindow": "هنگام تحویل، سر پیشخوان پرداخت می‌کنید.",
   "checkout.somethingWentWrong": "مشکلی پیش آمد.",
   "checkout.couldNotPrice": "نتوانستیم هزینهٔ آن ارسال را حساب کنیم.",

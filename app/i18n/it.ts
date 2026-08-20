@@ -219,7 +219,7 @@ export const it: Table = {
   "checkout.tenderCounterHint":
     "Lo teniamo pronto. Carta, Apple Pay, Google Pay o contanti al ritiro.",
   "checkout.tenderCard": "Paga adesso con carta",
-  "checkout.tenderCardHint": "Addebitata quando il negozio conferma l'ordine.",
+  "checkout.tenderCardHint": "Addebitata al momento dell’ordine.",
   "checkout.addTip": "Lascia una mancia",
   "checkout.noTip": "Nessuna mancia",
   "checkout.enterCustomTip": "Inserisci l'importo della mancia",
@@ -289,8 +289,8 @@ export const it: Table = {
   "checkout.placingOrder": "Invio dell'ordine…",
   "checkout.deliveryUnavailable": "Consegna non disponibile",
   "checkout.pricingDelivery": "Calcolo della consegna…",
-  "checkout.cardCharged":
-    "La carta viene addebitata quando il negozio conferma l'ordine.",
+  "checkout.cardCharged": "La tua carta viene addebitata quando invii questo ordine.",
+  "checkout.cardChargedDone": "La tua carta è stata addebitata al momento dell’ordine.",
   "checkout.payAtWindow": "Paghi al banco quando ritiri.",
   "checkout.somethingWentWrong": "Qualcosa è andato storto.",
   "checkout.couldNotPrice": "Non siamo riusciti a calcolare quella consegna.",

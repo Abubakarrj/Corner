@@ -219,7 +219,7 @@ export const fr: Table = {
   "checkout.tenderCounterHint":
     "Ce sera prêt. Carte, Apple Pay, Google Pay ou espèces au moment du retrait.",
   "checkout.tenderCard": "Payer maintenant par carte",
-  "checkout.tenderCardHint": "Débitée quand la boutique confirme la commande.",
+  "checkout.tenderCardHint": "Débitée au moment de la commande.",
   "checkout.addTip": "Laisser un pourboire",
   "checkout.noTip": "Sans pourboire",
   "checkout.enterCustomTip": "Saisir un montant de pourboire",
@@ -289,8 +289,8 @@ export const fr: Table = {
   "checkout.placingOrder": "Envoi de la commande…",
   "checkout.deliveryUnavailable": "Livraison indisponible",
   "checkout.pricingDelivery": "Calcul de la livraison…",
-  "checkout.cardCharged":
-    "Votre carte est débitée quand la boutique confirme la commande.",
+  "checkout.cardCharged": "Votre carte est débitée lorsque vous passez cette commande.",
+  "checkout.cardChargedDone": "Votre carte a été débitée au moment de la commande.",
   "checkout.payAtWindow": "Vous payez au comptoir au moment du retrait.",
   "checkout.somethingWentWrong": "Une erreur est survenue.",
   "checkout.couldNotPrice": "Nous n'avons pas pu chiffrer cette livraison.",

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { loadMaps, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { MAP_STYLE } from "../locations/mapStyle";
+import { PIN_SIZE, pinDataUri } from "../locations/mapEngine";
 import { DELIVERY_ORIGIN } from "../locations/locations";
 import { searchBias } from "../../geolocate";
 import { useResolvedTheme } from "../../theme";
@@ -191,6 +192,18 @@ export default function DeliveryAreaMap() {
             position: { lat: point[0], lng: point[1] },
             map: instance,
             title: "Corner Bagel",
+            // The shop's own pin, the same one /locations draws — red with the
+            // bagel mark in wheat, from mapEngine.ts. It was Google's default
+            // teardrop here, which on a map of where *this shop* delivers reads
+            // as a dropped search result rather than as a counter.
+            //
+            // Anchored at the point of the teardrop so the pin sits on its
+            // coordinate rather than hovering above it.
+            icon: {
+              url: pinDataUri("shop"),
+              scaledSize: new maps.Size(PIN_SIZE.width, PIN_SIZE.height),
+              anchor: new maps.Point(PIN_SIZE.width / 2, PIN_SIZE.height),
+            },
           }),
       );
 

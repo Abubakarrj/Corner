@@ -181,7 +181,7 @@ export default function PurchaseComplete({
             they've paid when they haven't — is the one failure this screen
             has to avoid. */}
         <p className="mx-auto mt-3 max-w-xs text-[12px] leading-[1.5] text-quiet">
-          {tender === "card" ? t("checkout.cardCharged") : t("checkout.payAtWindow")}
+          {tender === "card" ? t("checkout.cardChargedDone") : t("checkout.payAtWindow")}
         </p>
 
         {order && onTrack ? (
