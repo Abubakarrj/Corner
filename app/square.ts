@@ -566,6 +566,66 @@ export async function squareReachable(): Promise<{ ok: true } | { ok: false; why
     const detail = await response.text().catch(() => "");
     return { ok: false, why: explainSquare(response.status, detail) };
   }
+
+  // ——— Answering is not the same as being usable ———
+  //
+  // This used to stop above: Square replied, so Square was fine. That passed
+  // happily while every single checkout failed with
+  //
+  //   Not authorized to take payments with location_id=…
+  //
+  // which is a property of the location rather than of the connection. A Square
+  // location only takes cards when its capabilities include
+  // CREDIT_CARD_PROCESSING, and a location created by hand — in the sandbox or
+  // otherwise — often does not have it. The credentials are right, the API is
+  // reachable, the id exists, and the money still cannot move.
+  //
+  // So the reply is read rather than counted. The point of this endpoint is to
+  // answer "will an order work right now", and the only place that question can
+  // be settled cheaply is here, before somebody's card is involved.
+  const parsed = (await response.json().catch(() => null)) as {
+    locations?: {
+      id?: string;
+      name?: string;
+      status?: string;
+      currency?: string;
+      capabilities?: string[];
+    }[];
+  } | null;
+  const locations = parsed?.locations ?? [];
+  const here = locations.find((location) => location.id === config.locationId);
+
+  if (!here) {
+    const known = locations.map((l) => l.id).filter(Boolean).join(", ") || "none";
+    return {
+      ok: false,
+      why:
+        `SQUARE_LOCATION_ID is ${config.locationId}, which this token cannot see.` +
+        ` Locations it can: ${known}.`,
+    };
+  }
+  if (here.status && here.status !== "ACTIVE") {
+    return { ok: false, why: `The ${here.name ?? config.locationId} location is ${here.status}.` };
+  }
+  if (here.capabilities && !here.capabilities.includes("CREDIT_CARD_PROCESSING")) {
+    return {
+      ok: false,
+      why:
+        `The ${here.name ?? config.locationId} location cannot take card payments` +
+        ` (capabilities: ${here.capabilities.join(", ") || "none"}). Orders will reach` +
+        ` the kitchen; every charge will be refused. Pick a location whose` +
+        ` capabilities include CREDIT_CARD_PROCESSING.`,
+    };
+  }
+  // We charge in dollars and say so in every request, so a location keeping its
+  // books in anything else refuses each one on a mismatch nobody would guess
+  // from the message.
+  if (here.currency && here.currency !== "USD") {
+    return {
+      ok: false,
+      why: `The ${here.name ?? config.locationId} location is in ${here.currency}; this app charges USD.`,
+    };
+  }
   return { ok: true };
 }
 
