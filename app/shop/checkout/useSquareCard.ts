@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useResolvedTheme } from "../../theme";
 
 // Square's hosted card fields, and the token they produce.
 //
@@ -34,7 +35,7 @@ type SquareCard = {
 };
 
 type SquarePayments = {
-  card: () => Promise<SquareCard>;
+  card: (options?: { style?: Record<string, Record<string, string>> }) => Promise<SquareCard>;
   verifyBuyer: (
     token: string,
     details: unknown,
@@ -89,6 +90,62 @@ export type SquareCardEntry = {
   }) => Promise<{ token: string; verificationToken?: string } | null>;
 };
 
+/** The checkout's own colours, handed to Square as literal values.
+ *
+ *  ——— Why this is not just CSS ———
+ *
+ *  Square's fields are iframes served from Square's origin. They cannot see this
+ *  document's stylesheet, so `var(--cb-surface)` means nothing inside them and a
+ *  class name reaches nothing. The only way to style them is to pass resolved
+ *  values through the SDK — which means reading the custom properties out of the
+ *  page at mount time and sending the colours they currently hold.
+ *
+ *  That in turn is why the theme is a dependency of the mount effect below: a
+ *  light/dark flip changes what these variables resolve to, and the iframe has
+ *  already been handed the old answer. Nothing repaints it but a re-mount.
+ *
+ *  ⚠️ Square accepts a fixed set of properties per selector and rejects the
+ *  rest, so this stays to the documented ones. The font is a system stack rather
+ *  than the page's own face: a webfont would have to be loadable from Square's
+ *  origin, and one that silently fails to load is worse than one that was never
+ *  asked for. */
+function fieldStyle(): Record<string, Record<string, string>> {
+  const read = (name: string, fallback: string) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+  const surface = read("--cb-surface", "#fdfcf7");
+  const ink = read("--cb-ink", "#1d1c19");
+  const quieter = read("--cb-quieter", "#666666");
+  const line = read("--cb-line-soft", "#ddd6c2");
+  const red = read("--cb-red", "#be1923");
+
+  return {
+    // 16px, the same as the fields above it — and the size below which iOS
+    // Safari zooms the page when a field takes focus.
+    input: {
+      backgroundColor: surface,
+      color: ink,
+      fontSize: "16px",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    },
+    "input::placeholder": { color: quieter },
+    ".input-container": {
+      backgroundColor: surface,
+      borderColor: line,
+      borderRadius: "12px",
+      borderWidth: "1px",
+    },
+    // Matches what the name and phone fields do on focus, so the whole form
+    // behaves as one form.
+    ".input-container.is-focus": { borderColor: ink },
+    ".input-container.is-error": { borderColor: red },
+    ".message-text": { color: quieter },
+    ".message-text.is-error": { color: red },
+    ".message-icon": { color: quieter },
+    ".message-icon.is-error": { color: red },
+  };
+}
+
 function scriptFor(environment: "sandbox" | "production"): string {
   return environment === "production"
     ? "https://web.squarecdn.com/v1/square.js"
@@ -117,6 +174,9 @@ function loadSdk(src: string): Promise<void> {
 
 export function useSquareCard(): SquareCardEntry {
   const [config, setConfig] = useState<Config | null>(null);
+  // A dependency of the mount, not a decoration: see fieldStyle() above for why
+  // a theme change has to rebuild the iframe rather than restyle it.
+  const theme = useResolvedTheme();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // State rather than a ref, so that the container appearing re-runs the effect
@@ -160,7 +220,7 @@ export function useSquareCard(): SquareCardEntry {
         if (cancelled || !window.Square) return;
         const payments = window.Square.payments(config.applicationId!, config.locationId!);
         paymentsRef.current = payments;
-        const card = await payments.card();
+        const card = await payments.card({ style: fieldStyle() });
         if (cancelled) return;
         await card.attach(mount);
         if (cancelled) {
@@ -183,7 +243,7 @@ export function useSquareCard(): SquareCardEntry {
       setReady(false);
       void mounted?.destroy?.().catch(() => undefined);
     };
-  }, [config, mount]);
+  }, [config, mount, theme]);
 
   const tokenize = useCallback<SquareCardEntry["tokenize"]>(async (buyer) => {
     const card = cardRef.current;

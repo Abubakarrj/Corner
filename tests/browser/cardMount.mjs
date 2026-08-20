@@ -7,6 +7,13 @@
 //     SQUARE_APPLICATION_ID=sandbox-fake SHOP_OPEN_PREVIEW=1 npx next start -p 3115
 //   node tests/browser/cardMount.mjs
 //
+// Playwright is not a dependency of this app and deliberately is not — it would
+// be a large install carried by every deploy for one script. Point NODE_PATH at
+// wherever it lives, e.g. a global install:
+//
+//   PLAYWRIGHT=/opt/node22/lib/node_modules/playwright/index.mjs \
+//     node tests/browser/cardMount.mjs
+//
 // Not part of `npm test`. That suite is node-only and finishes in seconds; this
 // needs a built app, a running server and a browser. It is here because the bug
 // below is invisible to every kind of test that suite can run — the modules were
@@ -21,7 +28,10 @@
 // Square's SDK is stubbed at the network layer, so this exercises our mount
 // sequence rather than Square's. That is the half that was broken.
 
-import { chromium } from "playwright";
+// Resolved at run time rather than imported by name, because ESM ignores
+// NODE_PATH: with Playwright installed somewhere other than this project, the
+// only way in is the full path. PLAYWRIGHT takes one.
+const { chromium } = await import(process.env.PLAYWRIGHT ?? "playwright");
 
 const BASE = process.env.BASE ?? "http://localhost:3115";
 
@@ -30,7 +40,8 @@ window.Square = {
   payments(appId, locationId) {
     window.__squareInit = { appId, locationId };
     return {
-      async card() {
+      async card(options) {
+        window.__squareStyle = options && options.style ? options.style : null;
         return {
           async attach(target) {
             window.__squareAttached = true;
@@ -66,7 +77,9 @@ page.on("console", (m) => {
 });
 
 // A basket and a pickup counter, so the checkout is reachable.
-await page.addInitScript(() => {
+const THEME = process.env.THEME ?? "light";
+await page.addInitScript((theme) => {
+  localStorage.setItem("cb-theme-v1", theme);
   localStorage.setItem(
     "cb-shop-cart-v1",
     JSON.stringify([{ slug: "single-bagel", quantity: 2, options: {} }]),
@@ -80,7 +93,7 @@ await page.addInitScript(() => {
       detail: "3450 Wilshire Blvd",
     }),
   );
-});
+}, THEME);
 
 await page.goto(`${BASE}/shop/checkout`, { waitUntil: "networkidle" });
 
@@ -88,6 +101,7 @@ const config = await page.evaluate(async () => {
   const r = await fetch("/api/payments-config");
   return r.json();
 });
+console.log(`theme: ${THEME}`);
 console.log("payments-config:", JSON.stringify(config));
 if (config.provider !== "square") {
   console.log("FAIL  the server is not offering Square; nothing to mount");
@@ -140,6 +154,34 @@ console.log(
 );
 console.log(fieldVisible ? "pass  the field is on the page" : "FAIL  no field rendered");
 
+// ——— On brand, not Square's white default ———
+//
+// The iframe cannot read this page's stylesheet, so the only way it is themed is
+// the style object we hand the SDK. This checks the values actually resolved
+// from the page's custom properties rather than that a style object was passed:
+// a fieldStyle() that read the wrong variable names would send a full object of
+// empty strings and look, from the outside, exactly like this working.
+const style = await page.evaluate(() => window.__squareStyle ?? null);
+const dark = await page.evaluate(() =>
+  getComputedStyle(document.documentElement).getPropertyValue("--cb-surface").trim(),
+);
+const hex = /^#[0-9a-fA-F]{3,8}$|^rgb/;
+const styled =
+  style &&
+  hex.test(style.input?.backgroundColor ?? "") &&
+  hex.test(style.input?.color ?? "") &&
+  hex.test(style[".input-container"]?.borderColor ?? "");
+console.log("style handed to Square:", JSON.stringify(style?.input ?? null));
+console.log(styled ? "pass  the fields are styled with resolved colours"
+                   : "FAIL  no usable colours reached Square");
+const matchesPage = style?.input?.backgroundColor === dark;
+console.log(matchesPage ? `pass  and the ground matches the page (${dark})`
+                        : `FAIL  ground ${style?.input?.backgroundColor} is not the page's ${dark}`);
+// 16px or larger, or iOS Safari zooms the whole page when the field takes focus.
+const bigEnough = parseInt(style?.input?.fontSize ?? "0", 10) >= 16;
+console.log(bigEnough ? "pass  the text is 16px so iOS does not zoom on focus"
+                      : `FAIL  fontSize ${style?.input?.fontSize} will make iOS zoom`);
+
 // Switching away and back must re-mount rather than strand a dead node.
 await page.getByText(/Pay at the window/i).first().click();
 await page.waitForTimeout(400);
@@ -155,7 +197,9 @@ await page.screenshot({ path: process.env.SHOT ?? "/tmp/card-mounted.png", fullP
 
 if (problems.length) console.log("console errors:", problems.slice(0, 5));
 
-const failed = !attached || stillLoading || !fieldVisible || !reattached;
+const failed =
+  !attached || stillLoading || !fieldVisible || !reattached ||
+  !styled || !matchesPage || !bigEnough;
 console.log(failed ? "\nFAILED" : "\nALL PASS");
 await browser.close();
 process.exit(failed ? 1 : 0);

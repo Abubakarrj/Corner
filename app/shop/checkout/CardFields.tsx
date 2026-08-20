@@ -126,15 +126,14 @@ export default function CardFields({
     return (
       <div className="flex flex-col gap-3">
         <Line label={t("checkout.cardNumber")} error={undefined}>
-          {/* Square styles the inside; this is the frame around it, matched to
-              the inputs below so the screen does not change shape depending on
-              which processor is configured. A min height holds the space while
-              the iframes load, because a form that jumps as it finishes loading
-              is a form somebody taps the wrong part of. */}
-          <div
-            ref={hostedMount}
-            className="min-h-[52px] rounded-xl border border-line-soft bg-surface px-1 transition-colors"
-          />
+          {/* No border and no background of our own. Square draws the field's
+              frame itself, from this page's own tokens — see fieldStyle() in
+              useSquareCard.ts — and a wrapper with its own border would put a
+              second box around the first, which is exactly what it used to do.
+              The min height holds the space while the iframes load, because a
+              form that jumps as it finishes loading is a form somebody taps the
+              wrong part of. */}
+          <div ref={hostedMount} className="min-h-[52px]" />
         </Line>
 
         {/* Loading and broken are different, and the difference matters: one
