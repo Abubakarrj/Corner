@@ -174,8 +174,7 @@ export const fr: Table = {
   "cart.decreaseOf": "Diminuer la quantité de {name}",
   "cart.increaseOf": "Augmenter la quantité de {name}",
   "cart.viewFull": "Voir tout le panier",
-  "cart.paymentConfirmed":
-    "Le paiement est confirmé avec vous une fois la commande passée.",
+  "cart.checkoutNote": "Les taxes et les frais s’ajoutent au paiement. Rien n’est débité avant que vous passiez la commande.",
   "cart.closeBasket": "Fermer le panier",
   "cart.movedFrom":
     "Vous aviez commencé ce panier pour {from}. Il part maintenant en {to}. Même chose à manger, remise différente.",
@@ -367,6 +366,7 @@ export const fr: Table = {
   "order.somethingWrong": "Un souci avec cette commande ?",
   "order.followCourier": "Suivre le coursier",
   "order.payCourier": "Payez le coursier à l'arrivée.",
+  "order.paidInFull": "Intégralement payé.",
   "order.payAtWindow": "Payez au comptoir au moment du retrait.",
   "order.received": "Reçue",
   "order.preparing": "En préparation",

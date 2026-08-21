@@ -5,7 +5,7 @@ import { useLocale, useT, type StringKey } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { slotLabel } from "../../shopFacts";
 import { formatPrice } from "../products";
-import { orderTotals, type PlacedOrder } from "../../account";
+import { amountOwing, orderTotals, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
 import Confetti from "../../ui/Confetti";
 import { DISPLAY_FONT } from "../shopControls";
@@ -66,6 +66,7 @@ export default function PurchaseComplete({
   const t = useT();
   const tag = localeById(useLocale()).tag;
   const bill = order ? orderTotals(order) : null;
+  const owing = order ? amountOwing(order) : null;
 
   return (
     // relative, because the confetti canvas fills this box rather than the
@@ -176,12 +177,22 @@ export default function PurchaseComplete({
           </div>
         ) : null}
 
-        {/* The money sentence, chosen from the tender rather than assumed.
-            Getting this wrong in the reassuring direction — telling somebody
-            they've paid when they haven't — is the one failure this screen
-            has to avoid. */}
+        {/* The money sentence, from what was settled rather than from the
+            tender alone. Getting this wrong in the reassuring direction —
+            telling somebody they have paid when they have not — is the one
+            failure this screen has to avoid, so the tender still decides
+            wording wherever anything is left owing.
+
+            ⚠️ The tender on its own was wrong in the other direction too. A
+            gift card is spent whichever tender was chosen, so a card that
+            covered the whole bill left this saying "you pay at the window"
+            about an order with nothing left to pay. */}
         <p className="mx-auto mt-3 max-w-xs text-[12px] leading-[1.5] text-quiet">
-          {tender === "card" ? t("checkout.cardChargedDone") : t("checkout.payAtWindow")}
+          {tender === "card"
+            ? t("checkout.cardChargedDone")
+            : owing === 0
+              ? t("order.paidInFull")
+              : t("checkout.payAtWindow")}
         </p>
 
         {order && onTrack ? (

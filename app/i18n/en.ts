@@ -184,7 +184,7 @@ export const en = {
   "cart.decreaseOf": "Decrease quantity of {name}",
   "cart.increaseOf": "Increase quantity of {name}",
   "cart.viewFull": "View full basket",
-  "cart.paymentConfirmed": "Payment is confirmed with you after the order goes in.",
+  "cart.checkoutNote": "Tax and any fees are added at checkout. Nothing is charged until you place the order.",
   "cart.closeBasket": "Close basket",
   "cart.movedFrom": "You started this basket for {from}. It's going to {to} now. Same food, different handover.",
 
@@ -383,6 +383,7 @@ export const en = {
   "order.somethingWrong": "Something wrong with this order?",
   "order.followCourier": "Follow the courier",
   "order.payCourier": "Pay the courier when it arrives.",
+  "order.paidInFull": "Paid in full.",
   "order.payAtWindow": "Pay at the window when you collect.",
   "order.received": "Received",
   "order.preparing": "Preparing",

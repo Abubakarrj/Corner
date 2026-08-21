@@ -157,7 +157,7 @@ export const es: Table = {
   "cart.decreaseOf": "Reducir la cantidad de {name}",
   "cart.increaseOf": "Aumentar la cantidad de {name}",
   "cart.viewFull": "Ver la cesta completa",
-  "cart.paymentConfirmed": "El pago se confirma contigo después de enviar el pedido.",
+  "cart.checkoutNote": "Los impuestos y las tarifas se añaden al finalizar la compra. No se cobra nada hasta que haces el pedido.",
   "cart.closeBasket": "Cerrar cesta",
   "cart.movedFrom": "Empezaste esta cesta para {from}. Ahora va a {to}. La misma comida, otra forma de recogerla.",
 
@@ -339,6 +339,7 @@ export const es: Table = {
   "order.somethingWrong": "¿Algo va mal con este pedido?",
   "order.followCourier": "Seguir al repartidor",
   "order.payCourier": "Paga al repartidor cuando llegue.",
+  "order.paidInFull": "Pagado por completo.",
   "order.payAtWindow": "Paga en la ventanilla al recoger.",
   "order.received": "Recibido",
   "order.preparing": "Preparando",

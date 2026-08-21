@@ -174,8 +174,7 @@ export const it: Table = {
   "cart.decreaseOf": "Riduci la quantità di {name}",
   "cart.increaseOf": "Aumenta la quantità di {name}",
   "cart.viewFull": "Vedi tutto il carrello",
-  "cart.paymentConfirmed":
-    "Il pagamento viene confermato con te dopo che l'ordine è partito.",
+  "cart.checkoutNote": "Tasse ed eventuali costi si aggiungono al pagamento. Non addebitiamo nulla finché non invii l’ordine.",
   "cart.closeBasket": "Chiudi il carrello",
   "cart.movedFrom":
     "Avevi iniziato questo carrello per {from}. Adesso va a {to}. Stesso cibo, consegna diversa.",
@@ -367,6 +366,7 @@ export const it: Table = {
   "order.somethingWrong": "Qualcosa non va con questo ordine?",
   "order.followCourier": "Segui il corriere",
   "order.payCourier": "Paga il corriere quando arriva.",
+  "order.paidInFull": "Pagato per intero.",
   "order.payAtWindow": "Paga al banco quando ritiri.",
   "order.received": "Ricevuto",
   "order.preparing": "In preparazione",

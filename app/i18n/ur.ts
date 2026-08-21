@@ -158,7 +158,7 @@ export const ur: Table = {
   "cart.decreaseOf": "{name} کی مقدار کم کریں",
   "cart.increaseOf": "{name} کی مقدار بڑھائیں",
   "cart.viewFull": "پوری ٹوکری دیکھیں",
-  "cart.paymentConfirmed": "آرڈر جانے کے بعد ادائیگی آپ سے تصدیق کی جاتی ہے۔",
+  "cart.checkoutNote": "ٹیکس اور فیس چیک آؤٹ پر شامل ہوتی ہیں۔ آرڈر دینے تک کوئی رقم نہیں کٹتی۔",
   "cart.closeBasket": "ٹوکری بند کریں",
   "cart.movedFrom": "آپ نے یہ ٹوکری {from} کے لیے شروع کی تھی۔ اب یہ {to} جا رہی ہے۔ کھانا وہی ہے، صرف حوالگی کا طریقہ بدلا ہے۔",
 
@@ -339,6 +339,7 @@ export const ur: Table = {
   "order.somethingWrong": "کیا اس آرڈر میں کوئی مسئلہ ہے؟",
   "order.followCourier": "کورئیر کو ٹریک کریں",
   "order.payCourier": "جب کورئیر پہنچے تو اسے ادائیگی کریں۔",
+  "order.paidInFull": "پوری ادائیگی ہو چکی ہے۔",
   "order.payAtWindow": "لیتے وقت کھڑکی پر ادائیگی کریں۔",
   "order.received": "موصول ہوا",
   "order.preparing": "تیار ہو رہا ہے",

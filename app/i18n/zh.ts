@@ -157,7 +157,7 @@ export const zh: Table = {
   "cart.decreaseOf": "减少{name}的数量",
   "cart.increaseOf": "增加{name}的数量",
   "cart.viewFull": "查看完整购物篮",
-  "cart.paymentConfirmed": "订单提交后我们会与你确认付款。",
+  "cart.checkoutNote": "税费和其他费用在结账时加上。下单之前不会扣款。",
   "cart.closeBasket": "关闭购物篮",
   "cart.movedFrom": "这个购物篮原本是为{from}准备的，现在要送到{to}。食物不变，只是取餐方式不同。",
 
@@ -338,6 +338,7 @@ export const zh: Table = {
   "order.somethingWrong": "这份订单有问题吗？",
   "order.followCourier": "追踪配送员",
   "order.payCourier": "配送员送达时付款。",
+  "order.paidInFull": "已全额付款。",
   "order.payAtWindow": "取餐时在窗口付款。",
   "order.received": "已接单",
   "order.preparing": "制作中",

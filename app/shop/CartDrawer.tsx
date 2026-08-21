@@ -271,8 +271,18 @@ export default function CartDrawer({
                 {formatPrice(subtotalCents)}
               </span>
             </div>
-            <p className="mt-1 text-[10px] text-quiet">
-              {t("cart.paymentConfirmed")}
+            {/* ⚠️ What this said before: "Payment is confirmed with you after
+                the order goes in." That was written when every order was
+                settled at a counter and this screen's job was to promise the
+                shop would not touch anybody's money. The checkout takes cards
+                and spends gift cards now, so the promise had quietly become
+                the wrong half of the story.
+
+                What is still true, and is what somebody about to press
+                Checkout actually needs: the number above is not the number
+                they will pay, and pressing this button does not move money. */}
+            <p className="mt-1 text-[10px] leading-[1.4] text-quiet">
+              {t("cart.checkoutNote")}
             </p>
             {/* Held back while a line still needs a choice — the picker for
                 it is up in the list, so there's nowhere useful to send

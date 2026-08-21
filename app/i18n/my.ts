@@ -155,7 +155,7 @@ export const my: Table = {
   "cart.decreaseOf": "{name} အရေအတွက် လျှော့ရန်",
   "cart.increaseOf": "{name} အရေအတွက် တိုးရန်",
   "cart.viewFull": "ခြင်းအပြည့် ကြည့်ရန်",
-  "cart.paymentConfirmed": "အော်ဒါ ရောက်ပြီးနောက် ငွေပေးချေမှုကို သင်နှင့် အတည်ပြုပါမည်။",
+  "cart.checkoutNote": "အခွန်နှင့် အခကြေးငွေများကို ငွေရှင်းချိန်တွင် ထည့်ပါသည်။ အော်ဒါမတင်မချင်း ငွေမဖြတ်ပါ။",
   "cart.closeBasket": "ခြင်း ပိတ်ရန်",
   "cart.movedFrom": "ဤခြင်းကို {from} အတွက် စတင်ခဲ့သည်။ ယခု {to} သို့ သွားပါမည်။ အစားအစာက အတူတူပါပဲ၊ လက်ခံပုံသာ ကွာသည်။",
 
@@ -337,6 +337,7 @@ export const my: Table = {
   "order.somethingWrong": "ဤအော်ဒါတွင် ပြဿနာ ရှိပါသလား။",
   "order.followCourier": "ပို့ဆောင်သူကို ခြေရာခံရန်",
   "order.payCourier": "ပို့ဆောင်သူ ရောက်လာသည့်အခါ ငွေပေးချေပါ။",
+  "order.paidInFull": "ငွေအပြည့်အစုံ ပေးချေပြီးပါပြီ။",
   "order.payAtWindow": "လာယူသည့်အခါ ကောင်တာတွင် ငွေပေးချေပါ။",
   "order.received": "လက်ခံရရှိပြီး",
   "order.preparing": "ပြင်ဆင်နေသည်",

@@ -141,6 +141,20 @@ export type PlacedOrder = {
   // from. See the note at the top of app/shop/checkout/card.ts.
   cardBrand?: string;
   cardLast4?: string;
+  // ⚠️ What was actually taken before this order left the browser: a card
+  // charge, a gift card, or both. Nothing else on this record can answer that
+  // question — `cardLast4` cannot, because with Square's hosted fields the
+  // number lives in an iframe and the local card state is empty, so a real
+  // card payment records a blank four digits.
+  //
+  // It exists because every screen after checkout was deciding what somebody
+  // owed from the *fulfillment mode* alone, and told a customer who had
+  // already paid online to pay again. Money is the one thing these screens
+  // must not be casually wrong about.
+  //
+  // Absent on orders placed before this existed. Read through amountOwing()
+  // rather than directly: absent has to mean "we cannot say", not "paid".
+  settledCents?: number;
   status: OrderStatus;
 };
 
@@ -184,6 +198,23 @@ export function orderTotals(order: PlacedOrder): {
     totalCents:
       order.totalCents ?? order.subtotalCents + taxCents + deliveryCents + tipCents,
   };
+}
+
+/** What is still owed on an order, and `null` when the record cannot say.
+ *
+ *  ——— ⚠️ Why absent is not zero, and not the total either ———
+ *
+ *  Three answers, not two. An order that settled online owes nothing; an order
+ *  paying at the counter owes the total; an order placed before `settledCents`
+ *  existed cannot be asked, and guessing either way is a sentence about money
+ *  that might be wrong. The screens render nothing at all for `null`, which is
+ *  the honest amount of nothing to say.
+ *
+ *  A gift card that covered only part of the bill leaves the rest owing, which
+ *  falls out of the arithmetic rather than needing a case of its own. */
+export function amountOwing(order: PlacedOrder): number | null {
+  if (typeof order.settledCents !== "number") return null;
+  return Math.max(orderTotals(order).totalCents - order.settledCents, 0);
 }
 
 // ——— Account ———

@@ -777,6 +777,34 @@ export function useCheckout(): Checkout {
       // is a single object with two harmless fields in it.
       const paid = tender === "card" ? card.summary() : null;
 
+      // ——— What has actually been taken, before anybody reaches a counter ———
+      //
+      // ⚠️ Every screen after this one used to work out what was owed from the
+      // fulfillment mode alone — delivery meant "pay the courier", pickup meant
+      // "pay at the window" — and after this checkout learned to charge cards
+      // and spend gift cards, both sentences were being shown to people who had
+      // already paid. Telling somebody to pay twice is the worst thing a
+      // receipt can do.
+      //
+      // Two things can have moved:
+      //
+      //   · the card, and `payment` is the proof rather than the tender. A
+      //     token exists only if hosted fields were enabled, the tender was
+      //     card, and there was something left to charge — the same three
+      //     conditions the server re-checks before it charges anything.
+      //   · a gift card, which is spent whichever tender was chosen, so it is
+      //     read from the server's answer rather than inferred here.
+      //
+      // The server's own figures win where it sent them: it repriced the order
+      // and it is the side that moved the money.
+      const giftPaidCents =
+        typeof result?.giftAppliedCents === "number" ? result.giftAppliedCents : 0;
+      const cardPaidCents = payment
+        ? typeof result?.dueNowCents === "number"
+          ? result.dueNowCents
+          : dueNowCents
+        : 0;
+
       // The account page's history and its usuals list are built from this.
       // Recorded after the endpoint accepts, so a rejected order doesn't show
       // up as one that happened, and on this device only — there's no
@@ -836,6 +864,10 @@ export function useCheckout(): Checkout {
         // device only — `summary()` is structurally incapable of handing over
         // the number, which is the point of it.
         ...(paid ? { cardBrand: BRAND_LABEL[paid.brand], cardLast4: paid.last4 } : {}),
+        // Always written, including as a zero. A zero is the answer for an
+        // order paying at the counter; it is leaving the field out that means
+        // "this record predates the question" — see amountOwing().
+        settledCents: giftPaidCents + cardPaidCents,
       });
       // Up to the account, when there is one. Deliberately not awaited: the
       // order is placed, the kitchen has it, and this device has its own copy

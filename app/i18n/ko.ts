@@ -155,7 +155,7 @@ export const ko: Table = {
   "cart.decreaseOf": "{name} 수량 줄이기",
   "cart.increaseOf": "{name} 수량 늘리기",
   "cart.viewFull": "장바구니 전체 보기",
-  "cart.paymentConfirmed": "결제는 주문이 접수된 뒤에 확인해 드립니다.",
+  "cart.checkoutNote": "세금과 수수료는 결제 단계에서 더해집니다. 주문을 넣기 전까지는 결제되지 않습니다.",
   "cart.closeBasket": "장바구니 닫기",
   "cart.movedFrom": "{from}으로 시작한 장바구니입니다. 이제 {to}으로 갑니다. 음식은 그대로, 전달 방식만 달라집니다.",
 
@@ -336,6 +336,7 @@ export const ko: Table = {
   "order.somethingWrong": "이 주문에 문제가 있나요?",
   "order.followCourier": "배달원 위치 보기",
   "order.payCourier": "배달원이 도착하면 결제해 주세요.",
+  "order.paidInFull": "결제가 완료되었습니다.",
   "order.payAtWindow": "찾으실 때 창구에서 결제해 주세요.",
   "order.received": "접수됨",
   "order.preparing": "준비 중",

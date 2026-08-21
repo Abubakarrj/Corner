@@ -155,7 +155,7 @@ export const ja: Table = {
   "cart.decreaseOf": "{name}の数量を減らす",
   "cart.increaseOf": "{name}の数量を増やす",
   "cart.viewFull": "カート全体を見る",
-  "cart.paymentConfirmed": "お支払いは注文が入ってからご確認いただきます。",
+  "cart.checkoutNote": "税と手数料はお会計時に加算されます。ご注文を確定するまで請求はありません。",
   "cart.closeBasket": "カートを閉じる",
   "cart.movedFrom": "このカートは{from}向けに始めました。今は{to}へ向かいます。 中身は同じで、受け取り方だけが変わります。",
 
@@ -336,6 +336,7 @@ export const ja: Table = {
   "order.somethingWrong": "このご注文に何か問題がありますか？",
   "order.followCourier": "配達員を追跡",
   "order.payCourier": "配達員が到着したらお支払いください。",
+  "order.paidInFull": "お支払い済みです。",
   "order.payAtWindow": "受け取りの際に窓口でお支払いください。",
   "order.received": "受付済み",
   "order.preparing": "準備中",

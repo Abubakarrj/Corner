@@ -181,7 +181,7 @@ export const fa: Table = {
   "cart.decreaseOf": "کم کردن تعداد {name}",
   "cart.increaseOf": "زیاد کردن تعداد {name}",
   "cart.viewFull": "دیدن کل سبد",
-  "cart.paymentConfirmed": "پرداخت پس از ثبت سفارش با شما تأیید می‌شود.",
+  "cart.checkoutNote": "مالیات و هزینه‌ها هنگام پرداخت اضافه می‌شود. تا زمانی که سفارش را ثبت نکنید مبلغی کسر نمی‌شود.",
   "cart.closeBasket": "بستن سبد",
   "cart.movedFrom":
     "این سبد را برای {from} شروع کرده بودید. حالا به {to} می‌رود. همان غذا، تحویل متفاوت.",
@@ -368,6 +368,7 @@ export const fa: Table = {
   "order.somethingWrong": "مشکلی با این سفارش هست؟",
   "order.followCourier": "پیگیری پیک",
   "order.payCourier": "هنگام رسیدن، به پیک پرداخت کنید.",
+  "order.paidInFull": "به‌طور کامل پرداخت شد.",
   "order.payAtWindow": "هنگام تحویل، سر پیشخوان پرداخت کنید.",
   "order.received": "دریافت شد",
   "order.preparing": "در حال آماده‌سازی",

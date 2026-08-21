@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import {
   findOrder,
   formatOrderDate,
+  amountOwing,
   orderTotals,
   progressFor,
   useOrders,
@@ -373,6 +374,7 @@ function Receipt({
   const menu = useMenu();
   const tag = localeById(useLocale()).tag;
   const bill = orderTotals(order);
+  const owing = amountOwing(order);
   return (
     <div
       className="mt-8 rounded-2xl border p-5"
@@ -449,12 +451,28 @@ function Receipt({
           <Line label={t("common.total")} amount={formatPrice(bill.totalCents)} strong />
         </div>
       </div>
-      <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
-        {/* Whether this is a delivery at all, not whether it was charged for.
-            Keyed on the charge, a waived order said "pay at the window" about
-            a bag going into a car. */}
-        {bill.deliveryQuotedCents > 0 ? t("order.payCourier") : t("order.payAtWindow")}
-      </p>
+      {/* ——— ⚠️ What is left to pay, which is not the same as how it arrives ———
+
+          This line used to be chosen from the fulfillment alone: a delivery
+          said "pay the courier", anything else said "pay at the window". That
+          was right while every order was settled at a counter. It stopped
+          being right when the checkout learned to charge a card and to spend a
+          gift card, and it has been telling people who already paid to pay
+          again — on the one screen they open to check.
+
+          Three states, and the third is why owing is nullable: an order placed
+          before the record carried this cannot be asked what it settled, and
+          the honest thing to print about money we cannot account for is
+          nothing. */}
+      {owing === null ? null : (
+        <p className="mt-1.5 text-[12px]" style={{ color: muted }}>
+          {owing === 0
+            ? t("order.paidInFull")
+            : bill.deliveryQuotedCents > 0
+              ? t("order.payCourier")
+              : t("order.payAtWindow")}
+        </p>
+      )}
 
       {/* Uber's own tracking page. Linked rather than embedded, and rather
           than rebuilt: the courier is theirs, the live position is theirs,
