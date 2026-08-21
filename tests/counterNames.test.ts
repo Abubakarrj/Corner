@@ -55,6 +55,7 @@ console.log("\n— names —");
 for (const [id, name] of [
   ["wilshire", "Koreatown"],
   ["larchmont", "Larchmont"],
+  ["pasadena", "Pasadena"],
   ["glendon", "Westwood"],
   ["ventura", "Studio City"],
 ] as const) {
@@ -76,7 +77,7 @@ ok("and would go last when it returns, after the full stores",
 // every past order and every Square variable stops resolving.
 console.log("\n— and the ids that did not move —");
 ok("the ids are still the street handles",
-   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura",
+   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura,pasadena",
    LOCATIONS.map((l) => l.id).join(","));
 
 // ——— The street names still find their shops ———
@@ -97,6 +98,8 @@ for (const [query, id] of [
   // one shop rather than splitting across name and alias.
   ["larchmont", "larchmont"],
   ["142 larchmont", "larchmont"],
+  ["fair oaks", "pasadena"],
+  ["14 fair oaks", "pasadena"],
 ] as const) {
   const hits = searchLocations(query, "shop");
   ok(`"${query}" still finds ${id} first`, hits[0]?.id === id,
@@ -112,6 +115,9 @@ for (const [query, id] of [
   ["larchmont village", "larchmont"],
   ["hancock park", "larchmont"],
   ["windsor square", "larchmont"],
+  ["pasadena", "pasadena"],
+  ["old pasadena", "pasadena"],
+  ["91105", "pasadena"],
 ] as const) {
   const hits = searchLocations(query, "shop");
   ok(`"${query}" finds ${id} first`, hits[0]?.id === id,

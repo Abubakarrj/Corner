@@ -106,6 +106,17 @@ export function isSquareConfigured(): boolean {
  *  the ids it is given — but it should come off the deploy, and Square's own
  *  location for that store should be deactivated in the dashboard so it stops
  *  showing up in reporting as a counter with no sales. */
+/** The sales tax rate at one of our counters, as a fraction.
+ *
+ *  Looked up rather than passed, because the draft carries the counter id and
+ *  not the record. An unknown counter — including undefined, which is what a
+ *  draft from a deployment with one location looks like — is the shop's usual
+ *  rate, which is the same fallback taxFor() makes. */
+function counterTaxRate(counter: string | undefined): number {
+  if (!counter) return TAX_RATE;
+  return LOCATIONS.find((store) => store.id === counter)?.taxRate ?? TAX_RATE;
+}
+
 export function squareLocationFor(counter: string | undefined): string | null {
   const config = squareConfig();
   if (!config) return null;
@@ -247,7 +258,17 @@ export async function createSquareOrder(draft: PosOrderDraft): Promise<PosOrderR
         {
           uid: "cb-tax",
           name: "Sales tax",
-          percentage: (TAX_RATE * 100).toFixed(4).replace(/0+$/, "").replace(/\.$/, ""),
+          // ⚠️ The counter's rate, not the shop's usual one. Square prints this
+          // on the customer's receipt and files it in the shop's own tax
+          // reporting, so a ticket from Pasadena stamped with the county rate
+          // is wrong in two places at once — on paper in somebody's hand, and
+          // in the numbers the shop remits from. `counter` is our location id;
+          // a counter with no rate of its own falls back to TAX_RATE, which is
+          // every counter but one. See `taxRate` in locations.ts.
+          percentage: ((counterTaxRate(draft.counter) * 100))
+            .toFixed(4)
+            .replace(/0+$/, "")
+            .replace(/\.$/, ""),
           scope: "ORDER",
           type: "ADDITIVE",
         },

@@ -87,8 +87,15 @@ function toCents(value: number): number {
   return Math.round(value);
 }
 
-export function taxFor(subtotalCents: number): number {
-  return toCents(subtotalCents * TAX_RATE);
+/** The tax on a subtotal, at a counter's rate.
+ *
+ *  ⚠️ `rate` is the counter's own, and `undefined` means TAX_RATE — which is
+ *  Los Angeles County's. Optional rather than required on purpose: every
+ *  counter but one is on the county rate, and making the common case pass a
+ *  number would mean six call sites each remembering which. The one that is
+ *  different says so in its record. See `taxRate` in locations.ts. */
+export function taxFor(subtotalCents: number, rate?: number): number {
+  return toCents(subtotalCents * (rate ?? TAX_RATE));
 }
 
 // A tip is a percentage of the food, before tax — tipping on the tax is a
@@ -138,17 +145,28 @@ export function totalsFor({
   discountCents = 0,
   deliveryCents = 0,
   tipCents = 0,
+  taxRate,
 }: {
   subtotalCents: number;
   discountCents?: number;
   deliveryCents?: number;
   tipCents?: number;
+  /** The counter's sales tax rate. Undefined is TAX_RATE — see taxFor.
+   *
+   *  ⚠️ Which counter's, for a delivery, is a question this module cannot
+   *  answer and does not pretend to. California sources district tax on
+   *  prepared food to the seller's location for a counter sale, and a delivery
+   *  across a district line is a harder question than a constant. The callers
+   *  pass the kitchen the order leaves from, which is right for pickup and is
+   *  the best available answer for delivery until Toast's own per-order tax
+   *  is wired up and wins over this — see the note on TAX_RATE. */
+  taxRate?: number;
 }): OrderTotals {
   // A discount can't take the order below zero, and it can't take the tax
   // negative on the way.
   const discount = Math.min(Math.max(discountCents, 0), subtotalCents);
   const taxed = subtotalCents - discount;
-  const taxCents = taxFor(taxed);
+  const taxCents = taxFor(taxed, taxRate);
   const tip = Math.max(tipCents, 0);
   const quoted = Math.max(deliveryCents, 0);
 

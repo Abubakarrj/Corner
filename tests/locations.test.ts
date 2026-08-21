@@ -50,7 +50,7 @@ for (const query of ["usc", "figueroa", "trojans", "90007"]) {
 // than nothing. An empty answer there would be the finder saying "no shops in
 // Los Angeles" to somebody a few miles from three of them.
 const nearUSC: [number, number] = [34.0224, -118.2851];
-ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 4,
+ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 5,
    String(nearestLocations(nearUSC, "shop").length));
 
 // ——— The ones that opened ———
@@ -65,6 +65,10 @@ const larchmont = LOCATIONS.find((l) => l.id === "larchmont")!;
 const opened: { store: StoreLocation; street: string; city: string; zip: string; town: string }[] = [
   { store: glendon, street: "1129 Glendon Ave", city: "Los Angeles, CA 90024", zip: "90024", town: "Los Angeles" },
   { store: larchmont, street: "142 N Larchmont Ave", city: "Los Angeles, CA 90004", zip: "90004", town: "Los Angeles" },
+  // ⚠️ Pasadena, and the town on the docket is Pasadena — not a formatting
+  // choice like Studio City's, but a different city entirely. See its taxRate.
+  { store: LOCATIONS.find((l) => l.id === "pasadena")!, street: "14 S Fair Oaks Ave",
+    city: "Pasadena, CA 91105", zip: "91105", town: "Pasadena" },
   // ⚠️ Studio City, not Los Angeles. Inside LA city limits and on the same tax
   // rate, but it is what a courier's address form expects — and addressParts
   // puts this string on the docket.
@@ -155,7 +159,7 @@ for (const [query, id] of [
 ok('"wilshire" still finds Wilshire', searchLocations("wilshire", "shop")[0]?.id === "wilshire");
 ok('"ktown" finds the Koreatown counter',
    searchLocations("ktown", "shop")[0]?.id === "wilshire");
-ok('"los angeles" finds all four', searchLocations("los angeles", "shop").length === 4,
+ok('"los angeles" finds the LA counters', searchLocations("los angeles", "shop").length === 4,
    String(searchLocations("los angeles", "shop").length));
 ok("Westwood is offered for catering too",
    searchLocations("westwood", "catering")[0]?.id === "glendon");

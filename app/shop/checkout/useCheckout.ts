@@ -7,6 +7,7 @@ import { slotLabel } from "../../shopFacts";
 import { usePickupSchedule, type PickupSchedule } from "./usePickupSchedule";
 import { useCart, useCartRows } from "../CartContext";
 import { getProduct, lineKey } from "../products";
+import { storeById } from "../storeMenu";
 import { totalsFor, type OrderTotals } from "../money";
 import {
   describeFulfillment,
@@ -99,6 +100,14 @@ export type DeliveryQuote = {
   /** Road miles from the counter, for the fee explainer. Null when Routes
    *  could not answer — see the note in /api/delivery/quote. */
   miles?: number | null;
+  /** The sales tax rate of the kitchen this was priced from, when it is not
+   *  the shop's usual one. Null or absent means the usual.
+   *
+   *  ⚠️ Carried on the quote rather than worked out here, because the quote is
+   *  where the kitchen was chosen. A delivery leaving from Pasadena is taxed at
+   *  Pasadena's rate, and this browser has no way to know which kitchen that
+   *  is without re-deriving the routing the server already did. */
+  taxRate?: number | null;
 };
 
 /** How the bag changes hands. Uber's courier is told which, in the dropoff
@@ -500,10 +509,23 @@ export function useCheckout(): Checkout {
   // for the button and told apart on the row itself.
   const unavailable = rows.filter((row) => row.gone || row.elsewhere);
 
+  // ⚠️ The rate of the counter this order comes out of, so the number on the
+  // screen is the number on the card. A collection knows its counter outright;
+  // a delivery is told by the quote which kitchen priced it. Undefined for
+  // either falls back to the county rate, which is right for every counter
+  // that has not said otherwise — see taxFor in app/shop/money.ts.
+  //
+  // The server charges from the same rate by its own road, and does not trust
+  // this one: see the repricing in /api/shop-order.
+  const taxRate = isDelivery
+    ? (quote?.taxRate ?? undefined)
+    : (storeById(counterId ?? undefined)?.taxRate ?? undefined);
+
   const totals = totalsFor({
     subtotalCents,
     tipCents,
     deliveryCents: quote?.feeCents ?? 0,
+    taxRate,
   });
 
   // What the card covers, and what is left. The same arithmetic the server

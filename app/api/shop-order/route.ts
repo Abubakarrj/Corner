@@ -594,7 +594,21 @@ export async function POST(request: Request) {
     }
   }
 
-  const totals = totalsFor({ subtotalCents, deliveryCents, tipCents });
+  // ⚠️ At the rate of the counter the food comes out of, not the shop's usual
+  // one. `counterStore` for a collection, `pickupStore` for a delivery — the
+  // kitchen chosen above. Both are null only when neither mode resolved a
+  // shop, and undefined falls back to TAX_RATE, so the county rate stays the
+  // answer for every counter that has not said otherwise.
+  //
+  // This is the charge, not the display. The browser's estimate comes from the
+  // same rate by a different road: the counter's record for a collection, the
+  // quote's `taxRate` for a delivery.
+  const totals = totalsFor({
+    subtotalCents,
+    deliveryCents,
+    tipCents,
+    taxRate: (counterStore ?? pickupStore)?.taxRate,
+  });
 
   const order: Order = {
     name: name.trim(),

@@ -103,6 +103,26 @@ export type StoreLocation = {
   // catalog, the basket, Riley and the order endpoint, and four copies of it
   // is three chances to disagree with the kitchen.
   menu?: readonly string[];
+  // ——— ⚠️ The combined sales tax rate here, when it is not the shop's usual ———
+  //
+  // Undefined is TAX_RATE in app/shop/money.ts, which is Los Angeles County's
+  // 9.75%. Every counter shared that until one opened outside the county's
+  // cities: Pasadena levies its own transactions tax on top, so an order
+  // collected there is owed a different rate than one collected in Koreatown.
+  //
+  // A rate rather than a city name, because the thing that varies is a number
+  // and the thing that decides it is a jurisdiction boundary no address field
+  // in this record describes. Writing "Pasadena" here would mean something
+  // downstream had to keep a table of California district rates; writing the
+  // rate means the record says what it knows.
+  //
+  // ⚠️ This is a remittance figure, not a display one. A counter charging 9.75%
+  // in a 10.5% district is not showing a wrong number on a screen — it is
+  // collecting less than the state is owed, and the difference comes out of the
+  // shop's margin at remittance time. That is the same failure the note on
+  // TAX_RATE describes for the Measure A change, and it is why this is a field
+  // rather than a rounding somebody can defer.
+  taxRate?: number;
 };
 
 // ——— The counters ———
@@ -110,10 +130,14 @@ export type StoreLocation = {
 // Each given by the shop with the city, which is how an address should
 // arrive. The two Koreatown ones replace 650 S Catalina St, which the shop
 // moved off; anything still saying Catalina St, or 3064 W 8th St before it, is
-// stale and should be corrected rather than worked around. All of them are
-// inside Los Angeles city limits — Westwood, Studio City and Larchmont are LA
-// neighbourhoods, not separate cities — and on the same sales-tax rate, so
-// nothing downstream of an address changes except the address.
+// stale and should be corrected rather than worked around.
+//
+// ⚠️ They are no longer all in one city, and the sentence that used to sit here
+// said they were: "all inside Los Angeles city limits and on the same
+// sales-tax rate, so nothing downstream of an address changes except the
+// address." Westwood, Studio City and Larchmont are LA neighbourhoods and that
+// held for them. Pasadena is its own city with its own transactions tax, so an
+// address now changes one thing besides itself — see `taxRate` on the type.
 //
 // ——— ⚠️ The shop closed 2528 S Figueroa St, by USC ———
 //
@@ -361,6 +385,63 @@ export const LARCHMONT: StoreLocation = {
   ],
 };
 
+// Old Pasadena. A full store.
+//
+// ——— ⚠️ The first counter outside the City of Los Angeles ———
+//
+// Every other one is an LA neighbourhood — Koreatown, Larchmont, Westwood,
+// Studio City are all inside the city, on one sales-tax rate, so the sentence
+// at the top of this file could say that an address changes nothing but the
+// address. Pasadena is its own city with its own transactions tax, and that
+// sentence is no longer true.
+//
+// What it changes is `taxRate` below and nothing else. The courier's docket
+// already carries whatever `city` says, delivery routing already asks which
+// counter per order, and the ten-mile reach around this one is measured the
+// same way as the rest — it simply reaches east into the San Gabriel Valley,
+// which nothing here had covered before.
+export const PASADENA: StoreLocation = {
+  id: "pasadena",
+  name: "Pasadena",
+  kind: "shop",
+  address: "14 S Fair Oaks Ave",
+  // ⚠️ Pasadena, not Los Angeles, and this one is not a formatting preference
+  // the way Studio City's is. Studio City is inside LA; this is a different
+  // city, and the string is what addressParts puts on a courier's docket.
+  city: "Pasadena, CA 91105",
+  hours: SHOP_HOURS,
+  // ⚠️ 10.5%: Los Angeles County's 9.75% plus Pasadena's own 0.75%
+  // transactions tax.
+  //
+  // ⚠️ VERIFY THIS AGAINST CDTFA BEFORE THE STORE TAKES AN ORDER. It is the
+  // one number in this record that costs money to get wrong, it is derived
+  // rather than quoted, and district rates change on their own schedule. The
+  // mechanism is what this commit is for; the figure is one edit.
+  taxRate: 0.105,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // ⚠️ Estimated, not surveyed. Fair Oaks Ave at Colorado Blvd is the origin
+  // for the N/S numbering, so 14 S Fair Oaks is the first address south of it.
+  // Read the drift-guard warning above these records.
+  position: [34.145, -118.1503],
+  catering: true,
+  aliases: [
+    "pasadena",
+    "old pasadena",
+    "old town",
+    "old town pasadena",
+    "fair oaks",
+    "s fair oaks",
+    "south fair oaks",
+    "fair oaks ave",
+    "14 fair oaks",
+    "colorado blvd",
+    "sgv",
+    "san gabriel valley",
+    "91105",
+  ],
+};
+
 // Westwood. A full store: it makes the whole menu, so it says nothing about
 // `menu` at all. That silence is the point of the field — the common case stays
 // quiet and a restriction is the thing somebody has to write down, which is
@@ -496,7 +577,7 @@ export const VENTURA: StoreLocation = {
 // ⚠️ WESTERN is deliberately absent — paused, not closed. See the note above
 // its record. Adding it back to the end of this array is the whole of
 // reopening it.
-export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA];
+export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA, PASADENA];
 
 /** When a counter opens, as an hour of the day.
  *

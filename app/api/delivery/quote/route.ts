@@ -178,6 +178,19 @@ export async function POST(request: Request) {
   return Response.json({
     quoteId: quote.quote.quoteId,
     feeCents: quote.quote.feeCents,
+    // ⚠️ The sales tax rate of the kitchen this was priced from, so the
+    // checkout's estimate and the charge agree.
+    //
+    // This route already picked the kitchen — it has to, to price the trip —
+    // and it is the only place that knows which one before the order is
+    // placed. Without this the browser would have to re-derive the routing to
+    // guess a tax rate, or show the county rate and be corrected at the till
+    // for anything leaving from Pasadena. "Shown one number, charged another"
+    // is the failure app/shop/money.ts exists to prevent, and a counter in a
+    // different tax district is a new way to cause it.
+    //
+    // Null when the kitchen is on the usual rate, which is most of them.
+    taxRate: store.taxRate ?? null,
     etaMinutes: quote.quote.etaMinutes,
     etaAt: quote.quote.etaAt,
     expiresAt: quote.quote.expiresAt,
