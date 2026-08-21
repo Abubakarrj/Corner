@@ -3,9 +3,12 @@ import type { PositionId } from "./application";
 // What the careers page lists.
 //
 // One row per job per shop, which is what makes a location label mean
-// something: "Manager" is a kind of job, "Manager, Hancock Park" is a job
-// somebody could turn up to. The page used to list the four kinds and say
-// nothing about where, and a label was the thing missing.
+// something: "Manager" is a kind of job, "Manager, Pasadena" is a job somebody
+// could turn up to. The page used to list the four kinds and say nothing about
+// where, and a label was the thing missing.
+//
+// That shape is what let five shops become twenty rows without touching
+// anything but this array.
 //
 // ——— This is now a list somebody maintains ———
 //
@@ -61,15 +64,63 @@ export type Opening = {
 /** How long a job wears the "New" badge. */
 export const NEW_FOR_DAYS = 30;
 
-// All four at the Wilshire store, which is the one with a kitchen behind the
-// counter. The outlet on Western is not hiring here — that is a decision for
-// the shop to make and add a row for, not something to infer from a second
-// address appearing on the map.
+// ——— ⚠️ Grouped by role, not by shop ———
+//
+// Twenty rows need an order, and this one is a guess about who is reading. A
+// person looking for work picks the job before the neighbourhood: they know
+// they want a kitchen, and then they find out which of the five is nearest.
+// Grouped this way, adjacent rows share the role and differ by location, so the
+// eye reads down the column that varies. Grouped by shop it would read as a
+// directory of branches, which is a thing the shop cares about and an applicant
+// does not.
+//
+// The place filter above the list serves the other reading, so nobody who came
+// for a neighbourhood has to scroll for it.
+//
+// ——— ⚠️ "Koreatown", not "Wilshire" ———
+//
+// These rows said Wilshire, which is what that counter used to be called before
+// the shops were renamed for their neighbourhoods. The type's own note says to
+// match the name in locations.ts, and this file quietly stopped doing so —
+// nothing breaks when it drifts, which is exactly why it drifts: a careers page
+// offering a job at "Wilshire" beside a finder listing "Koreatown" is two names
+// for one shop and a reader wondering whether they are the same place.
+//
+// ⚠️ The Koreatown Outlet is not on this list, and its absence is a decision.
+// The shop has paused that counter — see the note on WESTERN in locations.ts —
+// so there is nothing to staff. If it reopens, hiring for it is four more rows
+// here, not something to infer from an address coming back onto the map.
+//
+// `since` is on the sixteen jobs that opened with the new shops and off the
+// four that were already advertised. That is a lot of "New" badges at once,
+// which is what a shop opening four locations actually looks like; they expire
+// by themselves after NEW_FOR_DAYS.
+const OPENED = "2026-08-21";
+
 export const OPENINGS: Opening[] = [
-  { role: "counter", location: "Wilshire" },
-  { role: "kitchen", location: "Wilshire" },
-  { role: "shift-lead", location: "Wilshire" },
-  { role: "manager", location: "Wilshire" },
+  { role: "counter", location: "Koreatown" },
+  { role: "counter", location: "Larchmont", since: OPENED },
+  { role: "counter", location: "Westwood", since: OPENED },
+  { role: "counter", location: "Studio City", since: OPENED },
+  { role: "counter", location: "Pasadena", since: OPENED },
+
+  { role: "kitchen", location: "Koreatown" },
+  { role: "kitchen", location: "Larchmont", since: OPENED },
+  { role: "kitchen", location: "Westwood", since: OPENED },
+  { role: "kitchen", location: "Studio City", since: OPENED },
+  { role: "kitchen", location: "Pasadena", since: OPENED },
+
+  { role: "shift-lead", location: "Koreatown" },
+  { role: "shift-lead", location: "Larchmont", since: OPENED },
+  { role: "shift-lead", location: "Westwood", since: OPENED },
+  { role: "shift-lead", location: "Studio City", since: OPENED },
+  { role: "shift-lead", location: "Pasadena", since: OPENED },
+
+  { role: "manager", location: "Koreatown" },
+  { role: "manager", location: "Larchmont", since: OPENED },
+  { role: "manager", location: "Westwood", since: OPENED },
+  { role: "manager", location: "Studio City", since: OPENED },
+  { role: "manager", location: "Pasadena", since: OPENED },
 ];
 
 /** Whether a job still counts as new, as of `now`.
