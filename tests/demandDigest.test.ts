@@ -83,7 +83,7 @@ ok("a delivery that stayed near its own counter does not say so twice",
    deliveryLines.some((line) => /near Westwood/.test(line) && !/from /.test(line)),
    deliveryLines.join(" | "));
 ok("while one that crossed the city names both ends",
-   deliveryLines.some((line) => /near Koreatown Outlet/.test(line) && /from Koreatown/.test(line)),
+   deliveryLines.some((line) => /near Larchmont/.test(line) && /from Koreatown/.test(line)),
    deliveryLines.join(" | "));
 ok("a refusal says how far out it was", /14\.2 mi out/.test(busyText), busyText);
 ok("and which screen it happened on",

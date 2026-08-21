@@ -445,8 +445,16 @@ async function main() {
      shared?.byCounter === null, JSON.stringify(shared?.byCounter));
 
   // ——— And when every counter has its own location ———
+  //
+  // ⚠️ Every one of them, which is what "splittable" means. A fifth counter
+  // opened with no variable set, so it shared L-default with the fourth and the
+  // whole answer went back to null — the mapping could no longer tell two
+  // counters apart, exactly as the assertion above describes. Opening a shop
+  // adds a variable to this list as well as to the deploy.
   process.env.SQUARE_LOCATION_WILSHIRE = "L-wilshire";
   process.env.SQUARE_LOCATION_WESTERN = "L-western";
+  process.env.SQUARE_LOCATION_LARCHMONT = "L-larchmont";
+  process.env.SQUARE_LOCATION_VENTURA = "L-ventura";
   reset({
     order_entries: [
       { location_id: "L-glendon" },
@@ -466,7 +474,7 @@ async function main() {
   // something this assertion is about.
   ok("and every counter's location is searched",
      JSON.stringify([...(wire().location_ids as string[])].sort()) ===
-       JSON.stringify(["L-default", "L-glendon", "L-western", "L-wilshire"]),
+       JSON.stringify(["L-glendon", "L-larchmont", "L-ventura", "L-western", "L-wilshire"]),
      JSON.stringify(wire().location_ids));
 
   // An entry Square declines to attribute is counted in the total and against
@@ -483,6 +491,8 @@ async function main() {
   // about the request rather than the split.
   delete process.env.SQUARE_LOCATION_WILSHIRE;
   delete process.env.SQUARE_LOCATION_WESTERN;
+  delete process.env.SQUARE_LOCATION_LARCHMONT;
+  delete process.env.SQUARE_LOCATION_VENTURA;
   reset({ order_entries: [{ location_id: "L-glendon" }] });
   await countOpenSquareOrders();
   const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;

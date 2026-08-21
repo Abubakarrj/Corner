@@ -49,15 +49,21 @@ for (const query of ["usc", "figueroa", "trojans", "90007"]) {
 // than nothing. An empty answer there would be the finder saying "no shops in
 // Los Angeles" to somebody a few miles from three of them.
 const nearUSC: [number, number] = [34.0224, -118.2851];
-ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 4,
+ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 5,
    String(nearestLocations(nearUSC, "shop").length));
 
-// ——— The two that opened ———
+// ——— The ones that opened ———
+//
+// Every counter added since launch gets the same battery, rather than only the
+// newest. A record is one edit and the whole point is that the edit is enough,
+// so each one is checked through the same nine questions the last was.
 const glendon = LOCATIONS.find((l) => l.id === "glendon")!;
 const ventura = LOCATIONS.find((l) => l.id === "ventura")!;
+const larchmont = LOCATIONS.find((l) => l.id === "larchmont")!;
 
 const opened: { store: StoreLocation; street: string; city: string; zip: string; town: string }[] = [
   { store: glendon, street: "1129 Glendon Ave", city: "Los Angeles, CA 90024", zip: "90024", town: "Los Angeles" },
+  { store: larchmont, street: "142 N Larchmont Ave", city: "Los Angeles, CA 90004", zip: "90004", town: "Los Angeles" },
   // ⚠️ Studio City, not Los Angeles. Inside LA city limits and on the same tax
   // rate, but it is what a courier's address form expects — and addressParts
   // puts this string on the docket.
@@ -119,11 +125,20 @@ ok('"wilshire" still finds Wilshire', searchLocations("wilshire", "shop")[0]?.id
 ok('"western" still finds Western', searchLocations("western", "shop")[0]?.id === "western");
 ok('"ktown" finds a Koreatown counter',
    ["wilshire", "western"].includes(searchLocations("ktown", "shop")[0]?.id ?? ""));
-ok('"los angeles" finds all four', searchLocations("los angeles", "shop").length === 4,
+ok('"los angeles" finds all five', searchLocations("los angeles", "shop").length === 5,
    String(searchLocations("los angeles", "shop").length));
 ok("Westwood is offered for catering too",
    searchLocations("westwood", "catering")[0]?.id === "glendon");
 ok("so is Studio City", searchLocations("studio city", "catering")[0]?.id === "ventura");
+ok("and Larchmont", searchLocations("larchmont", "catering")[0]?.id === "larchmont");
+
+// ⚠️ Larchmont is under a mile from the Koreatown Outlet, closer than any two
+// counters except the Koreatown pair itself. Nearest has to be the new one from
+// its own block, or a pickup there sends somebody to the wrong door.
+const onLarchmont: [number, number] = [34.0728, -118.3244];
+ok("nearest to Larchmont is Larchmont",
+   nearestDelivering(onLarchmont)?.id === "larchmont",
+   nearestDelivering(onLarchmont)?.id);
 
 // ——— Nearest, from places each should win ———
 //

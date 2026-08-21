@@ -88,16 +88,17 @@ export function isSquareConfigured(): boolean {
  *  and the real account, and a value that differs per deployment is a value
  *  that belongs in the deployment.
  *
- *  SQUARE_LOCATION_WILSHIRE, SQUARE_LOCATION_GLENDON, SQUARE_LOCATION_VENTURA,
- *  SQUARE_LOCATION_WESTERN — the counter's id, uppercased. Anything unmapped
- *  falls back to SQUARE_LOCATION_ID, which is right for a shop with one Square
- *  location and visible in the log when it is not.
+ *  SQUARE_LOCATION_WILSHIRE, SQUARE_LOCATION_LARCHMONT, SQUARE_LOCATION_GLENDON,
+ *  SQUARE_LOCATION_VENTURA, SQUARE_LOCATION_WESTERN — the counter's id,
+ *  uppercased. Anything unmapped falls back to SQUARE_LOCATION_ID, which is
+ *  right for a shop with one Square location and visible in the log when it is
+ *  not.
  *
  *  ⚠️ The names come from the ids in locations.ts, so opening a counter needs a
  *  matching variable on the deploy and closing one leaves a variable behind.
- *  GLENDON and VENTURA are new and unset until somebody adds them; until then
- *  Westwood's and Studio City's takings are filed against SQUARE_LOCATION_ID
- *  and Square's per-location reporting attributes four shops to one. The warning
+ *  LARCHMONT, GLENDON and VENTURA are new and unset until somebody adds them;
+ *  until then those counters' takings are filed against SQUARE_LOCATION_ID and
+ *  Square's per-location reporting attributes five shops to one. The warning
  *  below says so once per counter.
  *
  *  SQUARE_LOCATION_FIGUEROA is read by nothing now that the USC store has

@@ -54,6 +54,7 @@ console.log("\n— names —");
 for (const [id, name] of [
   ["wilshire", "Koreatown"],
   ["western", "Koreatown Outlet"],
+  ["larchmont", "Larchmont"],
   ["glendon", "Westwood"],
   ["ventura", "Studio City"],
 ] as const) {
@@ -64,7 +65,7 @@ for (const [id, name] of [
 // every past order and every Square variable stops resolving.
 console.log("\n— and the ids that did not move —");
 ok("the ids are still the street handles",
-   LOCATIONS.map((l) => l.id).join(",") === "wilshire,glendon,ventura,western",
+   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura,western",
    LOCATIONS.map((l) => l.id).join(","));
 
 // ——— The street names still find their shops ———
@@ -82,6 +83,11 @@ for (const [query, id] of [
   ["1129 glendon", "glendon"],
   ["ventura", "ventura"],
   ["11128 ventura", "ventura"],
+  // ⚠️ Larchmont is the one counter whose name and street are the same word, so
+  // it keeps its 100-point name match. Here to prove the pair still resolves to
+  // one shop rather than splitting across name and alias.
+  ["larchmont", "larchmont"],
+  ["142 larchmont", "larchmont"],
 ] as const) {
   const hits = searchLocations(query, "shop");
   ok(`"${query}" still finds ${id} first`, hits[0]?.id === id,
@@ -94,6 +100,9 @@ for (const [query, id] of [
   ["koreatown", "wilshire"],
   ["westwood", "glendon"],
   ["studio city", "ventura"],
+  ["larchmont village", "larchmont"],
+  ["hancock park", "larchmont"],
+  ["windsor square", "larchmont"],
 ] as const) {
   const hits = searchLocations(query, "shop");
   ok(`"${query}" finds ${id} first`, hits[0]?.id === id,

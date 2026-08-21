@@ -110,10 +110,10 @@ export type StoreLocation = {
 // Each given by the shop with the city, which is how an address should
 // arrive. The two Koreatown ones replace 650 S Catalina St, which the shop
 // moved off; anything still saying Catalina St, or 3064 W 8th St before it, is
-// stale and should be corrected rather than worked around. All four are inside
-// Los Angeles city limits — Westwood and Studio City are LA neighbourhoods, not
-// separate cities — and on the same sales-tax rate, so nothing downstream of an
-// address changes except the address.
+// stale and should be corrected rather than worked around. All five are inside
+// Los Angeles city limits — Westwood, Studio City and Larchmont are LA
+// neighbourhoods, not separate cities — and on the same sales-tax rate, so
+// nothing downstream of an address changes except the address.
 //
 // ——— ⚠️ The shop closed 2528 S Figueroa St, by USC ———
 //
@@ -145,10 +145,11 @@ export type StoreLocation = {
 // guard in storePlaces.ts, so a good geocode is accepted rather than refused —
 // which is the check to re-run if either address is ever corrected.
 //
-// None has a `door` yet. All four need one, and the Wilshire suite needs it
+// None has a `door` yet. All five need one, and the Wilshire suite needs it
 // most: see the note on the field above, and the note on that record.
 //
-// ⚠️ For the two new addresses the typed pair is doing more work than usual and
+// ⚠️ For the addresses added since launch the typed pair is doing more work
+// than usual and
 // deserves checking before launch, because the drift guard runs the wrong way
 // round for a brand new record. It compares Google's answer against what is
 // typed here and keeps what is typed when they disagree by more than half a
@@ -285,6 +286,55 @@ export const WESTERN: StoreLocation = {
   ],
 };
 
+// Larchmont Village. A full store.
+//
+// ——— ⚠️ The closest two counters have ever been to each other, bar one ———
+//
+// Just under a mile from the Koreatown Outlet, and about a mile and a half from
+// the Koreatown store. That is inside OUTLET_DETOUR_MILES, so a bagel delivery
+// around here will leave from the outlet rather than from this counter — which
+// is the outlet preference working as written, not a bug: the point of it is to
+// keep a full store's line free for the orders only a full store can take, and
+// a mile of Beverly Blvd is exactly the detour that rule was priced for.
+//
+// Anything this counter alone can make — a sandwich — still leaves from here.
+// See kitchensFor in storePlaces.ts.
+export const LARCHMONT: StoreLocation = {
+  id: "larchmont",
+  name: "Larchmont",
+  kind: "shop",
+  // ⚠️ Ave, as given. The shopping street in Larchmont Village is signed
+  // Larchmont Blvd, so this is worth confirming against the lease before the
+  // first courier is sent: `addressParts` puts this string straight onto the
+  // docket, and a courier reading the wrong street type is a courier on a
+  // different street. Both spellings are in the aliases below either way.
+  address: "142 N Larchmont Ave",
+  city: "Los Angeles, CA 90004",
+  hours: SHOP_HOURS,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7. `opensAt` is unset,
+  // which is how a counter says "the usual".
+  //
+  // ⚠️ Estimated, not surveyed. The 100 block of N Larchmont is the first one
+  // north of 1st St, a couple of blocks south of Beverly Blvd. Read the
+  // drift-guard warning above these records before trusting it.
+  position: [34.0728, -118.3244],
+  catering: true,
+  aliases: [
+    "larchmont",
+    "larchmont village",
+    "larchmont ave",
+    "larchmont avenue",
+    "larchmont blvd",
+    "larchmont boulevard",
+    "142 larchmont",
+    "hancock park",
+    "windsor square",
+    "la",
+    "los angeles",
+    "90004",
+  ],
+};
+
 // Westwood. A full store: it makes the whole menu, so it says nothing about
 // `menu` at all. That silence is the point of the field — the common case stays
 // quiet and a restriction is the thing somebody has to write down, which is
@@ -379,7 +429,7 @@ export const VENTURA: StoreLocation = {
   ],
 };
 
-// Four counters, and everything around them is written for several.
+// Five counters, and everything around them is written for several.
 //
 // That generality was here before the second address arrived, on the shop's
 // stated plan to hold a ten-mile radius until it opened more counters, and it
@@ -396,8 +446,8 @@ export const VENTURA: StoreLocation = {
 //
 // Three counters used to sit inside a four-mile box, so their ten-mile reaches
 // were nearly the same circle and the union was barely bigger than any one of
-// them. These four span roughly Studio City to Westwood to Koreatown, and the
-// union of four ten-mile road reaches around points that far apart is a much
+// them. These five span roughly Studio City to Westwood to Koreatown, and the
+// union of five ten-mile road reaches around points that far apart is a much
 // larger and much less circular area — the Valley comes in over the hill from
 // Ventura Blvd, the Westside from Glendon, and the reach east of downtown still
 // comes from Koreatown.
@@ -413,10 +463,10 @@ export const VENTURA: StoreLocation = {
 // assumes that along a ray out from the centre, once you are out of range you
 // stay out. Counters this far apart make that assumption work harder than it
 // did, since a ray can now leave one counter's reach and approach another's.
-// The centroid sits within about five miles of all four, and each reaches ten,
+// The centroid sits within about five miles of all of them, and each reaches ten,
 // so the union stays connected around it — but that is an argument, not a
 // measurement, and the map is the place it would show up.
-export const LOCATIONS: StoreLocation[] = [WILSHIRE, GLENDON, VENTURA, WESTERN];
+export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA, WESTERN];
 
 /** When a counter opens, as an hour of the day.
  *
