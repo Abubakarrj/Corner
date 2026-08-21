@@ -64,7 +64,7 @@ const larchmont = LOCATIONS.find((l) => l.id === "larchmont")!;
 
 const opened: { store: StoreLocation; street: string; city: string; zip: string; town: string }[] = [
   { store: glendon, street: "1129 Glendon Ave", city: "Los Angeles, CA 90024", zip: "90024", town: "Los Angeles" },
-  { store: larchmont, street: "142 N Larchmont Ave", city: "Los Angeles, CA 90004", zip: "90004", town: "Los Angeles" },
+  { store: larchmont, street: "142 N Larchmont Blvd", city: "Los Angeles, CA 90004", zip: "90004", town: "Los Angeles" },
   // ⚠️ Pasadena, and the town on the docket is Pasadena — not a formatting
   // choice like Studio City's, but a different city entirely. See its taxRate.
   { store: LOCATIONS.find((l) => l.id === "pasadena")!, street: "14 S Fair Oaks Ave",

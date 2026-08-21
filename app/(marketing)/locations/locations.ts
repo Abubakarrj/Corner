@@ -353,12 +353,11 @@ export const LARCHMONT: StoreLocation = {
   id: "larchmont",
   name: "Larchmont",
   kind: "shop",
-  // ⚠️ Ave, as given. The shopping street in Larchmont Village is signed
-  // Larchmont Blvd, so this is worth confirming against the lease before the
-  // first courier is sent: `addressParts` puts this string straight onto the
-  // docket, and a courier reading the wrong street type is a courier on a
-  // different street. Both spellings are in the aliases below either way.
-  address: "142 N Larchmont Ave",
+  // Blvd. This record said Ave until the shop confirmed it, which was the one
+  // thing flagged on it when it went in: `addressParts` puts this string
+  // straight onto a courier's docket, and a courier reading the wrong street
+  // type is a courier on a different street.
+  address: "142 N Larchmont Blvd",
   city: "Los Angeles, CA 90004",
   hours: SHOP_HOURS,
   // ⚠️ Assumed, not given: the usual hours, opening at 7. `opensAt` is unset,
@@ -372,10 +371,15 @@ export const LARCHMONT: StoreLocation = {
   aliases: [
     "larchmont",
     "larchmont village",
-    "larchmont ave",
-    "larchmont avenue",
     "larchmont blvd",
     "larchmont boulevard",
+    // ⚠️ Kept although the street is a Blvd. This is what the record said for
+    // a while, so it is what somebody may have written down or shared a link
+    // with — an alias costs nothing and a search that finds nothing costs a
+    // customer. Same reason "112 euclid" is on Fullerton without a street type
+    // at all: aliases are for how people type, not for what is on the sign.
+    "larchmont ave",
+    "larchmont avenue",
     "142 larchmont",
     "hancock park",
     "windsor square",
