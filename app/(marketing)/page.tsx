@@ -4,6 +4,7 @@ import PageTitle from "../ui/PageTitle";
 import ThemeToggle from "../ui/ThemeToggle";
 import LanguagePicker from "../ui/LanguagePicker";
 import AboutMenu from "../ui/AboutMenu";
+import NotesPill from "../ui/NotesPill";
 import OrderStatusBar from "../shop/OrderStatusBar";
 
 // The "SHOP PANTRY" button and its arrow annotation used to sit under the
@@ -91,6 +92,7 @@ export default function Home() {
         style={{ top: "calc(1rem + env(safe-area-inset-top))" }}
       >
         <AboutMenu />
+        <NotesPill />
         <LanguagePicker shell="page" />
         <ThemeToggle shell="page" />
       </div>

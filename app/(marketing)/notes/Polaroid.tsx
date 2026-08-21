@@ -1,0 +1,83 @@
+import { CANVAS, strokePath, type Drawing } from "../../drawing";
+
+// A note, as a polaroid.
+//
+// ——— ⚠️ The drawing is drawn here, from numbers ———
+//
+// Nothing on this card is markup somebody else wrote. The name, the
+// neighbourhood and the note are text, which React escapes; the picture is an
+// SVG this file builds out of integers that app/drawing.ts has already bounded
+// to a 0–1000 square. There is no <img>, no data URL, no dangerouslySet
+// anything, and no path for a stranger's string to become an element.
+//
+// That is the whole reason the pad stores strokes instead of an image. See the
+// note at the top of app/drawing.ts.
+//
+// ——— Why a picture frame with no picture is still a polaroid ———
+//
+// A note can be words with no drawing, and it still gets the window: an empty
+// frame reads as a photo that has not developed, which is the right feeling for
+// a wall of them, and cards that change shape depending on what is in them make
+// a grid that jumps.
+
+export default function Polaroid({
+  name,
+  neighborhood,
+  note,
+  drawing,
+  className = "",
+}: {
+  name: string;
+  neighborhood?: string | null;
+  note: string;
+  drawing: Drawing | null;
+  className?: string;
+}) {
+  return (
+    <figure
+      className={`m-0 flex h-full flex-col rounded-[3px] border border-line-soft bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.14)] ${className}`}
+    >
+      {/* The window. Square, like a real one, and the same grey whether or not
+          anybody drew — see the note above. */}
+      <div className="relative aspect-square w-full overflow-hidden bg-[#efefe9]">
+        {drawing && drawing.length > 0 ? (
+          <svg
+            viewBox={`0 0 ${CANVAS} ${CANVAS}`}
+            className="absolute inset-0 h-full w-full"
+            // Decorative in the strict sense: the caption underneath is the
+            // note, and nobody can write alt text for a stranger's scribble.
+            // Announcing "drawing" before every card would be noise on a wall
+            // of ninety.
+            aria-hidden
+          >
+            {drawing.map((stroke, index) => (
+              <path
+                key={index}
+                d={strokePath(stroke)}
+                fill="none"
+                stroke="#111"
+                strokeWidth={22}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+          </svg>
+        ) : null}
+      </div>
+
+      <figcaption className="pt-2">
+        <p className="m-0 flex flex-wrap items-baseline gap-x-1.5 text-[12px] leading-tight text-quiet">
+          <span className="font-medium">{name}</span>
+          {/* The neighbourhood is the part that makes this a wall rather than a
+              list. Quiet, because it is context and not the message. */}
+          {neighborhood ? <span className="text-faint">· {neighborhood}</span> : null}
+        </p>
+        {note ? (
+          // break-words, because a name or a note can be one unbroken string of
+          // forty characters and a card that overflows takes the grid with it.
+          <p className="m-0 mt-0.5 break-words text-[13px] leading-[1.35] text-ink">{note}</p>
+        ) : null}
+      </figcaption>
+    </figure>
+  );
+}

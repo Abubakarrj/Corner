@@ -500,6 +500,28 @@ const enPrivacy: Policy = {
         },
       ],
     },
+    // ⚠️ The only thing in this app that publishes what somebody typed. Every
+    // other section above describes data going *to* us — an order to the
+    // kitchen, an application to an inbox. A note goes on a page every future
+    // visitor can read, and a document that does not say so plainly is a
+    // document that let somebody publish their own name without noticing.
+    {
+      heading: "Corner Notes",
+      blocks: [
+        {
+          kind: "p",
+          text: "Corner Notes is a public wall. If you leave one, the name, neighborhood, note and drawing you enter are shown on our website to anyone who visits it, right away and for as long as the note is up. Please treat it the way you would treat writing on a chalkboard in the shop: put nothing on it you would not want a stranger to read.",
+        },
+        {
+          kind: "p",
+          text: "All four fields are optional and all four are yours to make up. You do not need an account and we do not ask for your email, your address, or anything that identifies you. We do not store your IP address next to your note; our servers hold addresses briefly and separately, only to limit how many notes one person can leave in an hour.",
+        },
+        {
+          kind: "p",
+          text: "We may take a note down at any time, and we will take yours down if you ask. Because notes carry no account and no contact details, tell us enough to find it — roughly when you left it and what it said — and write to {email}. A note that is taken down stops being shown immediately.",
+        },
+      ],
+    },
     {
       heading: "Children’s Privacy",
       blocks: [
