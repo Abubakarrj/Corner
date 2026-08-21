@@ -249,7 +249,7 @@ export const en = {
   "notes.clearPad": "Clear",
   "notes.pinItUp": "Pin it up",
   "notes.pinning": "Pinning it up...",
-  "notes.thanks": "Up on the wall. Thanks for coming by.",
+  "notes.thanks": "thanks for visiting! see you around the corner 🥯",
   "notes.writeAnother": "Write another",
   "notes.beFirst": "Nobody's written yet. Go on, be the first.",
   "notes.unavailable": "The wall is having a moment. Try again in a bit.",

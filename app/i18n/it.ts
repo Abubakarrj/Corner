@@ -241,7 +241,7 @@ export const it: Table = {
   "notes.clearPad": "Cancella",
   "notes.pinItUp": "Appendilo",
   "notes.pinning": "Lo appendiamo...",
-  "notes.thanks": "È sul muro. Grazie del passaggio.",
+  "notes.thanks": "grazie per essere passato! ci vediamo dietro l'angolo 🥯",
   "notes.writeAnother": "Scrivine un altro",
   "notes.beFirst": "Non ha ancora scritto nessuno. Sii il primo.",
   "notes.unavailable": "Il muro sta avendo un momento. Riprova tra poco.",

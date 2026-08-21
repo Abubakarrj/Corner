@@ -222,7 +222,7 @@ export const ur: Table = {
   "notes.clearPad": "صاف کریں",
   "notes.pinItUp": "دیوار پر لگائیں",
   "notes.pinning": "لگا رہے ہیں…",
-  "notes.thanks": "دیوار پر لگ گیا۔ آنے کا شکریہ۔",
+  "notes.thanks": "آنے کا شکریہ! کونے پر ملتے ہیں 🥯",
   "notes.writeAnother": "ایک اور لکھیں",
   "notes.beFirst": "ابھی تک کسی نے نہیں لکھا۔ پہلے آپ ہو جائیں۔",
   "notes.unavailable": "دیوار ذرا سستا رہی ہے۔ تھوڑی دیر بعد کوشش کریں۔",

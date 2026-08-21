@@ -221,7 +221,7 @@ export const zh: Table = {
   "notes.clearPad": "清空",
   "notes.pinItUp": "贴上墙",
   "notes.pinning": "正在贴…",
-  "notes.thanks": "贴上墙了。谢谢你来。",
+  "notes.thanks": "谢谢你来！街角见 🥯",
   "notes.writeAnother": "再写一张",
   "notes.beFirst": "还没有人写过。来当第一个吧。",
   "notes.unavailable": "墙这会儿有点问题。过一会儿再试。",

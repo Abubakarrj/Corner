@@ -241,7 +241,7 @@ export const fr: Table = {
   "notes.clearPad": "Effacer",
   "notes.pinItUp": "Sur le mur",
   "notes.pinning": "On l'accroche...",
-  "notes.thanks": "C'est sur le mur. Merci d'être passé.",
+  "notes.thanks": "merci d'être passé ! à bientôt au coin de la rue 🥯",
   "notes.writeAnother": "En écrire un autre",
   "notes.beFirst": "Personne n'a encore écrit. Soyez le premier.",
   "notes.unavailable": "Le mur fait une pause. Réessayez dans un moment.",

@@ -219,7 +219,7 @@ export const ko: Table = {
   "notes.clearPad": "다 지우기",
   "notes.pinItUp": "벽에 붙이기",
   "notes.pinning": "붙이는 중…",
-  "notes.thanks": "벽에 붙었습니다. 들러주셔서 고마워요.",
+  "notes.thanks": "들러줘서 고마워요! 모퉁이에서 또 만나요 🥯",
   "notes.writeAnother": "하나 더 쓰기",
   "notes.beFirst": "아직 아무도 안 썼어요. 첫 번째가 되어 주세요.",
   "notes.unavailable": "벽이 잠깐 쉬고 있어요. 조금 뒤에 다시 시도해 주세요.",

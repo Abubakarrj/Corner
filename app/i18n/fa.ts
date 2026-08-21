@@ -248,7 +248,7 @@ export const fa: Table = {
   "notes.clearPad": "پاک کردن",
   "notes.pinItUp": "روی دیوار بزن",
   "notes.pinning": "در حال زدن…",
-  "notes.thanks": "روی دیوار رفت. ممنون که سر زدید.",
+  "notes.thanks": "ممنون که سر زدی! سر همین نبش می‌بینمت 🥯",
   "notes.writeAnother": "یکی دیگر بنویسید",
   "notes.beFirst": "هنوز کسی چیزی ننوشته. اولین نفر باشید.",
   "notes.unavailable": "دیوار کمی حالش خوش نیست. کمی بعد دوباره امتحان کنید.",

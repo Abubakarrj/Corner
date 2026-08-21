@@ -219,7 +219,7 @@ export const ja: Table = {
   "notes.clearPad": "全部消す",
   "notes.pinItUp": "かべに貼る",
   "notes.pinning": "貼っています…",
-  "notes.thanks": "かべに貼りました。来てくれてありがとう。",
+  "notes.thanks": "来てくれてありがとう！またこの角で 🥯",
   "notes.writeAnother": "もう一枚書く",
   "notes.beFirst": "まだ誰も書いていません。最初の一枚をどうぞ。",
   "notes.unavailable": "かべが少し不調です。しばらくしてからお試しください。",
