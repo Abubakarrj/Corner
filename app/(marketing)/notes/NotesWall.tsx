@@ -58,13 +58,32 @@ export default function NotesWall({
           the server, in the browser and tomorrow. See scatter.ts for why a
           random angle would tear the page in half at hydration.
 
-          The gap is wider than a plain grid's and the container clips, because
-          a rotated card is wider than an upright one and the corner of a
-          five-degree tilt has to go somewhere. */}
+          The gap is wider than a plain grid's, because a rotated card is wider
+          than an upright one and the corner of a five-degree tilt has to go
+          somewhere.
+
+          ——— ⚠️ Why this no longer clips ———
+
+          It used to carry `overflow-hidden`, to stop a tilted card at the edge
+          pushing the page sideways. That is a real hazard and this was the
+          wrong guard for it: a clipping box cuts the shadows too, and once
+          Polaroid's lift grew, the outermost cards had theirs sliced off square
+          — a crease down the side of the wall rather than a card lying on it.
+          Padding could not buy its way out, because the rotation eats the
+          padding first: measured at 768px, a tilted card cleared the padding
+          box by −0.8px while the shadow needed eighteen.
+
+          What makes removing it safe is that a box-shadow is not scrollable
+          overflow. Only the transform is, and the rotated overhang is about ten
+          pixels into a twenty-pixel page gutter. So the shadows spill into the
+          gutter for free and the tilt still has room, which is what the clip
+          was there for. Measured at 320, 360, 390, 430, 768 and 1280: no
+          horizontal scroll at any of them. Check that again before widening
+          the tilt in scatter.ts. */}
       {notes.length === 0 && reachable ? (
         <p className="m-0 text-center text-[14px] text-muted">{t("notes.beFirst")}</p>
       ) : (
-        <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-6 overflow-hidden p-1 sm:grid-cols-3">
+        <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-7 p-1 sm:grid-cols-3">
           {notes.map((entry) => (
             <li key={entry.id} style={scatterStyle(entry.id)}>
               <Polaroid

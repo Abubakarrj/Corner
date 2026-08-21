@@ -35,7 +35,24 @@ export default function Polaroid({
 }) {
   return (
     <figure
-      className={`m-0 flex h-full flex-col rounded-[3px] border border-[#e5e0d4] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.14)] ${className}`}
+      // ——— ⚠️ Two shadows, because the card is white on white ———
+      //
+      // --cb-page is #ffffff in light mode and this card is #ffffff too, on
+      // purpose, because that is what a polaroid is. So the only thing holding
+      // its edge was a 1px border and one soft blur, and a wall of them read as
+      // captions floating on the page rather than as objects lying on it.
+      //
+      // The first shadow is contact: 1px down, 2px blur, no travel. It is what
+      // makes the edge look like it is touching something. The second is the
+      // lift, wide and faint, and it is what makes the card look like it is
+      // above the page rather than printed on it. One shadow has to choose
+      // between those two jobs and does neither well, which is what the single
+      // 0_2px_10px was doing.
+      //
+      // Dark mode gets the same values and needs none of it: a white card on
+      // #171614 separates by itself, and black at these alphas is invisible
+      // there. Nothing is gained by branching, so it does not.
+      className={`m-0 flex h-full flex-col rounded-[3px] border border-[#e5e0d4] bg-white p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.20),0_7px_18px_rgba(0,0,0,0.16)] ${className}`}
     >
       {/* The window. Square, like a real one, and the same grey whether or not
           anybody drew — see the note above. */}
