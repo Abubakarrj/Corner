@@ -201,7 +201,7 @@ export const ja: Table = {
   "notes.seeAll": "すべて見る",
   "notes.allTitle": "すべてのひとこと",
   "notes.title": "Corner Notes",
-  "notes.blurb": "ひとこと書いて、絵を描いて、どのあたりから来たか教えてください。全部かべに貼ります。",
+  "notes.blurb": "なにか書いて。なにか描いて。なにかの一部に。この街角で。",
   "notes.write": "ひとこと書く",
   "notes.yourName": "お名前",
   "notes.namePlaceholder": "どなたですか？",

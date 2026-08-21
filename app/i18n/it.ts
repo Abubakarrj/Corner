@@ -223,7 +223,7 @@ export const it: Table = {
   "notes.seeAll": "Vedi tutti i biglietti",
   "notes.allTitle": "Tutti i biglietti",
   "notes.title": "Corner Notes",
-  "notes.blurb": "Lascia un biglietto, disegna qualcosa, dicci da che quartiere vieni. Finisce tutto sul muro.",
+  "notes.blurb": "Di' qualcosa. Disegna qualcosa. Fai parte di qualcosa. Nel nostro angolo.",
   "notes.write": "Scrivi un biglietto",
   "notes.yourName": "Il tuo nome",
   "notes.namePlaceholder": "chi sei?",

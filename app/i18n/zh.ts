@@ -203,7 +203,7 @@ export const zh: Table = {
   "notes.seeAll": "查看全部",
   "notes.allTitle": "全部便条",
   "notes.title": "Corner Notes",
-  "notes.blurb": "留句话、画点什么、告诉我们你从哪个街区来。都会贴到墙上。",
+  "notes.blurb": "说点什么。画点什么。成为其中的一部分。就在我们这个街角。",
   "notes.write": "写张便条",
   "notes.yourName": "你的名字",
   "notes.namePlaceholder": "你是谁？",

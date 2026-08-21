@@ -201,7 +201,7 @@ export const ko: Table = {
   "notes.seeAll": "전체 보기",
   "notes.allTitle": "모든 메모",
   "notes.title": "Corner Notes",
-  "notes.blurb": "한마디 남기고, 그림도 그리고, 어느 동네에서 왔는지 알려주세요. 전부 벽에 붙입니다.",
+  "notes.blurb": "한마디 남겨 주세요. 그림 하나 그려 주세요. 우리 코너의 일부가 되어 주세요.",
   "notes.write": "한마디 남기기",
   "notes.yourName": "이름",
   "notes.namePlaceholder": "누구신가요?",

@@ -204,7 +204,7 @@ export const ur: Table = {
   "notes.seeAll": "سب نوٹ دیکھیں",
   "notes.allTitle": "تمام نوٹ",
   "notes.title": "Corner Notes",
-  "notes.blurb": "ایک بات لکھیں، کچھ بنائیں، بتائیں آپ کس محلے سے ہیں۔ سب دیوار پر لگ جائے گا۔",
+  "notes.blurb": "کچھ کہیے۔ کچھ بنائیے۔ کسی چیز کا حصہ بنیے۔ ہمارے کونے پر۔",
   "notes.write": "ایک بات لکھیں",
   "notes.yourName": "آپ کا نام",
   "notes.namePlaceholder": "آپ کون ہیں؟",

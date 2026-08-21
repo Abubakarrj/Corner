@@ -203,7 +203,7 @@ export const es: Table = {
   "notes.seeAll": "Ver todas las notas",
   "notes.allTitle": "Todas las notas",
   "notes.title": "Corner Notes",
-  "notes.blurb": "Deja una nota, dibuja algo, dinos de qué barrio eres. Todo va a la pared.",
+  "notes.blurb": "Di algo. Dibuja algo. Sé parte de algo. En nuestra esquina.",
   "notes.write": "Escribe una nota",
   "notes.yourName": "Tu nombre",
   "notes.namePlaceholder": "¿quién eres?",

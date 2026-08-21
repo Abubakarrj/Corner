@@ -223,7 +223,7 @@ export const fr: Table = {
   "notes.seeAll": "Voir tous les mots",
   "notes.allTitle": "Tous les mots",
   "notes.title": "Corner Notes",
-  "notes.blurb": "Laissez un mot, dessinez quelque chose, dites-nous votre quartier. Tout finit sur le mur.",
+  "notes.blurb": "Dites quelque chose. Dessinez quelque chose. Faites partie de quelque chose. Dans notre coin.",
   "notes.write": "Écrire un mot",
   "notes.yourName": "Votre nom",
   "notes.namePlaceholder": "c'est qui ?",

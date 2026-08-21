@@ -230,7 +230,7 @@ export const fa: Table = {
   "notes.seeAll": "دیدن همه یادداشت‌ها",
   "notes.allTitle": "همه یادداشت‌ها",
   "notes.title": "Corner Notes",
-  "notes.blurb": "یک یادداشت بگذارید، چیزی بکشید، بگویید از کدام محله‌اید. همه‌اش روی دیوار می‌رود.",
+  "notes.blurb": "چیزی بگویید. چیزی بکشید. بخشی از چیزی باشید. سر کوچهٔ ما.",
   "notes.write": "یادداشت بنویسید",
   "notes.yourName": "نام شما",
   "notes.namePlaceholder": "شما؟",
