@@ -66,7 +66,7 @@ ok("the subject names the day and both headline numbers",
    busyOut.subject === "Corner Bagel — 2026-08-19 — 34 orders, 7 turned away",
    busyOut.subject);
 ok("pickup is broken out by counter",
-   /14× Wilshire Blvd/.test(busyText) && /9× Glendon Ave/.test(busyText),
+   /14× Koreatown/.test(busyText) && /9× Westwood/.test(busyText),
    busyText);
 // Named by counter and distance rather than by a coordinate — the report is
 // read over coffee, not plotted. The first version of this assertion named
@@ -80,10 +80,10 @@ ok("and never by a raw coordinate",
    !/-?\d{2}\.\d{2,}/.test(deliveryLines.join(" ").replace(/\(\d+\.\d mi\)/g, "")),
    deliveryLines.join(" | "));
 ok("a delivery that stayed near its own counter does not say so twice",
-   deliveryLines.some((line) => /near Glendon Ave/.test(line) && !/from /.test(line)),
+   deliveryLines.some((line) => /near Westwood/.test(line) && !/from /.test(line)),
    deliveryLines.join(" | "));
 ok("while one that crossed the city names both ends",
-   deliveryLines.some((line) => /near Western Ave/.test(line) && /from Wilshire Blvd/.test(line)),
+   deliveryLines.some((line) => /near Koreatown Outlet/.test(line) && /from Koreatown/.test(line)),
    deliveryLines.join(" | "));
 ok("a refusal says how far out it was", /14\.2 mi out/.test(busyText), busyText);
 ok("and which screen it happened on",

@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { mapsConfig } from "../../googleMapsPublic";
 import { useResolvedTheme } from "../../theme";
-import { INITIAL_BOUNDS, type MapBounds, type StoreLocation } from "./locations";
+import { INITIAL_BOUNDS, type MapBounds, type StoreLocation,
+  outletChipFor,
+} from "./locations";
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
 import { useLocale, useT } from "../../i18n";
@@ -559,7 +561,7 @@ export default function StoreMap({
                       >
                         {location.name}
                       </span>
-                      {location.outlet ? (
+                      {outletChipFor(location, t("finder.outlet")) ? (
                         <span className={`shrink-0 ${OUTLET_CHIP}`}>{t("finder.outlet")}</span>
                       ) : null}
                     </span>

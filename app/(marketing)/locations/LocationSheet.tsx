@@ -9,7 +9,9 @@ import { localeById } from "../../localeScript";
 import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { clockLabel, closeHour } from "../../shopFacts";
 import KitchenLoad from "./KitchenLoad";
-import { opensAt, type StoreLocation } from "./locations";
+import { opensAt, type StoreLocation,
+  outletChipFor,
+} from "./locations";
 
 const { ink, muted, controlBorder } = PALETTE;
 
@@ -160,7 +162,7 @@ export default function LocationSheet({
           >
             {location.name}
           </h2>
-          {location.outlet ? (
+          {outletChipFor(location, t("finder.outlet")) ? (
             <span className={OUTLET_CHIP}>{t("finder.outlet")}</span>
           ) : null}
         </div>

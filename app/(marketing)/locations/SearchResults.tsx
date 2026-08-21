@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useServerText, useT } from "../../i18n";
 import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
-import { SHOPS_CENTRE, nearestLocations, type StoreLocation } from "./locations";
+import { SHOPS_CENTRE, nearestLocations, type StoreLocation,
+  outletChipFor,
+} from "./locations";
 import { searchBias } from "../../geolocate";
 
 const { ink, onInk, controlBorder, muted, faint, border } = PALETTE;
@@ -323,7 +325,7 @@ export default function SearchResults({
                         <span className="min-w-0 truncate text-[15px]" style={{ color: ink }}>
                           {store.name}
                         </span>
-                        {store.outlet ? (
+                        {outletChipFor(store, t("finder.outlet")) ? (
                           <span className={`shrink-0 ${OUTLET_CHIP}`}>{t("finder.outlet")}</span>
                         ) : null}
                       </span>

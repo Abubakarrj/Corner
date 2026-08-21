@@ -165,7 +165,15 @@ export type StoreLocation = {
 // The store, and the kitchen every delivery leaves from.
 export const WILSHIRE: StoreLocation = {
   id: "wilshire",
-  name: "Wilshire Blvd",
+  // ——— ⚠️ The neighbourhood, not the street ———
+  //
+  // All four counters are named for where they are rather than what they are
+  // on, because that is how somebody says where they are going. The id stays
+  // `wilshire`: it is written into every past order, every Square variable name
+  // and the kitchen queue, and renaming it would orphan all of them to change a
+  // label. The id is the shop's internal handle and the name is what a person
+  // reads, and this is the edit that separates them.
+  name: "Koreatown",
   kind: "shop",
   // The suite is part of the address, not a note about it. R3452H is how the
   // building numbers the unit, and a courier reading "3450 Wilshire Blvd" with
@@ -220,7 +228,13 @@ export const WILSHIRE: StoreLocation = {
 // of buttons.
 export const WESTERN: StoreLocation = {
   id: "western",
-  name: "Western Ave",
+  // Two counters in the same neighbourhood, so this one says which it is. See
+  // the note on the Koreatown record above for why the id did not move.
+  //
+  // ⚠️ The word "Outlet" is in the name now, so the chip that also said it is
+  // suppressed here — see outletChipFor() below. Without that the row reads
+  // "Koreatown Outlet · Outlet".
+  name: "Koreatown Outlet",
   kind: "shop",
   outlet: true,
   address: "355 S Western Ave #101",
@@ -283,10 +297,11 @@ export const WESTERN: StoreLocation = {
 // OUTLET_DETOUR_MILES in storePlaces.ts, and the note on deliveryArea's centre.
 export const GLENDON: StoreLocation = {
   id: "glendon",
-  // The street, like Wilshire and Western. Westwood is the neighbourhood and it
-  // is in every alias below, but two counters could sit in Westwood one day and
-  // only one of them can be called it.
-  name: "Glendon Ave",
+  // The neighbourhood, like the rest. The street is in the aliases below, so
+  // "glendon" still finds it — and if a second Westwood counter ever opens,
+  // this is the record that has to say which one it is, the way the two
+  // Koreatown counters already do.
+  name: "Westwood",
   kind: "shop",
   address: "1129 Glendon Ave",
   city: "Los Angeles, CA 90024",
@@ -329,7 +344,7 @@ export const GLENDON: StoreLocation = {
 // A full store, same as Glendon and Wilshire.
 export const VENTURA: StoreLocation = {
   id: "ventura",
-  name: "Ventura Blvd",
+  name: "Studio City",
   kind: "shop",
   address: "11128 Ventura Blvd",
   // ⚠️ "Studio City" and not "Los Angeles". It is inside Los Angeles city
@@ -436,6 +451,30 @@ export function addressParts(store: StoreLocation): {
     return { street: store.address, city: store.city, state: "", zip: "" };
   }
   return { street: store.address, city: match[1].trim(), state: match[2], zip: match[3] };
+}
+
+/** Whether to draw the "Outlet" chip beside this shop's name.
+ *
+ *  ——— ⚠️ Why this is a function and not `store.outlet` ———
+ *
+ *  The chip and the name started saying the same word. Counters are named for
+ *  their neighbourhood now, and the Koreatown pair needs the second one
+ *  distinguished, so its name is "Koreatown Outlet" — beside a chip reading
+ *  "Outlet" that is the row telling you twice, which is the same thing a
+ *  redundant arrow beside a link that says where it goes does.
+ *
+ *  ⚠️ Compared against the chip's *translated* text rather than the English
+ *  word, and that is the whole reason this takes an argument. A name is a place
+ *  and does not translate: the Spanish finder shows "Koreatown Outlet" with a
+ *  chip reading "Punto de venta", and those are two different words doing two
+ *  different jobs, so the chip stays. Matching on "outlet" would have hidden it
+ *  in all ten languages to fix a repetition that only happens in one.
+ *
+ *  Takes the label rather than a locale so it cannot go stale against the
+ *  string table: the caller passes exactly what it is about to render. */
+export function outletChipFor(store: StoreLocation, label: string): boolean {
+  if (store.outlet !== true) return false;
+  return !store.name.toLowerCase().includes(label.trim().toLowerCase());
 }
 
 /** Shops somebody can collect from. */
