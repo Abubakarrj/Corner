@@ -41,6 +41,8 @@ const ok = (what: string, cond: boolean, detail = "") => {
 // notch in a published map. Nothing else in the suite covers it.
 let matrixCalls = 0;
 let elementsAsked = 0;
+let biggestCall = 0;
+let pointlessOrigins = 0;
 const realFetch = globalThis.fetch;
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = String(input);
@@ -57,6 +59,18 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const origins = body.origins.map(point);
   const destinations = body.destinations.map(point);
   elementsAsked += origins.length * destinations.length;
+  biggestCall = Math.max(biggestCall, origins.length * destinations.length);
+  // ⚠️ Every origin this call carried that could not possibly be the nearest
+  // counter to any of its destinations. A counter more than the radius away in
+  // a straight line is further than that by road, so it can never bring a
+  // probe into range: asking about it is elements spent on an answer that is
+  // already known. This is what took the map down — see the header of
+  // tests/matrixBudget.test.ts.
+  for (const o of origins) {
+    if (destinations.every((d) => milesBetween(o, d) > DELIVERY_RADIUS_MILES)) {
+      pointlessOrigins += 1;
+    }
+  }
   const elements: unknown[] = [];
   origins.forEach((o, oi) => {
     destinations.forEach((d, di) => {
@@ -81,7 +95,7 @@ process.env.GOOGLE_MAPS_API_KEY = "test-key";
 async function main() {
   // Imported after the key is set and fetch is replaced, so the module reads
   // the stubbed world on first use.
-  const { deliveryArea, __resetDeliveryArea, STEPS } = await import(
+  const { deliveryArea, __resetDeliveryArea, MATRIX_ELEMENT_QUOTA } = await import(
     "../app/deliveryArea"
   );
   __resetDeliveryArea();
@@ -122,16 +136,31 @@ async function main() {
      area.origins.every((o) => origins.some((p) => milesBetween(o, p) < 0.01)));
   ok("the centre is not one of the counters",
      origins.every((p) => milesBetween(area.centre, p) > 0.01));
-  // ⚠️ One call per binary-search step, however many counters there are — the
-  // property this is about. Read off STEPS rather than typed as 7, because it
-  // was typed as 7 and became a test of a constant rather than of the claim:
-  // the step count went to nine when the counters spread out, and this failed
-  // for the one reason it was never meant to catch.
-  ok("it stayed at one call per step, not one set per counter",
-     matrixCalls === STEPS, `${matrixCalls} calls for ${STEPS} steps`);
-  ok("asking every counter at once, not in sequence",
-     elementsAsked === STEPS * origins.length * vertices.length,
-     String(elementsAsked));
+  // ——— ⚠️ What a rebuild costs, which is what took the map down ———
+  //
+  // This used to assert "one Route Matrix call per search step, asking every
+  // counter at once", and both halves of that were satisfied on the day the
+  // delivery map disappeared from the live site. Google meters elements —
+  // origins × destinations — not calls, and batching every patch into one call
+  // multiplied both sides of that product at once. The assertion was measuring
+  // the thing that was cheap.
+  //
+  // So it counts elements now, against the quota that actually refused them.
+  // tests/matrixBudget.test.ts does the same arithmetic without a stub, from
+  // the location list; this one proves the code really asks for what that file
+  // calculates.
+  ok("⚠️ a whole rebuild fits inside one minute's element quota",
+     elementsAsked < MATRIX_ELEMENT_QUOTA,
+     `${elementsAsked} elements in ${matrixCalls} calls, quota ${MATRIX_ELEMENT_QUOTA}`);
+  // ⚠️ Zero, not "few". A counter further than the radius from every probe in
+  // a call cannot be the nearest counter to any of them, so every element it
+  // costs is spent on an answer already known. Six counters asked about both
+  // patches was 216 of these per step; the arrangement that broke was built
+  // entirely out of them.
+  ok("⚠️ no call carries a counter that could not serve any of its probes",
+     pointlessOrigins === 0, `${pointlessOrigins} pointless origins`);
+  ok("and no single call exceeds what Google accepts in one request",
+     biggestCall <= 625, String(biggestCall));
 
   // ——— Every vertex obeys the rule ———
   const reach = (p: [number, number]) => Math.min(...origins.map((o) => milesBetween(p, o)));

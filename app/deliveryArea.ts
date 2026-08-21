@@ -46,13 +46,39 @@ import {
 // not a theorem — an arterial road can reach further than the streets either
 // side of it — and it was the shape of the answer before this change too.
 //
-// ——— Why it is affordable ———
+// ——— ⚠️ Why it is affordable, and the day it stopped being ———
 //
-// Naively this is BEARINGS × STEPS route requests. Route Matrix turns each
-// step into one call for every bearing at once, so it is STEPS calls total —
-// nine — for a shape that is then cached until the counter list changes or an
-// hour passes. Roughly two thousand matrix elements per rebuild, which is a
-// function of how many counters there are as well as how many bearings.
+// Naively this is BEARINGS × steps route requests. Route Matrix collapses each
+// step into one call for all forty-eight bearings at once, so a patch costs its
+// own step count in calls, and the shape is cached until the counter list
+// changes or an hour passes.
+//
+// The number that matters is not calls, it is *elements* — origins ×
+// destinations, summed over the whole rebuild — because that is what Google
+// meters. It is worth writing the history down, because every step of it looked
+// harmless at the time:
+//
+//   4 counters, 1 patch, 7 steps      1,344 elements   the map drew
+//   5 counters, 1 patch, 7 steps      1,680 elements   the map drew
+//   6 counters, 2 patches, 9 steps    5,184 elements   the map disappeared
+//
+// Nothing in that third line is a bug on its own. A counter opened in Orange
+// County, which split the counters into two patches; the wider span needed two
+// more search steps; and the code asked every counter about every patch's
+// probes. Each of those multiplies the others, and the product went past the
+// quota in one move.
+//
+// It is now the sum over patches of (that patch's counters × BEARINGS × that
+// patch's steps), which is linear in counters rather than counters × patches,
+// and then less again because a counter too far from a probe to matter is not
+// asked about at all:
+//
+//   6 counters, 2 patches             2,544 elements at worst
+//                                     1,434 as it actually asks
+//
+// See MATRIX_ELEMENT_QUOTA, and tests/matrixBudget.test.ts, which computes the
+// worst case from the shop's own location list and fails before a deployment
+// does.
 //
 // ——— What it is not ———
 //
@@ -68,30 +94,66 @@ import {
 // as a polygon, and coarse enough to stay one matrix call per step.
 export const BEARINGS = 48;
 
-// Binary-search steps. Each halves the interval.
-//
-// ——— ⚠️ Nine, and it was seven ———
-//
-// Seven was chosen when the search span was ten miles, which halved down to
-// about 250 feet. The span is not ten miles any more: it is the radius plus how
-// far the furthest counter sits from the centre, and that second term grows
-// every time the shop opens somewhere new. With a counter in Pasadena the
-// spread is ten miles on its own, so the span is twenty and seven steps land at
-// 831 feet — a boundary drawn to a sixth of the precision the comment claimed,
-// on a map that says where the shop delivers.
-//
-// Nine steps take that same twenty-mile span back to about 210 feet, which is
-// where this started. The cost is two more Route Matrix calls per rebuild, and
-// a rebuild happens at most once an hour.
-//
-// ⚠️ This is the number to revisit when a counter opens far from the rest.
-// Precision here is a function of how spread out the shop is, and nothing warns
-// you: the polygon still draws, it just draws less carefully.
-//
-// Exported for the suite, which asserts one Route Matrix call per step. That
-// assertion was written as `=== 7` and broke when this became 9 — a test of a
-// constant rather than of the claim. It reads the constant now.
-export const STEPS = 9;
+/** ⚠️ Google's default Compute Route Matrix quota: elements per minute, per
+ *  project.
+ *
+ *  ——— The limit that actually took the map down ———
+ *
+ *  It is easy to read this as a cost concern and it is not one. Elements are
+ *  cheap. This is a *rate*, it is enforced with a 429, and a rebuild fires all
+ *  of its calls back to back — so the whole minute's allowance is spent in a
+ *  few seconds. Go over and a call in the middle of the binary search is
+ *  refused, `measure()` returns null, and /delivery-areas draws nothing at all.
+ *
+ *  Every part of that failure is quiet. The page renders the address check and
+ *  no map, deliberately; the endpoint answers `{known:false}`, which is a
+ *  perfectly good answer to a question about a shape nobody could measure; and
+ *  the only trace is a line on a hosting dashboard. The shop finds out by
+ *  looking at its own website.
+ *
+ *  ⚠️ It is a *default*, and it can be raised for free in the Cloud console
+ *  under Routes API → Quotas. Being under it here is the code's job; staying
+ *  under it as the shop keeps opening counters is a console setting, and
+ *  tests/matrixBudget.test.ts is what says which of the two is about to run
+ *  out. Written down here rather than left in a commit message because the
+ *  next person to add a counter needs it, and nothing else in this file would
+ *  have told them. */
+export const MATRIX_ELEMENT_QUOTA = 3000;
+
+/** How finely the boundary is resolved, in feet.
+ *
+ *  ——— ⚠️ A target, not a step count, and that is the fix for a real outage ———
+ *
+ *  This was a constant number of binary-search steps for every patch. Seven,
+ *  then nine when the counters spread out and seven stopped being enough for a
+ *  twenty-mile span. Both were the wrong kind of number: a step count is a
+ *  statement about *cost*, and what anybody cares about is *precision*, and the
+ *  two are only the same while every search has the same span.
+ *
+ *  They stopped being the same when Fullerton opened. The Los Angeles patch
+ *  searches a twenty-mile span and needs nine steps to get here; Fullerton, on
+ *  its own, searches ten and needs eight. Running both at nine bought a
+ *  hundred-foot boundary nobody asked for around one shop, and paid for it in
+ *  Route Matrix elements — which is the currency that ran out. See the note on
+ *  MATRIX_ELEMENT_QUOTA below.
+ *
+ *  So the constant is the answer's precision and the step count is derived per
+ *  patch. Two hundred and fifty feet is about a building, which is as exact as
+ *  a published coverage map can honestly claim: the chord between two vertices
+ *  sags further than that, which is why the ring is inset by both terms
+ *  together at the end. */
+const TARGET_FEET = 250;
+
+/** Binary-search steps for a search of this span, each halving the interval.
+ *
+ *  Deliberately not clamped at the top: a patch whose span somehow grew would
+ *  get more steps rather than a silently coarser boundary. It is clamped at the
+ *  bottom because zero steps is a ring drawn at whatever the interval started
+ *  at, which is not a measurement at all. */
+export function stepsFor(spanMiles: number): number {
+  const target = TARGET_FEET / 5280;
+  return Math.max(1, Math.ceil(Math.log2(Math.max(spanMiles, target) / target)));
+}
 
 const EARTH_MILES = 3958.8;
 
@@ -202,10 +264,14 @@ async function measure(): Promise<DeliveryArea | null> {
   const origins = await deliveryOrigins();
   if (origins.length === 0) return null;
 
-  // One search per patch, all of them advanced together so a step is still a
-  // single Route Matrix call however many patches there are. See patches().
+  // One search per patch, run one after another. See patches().
   const groups = patches(origins);
-  const searches = groups.map((group) => {
+  // The chord margin, needed per patch below and constant across them: it is a
+  // function of the bearing spacing alone.
+  const sag = 1 - Math.cos(Math.PI / BEARINGS);
+  const rings: [number, number][][] = [];
+
+  for (const group of groups) {
     // The centre this patch's rays go out from. Not a counter: a point that
     // has all of the patch around it, so a ray in any direction crosses the
     // boundary once rather than clipping one shop's circle and missing
@@ -224,73 +290,120 @@ async function measure(): Promise<DeliveryArea | null> {
       (furthest, point) => Math.max(furthest, milesBetween(centre, point)),
       0,
     );
-    return {
-      centre,
-      low: new Array<number>(BEARINGS).fill(0),
-      high: new Array<number>(BEARINGS).fill(DELIVERY_RADIUS_MILES + spread),
-    };
-  });
+    const ceiling = DELIVERY_RADIUS_MILES + spread;
+    // This patch's own step count, from its own span. A tight patch converges
+    // sooner and is not made to pay for a spread-out one. See stepsFor().
+    const steps = stepsFor(ceiling);
+    const low = new Array<number>(BEARINGS).fill(0);
+    const high = new Array<number>(BEARINGS).fill(ceiling);
 
-  for (let step = 0; step < STEPS; step += 1) {
-    // Every patch's probes in one list, so the whole rebuild is STEPS calls
-    // rather than STEPS per patch.
-    const probes: [number, number][] = [];
-    for (const search of searches) {
+    for (let step = 0; step < steps; step += 1) {
+      // ——— ⚠️ Only the questions whose answer is not already known ———
+      //
+      // This step used to be "every counter against every probe", and every
+      // patch's probes were batched into one call besides. The argument was
+      // that a mistake in the grouping could then only change the shape and
+      // never the distances, and that the extra origins were free because the
+      // call was being made anyway.
+      //
+      // They were not free. Google meters elements — origins × destinations —
+      // and batching multiplied both sides at once: six counters against two
+      // patches' probes is 576 elements a step where one patch of five had
+      // been 240. Nine steps of that is 5,184 elements fired back to back
+      // against a quota of 3,000 a minute, so a call in the middle of the
+      // search was refused, measure() returned null, and the map vanished off
+      // a public page. See MATRIX_ELEMENT_QUOTA.
+      //
+      // What replaces it is one inequality: a road route is never shorter than
+      // the straight line between its ends. So a counter more than the radius
+      // away from a probe *in a straight line* is more than the radius away by
+      // road, and cannot be the counter that brings it into range. Asking is
+      // spending an element on an answer already in hand.
+      //
+      // ⚠️ This is a filter on questions, not an approximation of them. Every
+      // pair it drops is a pair whose verdict is out-of-range with certainty;
+      // every pair it keeps is measured on the road exactly as before. The
+      // boundary it produces is identical to the boundary the expensive
+      // version produced, which is what makes it worth doing rather than a
+      // trade.
+      const probes: [number, number][] = [];
+      const bearingOf: number[] = [];
+      const midOf: number[] = [];
       for (let i = 0; i < BEARINGS; i += 1) {
-        probes.push(project(search.centre, (i * 360) / BEARINGS, (search.low[i] + search.high[i]) / 2));
+        const mid = (low[i] + high[i]) / 2;
+        const at = project(centre, (i * 360) / BEARINGS, mid);
+        if (group.some((counter) => milesBetween(counter, at) <= DELIVERY_RADIUS_MILES)) {
+          probes.push(at);
+          bearingOf.push(i);
+          midOf.push(mid);
+        } else {
+          // No counter can reach it, so it is outside the boundary, and that
+          // is settled without a round trip. On the later steps of a search
+          // this is most of the ray casts.
+          high[i] = mid;
+        }
       }
-    }
+      // Every probe was ruled out on the geometry alone. Nothing to ask.
+      if (probes.length === 0) continue;
 
-    // ⚠️ Asked against *every* counter, not only the patch's own. The patches
-    // are meant to be far enough apart that it makes no difference, and asking
-    // globally means a mistake in the grouping can only change the shape, never
-    // the distances behind it. It costs elements in a call already being made.
-    const measured = await driveMatrixMin(origins, probes);
-    // One failed call and the whole shape is a guess. Better to have no map
-    // than a boundary drawn half from measurement and half from an interval
-    // that never got narrowed.
-    if (!measured) return null;
+      // And the same rule the other way round: a counter that is too far from
+      // every probe still standing contributes nothing to this call.
+      const near = group.filter((counter) =>
+        probes.some((probe) => milesBetween(counter, probe) <= DELIVERY_RADIUS_MILES),
+      );
 
-    searches.forEach((search, patch) => {
-      for (let i = 0; i < BEARINGS; i += 1) {
-        const mid = (search.low[i] + search.high[i]) / 2;
-        const miles = measured[patch * BEARINGS + i]?.miles ?? null;
+      const measured = await driveMatrixMin(near, probes);
+      // One failed call and the whole shape is a guess. Better to have no map
+      // than a boundary drawn half from measurement and half from an interval
+      // that never got narrowed.
+      if (!measured) return null;
+
+      for (let k = 0; k < probes.length; k += 1) {
+        const i = bearingOf[k];
+        const miles = measured[k]?.miles ?? null;
         // Unreachable counts as too far. That is what pulls the western edge
         // off the water: no road route to a point in the Pacific, so the
         // search stops reaching for it.
-        if (miles === null || miles > DELIVERY_RADIUS_MILES) search.high[i] = mid;
-        else search.low[i] = mid;
+        if (miles === null || miles > DELIVERY_RADIUS_MILES) high[i] = midOf[k];
+        else low[i] = midOf[k];
       }
-    });
+    }
+
+    // ——— ⚠️ Pulled in, because a vertex being inside is not the polygon being
+    //     inside ———
+    //
+    // `low` is the last distance known to obey the rule, so every vertex sits
+    // inside the boundary. The straight edge *between* two vertices does not:
+    // it is a chord across a curve, and a chord cuts outside wherever the curve
+    // bends away from it. Where two counters' reaches meet, the outline has a
+    // notch, and an edge spanning it bulges into ground nobody serves.
+    //
+    // Measured, that was 154 feet of over-claim north of Studio City — small,
+    // and still the one direction this map is not allowed to be wrong in. So
+    // each ring is drawn a little inside its own measurement.
+    //
+    // The margin is the worst a chord can sag for this bearing spacing at this
+    // search's reach — R(1 − cos(half a step)) — plus one search step. That is
+    // the exact bound for a convex arc and headroom for a notch, and it comes
+    // to a few hundred feet: about a pixel at the zoom the page opens on, and
+    // always on the side of telling somebody to check rather than telling them
+    // yes.
+    //
+    // ⚠️ `steps` is this patch's own, so a patch that converged in fewer steps
+    // is inset by its own coarser step rather than by somebody else's finer
+    // one. Reading a shared constant here is how a ring gets drawn tighter
+    // than it was measured.
+    const reach = Math.max(...high);
+    const inset = reach * sag + reach / 2 ** steps;
+    rings.push(
+      low.map((miles, i) =>
+        project(centre, (i * 360) / BEARINGS, Math.max(0, miles - inset)),
+      ),
+    );
   }
 
-  // ——— ⚠️ Pulled in, because a vertex being inside is not the polygon being
-  //     inside ———
-  //
-  // `low` is the last distance known to obey the rule, so every vertex sits
-  // inside the boundary. The straight edge *between* two vertices does not: it
-  // is a chord across a curve, and a chord cuts outside wherever the curve
-  // bends away from it. Where two counters' reaches meet, the outline has a
-  // notch, and an edge spanning it bulges into ground nobody serves.
-  //
-  // Measured, that was 154 feet of over-claim north of Studio City — small, and
-  // still the one direction this map is not allowed to be wrong in. So each
-  // ring is drawn a little inside its own measurement.
-  //
-  // The margin is the worst a chord can sag for this bearing spacing at this
-  // search's reach — R(1 − cos(half a step)) — plus one search step. That is
-  // the exact bound for a convex arc and headroom for a notch, and it comes to
-  // a few hundred feet: about a pixel at the zoom the page opens on, and always
-  // on the side of telling somebody to check rather than telling them yes.
-  const sag = 1 - Math.cos(Math.PI / BEARINGS);
   return {
-    rings: searches.map((search) => {
-      const ceiling = Math.max(...search.high);
-      const inset = ceiling * sag + ceiling / 2 ** STEPS;
-      return search.low.map((miles, i) =>
-        project(search.centre, (i * 360) / BEARINGS, Math.max(0, miles - inset)),
-      );
-    }),
+    rings,
     origins,
     // The framing centre, across every patch — what the map opens on. Not one
     // of the patch centres: with two lobes, opening on either one puts the
