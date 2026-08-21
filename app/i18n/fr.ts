@@ -222,6 +222,9 @@ export const fr: Table = {
   "checkout.tenderCounter": "Payer au comptoir",
   "checkout.tenderCounterHint":
     "Ce sera prêt. Carte, Apple Pay, Google Pay ou espèces au moment du retrait.",
+  "checkout.tenderWallet": "Apple Pay",
+  "checkout.tenderWalletHint": "Débité au moment de la commande. Aucune carte à saisir.",
+  "checkout.payWithApplePay": "Payer avec Apple Pay",
   "checkout.tenderCard": "Payer maintenant par carte",
   "checkout.giftCard": "Carte cadeau",
   "checkout.dueNow": "Reste à payer",

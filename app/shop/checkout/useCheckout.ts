@@ -23,10 +23,11 @@ import {
   type SquareCardEntry,
   type TokenizedCard,
 } from "./useSquareCard";
+import { useApplePay, type ApplePayEntry } from "./useApplePay";
 import { clearDraft, readDraft, writeDraft } from "./draft";
 import { completed, refused } from "../../haptics";
 import { closeFunnel } from "../../navigationDepth";
-import type { Tender } from "./PaymentSection";
+import type { Tender } from "./tender";
 import type { CartRow } from "../CartContext";
 
 // Everything checkout *is*, with none of what it looks like.
@@ -183,6 +184,9 @@ export type Checkout = {
   /** Square's hosted fields, when this shop charges cards. `enabled` false
    *  means the local `card` fields above are the ones on screen. */
   hosted: SquareCardEntry;
+  /** Apple Pay, when this browser can offer it for this amount. `available`
+   *  false everywhere else, which is most of the web — see useApplePay. */
+  wallet: ApplePayEntry;
 
   // ——— A gift card against this order ———
   //
@@ -330,6 +334,7 @@ export function useCheckout(): Checkout {
   // When it is true the local fields are not rendered at all, so there is no
   // second place a card number could be typed.
   const hosted = useSquareCard();
+
 
   const where = fulfillment ? describeFulfillment(fulfillment) : null;
   const isDelivery = fulfillment?.mode === "delivery";
@@ -497,6 +502,25 @@ export function useCheckout(): Checkout {
     giftBalanceCents === null ? 0 : Math.min(giftBalanceCents, totals.totalCents);
   const dueNowCents = totals.totalCents - giftAppliedCents;
 
+  // ——— Apple Pay ———
+  //
+  // ⚠️ Built only on the payment step, and that gate is load-bearing rather
+  // than tidy. The chat widget is mounted on every route and runs this hook, so
+  // an ungated wallet would pull Square's SDK onto the landing page, the menu
+  // and every product — which is the exact thing useSquareCard's own comment
+  // says it avoids by loading the script on the one screen that takes money.
+  //
+  // The amount is `dueNowCents`, not the total: a gift card that covers part of
+  // the bill means Apple's sheet must authorise the remainder, and one that
+  // covers all of it means there is nothing to authorise at all. The hook
+  // rebuilds the request when this number moves, which is what keeps the sheet
+  // and the charge the same figure after a tip.
+  const applePay = useApplePay({
+    amountCents: dueNowCents,
+    label: "Corner Bagel",
+    enabled: step === "payment",
+  });
+
   /** Look up a card, so the customer sees what it covers before they commit.
    *
    *  Every way this can miss reads the same, because the server answers them
@@ -581,7 +605,13 @@ export function useCheckout(): Checkout {
     // order until they do would refuse an order that is already paid for.
     (tender !== "card" ||
       dueNowCents === 0 ||
-      (hosted.enabled ? hosted.ready : card.complete));
+      (hosted.enabled ? hosted.ready : card.complete)) &&
+    // ⚠️ And paying by wallet means the wallet has to be there. Apple Pay is
+    // only ever selectable while `available` is true, but it can go false
+    // underneath a selection — the amount changes and the payment request is
+    // rebuilt, and for that moment there is no sheet to open. Placing the order
+    // then would send it to the kitchen with no authorisation behind it.
+    (tender !== "wallet" || dueNowCents === 0 || applePay.available);
 
   async function submit() {
     setTried(true);
@@ -634,6 +664,27 @@ export function useCheckout(): Checkout {
         refused();
         return;
       }
+    }
+
+    // ——— Or Apple's sheet, which is the same token by a different door ———
+    //
+    // ⚠️ This runs inside the tap that opened it. Safari will only summon the
+    // Apple Pay sheet from a user gesture, and an `await` between the press and
+    // this call spends that gesture — which is why the payment method is built
+    // ahead of time by useApplePay and why nothing above this line awaits.
+    if (tender === "wallet" && dueNowCents > 0) {
+      const authorized = await applePay.tokenize();
+      if (!authorized) {
+        // ⚠️ No error message, deliberately. The overwhelmingly likely reason
+        // to be here is that somebody looked at the sheet and closed it, and
+        // "your card was not accepted" is an accusation about a decision. The
+        // screen goes back to how it was, with the order unplaced and every
+        // choice intact, which is what dismissing a payment sheet should do.
+        setStatus("idle");
+        refused();
+        return;
+      }
+      payment = { token: authorized.token, card: authorized.card };
     }
 
     try {
@@ -978,6 +1029,7 @@ export function useCheckout(): Checkout {
     setTender,
     card,
     hosted,
+    wallet: applePay,
 
     giftGan,
     setGiftGan,

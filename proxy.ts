@@ -30,10 +30,23 @@ export function proxy(request: NextRequest) {
   // has to land somewhere real. There is no /shop/cookie-policy to rewrite
   // to, and duplicating a legal page under the shop tree to satisfy the
   // rewrite would mean two copies to keep in sync.
+  // ⚠️ /.well-known is exempt and has to be. It is where a domain proves things
+  // about itself to somebody else's verifier, and right now that is Apple: they
+  // fetch /.well-known/apple-developer-merchantid-domain-association before they
+  // will let this domain summon the Apple Pay sheet.
+  //
+  // It slips through every other test here. It does not start with /shop, /api
+  // or /_next, and the file-extension check does not catch it either — the dot
+  // in ".well-known" is at the front, and that pattern is anchored to the end.
+  // So without this line the path would be rewritten to
+  // /shop/.well-known/... on the shop subdomain, Apple would get a 404, the
+  // domain would stay unverified, and Apple Pay would simply never appear —
+  // with nothing anywhere saying why.
   if (
     pathname.startsWith("/shop") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/.well-known") ||
     POLICY_PATHS.includes(pathname) ||
     /\.[a-zA-Z0-9]+$/.test(pathname)
   ) {

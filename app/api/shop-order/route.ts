@@ -33,6 +33,7 @@ import {
   refundGiftCard,
 } from "../../squareGiftCards";
 import { giftSplit, spendable } from "../../giftTender";
+import { paysNow } from "../../shop/checkout/tender";
 import { clientIp, throttle } from "../../rateLimit";
 import { geocode } from "../../googleMaps";
 import {
@@ -746,7 +747,16 @@ export async function POST(request: Request) {
   // always had, settled when the bag is handed over. The only thing that has to
   // be true is that an order claiming it will pay *now* actually carries the
   // means to.
-  const payingNow = readText(body, "tender", 16) === "card";
+  //
+  // ⚠️ Through paysNow() rather than `=== "card"`, and the difference is a whole
+  // class of bug. A string comparison here is correct only for the exact set of
+  // tenders that existed when it was written: Apple Pay arrives as "wallet",
+  // which is not "card", so this endpoint would have read it as paying at the
+  // counter — placing the order, sending it to the kitchen, telling the
+  // customer their card was charged, and charging nobody. The list of tenders
+  // that take money now lives in app/shop/checkout/tender.ts, which the browser
+  // reads too, so the two sides cannot disagree about it.
+  const payingNow = paysNow(readText(body, "tender", 16));
 
   // ⚠️ `dueNowCents > 0` is the third condition, and it is not decoration. A
   // gift card that covers the whole order leaves nothing to charge: demanding a

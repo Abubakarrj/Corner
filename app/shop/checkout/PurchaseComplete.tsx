@@ -13,7 +13,7 @@ import { Money } from "./CheckoutSections";
 import DeliveryFeeInfo from "./DeliveryFeeInfo";
 import QueuePlace from "./QueuePlace";
 import UberDirectMark from "./UberDirectMark";
-import type { Tender } from "./PaymentSection";
+import type { Tender } from "./tender";
 
 // What both surfaces show once the endpoint has said yes.
 //

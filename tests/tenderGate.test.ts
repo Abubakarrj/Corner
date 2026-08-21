@@ -20,6 +20,7 @@
 // endpoint: what the gate must answer, for each tender, in each configuration.
 
 import { readFileSync } from "node:fs";
+import { paysNow } from "../app/shop/checkout/tender";
 import { isSquarePaymentsConfigured } from "../app/squarePayments";
 
 let failures = 0;
@@ -41,7 +42,14 @@ function mustPayNow(
   hasToken: boolean,
   dueNowCents = 1,
 ): "charge" | "refuse" | "proceed" {
-  const payingNow = tender === "card";
+  // ⚠️ paysNow(), not `tender === "card"`, which is what this line used to be.
+  // A local copy of the endpoint's rule is only worth something while the two
+  // agree, and that copy silently stopped agreeing the moment a third tender
+  // existed: Apple Pay arrives as "wallet", the copy called it not-paying, and
+  // this suite would have gone green over orders reaching the kitchen unpaid.
+  // Reading the shared predicate is what makes the copy structural rather than
+  // a remembered duplicate. See app/shop/checkout/tender.ts.
+  const payingNow = paysNow(tender);
   if (isSquarePaymentsConfigured() && payingNow && dueNowCents > 0) {
     return hasToken ? "charge" : "refuse";
   }
@@ -77,6 +85,24 @@ ok("paying by card with a token is charged",
 // choice — confirming it would promise a charge that never happened.
 ok("paying by card with no token is refused",
    mustPayNow("card", false) === "refuse", mustPayNow("card", false));
+
+// ——— Apple Pay ———
+//
+// ⚠️ The tender this file's local copy of the gate used to get wrong. A wallet
+// is a card by another door: the same processor, the same single-use token, and
+// the same three clauses. Everything a card order must satisfy, a wallet order
+// must satisfy identically — which is the assertion, stated as an equality so
+// the two cannot drift apart one case at a time.
+ok("a wallet with a token is charged",
+   mustPayNow("wallet", true) === "charge", mustPayNow("wallet", true));
+ok("⚠️ a wallet with no token is refused, not quietly waved through",
+   mustPayNow("wallet", false) === "refuse", mustPayNow("wallet", false));
+ok("a wallet answers exactly as a card does, in every case",
+   [true, false].every((token) =>
+     [0, 1, 250].every(
+       (due) => mustPayNow("wallet", token, due) === mustPayNow("card", token, due),
+     ),
+   ));
 
 // ——— With no processor at all ———
 //
@@ -132,7 +158,7 @@ ok("paying the rest at the window is fine",
 // rather than assumed.
 const endpoint = readFileSync("app/api/shop-order/route.ts", "utf8");
 ok("the endpoint reads the tender off the request",
-   /const payingNow = readText\(body, "tender"/.test(endpoint));
+   /const payingNow = paysNow\(readText\(body, "tender"/.test(endpoint));
 ok("and gates the charge on it, not on configuration alone",
    /if \(isSquarePaymentsConfigured\(\) && payingNow &&/.test(endpoint));
 // ⚠️ And on there being something left to charge. Without this clause a gift

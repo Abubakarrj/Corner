@@ -2,6 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useResolvedTheme } from "../../theme";
+import {
+  loadSdk,
+  scriptFor,
+  type SquareCard,
+  type SquareConfig,
+  type SquarePayments,
+} from "./squareSdk";
+
+/** What a receipt is allowed to know about a card, whether it was typed into
+ *  Square's iframes or authorised in a wallet.
+ *
+ *  ⚠️ A brand and four digits, the same pair app/shop/checkout/card.ts permits
+ *  itself and for the same reason. There is no shape here that can hold a card
+ *  number, so nothing downstream can accidentally be handed one. */
+export type TokenizedCard = { brand: string | null; last4: string | null };
 
 // Square's hosted card fields, and the token they produce.
 //
@@ -27,49 +42,6 @@ import { useResolvedTheme } from "../../theme";
 // sandbox from production at build time, which is the thing that config
 // endpoint exists to avoid, and it would load Square's SDK on every page in the
 // app rather than on the one screen that takes money.
-
-/** What a receipt is allowed to know about a card typed into Square's iframes.
- *
- *  ⚠️ A brand and four digits, which is the same pair app/shop/checkout/card.ts
- *  permits itself and for the same reason. There is no shape here that can hold
- *  a card number, so nothing downstream can accidentally be handed one. */
-export type TokenizedCard = { brand: string | null; last4: string | null };
-
-type SquareCard = {
-  attach: (selector: string | HTMLElement) => Promise<void>;
-  tokenize: () => Promise<{
-    status: string;
-    token?: string;
-    errors?: { message?: string }[];
-    // Square describes the card it just tokenized. This used to be left off the
-    // type and thrown away with the rest of the result, which is why the
-    // confirmation could not name the card on any order that actually paid for
-    // itself — see labelForSquareBrand().
-    details?: { card?: { brand?: string; last4?: string } };
-  }>;
-  destroy?: () => Promise<void>;
-};
-
-type SquarePayments = {
-  card: (options?: { style?: Record<string, Record<string, string>> }) => Promise<SquareCard>;
-  verifyBuyer: (
-    token: string,
-    details: unknown,
-  ) => Promise<{ token?: string } | null>;
-};
-
-declare global {
-  interface Window {
-    Square?: { payments: (appId: string, locationId: string) => SquarePayments };
-  }
-}
-
-type Config = {
-  provider: "square" | null;
-  applicationId?: string;
-  locationId?: string;
-  environment?: "sandbox" | "production";
-};
 
 export type SquareCardEntry = {
   /** Whether this shop charges cards at all. False means the checkout behaves
@@ -182,34 +154,8 @@ function fieldStyle(): Record<string, Record<string, string>> {
   };
 }
 
-function scriptFor(environment: "sandbox" | "production"): string {
-  return environment === "production"
-    ? "https://web.squarecdn.com/v1/square.js"
-    : "https://sandbox.web.squarecdn.com/v1/square.js";
-}
-
-/** Load Square's SDK once per page, however many times this hook runs. */
-function loadSdk(src: string): Promise<void> {
-  if (window.Square) return Promise.resolve();
-  const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
-  if (existing) {
-    return new Promise((resolve, reject) => {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("square-sdk-failed")));
-    });
-  }
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("square-sdk-failed"));
-    document.head.appendChild(script);
-  });
-}
-
 export function useSquareCard(): SquareCardEntry {
-  const [config, setConfig] = useState<Config | null>(null);
+  const [config, setConfig] = useState<SquareConfig | null>(null);
   // A dependency of the mount, not a decoration: see fieldStyle() above for why
   // a theme change has to rebuild the iframe rather than restyle it.
   const theme = useResolvedTheme();
@@ -226,7 +172,7 @@ export function useSquareCard(): SquareCardEntry {
     let cancelled = false;
     fetch("/api/payments-config")
       .then((response) => (response.ok ? response.json() : { provider: null }))
-      .then((answer: Config) => {
+      .then((answer: SquareConfig) => {
         if (!cancelled) setConfig(answer);
       })
       .catch(() => {

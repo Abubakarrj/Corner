@@ -20,11 +20,18 @@
 
 import { useServerText, useT } from "../../i18n";
 import { formatPrice } from "../products";
+import ApplePayButton from "./ApplePayButton";
 import CardFields from "./CardFields";
+import type { ApplePayEntry } from "./useApplePay";
 import type { SquareCardEntry } from "./useSquareCard";
 import type { CardEntry } from "./useCard";
 
-export type Tender = "counter" | "card";
+import type { Tender } from "./tender";
+
+// Re-exported because several surfaces have always imported the tender from
+// here. The definition moved to tender.ts so the order endpoint can read it
+// too; see the note at the top of that file.
+export type { Tender };
 
 /** The half of the checkout engine this component needs to offer a gift card.
  *
@@ -49,6 +56,8 @@ export default function PaymentSection({
   cardEnabled,
   card,
   hosted,
+  wallet,
+  onWalletPay,
   gift,
 }: {
   tender: Tender;
@@ -62,6 +71,19 @@ export default function PaymentSection({
    *  rather than read here for the same reason `cardEnabled` is: the surface
    *  owns the checkout engine, and this component renders what it is given. */
   hosted?: SquareCardEntry;
+  /** Apple Pay, when this browser can offer it.
+   *
+   *  ⚠️ Absent or unavailable means the option is not rendered at all, rather
+   *  than rendered disabled like the card one above. A greyed-out card tender
+   *  says something true and actionable — this shop has no processor — while a
+   *  greyed-out Apple Pay would be telling somebody on Android about a wallet
+   *  they cannot install. */
+  wallet?: ApplePayEntry;
+  /** Place the order through Apple's sheet. Passed rather than called from
+   *  here because it is the surface that owns submitting, and because this has
+   *  to run inside the tap: Safari opens the sheet from a user gesture and
+   *  nothing may be awaited on the way. */
+  onWalletPay?: () => void;
   /** A gift card against this order. Absent on a surface that does not offer
    *  one — the chat panel shares this component and has no room for it. */
   gift?: GiftEntry;
@@ -93,12 +115,39 @@ export default function PaymentSection({
         hint={t("checkout.tenderCardHint")}
       />
 
+      {/* ⚠️ Only when the wallet is really there. See the note on the prop:
+          this option is absent rather than disabled, because a browser that
+          cannot do Apple Pay usually cannot be made to. */}
+      {wallet?.available && cardEnabled ? (
+        <Option
+          id="wallet"
+          checked={tender === "wallet"}
+          onSelect={() => onTender("wallet")}
+          label={t("checkout.tenderWallet")}
+          hint={t("checkout.tenderWalletHint")}
+        />
+      ) : null}
+
       {/* ⚠️ No card fields when there is nothing left to charge. Showing an
           empty card box under "the gift card covers this" is asking somebody to
           pay twice, and the engine will not tokenize it anyway. */}
       {tender === "card" && cardEnabled && !covered ? (
         <div className="mt-1">
           <CardFields card={card} hosted={hosted} />
+        </div>
+      ) : null}
+
+      {/* Apple's button, in place of the card fields, for the same reason they
+          are there: it is what this tender needs on screen to be used.
+
+          ⚠️ It is also the submit. Apple requires their button to be the thing
+          that opens the sheet, so the surface hides its own Place order while
+          this tender is chosen — one button, and it is this one. Hidden when a
+          gift card covers the bill, because then there is nothing to
+          authorise. */}
+      {tender === "wallet" && wallet?.available && !covered && onWalletPay ? (
+        <div className="mt-1">
+          <ApplePayButton onPress={onWalletPay} />
         </div>
       ) : null}
     </div>
