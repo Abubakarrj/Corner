@@ -507,6 +507,73 @@ export const FULLERTON: StoreLocation = {
   ],
 };
 
+// Long Beach, on the Belmont Shore strip.
+//
+// ——— ⚠️ It joins Fullerton rather than Los Angeles ———
+//
+// Every counter before Fullerton was one blob on the delivery map. Fullerton
+// was the first that stood on its own, twenty-two miles from the nearest of
+// the others and so more than two radii away — a second patch, with real
+// ground between them that nobody serves.
+//
+// This one lands between the two, and closer to Fullerton: about fourteen
+// miles from it and twenty-three from Koreatown. Fourteen is inside two radii,
+// so the reaches overlap and the two become one patch covering Long Beach
+// through to Fullerton; twenty-three is outside, so the gap to Los Angeles
+// stays. The map draws two lobes, and the southern one is now much the bigger
+// of them. See patches() in app/deliveryArea.ts for why that grouping is a
+// measurement rather than a drawing choice.
+export const LONGBEACH: StoreLocation = {
+  id: "longbeach",
+  name: "Long Beach",
+  kind: "shop",
+  address: "4923 E 2nd St",
+  city: "Long Beach, CA 90803",
+  hours: SHOP_HOURS,
+  // ⚠️ 10.5%. Long Beach levies its own district tax on top of the county's,
+  // the way Pasadena does, and lands on the same figure by a different route.
+  //
+  // ⚠️ VERIFY AGAINST CDTFA BEFORE THIS STORE TAKES AN ORDER, like the other
+  // two. This one is quoted rather than derived — several rate services agree
+  // on 10.5% for the city — but a published aggregate is not the state's own
+  // table, district rates change quarterly, and Long Beach is one of the
+  // cities where a couple of addresses sit inside an extra district. Check the
+  // rate for *this address*, not for the city.
+  taxRate: 0.105,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // ⚠️ Estimated, not surveyed, and interpolated rather than looked up. Second
+  // Street's shops run from Livingston Drive at the west end to Bay Shore Ave
+  // at the east, a strip a little over a mile long; the USGS point for Belmont
+  // Shore sits at the Livingston end, and 4923 is a bit past halfway along.
+  // Two ways of reading the block numbering put it a quarter of a mile apart,
+  // and this is between them.
+  //
+  // That is well inside the half-mile drift guard, which is what this pair is
+  // for: storePlaces.ts geocodes the address and uses the real rooftop, with
+  // this only as the bias and the sanity check. Read the drift-guard warning
+  // above these records.
+  position: [33.759, -118.1293],
+  catering: true,
+  aliases: [
+    "long beach",
+    "longbeach",
+    "lbc",
+    "belmont shore",
+    "belmont",
+    "2nd st",
+    "2nd street",
+    "second street",
+    "e 2nd st",
+    "east 2nd street",
+    "4923 2nd",
+    "naples",
+    "alamitos bay",
+    "south bay",
+    "90803",
+  ],
+};
+
 // Westwood. A full store: it makes the whole menu, so it says nothing about
 // `menu` at all. That silence is the point of the field — the common case stays
 // quiet and a restriction is the thing somebody has to write down, which is
@@ -654,7 +721,15 @@ export const VENTURA: StoreLocation = {
 // ⚠️ WESTERN is deliberately absent — paused, not closed. See the note above
 // its record. Adding it back to the end of this array is the whole of
 // reopening it.
-export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA, PASADENA, FULLERTON];
+export const LOCATIONS: StoreLocation[] = [
+  WILSHIRE,
+  LARCHMONT,
+  GLENDON,
+  VENTURA,
+  PASADENA,
+  FULLERTON,
+  LONGBEACH,
+];
 
 /** When a counter opens, as an hour of the day.
  *

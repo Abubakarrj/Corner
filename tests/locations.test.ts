@@ -49,9 +49,17 @@ for (const query of ["usc", "figueroa", "trojans", "90007"]) {
 // ⚠️ And searching near where it stood returns the surviving counters rather
 // than nothing. An empty answer there would be the finder saying "no shops in
 // Los Angeles" to somebody a few miles from three of them.
+//
+// ⚠️ Counted off the list rather than typed. It was `=== 6`, which is a fact
+// about how many shops the business had on the afternoon it was written, and
+// it failed the next time one opened — for the one reason it was never meant
+// to catch. What is being asserted is that the finder returns the survivors
+// and not an empty answer, so it reads the survivors.
 const nearUSC: [number, number] = [34.0224, -118.2851];
-ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 6,
-   String(nearestLocations(nearUSC, "shop").length));
+const openShops = LOCATIONS.filter((l) => l.kind === "shop").length;
+ok("somewhere near USC still finds every counter",
+   nearestLocations(nearUSC, "shop").length === openShops,
+   `${nearestLocations(nearUSC, "shop").length} of ${openShops}`);
 
 // ——— The ones that opened ———
 //

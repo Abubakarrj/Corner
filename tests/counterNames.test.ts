@@ -78,7 +78,8 @@ ok("and would go last when it returns, after the full stores",
 // every past order and every Square variable stops resolving.
 console.log("\n— and the ids that did not move —");
 ok("the ids are still the street handles",
-   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura,pasadena,fullerton",
+   LOCATIONS.map((l) => l.id).join(",") ===
+     "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach",
    LOCATIONS.map((l) => l.id).join(","));
 
 // ——— The street names still find their shops ———

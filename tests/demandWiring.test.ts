@@ -15,7 +15,8 @@
 // ⚠️ Needs a scratch database and drops its own table.
 
 import { SCHEMA, db, isDatabaseConfigured } from "../app/db";
-import { milesBetween } from "../app/(marketing)/locations/locations";
+import { DELIVERY_RADIUS_MILES, LOCATIONS, milesBetween }
+  from "../app/(marketing)/locations/locations";
 
 let failures = 0;
 const ok = (what: string, cond: boolean, detail = "") => {
@@ -118,15 +119,25 @@ async function main() {
   ok("and nothing is counted", (await counted()).n === 0, String((await counted()).n));
 
   // ——— Out of range: answered, and counted once ———
-  // ⚠️ Long Beach, not Santa Monica. This was Santa Monica, and the counter in
-  // Westwood put it four miles inside the rule — so the address chosen to be
-  // refused started being accepted, and a suite about recording refusals had
-  // nothing to record. Twenty miles out is out under any radius this shop
-  // would plausibly set.
-  answerAt = [33.7701, -118.1937]; // Long Beach
-  const far = await ask("Somewhere in Long Beach");
+  //
+  // ⚠️ Santa Clarita, and it is the third address this fixture has had. It was
+  // Santa Monica until Westwood opened four miles from it; it was then Long
+  // Beach, "twenty miles out under any radius this shop would plausibly set",
+  // until the shop opened on Second Street in Belmont Shore.
+  //
+  // Both times the address picked to be refused started being accepted, and a
+  // suite about recording refusals quietly had nothing to record. So this one
+  // is checked rather than asserted from memory — the line below fails and
+  // says to move it if a counter ever opens within reach, instead of leaving
+  // the rest of the block passing vacuously.
+  answerAt = [34.3917, -118.5426]; // Santa Clarita
+  const reach = Math.min(...LOCATIONS.map((s) => milesBetween(answerAt, s.position)));
+  ok("⚠️ the refused address really is out of everyone's reach",
+     reach > DELIVERY_RADIUS_MILES * 1.5,
+     `nearest counter is ${reach.toFixed(1)}mi — move this fixture`);
+  const far = await ask("Somewhere in Santa Clarita");
   const farBody = await far.json();
-  ok("a Long Beach address is out of range", farBody.inRange === false,
+  ok("a Santa Clarita address is out of range", farBody.inRange === false,
      JSON.stringify(farBody));
   const after = await counted();
   ok("and it is counted once", after.n === 1, String(after.n));
@@ -138,15 +149,15 @@ async function main() {
     `SELECT cell_lat::text, cell_lng::text, channel FROM ${SCHEMA}.demand_daily
       WHERE outcome = 'refused'`,
   );
-  ok("stored as a rounded cell", cells[0].cell_lat === "33.77" && cells[0].cell_lng === "-118.19",
+  ok("stored as a rounded cell", cells[0].cell_lat === "34.39" && cells[0].cell_lng === "-118.54",
      `${cells[0].cell_lat},${cells[0].cell_lng}`);
   ok("tagged as the area check", cells[0].channel === "area", cells[0].channel);
 
   // A second refusal on the same block increments rather than adding a row —
   // which is what makes the table a tally and not a log of visits.
   // The neighbour has to be on the same block as the refusal above, so it
-  // moved to Long Beach with it. It rounds into the same cell.
-  answerAt = [33.7705, -118.194];
+  // moves with it. It rounds into the same cell.
+  answerAt = [34.3921, -118.5429];
   await ask("Another door on the same block");
   const { rows: still } = await client.query<{ n: string }>(
     `SELECT count(*)::text AS n FROM ${SCHEMA}.demand_daily WHERE outcome = 'refused'`,

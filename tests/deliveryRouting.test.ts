@@ -37,7 +37,7 @@ const onWilshire: [number, number] = [34.0616, -118.3005];
 const nine = la(9);
 const bagelKitchens = kitchensFor(["single-bagel"], nine);
 ok("at 9am only the full stores are lit",
-   ids(bagelKitchens) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton", ids(bagelKitchens));
+   ids(bagelKitchens) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach", ids(bagelKitchens));
 ok("and a Westwood address collects from Glendon",
    nearestDelivering(nearWestwood, kitchensFor(["single-bagel"], nine))?.id === "glendon",
    nearestDelivering(nearWestwood, kitchensFor(["single-bagel"], nine))?.id);
@@ -49,7 +49,7 @@ ok("and a Studio City address collects from Ventura",
 const noon = la(12);
 const withSandwich = kitchensFor(["the-veggie-stack"], noon);
 ok("a sandwich narrows to the full stores",
-   ids(withSandwich) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton", ids(withSandwich));
+   ids(withSandwich) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach", ids(withSandwich));
 ok("and a Westwood sandwich leaves from Glendon",
    nearestDelivering(nearWestwood, kitchensFor(["the-veggie-stack"], noon))?.id === "glendon");
 
@@ -142,19 +142,32 @@ ok("at 4am nothing is lit", kitchensFor(["single-bagel"], la(4)).length === 0);
 // The menu filter runs first now, and an order nobody open can make comes back
 // empty so the endpoint refuses it.
 //
-// ⚠️ Long Beach rather than Santa Monica. This scenario needs a point that no
-// real counter can reach, and Santa Monica stopped being one the day Westwood
-// opened — which is exactly the sort of quiet invalidation that leaves a test
-// passing for the wrong reason. Long Beach is twenty miles from the nearest.
-const longBeach: [number, number] = [33.7701, -118.1937];
+// ⚠️ Santa Clarita, and it is the third address this fixture has had.
+//
+// The scenario needs a point no real counter can reach. It was Santa Monica,
+// which stopped being one when Westwood opened. It was then Long Beach, chosen
+// because it was twenty miles from the nearest counter — and the shop has now
+// opened on Second Street in Belmont Shore, four miles away.
+//
+// Twice is a pattern, and the pattern is that a hand-picked "far away" point
+// is a bet against the business succeeding. So the point moved north, away
+// from every direction this shop has expanded in, and the assertion below
+// checks the premise instead of assuming it: if a counter ever opens within
+// range of here, this fails and says to move it, rather than quietly passing
+// for the wrong reason.
+const faraway: [number, number] = [34.3917, -118.5426];
+const nearestReal = Math.min(...LOCATIONS.map((s) => milesBetween(faraway, s.position)));
+ok("⚠️ the fixture point really is out of everyone's reach",
+   nearestReal > DELIVERY_RADIUS_MILES * 1.5,
+   `nearest counter is ${nearestReal.toFixed(1)}mi — move this point`);
 const island: StoreLocation = {
   id: "test-island-outlet", name: "Island", kind: "shop", outlet: true,
   address: "x", city: "Los Angeles, CA", hours: "x",
-  position: longBeach, aliases: [], menu: ["Bagels", "Spreads", "Drinks"],
+  position: faraway, aliases: [], menu: ["Bagels", "Spreads", "Drinks"],
 };
 LOCATIONS.push(island);
 try {
-  const bagels = kitchensFor(["single-bagel"], noon, longBeach);
+  const bagels = kitchensFor(["single-bagel"], noon, faraway);
   ok("a distant outlet does take the bagels near it",
      ids(bagels) === "test-island-outlet", ids(bagels));
 
@@ -164,16 +177,16 @@ try {
   // only naming who *should* be there separates them. An empty pool is safe
   // and still wrong: it refuses with a shrug where the real answer is a road
   // distance and a number the customer can act on.
-  const sandwiches = kitchensFor(["the-veggie-stack"], noon, longBeach);
+  const sandwiches = kitchensFor(["the-veggie-stack"], noon, faraway);
   ok("but never the sandwiches it cannot make",
      !sandwiches.some((s) => s.id === "test-island-outlet"), ids(sandwiches));
   ok("those stay with the counters that can, every full store",
-     sandwiches.map((s) => s.id).sort().join(",") === "fullerton,glendon,larchmont,pasadena,ventura,wilshire",
+     sandwiches.map((s) => s.id).sort().join(",") === "fullerton,glendon,larchmont,longbeach,pasadena,ventura,wilshire",
      ids(sandwiches) || "(empty)");
   // And the honest consequence: too far to deliver, refused rather than
   // dispatched to a counter that would have to say no in person.
   const nearestAble = Math.min(
-    ...sandwiches.map((s) => milesBetween(longBeach, s.position)),
+    ...sandwiches.map((s) => milesBetween(faraway, s.position)),
   ) * 1.3;
   ok("so a sandwich there is out of range, which the quote will say",
      nearestAble > DELIVERY_RADIUS_MILES, nearestAble.toFixed(1));
@@ -181,7 +194,7 @@ try {
   // Nothing open at all is an empty pool.
   const shut = new Date(Date.UTC(2026, 7, 19, 11, 0)); // 4am in Los Angeles
   ok("and when nothing is open, the pool is empty",
-     kitchensFor(["the-veggie-stack"], shut, longBeach).length === 0);
+     kitchensFor(["the-veggie-stack"], shut, faraway).length === 0);
 } finally {
   LOCATIONS.pop();
 }

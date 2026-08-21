@@ -456,6 +456,7 @@ async function main() {
   process.env.SQUARE_LOCATION_VENTURA = "L-ventura";
   process.env.SQUARE_LOCATION_PASADENA = "L-pasadena";
   process.env.SQUARE_LOCATION_FULLERTON = "L-fullerton";
+  process.env.SQUARE_LOCATION_LONGBEACH = "L-longbeach";
   reset({
     order_entries: [
       { location_id: "L-glendon" },
@@ -480,7 +481,8 @@ async function main() {
   // something this assertion is about.
   ok("and every counter's location is searched",
      JSON.stringify([...(wire().location_ids as string[])].sort()) ===
-       JSON.stringify(["L-fullerton", "L-glendon", "L-larchmont", "L-pasadena", "L-ventura", "L-wilshire"]),
+       JSON.stringify(["L-fullerton", "L-glendon", "L-larchmont", "L-longbeach",
+                       "L-pasadena", "L-ventura", "L-wilshire"]),
      JSON.stringify(wire().location_ids));
 
   // An entry Square declines to attribute is counted in the total and against
@@ -500,6 +502,7 @@ async function main() {
   delete process.env.SQUARE_LOCATION_VENTURA;
   delete process.env.SQUARE_LOCATION_PASADENA;
   delete process.env.SQUARE_LOCATION_FULLERTON;
+  delete process.env.SQUARE_LOCATION_LONGBEACH;
   reset({ order_entries: [{ location_id: "L-glendon" }] });
   await countOpenSquareOrders();
   const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;
