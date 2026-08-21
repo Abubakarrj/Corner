@@ -35,7 +35,7 @@ export default function Polaroid({
 }) {
   return (
     <figure
-      className={`m-0 flex h-full flex-col rounded-[3px] border border-line-soft bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.14)] ${className}`}
+      className={`m-0 flex h-full flex-col rounded-[3px] border border-[#e5e0d4] bg-white p-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.14)] ${className}`}
     >
       {/* The window. Square, like a real one, and the same grey whether or not
           anybody drew — see the note above. */}
@@ -66,16 +66,36 @@ export default function Polaroid({
       </div>
 
       <figcaption className="pt-2">
-        <p className="m-0 flex flex-wrap items-baseline gap-x-1.5 text-[12px] leading-tight text-quiet">
+        {/* ——— ⚠️ Fixed colours, not the theme's ———
+
+            These were text-quiet, text-faint and text-ink, which are the right
+            tokens on any surface that follows the theme. This one does not: a
+            polaroid is white in both themes, deliberately, because that is what
+            a polaroid is. So in dark mode the tokens resolved to the dark
+            theme's cream ink and printed cream on white — a card whose caption
+            could not be read at all.
+
+            A fixed surface takes fixed colours. #1d1c19 is the light theme's
+            ink, which is what this card would have used if the theme could see
+            that it is always light. */}
+        <p
+          className="m-0 flex flex-wrap items-baseline gap-x-1.5 text-[12px] leading-tight"
+          style={{ color: "#6b675e" }}
+        >
           <span className="font-medium">{name}</span>
-          {/* The neighbourhood is the part that makes this a wall rather than a
-              list. Quiet, because it is context and not the message. */}
-          {neighborhood ? <span className="text-faint">· {neighborhood}</span> : null}
+          {/* The neighbourhood is what makes this a wall rather than a list.
+              Quieter than the name, because it is context. */}
+          {neighborhood ? <span style={{ color: "#8a8578" }}>· {neighborhood}</span> : null}
         </p>
         {note ? (
           // break-words, because a name or a note can be one unbroken string of
           // forty characters and a card that overflows takes the grid with it.
-          <p className="m-0 mt-0.5 break-words text-[13px] leading-[1.35] text-ink">{note}</p>
+          <p
+            className="m-0 mt-0.5 break-words text-[13px] leading-[1.35]"
+            style={{ color: "#1d1c19" }}
+          >
+            {note}
+          </p>
         ) : null}
       </figcaption>
     </figure>

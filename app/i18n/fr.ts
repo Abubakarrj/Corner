@@ -220,6 +220,8 @@ export const fr: Table = {
   "checkout.chooseInBasket": "Choisir dans le panier",
   "checkout.payment": "Paiement",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "Voir tous les mots",
+  "notes.allTitle": "Tous les mots",
   "notes.title": "Corner Notes",
   "notes.blurb": "Laissez un mot, dessinez quelque chose, dites-nous votre quartier. Tout finit sur le mur.",
   "notes.write": "Écrire un mot",

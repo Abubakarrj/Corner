@@ -227,6 +227,8 @@ export const fa: Table = {
   "checkout.chooseInBasket": "در سبد انتخاب کنید",
   "checkout.payment": "پرداخت",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "دیدن همه یادداشت‌ها",
+  "notes.allTitle": "همه یادداشت‌ها",
   "notes.title": "Corner Notes",
   "notes.blurb": "یک یادداشت بگذارید، چیزی بکشید، بگویید از کدام محله‌اید. همه‌اش روی دیوار می‌رود.",
   "notes.write": "یادداشت بنویسید",

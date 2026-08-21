@@ -198,6 +198,8 @@ export const ja: Table = {
   "checkout.chooseInBasket": "カートで選ぶ",
   "checkout.payment": "お支払い",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "すべて見る",
+  "notes.allTitle": "すべてのひとこと",
   "notes.title": "Corner Notes",
   "notes.blurb": "ひとこと書いて、絵を描いて、どのあたりから来たか教えてください。全部かべに貼ります。",
   "notes.write": "ひとこと書く",

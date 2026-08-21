@@ -5,8 +5,10 @@ import { useT } from "../../i18n";
 import { Button } from "../../ui/Button";
 import { MAX_NAME, MAX_NEIGHBORHOOD, MAX_NOTE, type CornerNote } from "../../cornerNotesShape";
 import type { Drawing } from "../../drawing";
+import Link from "next/link";
 import DrawPad from "./DrawPad";
 import Polaroid from "./Polaroid";
+import { scatterStyle } from "./scatter";
 
 // The visitor's log: the wall, and the two steps to add to it.
 //
@@ -33,6 +35,7 @@ type Step = "closed" | "who" | "draw" | "done";
 export default function NotesWall({
   initial,
   reachable,
+  seeAll = false,
 }: {
   /** The first page of the wall, rendered on the server so the page is not an
    *  empty box while a fetch happens. */
@@ -40,6 +43,8 @@ export default function NotesWall({
   /** False when there is no database behind this. The wall says so rather than
    *  offering a form that cannot save anything. */
   reachable: boolean;
+  /** Whether there are more notes than this page is showing. */
+  seeAll?: boolean;
 }) {
   const t = useT();
   const [notes, setNotes] = useState<CornerNote[]>(initial);
@@ -241,13 +246,22 @@ export default function NotesWall({
         </div>
       ) : null}
 
-      {/* ——— The wall ——— */}
+      {/* ——— The wall ———
+
+          ⚠️ Laid out like a bench rather than a table: every card is tilted a
+          few degrees and nudged, from its own id so the angle is the same on
+          the server, in the browser and tomorrow. See scatter.ts for why a
+          random angle would tear the page in half at hydration.
+
+          The gap is wider than a plain grid's and the container clips, because
+          a rotated card is wider than an upright one and the corner of a
+          five-degree tilt has to go somewhere. */}
       {notes.length === 0 && reachable ? (
         <p className="m-0 text-center text-[14px] text-muted">{t("notes.beFirst")}</p>
       ) : (
-        <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3">
+        <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-6 overflow-hidden p-1 sm:grid-cols-3">
           {notes.map((entry) => (
-            <li key={entry.id}>
+            <li key={entry.id} style={scatterStyle(entry.id)}>
               <Polaroid
                 name={entry.name}
                 neighborhood={entry.neighborhood}
@@ -258,6 +272,23 @@ export default function NotesWall({
           ))}
         </ul>
       )}
+
+      {/* ⚠️ Shown whenever there is anything on the wall, not only once there
+          is more than fits. The first version of this appeared only when the
+          wall was truncated, on the reasoning that a link to "all" from a page
+          already showing all is a link to itself — which is true of the count
+          and false of the page. /notes/all is the by-place view, and hiding it
+          on a young wall means the only way to read the wall by neighbourhood
+          is to wait for it to get busy. */}
+      {seeAll ? (
+        <Link
+          href="/notes/all"
+          className="cb-press cb-tap mx-auto inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line-soft px-4 py-2 text-[13px] text-muted transition-colors hover:text-ink"
+        >
+          {t("notes.seeAll")}
+          <span aria-hidden>→</span>
+        </Link>
+      ) : null}
     </div>
   );
 }

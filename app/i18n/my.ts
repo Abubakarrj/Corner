@@ -198,6 +198,8 @@ export const my: Table = {
   "checkout.chooseInBasket": "ခြင်းထဲတွင် ရွေးပါ",
   "checkout.payment": "ငွေပေးချေမှု",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "အားလုံး ကြည့်ရန်",
+  "notes.allTitle": "စာအားလုံး",
   "notes.title": "Corner Notes",
   "notes.blurb": "စာတစ်ကြောင်း ချန်ထားပါ၊ ပုံဆွဲပါ၊ ဘယ်ရပ်ကွက်ကလဲ ပြောပြပါ။ အားလုံး နံရံပေါ် တင်ပါမည်။",
   "notes.write": "စာတစ်ကြောင်း ရေးရန်",

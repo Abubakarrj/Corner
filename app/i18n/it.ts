@@ -220,6 +220,8 @@ export const it: Table = {
   "checkout.chooseInBasket": "Scegli nel carrello",
   "checkout.payment": "Pagamento",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "Vedi tutti i biglietti",
+  "notes.allTitle": "Tutti i biglietti",
   "notes.title": "Corner Notes",
   "notes.blurb": "Lascia un biglietto, disegna qualcosa, dicci da che quartiere vieni. Finisce tutto sul muro.",
   "notes.write": "Scrivi un biglietto",

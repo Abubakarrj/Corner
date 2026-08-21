@@ -228,6 +228,8 @@ export const en = {
   "checkout.chooseInBasket": "Choose in your basket",
   "checkout.payment": "Payment",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "See all notes",
+  "notes.allTitle": "All notes",
   "notes.title": "Corner Notes",
   "notes.blurb": "Leave a note, draw something, tell us which corner you're from. It all goes up on the wall.",
   "notes.write": "Write a note",

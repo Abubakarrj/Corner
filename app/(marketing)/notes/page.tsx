@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import PageTitle from "../../ui/PageTitle";
+import BackButton from "../../ui/BackButton";
 import { isNotesConfigured, listNotes } from "../../cornerNotes";
 import NotesWall from "./NotesWall";
 
@@ -26,20 +26,23 @@ export const metadata: Metadata = {
 };
 
 export default async function NotesPage() {
-  const notes = await listNotes(60);
+  // ⚠️ 24 rather than 60. The wall is the scattered view and tilted cards need
+  // room; the rest live on /notes/all, laid flat and ordered by place.
+  const notes = await listNotes(24);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6">
       <PageTitle k="notes.title" />
 
-      <div className="flex items-center justify-between gap-3">
+      {/* ⚠️ The app's own back control, not an underlined link of this page's
+          own. Every other screen in this app uses BackButton — it goes back
+          where you came from when there is somewhere, and up a level when there
+          is not, rather than always to the landing page. A second kind of back
+          control is a second thing to learn on the one page a stranger is most
+          likely to arrive at cold. */}
+      <div className="flex items-center gap-1">
+        <BackButton fallback="/" className="-ml-2.5" />
         <p className="m-0 text-[20px] font-medium text-ink">Corner Notes</p>
-        <Link
-          href="/"
-          className="cb-tap cursor-pointer text-[13px] text-muted underline hover:text-ink"
-        >
-          ← Corner Bagel
-        </Link>
       </div>
 
       <div className="mt-6">
@@ -50,6 +53,7 @@ export default async function NotesPage() {
           // distinguishable on screen. See listNotes().
           initial={notes ?? []}
           reachable={isNotesConfigured() && notes !== null}
+          seeAll={(notes?.length ?? 0) > 0}
         />
       </div>
     </div>

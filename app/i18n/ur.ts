@@ -201,6 +201,8 @@ export const ur: Table = {
   "checkout.chooseInBasket": "ٹوکری میں منتخب کریں",
   "checkout.payment": "ادائیگی",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "سب نوٹ دیکھیں",
+  "notes.allTitle": "تمام نوٹ",
   "notes.title": "Corner Notes",
   "notes.blurb": "ایک بات لکھیں، کچھ بنائیں، بتائیں آپ کس محلے سے ہیں۔ سب دیوار پر لگ جائے گا۔",
   "notes.write": "ایک بات لکھیں",

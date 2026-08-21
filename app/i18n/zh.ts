@@ -200,6 +200,8 @@ export const zh: Table = {
   "checkout.chooseInBasket": "在购物篮中选择",
   "checkout.payment": "付款",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "查看全部",
+  "notes.allTitle": "全部便条",
   "notes.title": "Corner Notes",
   "notes.blurb": "留句话、画点什么、告诉我们你从哪个街区来。都会贴到墙上。",
   "notes.write": "写张便条",

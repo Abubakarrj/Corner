@@ -153,7 +153,20 @@ export async function addNote(input: {
  *  ⚠️ Returns null for "we cannot say" and [] for "nobody has written yet".
  *  The screens say different things about those two, and collapsing them would
  *  tell a visitor the wall is empty because a database is down. */
-export async function listNotes(limit = 60, offset = 0): Promise<CornerNote[] | null> {
+export async function listNotes(
+  limit = 60,
+  offset = 0,
+  options: {
+    /** Only this neighbourhood. Absent means all of them. */
+    in?: string;
+    /** ⚠️ Grouped by neighbourhood rather than by time. The wall reads newest
+     *  first, which is the right order for a thing people come back to; the
+     *  full list reads by place, which is the only order that makes a few
+     *  hundred cards answerable — "who else is in Koreatown" is a question,
+     *  "what came in on Tuesday" is not. */
+    byPlace?: boolean;
+  } = {},
+): Promise<CornerNote[] | null> {
   const client = db();
   if (!client) return null;
 
@@ -167,12 +180,24 @@ export async function listNotes(limit = 60, offset = 0): Promise<CornerNote[] | 
       drawing: unknown;
       at: Date;
     }>(
+      // ⚠️ The two orderings are literals chosen here, never interpolated
+      // from anything a caller passed. A sort column off a query string is one
+      // string concatenation away from being the injection this file spends
+      // the rest of its length avoiding.
+      //
+      // NULLS LAST so the notes from nobody-said-where sit at the end rather
+      // than at the top, which is where an unqualified sort puts them.
       `SELECT id, name, neighborhood, note, drawing, at
          FROM ${SCHEMA}.corner_notes
         WHERE hidden = false
-        ORDER BY at DESC
+          AND ($3::text IS NULL OR lower(neighborhood) = lower($3))
+        ORDER BY ${options.byPlace ? "neighborhood ASC NULLS LAST, at DESC" : "at DESC"}
         LIMIT $1 OFFSET $2`,
-      [Math.min(Math.max(limit, 1), 120), Math.max(offset, 0)],
+      [
+        Math.min(Math.max(limit, 1), 120),
+        Math.max(offset, 0),
+        readField(options.in ?? "", MAX_NEIGHBORHOOD) || null,
+      ],
     );
     return rows.rows.map((row) => ({
       id: row.id,
@@ -188,6 +213,38 @@ export async function listNotes(limit = 60, offset = 0): Promise<CornerNote[] | 
     }));
   } catch (error) {
     console.error(`[corner-notes] could not read the wall: ${explainDbError(error)}`);
+    return null;
+  }
+}
+
+/** Every neighbourhood somebody has written from, and how many from each.
+ *
+ *  Case-folded, because "K-town" and "k-town" are one place and a filter row
+ *  with both in it is a filter row that looks broken. The label shown is the
+ *  first spelling anybody used for it.
+ *
+ *  ⚠️ Capped. This becomes a row of chips on a page, and a wall that has seen
+ *  four hundred neighbourhoods should show the busiest of them rather than
+ *  four hundred chips. */
+export async function listNeighborhoods(
+  limit = 24,
+): Promise<{ name: string; count: number }[] | null> {
+  const client = db();
+  if (!client) return null;
+  try {
+    await prepared();
+    const rows = await client.query<{ name: string; count: string }>(
+      `SELECT min(neighborhood) AS name, count(*)::text AS count
+         FROM ${SCHEMA}.corner_notes
+        WHERE hidden = false AND neighborhood IS NOT NULL AND neighborhood <> ''
+        GROUP BY lower(neighborhood)
+        ORDER BY count(*) DESC, min(neighborhood) ASC
+        LIMIT $1`,
+      [Math.min(Math.max(limit, 1), 60)],
+    );
+    return rows.rows.map((row) => ({ name: row.name, count: Number(row.count) }));
+  } catch (error) {
+    console.error(`[corner-notes] could not read the neighbourhoods: ${explainDbError(error)}`);
     return null;
   }
 }

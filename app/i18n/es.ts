@@ -200,6 +200,8 @@ export const es: Table = {
   "checkout.chooseInBasket": "Elige en tu cesta",
   "checkout.payment": "Pago",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "Ver todas las notas",
+  "notes.allTitle": "Todas las notas",
   "notes.title": "Corner Notes",
   "notes.blurb": "Deja una nota, dibuja algo, dinos de qué barrio eres. Todo va a la pared.",
   "notes.write": "Escribe una nota",

@@ -198,6 +198,8 @@ export const ko: Table = {
   "checkout.chooseInBasket": "장바구니에서 선택",
   "checkout.payment": "결제",
   "notes.pill": "Corner Notes",
+  "notes.seeAll": "전체 보기",
+  "notes.allTitle": "모든 메모",
   "notes.title": "Corner Notes",
   "notes.blurb": "한마디 남기고, 그림도 그리고, 어느 동네에서 왔는지 알려주세요. 전부 벽에 붙입니다.",
   "notes.write": "한마디 남기기",
