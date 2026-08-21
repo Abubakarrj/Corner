@@ -111,7 +111,10 @@ export default function CartDrawer({
           the last − is the case the undo exists for, and that is exactly the
           case where the list below is replaced by the empty state — an offer
           rendered beside the rows would vanish at the moment it is needed. */}
-      <RemovedNotice className="mx-6 mb-3" />
+      {/* mt-4 matches the header's own py-4. Without it the card butts
+          straight up against the header rule, which reads as the notice being
+          part of the header rather than a thing that just happened. */}
+      <RemovedNotice className="mx-6 mb-3 mt-4" />
 
       {rows.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
