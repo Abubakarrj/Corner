@@ -4,8 +4,9 @@ import PageTitle from "../../../ui/PageTitle";
 import BackButton from "../../../ui/BackButton";
 import { countNotes, listNeighborhoods, listNotes } from "../../../cornerNotes";
 import Polaroid from "../Polaroid";
+import NoteComposer from "../NoteComposer";
 
-// Every note, by neighbourhood.
+// Every note, by neighbourhood — and where a new one gets written.
 //
 // ——— ⚠️ Why this is a different page and not a "load more" ———
 //
@@ -17,6 +18,17 @@ import Polaroid from "../Polaroid";
 // So the full list is its own page, laid flat and ordered by place, because
 // "who else is in Koreatown" is a question somebody actually has. The chips
 // filter it; the grid is square and aligned, which is what a list is for.
+//
+// ——— ⚠️ The composer is here, not on the wall ———
+//
+// /notes is read-only now. This is the only page with the form on it, which
+// makes the "See all notes" pill the single way in — worth knowing before
+// moving either one, because the pill and this form are now one path and
+// breaking half of it takes away the ability to write at all.
+//
+// It sits under the chips rather than at the top: somebody who arrives here to
+// read should get the notes, and somebody who came to write pressed a button
+// two seconds ago and knows what they came for.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -74,18 +86,26 @@ export default async function AllNotesPage({
         </nav>
       ) : null}
 
+      {/* ⚠️ Only when the database answered. `notes === null` is the one state
+          where a form would take somebody's drawing and drop it — see
+          listNotes(). A filter that matches nothing is `[]`, not null, and the
+          form belongs there. */}
+      {notes !== null ? (
+        <div className="mt-5 flex flex-col items-center">
+          <NoteComposer />
+        </div>
+      ) : null}
+
       {notes === null ? (
         <p role="status" className="mt-8 text-center text-[14px] text-muted">
           The wall is having a moment. Try again in a bit.
         </p>
       ) : notes.length === 0 ? (
-        <p className="mt-8 text-center text-[14px] text-muted">
-          Nothing from here yet.{" "}
-          <Link href="/notes" className="cursor-pointer underline">
-            Write the first one
-          </Link>
-          .
-        </p>
+        // ⚠️ No "write the first one" link any more. It pointed at /notes,
+        // which is read-only now, so it sent somebody looking for the form
+        // away from the only page that has one — and the form is directly
+        // above this sentence.
+        <p className="mt-8 text-center text-[14px] text-muted">Nothing from here yet.</p>
       ) : (
         // Flat and aligned, unlike the wall. See the note at the top.
         <ul className="m-0 mt-6 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3">

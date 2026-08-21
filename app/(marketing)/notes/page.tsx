@@ -51,9 +51,8 @@ export default async function NotesPage() {
           // list and a separate reachable flag, so that the two states the null
           // stands for — no database, and a database that answered — stay
           // distinguishable on screen. See listNotes().
-          initial={notes ?? []}
+          notes={notes ?? []}
           reachable={isNotesConfigured() && notes !== null}
-          seeAll={(notes?.length ?? 0) > 0}
         />
       </div>
     </div>
