@@ -248,6 +248,7 @@ export const fr: Table = {
   "notes.errTooMany": "Ça fait beaucoup de mots pour aujourd'hui. Revenez demain !",
   "notes.errEmpty": "Écrivez ou dessinez quelque chose, et on l'accroche.",
   "notes.errSaveFailed": "On n'a pas pu l'accrocher. Réessayez dans un instant.",
+  "notes.language": "Celle-là n'ira pas au mur. Reformulez et réessayez.",
   "checkout.orTypeCard": "ou saisissez votre carte",
   "checkout.payWithApplePay": "Payer avec Apple Pay",
   "checkout.giftCard": "Carte cadeau",

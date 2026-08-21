@@ -228,6 +228,7 @@ export const es: Table = {
   "notes.errTooMany": "Ya son bastantes notas por hoy. ¡Vuelve mañana!",
   "notes.errEmpty": "Escribe algo o dibuja algo, y lo ponemos en la pared.",
   "notes.errSaveFailed": "No pudimos ponerla. Inténtalo en un momento.",
+  "notes.language": "Esa no va a la pared. Cámbiala y vuelve a intentarlo.",
   "checkout.orTypeCard": "o escribe tu tarjeta",
   "checkout.payWithApplePay": "Pagar con Apple Pay",
   "checkout.giftCard": "Tarjeta regalo",

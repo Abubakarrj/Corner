@@ -47,6 +47,14 @@ export type Throttle = {
   /** How many calls this key has left, without counting one. For a caller
    *  that wants to check before doing something expensive and count after. */
   remaining(key: string): number;
+  /** Counts one against this key, without asking whether it was allowed.
+   *
+   *  The other half of `remaining`. For a budget that should be spent on what
+   *  actually happened rather than on what was asked for: a caller checks
+   *  first, does the work, and records it only if the work was done. See
+   *  /api/corner-notes, where a note refused for its wording must not cost
+   *  somebody one of the notes they were allowed to write. */
+  record(key: string): void;
 };
 
 /** Builds a throttle: `max` calls per `windowMs`, sliding.
@@ -59,6 +67,15 @@ export function throttle({ windowMs, max }: { windowMs: number; max: number }): 
   const recent = (key: string, now: number) =>
     (hits.get(key) ?? []).filter((at) => now - at < windowMs);
 
+  const add = (key: string, times: number[], now: number) => {
+    times.push(now);
+    hits.set(key, times);
+    if (hits.size > MAX_TRACKED) {
+      const oldest = hits.keys().next().value;
+      if (oldest !== undefined) hits.delete(oldest);
+    }
+  };
+
   return {
     exceeded(key: string): boolean {
       const now = Date.now();
@@ -69,16 +86,15 @@ export function throttle({ windowMs, max }: { windowMs: number; max: number }): 
         hits.set(key, times);
         return true;
       }
-      times.push(now);
-      hits.set(key, times);
-      if (hits.size > MAX_TRACKED) {
-        const oldest = hits.keys().next().value;
-        if (oldest !== undefined) hits.delete(oldest);
-      }
+      add(key, times, now);
       return false;
     },
     remaining(key: string): number {
       return Math.max(0, max - recent(key, Date.now()).length);
+    },
+    record(key: string): void {
+      const now = Date.now();
+      add(key, recent(key, now), now);
     },
   };
 }

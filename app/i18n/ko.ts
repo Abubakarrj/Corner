@@ -226,6 +226,7 @@ export const ko: Table = {
   "notes.errTooMany": "오늘은 이만큼이면 충분해요. 내일 또 오세요!",
   "notes.errEmpty": "뭐든 쓰거나 그려주시면 붙여드릴게요.",
   "notes.errSaveFailed": "붙이지 못했어요. 잠시 뒤에 다시 시도해 주세요.",
+  "notes.language": "그건 벽에 붙일 수 없어요. 다시 써서 올려 주세요.",
   "checkout.orTypeCard": "또는 카드 입력",
   "checkout.payWithApplePay": "Apple Pay로 결제",
   "checkout.giftCard": "기프트 카드",

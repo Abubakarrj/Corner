@@ -256,6 +256,7 @@ export const en = {
   "notes.errTooMany": "That's plenty of notes for today. Come back tomorrow!",
   "notes.errEmpty": "Write something or draw something, then we'll pin it up.",
   "notes.errSaveFailed": "We couldn't pin that up. Try again in a moment.",
+  "notes.language": "That one won't go up on the wall. Reword it and try again.",
   "checkout.orTypeCard": "or type your card",
   "checkout.payWithApplePay": "Pay with Apple Pay",
   "checkout.giftCard": "Gift card",

@@ -228,6 +228,7 @@ export const zh: Table = {
   "notes.errTooMany": "今天写得够多啦，明天再来！",
   "notes.errEmpty": "写点什么或画点什么，我们就贴上去。",
   "notes.errSaveFailed": "没能贴上去。过一会儿再试。",
+  "notes.language": "这条不能贴上墙。换个说法再试试。",
   "checkout.orTypeCard": "或输入卡号",
   "checkout.payWithApplePay": "使用 Apple Pay 付款",
   "checkout.giftCard": "礼品卡",

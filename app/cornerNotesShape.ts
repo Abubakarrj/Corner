@@ -6,10 +6,10 @@ import type { Drawing } from "./drawing";
 //
 // That file has `import "server-only"` at the top, which is what stops a
 // database pool and a connection string from being pulled into a browser
-// bundle by an accidental import. The wall is a client component: it holds the
-// composer's state and appends to its own list, so it needs the shape of a note
-// and the three limits, and it must not be able to reach the module that talks
-// to Postgres.
+// bundle by an accidental import. The wall and the composer are both client
+// components — one renders notes, the other enforces the three caps as you
+// type — so both need this and neither may reach the module that talks to
+// Postgres.
 //
 // So the shape lives here, with no side effects and nothing to import, and both
 // halves read the same one. The alternative — a second copy of the caps in the

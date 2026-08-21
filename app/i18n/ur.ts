@@ -229,6 +229,7 @@ export const ur: Table = {
   "notes.errTooMany": "آج کے لیے اتنا کافی ہے۔ کل پھر آئیے!",
   "notes.errEmpty": "کچھ لکھیں یا بنائیں، پھر ہم لگا دیں گے۔",
   "notes.errSaveFailed": "ہم اسے لگا نہیں سکے۔ ایک لمحے بعد کوشش کریں۔",
+  "notes.language": "یہ دیوار پر نہیں لگ سکتی۔ الفاظ بدل کر دوبارہ کوشش کریں۔",
   "checkout.orTypeCard": "یا اپنا کارڈ لکھیں",
   "checkout.payWithApplePay": "Apple Pay سے ادائیگی کریں",
   "checkout.giftCard": "گفٹ کارڈ",

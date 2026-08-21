@@ -226,6 +226,7 @@ export const ja: Table = {
   "notes.errTooMany": "今日はもう十分書いていただきました。また明日！",
   "notes.errEmpty": "なにか書くか描くかしてください。それから貼ります。",
   "notes.errSaveFailed": "貼れませんでした。少ししてからお試しください。",
+  "notes.language": "それは壁に貼れません。書き直してもう一度どうぞ。",
   "checkout.orTypeCard": "またはカード番号を入力",
   "checkout.payWithApplePay": "Apple Payで支払う",
   "checkout.giftCard": "ギフトカード",

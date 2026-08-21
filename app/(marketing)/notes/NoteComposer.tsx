@@ -78,6 +78,18 @@ export default function NoteComposer() {
         // The endpoint's own reasons, translated. A 429 is the one worth
         // wording carefully: somebody who has left six notes today is not doing
         // anything wrong, they are just done for now.
+        //
+        // ⚠️ `notes.language` says a note was refused and not which field or
+        // which word — see the route for why. It is also the only one of these
+        // that is worth showing on the step somebody can act on: the name and
+        // the neighbourhood are back on the first screen, so this sends them
+        // there rather than leaving the message beside a drawing pad that has
+        // nothing to do with it.
+        if (answer?.error === "notes.language") {
+          setError(t("notes.language"));
+          setStep("who");
+          return;
+        }
         setError(
           answer?.error === "notes.tooMany"
             ? t("notes.errTooMany")
@@ -138,6 +150,10 @@ export default function NoteComposer() {
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          // Cleared on the way out, not on the way in. A refusal that stays on
+          // screen while somebody edits the field it was about is the point of
+          // it; one that survives into the next attempt is just noise.
+          setError(null);
           setStep("draw");
         }}
         className="flex w-full max-w-md flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-4 text-start"
@@ -167,6 +183,14 @@ export default function NoteComposer() {
           placeholder={t("notes.notePlaceholder")}
           multiline
         />
+        {/* Shown here as well as on the drawing step, because a refusal about
+            words belongs beside the words. Coming back from a failed submit
+            lands on this step for that reason. */}
+        {error ? (
+          <p role="alert" className="m-0 text-[13px] text-brand-red">
+            {error}
+          </p>
+        ) : null}
         <Button type="submit" block>
           {t("notes.next")}
         </Button>

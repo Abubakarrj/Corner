@@ -255,6 +255,7 @@ export const fa: Table = {
   "notes.errTooMany": "برای امروز به اندازه کافی نوشتید. فردا دوباره بیایید!",
   "notes.errEmpty": "چیزی بنویسید یا بکشید، بعد رویش می‌زنیم.",
   "notes.errSaveFailed": "نتوانستیم بزنیمش. یک لحظه بعد دوباره امتحان کنید.",
+  "notes.language": "این یکی روی دیوار نمی‌رود. جور دیگری بنویسید و دوباره امتحان کنید.",
   "checkout.orTypeCard": "یا کارت خود را وارد کنید",
   "checkout.payWithApplePay": "پرداخت با Apple Pay",
   "checkout.giftCard": "کارت هدیه",

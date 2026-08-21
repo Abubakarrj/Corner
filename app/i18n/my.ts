@@ -226,6 +226,7 @@ export const my: Table = {
   "notes.errTooMany": "ဒီနေ့အတွက် လုံလောက်ပါပြီ။ မနက်ဖြန် ပြန်လာခဲ့ပါ!",
   "notes.errEmpty": "တစ်ခုခု ရေးပါ သို့မဟုတ် ဆွဲပါ၊ ပြီးရင် တင်ပေးပါမည်။",
   "notes.errSaveFailed": "မတင်နိုင်ခဲ့ပါ။ ခဏနေမှ ထပ်စမ်းကြည့်ပါ။",
+  "notes.language": "ဒါကို နံရံမှာ မတင်နိုင်ပါ။ စကားလုံးပြောင်းပြီး ထပ်စမ်းကြည့်ပါ။",
   "checkout.orTypeCard": "သို့မဟုတ် ကတ်နံပါတ် ရိုက်ထည့်ပါ",
   "checkout.payWithApplePay": "Apple Pay ဖြင့် ပေးချေရန်",
   "checkout.giftCard": "လက်ဆောင်ကတ်",
