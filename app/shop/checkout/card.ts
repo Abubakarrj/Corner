@@ -156,3 +156,52 @@ export const BRAND_LABEL: Record<CardBrand, string> = {
   discover: "Discover",
   unknown: "Card",
 };
+
+/** The same receipt line, for a card this app never saw.
+ *
+ *  ——— ⚠️ Why the brand cannot be derived on a real payment ———
+ *
+ *  Everything above works off the number, and on a shop that charges cards
+ *  there is no number here to work off: the digits are typed into Square's own
+ *  iframes and `describeCard("")` comes back as the unknown brand and an empty
+ *  four digits. That is not a defect in the iframes, it is the entire point of
+ *  them — but it meant the confirmation could not name the card on precisely
+ *  the orders where a card was actually charged, and printed the receipt line
+ *  only in the fallback configuration that charges nobody.
+ *
+ *  So the brand comes from the one party that did see the number. Square names
+ *  it in the tokenize result, alongside the last four, which is the same pair
+ *  a receipt has always been allowed to know.
+ *
+ *  Unrecognised brands get the generic label rather than a prettied-up version
+ *  of the enum. Square's vocabulary is longer than this list — JCB, UnionPay,
+ *  Interac, EFTPOS and more — and "Card ending 4242" is a sentence somebody
+ *  can read, where "China_Unionpay ending 4242" is a leaked constant. */
+export function labelForSquareBrand(brand: string | undefined | null): string {
+  switch ((brand ?? "").toUpperCase()) {
+    case "VISA":
+      return BRAND_LABEL.visa;
+    case "MASTERCARD":
+      return BRAND_LABEL.mastercard;
+    case "AMERICAN_EXPRESS":
+      return BRAND_LABEL.amex;
+    // Square reports Diners as a flavour of Discover, and the two share a
+    // network. One label for both is what the card itself says.
+    case "DISCOVER":
+    case "DISCOVER_DINERS":
+      return BRAND_LABEL.discover;
+    default:
+      return BRAND_LABEL.unknown;
+  }
+}
+
+/** The last four as a receipt may print them, or null when there is nothing
+ *  worth printing.
+ *
+ *  ⚠️ Null rather than an empty string, so a caller cannot render "Card ending"
+ *  with nothing after it. That is the shape the old bug took: a blank passed
+ *  every truthiness check that mattered until the very last one. */
+export function last4Of(value: string | undefined | null): string | null {
+  const digits = digitsOf(value ?? "");
+  return digits.length === 4 ? digits : null;
+}

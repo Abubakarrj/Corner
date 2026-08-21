@@ -17,8 +17,12 @@ import {
 import { useOpening } from "../../useOpening";
 import { pushOrder, recordOrder, type PlacedOrder } from "../../account";
 import { useCard, type CardEntry } from "./useCard";
-import { BRAND_LABEL } from "./card";
-import { useSquareCard, type SquareCardEntry } from "./useSquareCard";
+import { BRAND_LABEL, labelForSquareBrand, last4Of } from "./card";
+import {
+  useSquareCard,
+  type SquareCardEntry,
+  type TokenizedCard,
+} from "./useSquareCard";
 import { clearDraft, readDraft, writeDraft } from "./draft";
 import { completed, refused } from "../../haptics";
 import { closeFunnel } from "../../navigationDepth";
@@ -603,7 +607,11 @@ export function useCheckout(): Checkout {
     //
     // ⚠️ `payment` holds a single-use token. There is no card number in this
     // function, in this file, or in the request below.
-    let payment: { token: string; verificationToken?: string } | null = null;
+    let payment: {
+      token: string;
+      verificationToken?: string;
+      card: TokenizedCard;
+    } | null = null;
     // And only for what is actually left to charge. A gift card covering the
     // whole order means there is no card to tokenize and nothing to verify.
     if (hosted.enabled && tender === "card" && dueNowCents > 0) {
@@ -772,10 +780,30 @@ export function useCheckout(): Checkout {
         throw new Error(st(result?.error) || t("checkout.somethingWentWrong"));
       }
 
-      // Read once, here, so the two lines below can't describe two different
+      // ——— The card, as a receipt names one ———
+      //
+      // Read once, here, so the lines below cannot describe two different
       // cards — and so the whole of what this transaction knows about the card
-      // is a single object with two harmless fields in it.
-      const paid = tender === "card" ? card.summary() : null;
+      // is a brand and four digits.
+      //
+      // ⚠️ Two sources, and which one is right depends on where the digits were
+      // typed. This used to be `card.summary()` alone, which reads the local
+      // fields — and on a shop that charges cards there is nothing in them,
+      // because Square's iframes own the number. So a real payment recorded an
+      // empty last four, the confirmation's `order?.cardLast4 ?` fell through,
+      // and the receipt named the card on exactly the orders where no card was
+      // charged. Square's answer comes first for that reason; the local fields
+      // are the fallback for a deployment with no processor.
+      const paid: { brand: string; last4: string } | null = (() => {
+        if (tender !== "card") return null;
+        const fromSquare = last4Of(payment?.card.last4);
+        if (fromSquare) {
+          return { brand: labelForSquareBrand(payment?.card.brand), last4: fromSquare };
+        }
+        const local = card.summary();
+        const typed = last4Of(local.last4);
+        return typed ? { brand: BRAND_LABEL[local.brand], last4: typed } : null;
+      })();
 
       // ——— What has actually been taken, before anybody reaches a counter ———
       //
@@ -863,7 +891,7 @@ export function useCheckout(): Checkout {
         // The card, as a receipt describes one. Brand and four digits, on this
         // device only — `summary()` is structurally incapable of handing over
         // the number, which is the point of it.
-        ...(paid ? { cardBrand: BRAND_LABEL[paid.brand], cardLast4: paid.last4 } : {}),
+        ...(paid ? { cardBrand: paid.brand, cardLast4: paid.last4 } : {}),
         // Always written, including as a zero. A zero is the answer for an
         // order paying at the counter; it is leaving the field out that means
         // "this record predates the question" — see amountOwing().
