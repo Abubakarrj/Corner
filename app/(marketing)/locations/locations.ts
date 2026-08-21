@@ -574,6 +574,100 @@ export const LONGBEACH: StoreLocation = {
   ],
 };
 
+// Torrance, in the retail strip on 190th at the Harbor Gateway line.
+export const TORRANCE: StoreLocation = {
+  id: "torrance",
+  name: "Torrance",
+  kind: "shop",
+  address: "980 W 190th St",
+  city: "Torrance, CA 90502",
+  hours: SHOP_HOURS,
+  // ⚠️ 10.25%: Torrance levies half a point of its own on top of the county's.
+  //
+  // ⚠️ VERIFY AGAINST CDTFA BEFORE THIS STORE TAKES AN ORDER, and verify this
+  // one harder than the others. A 90502 mailing address does not settle which
+  // city you are standing in: this stretch of 190th is on the Harbor Gateway
+  // line, and Harbor Gateway is a strip of the City of Los Angeles that reaches
+  // down between Torrance and Carson with Torrance ZIPs on both sides of it.
+  // Los Angeles and Torrance are different rates. Rate services answer by city
+  // name and by ZIP, and both of those are the wrong question here — ask CDTFA
+  // for *this address*, which is the only lookup that knows where the line
+  // runs.
+  taxRate: 0.1025,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // The one position in this file that is not an estimate: 33.857306,
+  // -118.293999 is what a mapping service returns for a unit at this street
+  // number, so it is a rooftop rather than a reading of the block numbering.
+  // storePlaces.ts still geocodes the address and still checks the drift; this
+  // simply starts it much closer than the others do.
+  position: [33.8573, -118.294],
+  catering: true,
+  aliases: [
+    "torrance",
+    "190th",
+    "190th st",
+    "w 190th",
+    "west 190th",
+    "980 190th",
+    "harbor gateway",
+    "carson",
+    "gardena",
+    "south bay",
+    "the enclave",
+    "90502",
+  ],
+};
+
+// San Clemente, off the Camino de Estrella interchange.
+//
+// ——— ⚠️ The third patch ———
+//
+// Fullerton and Long Beach make one lobe in the south; the five Los Angeles
+// counters make another. This one is thirty-odd miles further down the coast
+// from either, which is more than two radii from everything, so it is a lobe of
+// its own with nobody near it. That is the shape the coverage map will draw and
+// it is the honest one: the ground between Irvine and here is not served.
+export const SANCLEMENTE: StoreLocation = {
+  id: "sanclemente",
+  name: "San Clemente",
+  kind: "shop",
+  address: "641 Camino de los Mares",
+  city: "San Clemente, CA 92673",
+  hours: SHOP_HOURS,
+  // ⚠️ 7.75%: Orange County's rate, the same as Fullerton's. San Clemente adds
+  // no city district tax of its own.
+  //
+  // ⚠️ VERIFY AGAINST CDTFA BEFORE THIS STORE TAKES AN ORDER. It errs the same
+  // way Fullerton's does — too high here is over-collecting from customers,
+  // which is the worse of the two mistakes and the harder to put right.
+  taxRate: 0.0775,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // ⚠️ Estimated, not surveyed. Read off a neighbouring address on the same
+  // street a couple of hundred numbers along; the plaza itself sits at Camino
+  // de los Mares and Calle Agua, an eighth of a mile from the Camino de
+  // Estrella exit off the 5. Inside the drift guard by a wide margin, and
+  // storePlaces.ts replaces it with the rooftop. Read the drift-guard warning
+  // above these records.
+  position: [33.4626, -117.6414],
+  catering: true,
+  aliases: [
+    "san clemente",
+    "sanclemente",
+    "camino de los mares",
+    "los mares",
+    "641 camino de los mares",
+    "camino de estrella",
+    "talega",
+    "capistrano beach",
+    "dana point",
+    "south orange county",
+    "south oc",
+    "92673",
+  ],
+};
+
 // Westwood. A full store: it makes the whole menu, so it says nothing about
 // `menu` at all. That silence is the point of the field — the common case stays
 // quiet and a restriction is the thing somebody has to write down, which is
@@ -729,6 +823,8 @@ export const LOCATIONS: StoreLocation[] = [
   PASADENA,
   FULLERTON,
   LONGBEACH,
+  TORRANCE,
+  SANCLEMENTE,
 ];
 
 /** When a counter opens, as an hour of the day.

@@ -168,20 +168,73 @@ async function main() {
   ok("no vertex is outside the radius", worst <= DELIVERY_RADIUS_MILES, worst.toFixed(3));
   ok("and none is more than one search step inside it",
      worst > DELIVERY_RADIUS_MILES - 0.25, worst.toFixed(3));
-  // ——— Every bearing, not just the best one ———
+  // ——— ⚠️ Every bearing, and why the old form of this had to go ———
   //
-  // The max above says the ring touches the boundary somewhere. The min says
-  // it touches it everywhere, which is the assertion that catches a clipped
-  // shape: with a straight-line ruler the union is three exact circles, so a
-  // ray from the centre meets the edge whichever way it points. A search
-  // ceiling set too low pulls the far bearings in and leaves the near ones
-  // alone, and a maximum cannot see that.
-  const least = Math.min(...vertices.map(reach));
-  ok("every bearing reaches the boundary, not just the nearest",
-     least > DELIVERY_RADIUS_MILES - 0.25, least.toFixed(3));
-  // The proto3 notch: bearing zero is the destination whose index is omitted.
-  ok("bearing zero is not pulled in to the shop",
-     reach(vertices[0]) > DELIVERY_RADIUS_MILES - 0.25, reach(vertices[0]).toFixed(3));
+  // This asserted that the *nearest* vertex is also out at the radius: with one
+  // ring from a centroid and a straight-line ruler, every ray meets the edge
+  // whichever way it points, so a single pulled-in vertex meant a clipped
+  // shape. Per-counter rings break that premise honestly. A ray west from San
+  // Clemente or Long Beach runs into the Pacific, finds no road route, and the
+  // search correctly stops at eight tenths of a mile. The vertex is short
+  // because the ocean is there.
+  //
+  // So the shape of the claim moves from "no vertex is short" to "no *ring* is
+  // short all the way round". A ring whose every bearing came back pulled in is
+  // a ring that was clipped; a ring with a few short bearings is a ring by the
+  // sea.
+  //
+  // ⚠️ Measured from the ring's *own* counter, not from the nearest one. The
+  // first cut of this used `reach`, which is the minimum across every counter,
+  // and Larchmont failed at 8.4 miles — correctly, because Larchmont is ringed
+  // by Koreatown, Westwood and Studio City, so no point ten miles from it is
+  // ten miles from all of them. That is a fact about the shop's density and
+  // says nothing about whether the ring was drawn properly. A ring belongs to
+  // one counter, so it is checked against that counter.
+  //
+  // rings[i] is the ring for origins[i]: measure() maps one over the other, and
+  // this assertion is the only thing that would notice if that stopped being
+  // true.
+  for (let r = 0; r < area.rings.length; r += 1) {
+    const own = (p: [number, number]) => milesBetween(p, area.origins[r]);
+    const out = Math.max(...area.rings[r].map(own));
+    ok(`ring ${r} reaches the boundary somewhere`,
+       out > DELIVERY_RADIUS_MILES - 0.25, out.toFixed(3));
+  }
+
+  // ——— ⚠️ The proto3 notch ———
+  //
+  // Bearing zero is the destination whose index Google may omit, and reading
+  // that as "no index, skip it" would drop it on every call — one notch per
+  // ring, pulled all the way in to the shop, on a published map.
+  //
+  // Checked across every ring rather than on the first vertex of the first one,
+  // and that is the point: a coastal ring can legitimately have a short bearing
+  // zero, but *all nine* being the shortest in their ring at once is not
+  // geography, it is the bug. Written as "how many rings have their minimum at
+  // bearing zero", which is at most a couple by chance and exactly nine when
+  // the index is being dropped.
+  // ——— ⚠️ What this suite cannot check: the inset ———
+  //
+  // Each ring is drawn a few hundred feet inside its own measurement, to cover
+  // the straight edge between two rays cutting outside a curve that bends away
+  // from it. Deleting that inset changes nothing here, and it is worth saying
+  // why rather than leaving somebody to discover the assertion is asleep: the
+  // stub's ruler is straight-line distance, so every ring is a circle, and the
+  // chord between two points on a circle is always inside it. The inset exists
+  // for road distance, where the boundary between two rays can dip inward and
+  // the chord then spans a notch — which no straight-line stub can produce.
+  //
+  // So the inset is checked for being a sane size in tests/matrixBudget.test.ts
+  // and for its arithmetic in app/deliveryArea.ts, and the thing it guards
+  // against is only visible against the live API. The sweep below catches the
+  // large-scale version of the same failure, which is what it was added for.
+  const zeroIsWorst = area.rings.filter((loop, r) => {
+    const radii = loop.map((p) => milesBetween(p, area.origins[r]));
+    return radii[0] === Math.min(...radii);
+  }).length;
+  ok("⚠️ bearing zero is not pulled in on every ring at once",
+     zeroIsWorst < area.rings.length,
+     `${zeroIsWorst} of ${area.rings.length} rings have their shortest bearing at zero`);
 
   // ——— It is the union, checked against one computed independently ———
   //

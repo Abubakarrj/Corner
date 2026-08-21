@@ -10,32 +10,30 @@
 // The cause was arithmetic nobody was doing. Google meters Compute Route Matrix
 // in *elements* — origins × destinations — at a default of 3,000 a minute, and
 // a rebuild fires every call back to back, so a rebuild is one burst against
-// one minute's allowance. Three separate reasonable-looking changes multiplied:
+// one minute's allowance. Three reasonable-looking changes multiplied:
 //
-//   4 counters, 1 patch, 7 steps      1,344    the map drew
-//   5 counters, 1 patch, 7 steps      1,680    the map drew
-//   6 counters, 2 patches, 9 steps    5,184    over quota, no map
+//   4 counters, one ring from the centroid       1,344    the map drew
+//   5 counters, one ring                         1,680    the map drew
+//   6 counters, two rings, every counter asked
+//     about every ring's probes                  5,184    over quota, no map
 //
-// Opening a shop in Orange County split the counters into two patches; the
-// wider span needed two more search steps; and every counter was asked about
-// every patch's probes. None of those is wrong on its own and the product is a
-// blank page.
+// ——— And why the arithmetic here is now simple ———
 //
-// So this suite is the arithmetic, run against the shop's own location list,
-// on every test run. It is the only thing in the repository that knows opening
-// a counter can take the delivery map off the website.
+// The boundary is one ring per counter, searched from that counter with only
+// that counter as the origin. So the whole rebuild is
+//
+//   BEARINGS × stepsFor(radius) × counters
+//
+// with no clustering, no centroid, and no multiplier that depends on where the
+// shops happen to sit. That is the other reason the rewrite was worth doing:
+// the old cost could not be worked out without knowing the geography, and a
+// cost nobody can predict is a cost nobody checks.
 
 import {
   DELIVERY_RADIUS_MILES,
   deliveringStores,
-  milesBetween,
 } from "../app/(marketing)/locations/locations";
-import {
-  BEARINGS,
-  MATRIX_ELEMENT_QUOTA,
-  patches,
-  stepsFor,
-} from "../app/deliveryArea";
+import { BEARINGS, MATRIX_ELEMENT_QUOTA, stepsFor } from "../app/deliveryArea";
 import { MATRIX_MAX_ELEMENTS } from "../app/googleMaps";
 
 let failures = 0;
@@ -45,182 +43,79 @@ const ok = (what: string, cond: boolean, detail = "") => {
 };
 
 const counters = deliveringStores();
-const points = counters.map((store) => store.position);
-const groups = patches(points);
-const nameOf = (point: [number, number]) =>
-  counters.find((store) => store.position === point)?.name ?? "?";
+const steps = stepsFor(DELIVERY_RADIUS_MILES);
+const perRing = BEARINGS * steps;
 
-/** One patch's span, the same way measure() computes it: the radius plus how
- *  far its furthest counter sits from its centre. */
-function spanOf(group: [number, number][]): number {
-  const centre: [number, number] = [
-    group.reduce((sum, [lat]) => sum + lat, 0) / group.length,
-    group.reduce((sum, [, lng]) => sum + lng, 0) / group.length,
-  ];
-  return (
-    DELIVERY_RADIUS_MILES +
-    group.reduce((furthest, point) => Math.max(furthest, milesBetween(centre, point)), 0)
-  );
-}
+/** Elements for a rebuild with this many counters. Exact, not a ceiling: one
+ *  origin per call and every probe asked exactly once. */
+const costOf = (shops: number) => shops * perRing;
 
-/** ⚠️ The ceiling on a rebuild, not the bill.
- *
- *  Each patch against its own counters, for its own number of steps. The real
- *  cost is lower — measure() also drops any counter more than the radius from
- *  a probe in a straight line, since a road route is never shorter, and on the
- *  later steps that is most of them. Measured against the stub in
- *  tests/deliveryArea.test.ts it comes to about 1,400 where this says 2,544.
- *
- *  The ceiling is what gets asserted, deliberately. How much the geometric
- *  filter saves depends on where the counters happen to sit, and a budget that
- *  only holds for one arrangement of shops is not a budget. */
-function costOf(patchGroups: [number, number][][]): { elements: number; calls: number } {
-  let elements = 0;
-  let calls = 0;
-  for (const group of patchGroups) {
-    const steps = stepsFor(spanOf(group));
-    const perCall = Math.max(1, Math.floor(MATRIX_MAX_ELEMENTS / group.length));
-    calls += steps * Math.ceil(BEARINGS / perCall);
-    elements += steps * group.length * BEARINGS;
-  }
-  return { elements, calls };
-}
-
-// ——— What the shop's own list asks for ———
 console.log("\n— today —");
 console.log(`  ${counters.length} counters: ${counters.map((s) => s.name).join(", ")}`);
-groups.forEach((group, index) => {
-  const span = spanOf(group);
-  console.log(
-    `  patch ${index}: ${group.map(nameOf).join(" + ")} · span ${span.toFixed(1)}mi · ` +
-      `${stepsFor(span)} steps · ${stepsFor(span) * group.length * BEARINGS} elements`,
-  );
-});
-const today = costOf(groups);
-console.log(`  rebuild: at most ${today.elements} elements in ${today.calls} calls ` +
-            `(${Math.round((today.elements / MATRIX_ELEMENT_QUOTA) * 100)}% of a minute's quota)`);
-console.log("  the geometric filter takes the real figure well below that — see costOf()");
+console.log(`  each ring: ${BEARINGS} bearings × ${steps} steps = ${perRing} elements` +
+            ` in ${steps} calls`);
+const today = costOf(counters.length);
+console.log(`  rebuild: ${today} elements in ${counters.length * steps} calls ` +
+            `(${Math.round((today / MATRIX_ELEMENT_QUOTA) * 100)}% of a minute's quota)`);
 
-// ——— ⚠️ Which file is the gate, and why it is not this one ———
-//
-// This asserted `ceiling < quota` when it was written, and Long Beach is what
-// showed that to be the wrong test. Seven counters put the ceiling at 3,024
-// against a 3,000 quota — and the real cost was 1,584, because the geometric
-// filter ruled out half the pairs before they were ever asked about. The build
-// would have failed on a change that works.
-//
-// It is wrong by design rather than by a margin. The ceiling assumes no pair
-// can be ruled out, which is only true when every counter sits within the
-// radius of every probe — that is, when the shop is one location. The further
-// apart the counters get, the more the filter saves and the looser this bound
-// becomes. A shop that keeps opening counters will keep making this number
-// less like the bill.
-//
-// So the gate is the *measured* count, in tests/deliveryArea.test.ts: real
-// code, stubbed network, counting exactly what Google would meter. What is
-// asserted here is that the ceiling has not drifted so far above the quota
-// that the filter is the only thing standing between the map and a 429 — the
-// filter is an optimisation, and a system whose correctness depends entirely
-// on an optimisation is one bad refactor from an outage.
+// ——— ⚠️ The assertion the outage would have failed ———
 console.log("\n— against the quota —");
-const SLACK = 2;
-ok("⚠️ the worst case stays within reach of the quota",
-   today.elements < MATRIX_ELEMENT_QUOTA * SLACK,
-   `${today.elements} vs ${MATRIX_ELEMENT_QUOTA * SLACK}`);
-console.log(
-  `  the gate is tests/deliveryArea.test.ts, which counts what the code really` +
-    ` asks (1,584 at seven counters, ${Math.round((1584 / MATRIX_ELEMENT_QUOTA) * 100)}% of quota)`,
-);
+ok("⚠️ a rebuild fits inside one minute's element quota",
+   today < MATRIX_ELEMENT_QUOTA, `${today} vs ${MATRIX_ELEMENT_QUOTA}`);
+// ⚠️ Headroom, not just "fits". A rebuild is a burst; every address check on
+// the site shares the same per-minute allowance, and a deploy that restarts two
+// instances has two cold caches. Ninety per cent is the line: past it the map
+// works until something else happens in the same minute, which is the worst
+// kind of working.
+ok("and leaves headroom for the address checks sharing the quota",
+   today < MATRIX_ELEMENT_QUOTA * 0.9,
+   `${today} is ${Math.round((today / MATRIX_ELEMENT_QUOTA) * 100)}% of ${MATRIX_ELEMENT_QUOTA}`);
 
-// ——— The shape the old code asked for, so the fix is a number and not a claim ———
+// ——— ⚠️ The counter that will need the console ———
 //
-// Every counter against every patch's probes, at one step count for all of
-// them. Kept as an explicit calculation rather than a remembered figure,
-// because the whole point is that it was never calculated.
-const worstSteps = Math.max(...groups.map((group) => stepsFor(spanOf(group))));
-const oldWay = worstSteps * counters.length * groups.length * BEARINGS;
-console.log("\n— what it cost before —");
-console.log(`  every counter against every patch, ${worstSteps} steps each: ${oldWay} elements`);
-ok("⚠️ the old shape really was over quota", oldWay > MATRIX_ELEMENT_QUOTA,
-   `${oldWay} vs ${MATRIX_ELEMENT_QUOTA}`);
-ok("and the fix is a real cut, not a rounding",
-   today.elements < oldWay / 1.5, `${today.elements} vs ${oldWay}`);
-
-// ——— ⚠️ The counters that have not opened yet ———
-//
-// Written out because "today's numbers are fine" is exactly what a shop reads
-// on the morning it signs a lease. Each row says how many counters, in how many
-// patches, and whether that rebuild still fits.
-console.log("\n— and the next few counters —");
-const futures: [string, number, number, number][] = [
-  // label, counters, patches, span of the biggest patch
-  ["one more in LA", 7, 2, 21],
-  ["one more somewhere new", 7, 3, 21],
-  ["ten counters, three patches", 10, 3, 25],
-  ["fifteen counters, four patches", 15, 4, 30],
-  ["twenty counters, five patches", 20, 5, 35],
-];
-for (const [label, shops, patchCount, span] of futures) {
-  // Evenly split, which is the optimistic reading; a lopsided split costs the
-  // same total because the total is linear in counters now.
-  const steps = stepsFor(span);
-  const elements = steps * shops * BEARINGS;
-  const share = Math.round((elements / MATRIX_ELEMENT_QUOTA) * 100);
-  console.log(`  ${label}: ${elements} elements (${share}% of quota), ${patchCount} patches`);
+// Linear growth is still growth, and the useful thing to publish is not "we are
+// fine" but "which shop is the one that stops us being fine". Printed rather
+// than only asserted, because it is a number somebody should read before
+// signing a lease and not after a map goes blank.
+console.log("\n— and the counters that have not opened yet —");
+let firstOver = 0;
+for (let shops = counters.length; shops <= counters.length + 8; shops += 1) {
+  const cost = costOf(shops);
+  const share = Math.round((cost / MATRIX_ELEMENT_QUOTA) * 100);
+  const flag = cost >= MATRIX_ELEMENT_QUOTA * 0.9 ? "  ⚠️" : "";
+  console.log(`  ${String(shops).padStart(2)} counters: ${cost} elements (${share}%)${flag}`);
+  if (firstOver === 0 && cost >= MATRIX_ELEMENT_QUOTA * 0.9) firstOver = shops;
 }
-// ⚠️ Not an assertion that they all fit — several of them do not, and that is
-// the honest answer. What is asserted is that somebody finds out here.
-const firstOver = futures.find(
-  ([, shops, , span]) => stepsFor(span) * shops * BEARINGS >= MATRIX_ELEMENT_QUOTA,
-);
 console.log(
   firstOver
-    ? `\n  ⚠️ At "${firstOver[0]}" the worst case passes the quota. Whether a` +
-        " rebuild really does depends on how spread out those counters are —" +
-        " the further apart, the more pairs the geometric filter rules out" +
-        " before asking. The measured gate in tests/deliveryArea.test.ts is" +
-        " what will say. When it does: Cloud console → Routes API → Quotas →" +
-        " Compute Route Matrix elements per minute. The raise is free."
-    : "\n  every projected shape fits.",
+    ? `\n  ⚠️ Counter ${firstOver} needs the Cloud console quota raised first.` +
+        " It is free: Routes API → Quotas → Compute Route Matrix elements per" +
+        " minute. Nothing in the code will do it and nothing but this line and" +
+        " a blank map will mention it."
+    : "\n  every projected count fits.",
 );
-ok("the projection reaches far enough to find a limit", firstOver !== undefined,
+ok("the projection reaches far enough to find the limit", firstOver > 0,
    "nothing projected goes over, so this table stopped being a warning");
 
-// ——— One call never exceeds what Google accepts in a single request ———
+// ——— One call at a time ———
 console.log("\n— and one call at a time —");
 const GOOGLE_PER_CALL = 625;
 ok("the app's per-call budget is inside Google's per-call limit",
    MATRIX_MAX_ELEMENTS <= GOOGLE_PER_CALL, `${MATRIX_MAX_ELEMENTS} vs ${GOOGLE_PER_CALL}`);
-for (const group of groups) {
-  const perCall = Math.floor(MATRIX_MAX_ELEMENTS / group.length);
-  ok(`patch of ${group.length} splits into calls that fit`,
-     perCall >= 1 && perCall * group.length <= GOOGLE_PER_CALL,
-     `${perCall} destinations a call`);
-}
+// ⚠️ One origin and BEARINGS destinations, so a ring's step is BEARINGS
+// elements and never needs splitting. Asserted so that raising BEARINGS past
+// the budget is caught here rather than by a 400 in production.
+ok("a ring's step is one call, not several",
+   BEARINGS <= MATRIX_MAX_ELEMENTS, `${BEARINGS} vs ${MATRIX_MAX_ELEMENTS}`);
 
 // ——— stepsFor, which is where precision is decided ———
 console.log("\n— the search depth —");
-for (const group of groups) {
-  const span = spanOf(group);
-  const steps = stepsFor(span);
-  const feet = (span / 2 ** steps) * 5280;
-  ok(`a ${span.toFixed(0)}-mile span resolves to under 250 feet`, feet <= 250, `${feet.toFixed(0)}ft`);
-  // ⚠️ And not far under, which would be quota spent on a boundary nobody can
-  // see. One step less has to be too coarse, or the step count is padded.
-  const coarser = (span / 2 ** (steps - 1)) * 5280;
-  ok(`and one step fewer would not`, coarser > 250, `${coarser.toFixed(0)}ft`);
-}
-// ——— ⚠️ A tight patch must not pay for a spread-out one ———
-//
-// Asserted against stepsFor directly rather than against today's patches, and
-// the difference matters. This was written as "the small patch searches less
-// deeply than the wide one", which held while Fullerton stood alone at a
-// ten-mile span against Los Angeles' twenty. Long Beach joined Fullerton's
-// patch, took its span to seventeen, and both patches landed on nine steps —
-// so a true statement about the function failed as a statement about the shop.
-//
-// The property belongs to stepsFor: a narrower search needs fewer halvings.
-// Whether any two counters happen to exercise it this week is not the claim.
+const feet = (DELIVERY_RADIUS_MILES / 2 ** steps) * 5280;
+ok("the radius resolves to under 250 feet", feet <= 250, `${feet.toFixed(0)}ft`);
+// ⚠️ And not far under, which would be quota spent on a boundary nobody can
+// see. One step less has to be too coarse, or the step count is padded.
+const coarser = (DELIVERY_RADIUS_MILES / 2 ** (steps - 1)) * 5280;
+ok("and one step fewer would not", coarser > 250, `${coarser.toFixed(0)}ft`);
 ok("a narrower span needs fewer steps than a wider one",
    stepsFor(5) < stepsFor(20), `${stepsFor(5)} vs ${stepsFor(20)}`);
 let monotonic = true;
@@ -228,29 +123,24 @@ for (let span = 1; span < 40; span += 1) {
   if (stepsFor(span + 1) < stepsFor(span)) monotonic = false;
 }
 ok("and a wider span never needs fewer", monotonic);
-console.log(`  each patch here: ${groups.map((g) => `${spanOf(g).toFixed(0)}mi→${stepsFor(spanOf(g))}`).join(", ")}`);
 
-// ——— patches(), which decides how the counters divide ———
-console.log("\n— the grouping —");
-ok("every counter lands in exactly one patch",
-   groups.reduce((sum, group) => sum + group.length, 0) === points.length,
-   String(groups.reduce((sum, group) => sum + group.length, 0)));
-// ⚠️ The property that makes per-patch origins correct. A counter in another
-// patch is more than two radii away, so it can never be the nearest counter to
-// any probe in this one — which is why dropping it from the call changes the
-// cost and not the answer.
-const touching = 2 * DELIVERY_RADIUS_MILES;
-let separated = true;
-groups.forEach((group, a) => {
-  groups.forEach((other, b) => {
-    if (a >= b) return;
-    for (const here of group) {
-      for (const there of other) if (milesBetween(here, there) < touching) separated = false;
-    }
-  });
-});
-ok("⚠️ separate patches are further apart than two radii, so dropping the" +
-   " other patch's counters cannot change a distance", separated);
+// ——— ⚠️ The chord margin, which is what BEARINGS buys ———
+//
+// Each ring is drawn inside its own measurement by the worst a straight edge
+// can sag between two neighbouring rays. Fewer bearings is cheaper and sags
+// more, so the two numbers trade against each other and the trade should be
+// visible rather than buried in a constant.
+const sag = 1 - Math.cos(Math.PI / BEARINGS);
+const insetFeet = DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** steps) * 5280;
+console.log(`\n— the inset —\n  ${BEARINGS} bearings → ${insetFeet.toFixed(0)}ft pulled in`);
+// A tenth of a mile on a ten-mile reach: about a pixel at the zoom the page
+// opens on, and always on the side of telling somebody to check.
+ok("the ring is drawn inside its measurement by under a tenth of a mile",
+   insetFeet < 528, `${insetFeet.toFixed(0)}ft`);
+// ⚠️ And by *something*. A zero inset means the polygon is drawn exactly on the
+// measured vertices, and the straight edges between them then claim ground the
+// rule refuses — which is the failure tests/deliveryArea.test.ts sweeps for.
+ok("and by more than nothing", insetFeet > 100, `${insetFeet.toFixed(0)}ft`);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

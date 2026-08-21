@@ -37,7 +37,7 @@ const onWilshire: [number, number] = [34.0616, -118.3005];
 const nine = la(9);
 const bagelKitchens = kitchensFor(["single-bagel"], nine);
 ok("at 9am only the full stores are lit",
-   ids(bagelKitchens) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach", ids(bagelKitchens));
+   ids(bagelKitchens) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach,torrance,sanclemente", ids(bagelKitchens));
 ok("and a Westwood address collects from Glendon",
    nearestDelivering(nearWestwood, kitchensFor(["single-bagel"], nine))?.id === "glendon",
    nearestDelivering(nearWestwood, kitchensFor(["single-bagel"], nine))?.id);
@@ -49,7 +49,7 @@ ok("and a Studio City address collects from Ventura",
 const noon = la(12);
 const withSandwich = kitchensFor(["the-veggie-stack"], noon);
 ok("a sandwich narrows to the full stores",
-   ids(withSandwich) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach", ids(withSandwich));
+   ids(withSandwich) === "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach,torrance,sanclemente", ids(withSandwich));
 ok("and a Westwood sandwich leaves from Glendon",
    nearestDelivering(nearWestwood, kitchensFor(["the-veggie-stack"], noon))?.id === "glendon");
 
@@ -181,7 +181,7 @@ try {
   ok("but never the sandwiches it cannot make",
      !sandwiches.some((s) => s.id === "test-island-outlet"), ids(sandwiches));
   ok("those stay with the counters that can, every full store",
-     sandwiches.map((s) => s.id).sort().join(",") === "fullerton,glendon,larchmont,longbeach,pasadena,ventura,wilshire",
+     sandwiches.map((s) => s.id).sort().join(",") === "fullerton,glendon,larchmont,longbeach,pasadena,sanclemente,torrance,ventura,wilshire",
      ids(sandwiches) || "(empty)");
   // And the honest consequence: too far to deliver, refused rather than
   // dispatched to a counter that would have to say no in person.
