@@ -81,7 +81,7 @@ process.env.GOOGLE_MAPS_API_KEY = "test-key";
 async function main() {
   // Imported after the key is set and fetch is replaced, so the module reads
   // the stubbed world on first use.
-  const { deliveryArea, __resetDeliveryArea } = await import(
+  const { deliveryArea, __resetDeliveryArea, STEPS } = await import(
     "../app/deliveryArea"
   );
   __resetDeliveryArea();
@@ -104,10 +104,15 @@ async function main() {
      area.origins.every((o) => origins.some((p) => milesBetween(o, p) < 0.01)));
   ok("the centre is not one of the counters",
      origins.every((p) => milesBetween(area.centre, p) > 0.01));
-  ok("it stayed at seven calls, not one set per counter", matrixCalls === 7,
-     String(matrixCalls));
-  ok("asking three counters at once, not in sequence",
-     elementsAsked === 7 * origins.length * area.ring.length,
+  // ⚠️ One call per binary-search step, however many counters there are — the
+  // property this is about. Read off STEPS rather than typed as 7, because it
+  // was typed as 7 and became a test of a constant rather than of the claim:
+  // the step count went to nine when the counters spread out, and this failed
+  // for the one reason it was never meant to catch.
+  ok("it stayed at one call per step, not one set per counter",
+     matrixCalls === STEPS, `${matrixCalls} calls for ${STEPS} steps`);
+  ok("asking every counter at once, not in sequence",
+     elementsAsked === STEPS * origins.length * area.ring.length,
      String(elementsAsked));
 
   // ——— Every vertex obeys the rule ———
@@ -188,12 +193,42 @@ async function main() {
   ok("a point beyond every counter is outside the ring", !inside(faraway, area.ring),
      reach(faraway).toFixed(1));
 
-  // ——— The search interval reaches the far edge ———
+  // ——— ⚠️ The search interval reaches the far edge ———
+  //
+  // This asked that no vertex sit within 0.05 miles of the ceiling, on the
+  // reasoning that a vertex pinned there means the interval was too short and
+  // the shape is clipped. That reasoning was right for a coarse search and
+  // stopped being right when the search got finer.
+  //
+  // With a straight-line ruler the furthest reachable point IS the ceiling
+  // exactly: it lies on the ray through the furthest counter, at that
+  // counter's offset from the centre plus the radius, which is how the ceiling
+  // is defined. So a search precise enough will always converge to just under
+  // it, and "close to the ceiling" stopped distinguishing a clipped shape from
+  // a well-measured one. Nine steps got precise enough and this failed while
+  // measuring better than it ever had.
+  //
+  // What it was protecting is still protected, one screen up: a ceiling set too
+  // short pulls vertices *inside* the radius, and `least` catches that with a
+  // real reach measurement. What is checked here now is the bound's formula —
+  // that the interval covers the furthest a counter can reach — which is the
+  // thing a wrong ceiling would actually get wrong.
   const spread = Math.max(...origins.map((p) => milesBetween(area.centre, p)));
+  const ceiling = DELIVERY_RADIUS_MILES + spread;
+  const reachable = Math.max(
+    ...origins.map((p) => milesBetween(area.centre, p) + DELIVERY_RADIUS_MILES),
+  );
+  ok("the search ceiling covers the furthest a counter can reach",
+     ceiling >= reachable - 1e-9, `${ceiling.toFixed(2)} vs ${reachable.toFixed(2)}`);
+
   const furthest = Math.max(...area.ring.map((p) => milesBetween(area.centre, p)));
-  ok("no vertex is pinned at the search ceiling",
-     furthest < DELIVERY_RADIUS_MILES + spread - 0.05,
-     `${furthest.toFixed(2)} of ${(DELIVERY_RADIUS_MILES + spread).toFixed(2)}`);
+  ok("and no vertex is outside it", furthest <= ceiling + 1e-9,
+     `${furthest.toFixed(2)} of ${ceiling.toFixed(2)}`);
+  // One binary-search step of slack: `low` is the last distance known to be
+  // inside, so the furthest vertex lands within one step of the true edge.
+  ok("while the far edge is resolved to within a step",
+     ceiling - furthest <= ceiling / 2 ** STEPS + 1e-9,
+     `${(ceiling - furthest).toFixed(3)}mi vs ${(ceiling / 2 ** STEPS).toFixed(3)}mi step`);
 
   // ——— And it is cached ———
   const before = matrixCalls;

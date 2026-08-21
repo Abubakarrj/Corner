@@ -50,8 +50,9 @@ import {
 //
 // Naively this is BEARINGS × STEPS route requests. Route Matrix turns each
 // step into one call for every bearing at once, so it is STEPS calls total —
-// seven — for a shape that is then cached until the counter list changes or an
-// hour passes. Roughly three hundred matrix elements per rebuild.
+// nine — for a shape that is then cached until the counter list changes or an
+// hour passes. Roughly two thousand matrix elements per rebuild, which is a
+// function of how many counters there are as well as how many bearings.
 //
 // ——— What it is not ———
 //
@@ -67,9 +68,30 @@ import {
 // as a polygon, and coarse enough to stay one matrix call per step.
 const BEARINGS = 48;
 
-// Binary-search steps. Each halves the interval, so seven takes a ten-mile
-// span to about 250 feet — well inside the error of the thing being drawn.
-const STEPS = 7;
+// Binary-search steps. Each halves the interval.
+//
+// ——— ⚠️ Nine, and it was seven ———
+//
+// Seven was chosen when the search span was ten miles, which halved down to
+// about 250 feet. The span is not ten miles any more: it is the radius plus how
+// far the furthest counter sits from the centre, and that second term grows
+// every time the shop opens somewhere new. With a counter in Pasadena the
+// spread is ten miles on its own, so the span is twenty and seven steps land at
+// 831 feet — a boundary drawn to a sixth of the precision the comment claimed,
+// on a map that says where the shop delivers.
+//
+// Nine steps take that same twenty-mile span back to about 210 feet, which is
+// where this started. The cost is two more Route Matrix calls per rebuild, and
+// a rebuild happens at most once an hour.
+//
+// ⚠️ This is the number to revisit when a counter opens far from the rest.
+// Precision here is a function of how spread out the shop is, and nothing warns
+// you: the polygon still draws, it just draws less carefully.
+//
+// Exported for the suite, which asserts one Route Matrix call per step. That
+// assertion was written as `=== 7` and broke when this became 9 — a test of a
+// constant rather than of the claim. It reads the constant now.
+export const STEPS = 9;
 
 const EARTH_MILES = 3958.8;
 
