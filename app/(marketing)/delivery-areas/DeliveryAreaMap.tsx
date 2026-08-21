@@ -28,7 +28,14 @@ import { useT } from "../../i18n";
 
 type Area = {
   known: true;
-  ring: [number, number][];
+  /** One closed loop per patch the shop serves. Plural because the counters
+   *  no longer form one connected area — see app/deliveryArea.ts. */
+  rings?: [number, number][][];
+  /** ⚠️ What this field was called until the shape became several. Kept
+   *  readable for as long as a cached response can outlive a deploy, which is
+   *  now minutes rather than a day, so a visitor mid-refresh gets the old
+   *  single ring drawn correctly instead of an empty map. */
+  ring?: [number, number][];
   /** Every counter a delivery can leave from. Plural: the area is a reach
    *  around each of them, not one shop with a long arm. */
   origins: [number, number][];
@@ -146,7 +153,11 @@ export default function DeliveryAreaMap() {
       const { Map } = (await maps.importLibrary("maps")) as google.maps.MapsLibrary;
       if (!live || !holder.current) return;
 
-      const path = area.ring.map(([lat, lng]) => ({ lat, lng }));
+      // Every patch, as Google wants them: one Polygon with several paths
+      // rather than several Polygons, so the overlap between two patches that
+      // do touch is painted once instead of twice.
+      const loops = area.rings ?? (area.ring ? [area.ring] : []);
+      const paths = loops.map((loop) => loop.map(([lat, lng]) => ({ lat, lng })));
       const instance = new Map(holder.current, {
         disableDefaultUI: true,
         keyboardShortcuts: false,
@@ -167,7 +178,7 @@ export default function DeliveryAreaMap() {
       map.current = instance;
 
       const shape = new maps.Polygon({
-        paths: path,
+        paths,
         // Brand red at a tenth, with a readable edge. The fill has to sit
         // under street names without erasing them — a coverage map somebody
         // cannot read the streets of does not tell them whether they are in
@@ -220,7 +231,8 @@ export default function DeliveryAreaMap() {
       // aspect ratio now, which removes most of that, and this catches the
       // rest: rotation, a split view, a keyboard opening.
       const bounds = new maps.LatLngBounds();
-      path.forEach((point) => bounds.extend(point));
+      // Every patch, so two lobes both fit rather than the map framing one.
+      paths.forEach((loop) => loop.forEach((point) => bounds.extend(point)));
       const fit = () => instance.fitBounds(bounds, 24);
       fit();
 

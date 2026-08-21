@@ -442,6 +442,67 @@ export const PASADENA: StoreLocation = {
   ],
 };
 
+// Downtown Fullerton. A full store.
+//
+// ——— ⚠️ The first counter outside Los Angeles County ———
+//
+// Pasadena was the first outside the City of LA; this is the first outside the
+// county, and the two are different kinds of first. Pasadena added a city tax
+// on top of the county rate. Orange County has a lower base rate than LA's
+// altogether — 7.75% against 9.75% — so this is the first counter that charges
+// *less* than the shop's usual, and the first proof that `taxRate` had to be a
+// number rather than a flag for "somewhere that costs extra".
+//
+// ⚠️ It is also about twenty-three miles from the nearest other counter, which
+// is more than twice the delivery radius. Its ten-mile reach touches nothing
+// else's, so the area the shop serves is now two separate patches with a gap
+// between them. See the note on LOCATIONS below — the published map has an
+// assumption that this is the first record to break.
+export const FULLERTON: StoreLocation = {
+  id: "fullerton",
+  name: "Fullerton",
+  kind: "shop",
+  address: "112 N Euclid St",
+  // ⚠️ 92832 is a completion, not a quote. The address came through as "CA
+  // 9283", which is four digits — no such ZIP. 112 N Euclid is downtown
+  // Fullerton, west of Harbor, which is 92832; the neighbours are 92831 east,
+  // 92833 west and 92835 north, and picking wrong puts the wrong ZIP on every
+  // courier docket. Confirm against the lease.
+  city: "Fullerton, CA 92832",
+  hours: SHOP_HOURS,
+  // ⚠️ Orange County's 7.75%: the state's 7.25% plus the county's 0.5%
+  // transportation tax, with no city district tax in Fullerton. Lower than
+  // every other counter.
+  //
+  // ⚠️ VERIFY AGAINST CDTFA BEFORE THIS STORE TAKES AN ORDER, for the reason
+  // the Pasadena record gives — but note this one errs the other way. Charging
+  // 9.75% here would be over-collecting from customers rather than
+  // under-remitting to the state, which is the worse of the two mistakes to
+  // make and the harder one to put right afterwards.
+  taxRate: 0.0775,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // ⚠️ Estimated, not surveyed. Euclid St is about six tenths of a mile west of
+  // Harbor Blvd, and the 100 block north starts at Chapman Ave. Read the
+  // drift-guard warning above these records.
+  position: [33.8712, -117.9345],
+  catering: true,
+  aliases: [
+    "fullerton",
+    "downtown fullerton",
+    "euclid",
+    "euclid st",
+    "n euclid",
+    "north euclid",
+    "112 euclid",
+    "chapman",
+    "orange county",
+    "oc",
+    "north oc",
+    "92832",
+  ],
+};
+
 // Westwood. A full store: it makes the whole menu, so it says nothing about
 // `menu` at all. That silence is the point of the field — the common case stays
 // quiet and a restriction is the thing somebody has to write down, which is
@@ -567,17 +628,29 @@ export const VENTURA: StoreLocation = {
 // has to be edited to make the new area appear — see app/deliveryArea.ts, which
 // measures out from the centroid of whatever is in this list.
 //
-// ⚠️ The one thing to re-check when the shape lands: deliveryArea's search
-// assumes that along a ray out from the centre, once you are out of range you
-// stay out. Counters this far apart make that assumption work harder than it
-// did, since a ray can now leave one counter's reach and approach another's.
-// The centroid sits within about five miles of all of them, and each reaches ten,
-// so the union stays connected around it — but that is an argument, not a
-// measurement, and the map is the place it would show up.
+// ——— ⚠️ The coverage is no longer one shape, and Fullerton is why ———
+//
+// This note used to argue that the union stayed connected: every counter was
+// within about five miles of the centroid and each reached ten, so a ray out
+// from the middle crossed the boundary once. It said that was an argument
+// rather than a measurement. It was, and it stopped being true.
+//
+// Fullerton is twenty-three miles from the nearest other counter — more than
+// twice the radius — so its reach touches nothing else's and what the shop
+// serves is two separate patches. Drawn as one ring that over-claimed by up to
+// a mile and a half through the gap around Pico Rivera, which is a published
+// map promising addresses the checkout refuses.
+//
+// deliveryArea.ts groups the counters into patches now and draws one ring each,
+// and tests/deliveryArea.test.ts sweeps a grid over the result asserting that
+// nothing drawn is out of range. That sweep is what to look at when a counter
+// opens somewhere new — it is the only assertion here that can see a hole,
+// because every other one checks the boundary and a gap lives between two
+// perfectly correct vertices.
 // ⚠️ WESTERN is deliberately absent — paused, not closed. See the note above
 // its record. Adding it back to the end of this array is the whole of
 // reopening it.
-export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA, PASADENA];
+export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA, PASADENA, FULLERTON];
 
 /** When a counter opens, as an hour of the day.
  *

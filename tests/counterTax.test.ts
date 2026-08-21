@@ -17,7 +17,7 @@
 // number being pretty. Each one names the road the rate travels: the record,
 // the totals, the charge and the ticket.
 
-import { LOCATIONS, PASADENA, WILSHIRE } from "../app/(marketing)/locations/locations";
+import { FULLERTON, LOCATIONS, PASADENA, WILSHIRE } from "../app/(marketing)/locations/locations";
 import { TAX_RATE, taxFor, totalsFor } from "../app/shop/money";
 
 let failures = 0;
@@ -32,12 +32,25 @@ ok("Pasadena carries its own rate", PASADENA.taxRate === 0.105, String(PASADENA.
 ok("and it is higher than the county's", (PASADENA.taxRate ?? 0) > TAX_RATE,
    `${PASADENA.taxRate} vs ${TAX_RATE}`);
 
-// ⚠️ Every other counter says nothing, and that silence is load-bearing: it is
-// what makes the county rate the default instead of something six records have
-// to repeat and one of them will eventually get wrong.
+// ⚠️ Fullerton is in Orange County, whose base rate is *lower* than LA's. It is
+// the proof that this field had to be a number: a flag for "somewhere that
+// costs extra" would have had nowhere to put 7.75%, and the counter would have
+// over-collected from every customer — the worse of the two mistakes, and the
+// harder to put right afterwards.
+ok("Fullerton carries a lower rate than the county's",
+   FULLERTON.taxRate === 0.0775 && (FULLERTON.taxRate ?? 1) < TAX_RATE,
+   `${FULLERTON.taxRate} vs ${TAX_RATE}`);
+ok("so the two counters with rates sit either side of it",
+   (FULLERTON.taxRate ?? 0) < TAX_RATE && TAX_RATE < (PASADENA.taxRate ?? 0),
+   `${FULLERTON.taxRate} < ${TAX_RATE} < ${PASADENA.taxRate}`);
+
+// ⚠️ Every counter inside Los Angeles County says nothing, and that silence is
+// load-bearing: it is what makes the county rate the default instead of
+// something six records have to repeat and one will eventually get wrong.
+const named = ["pasadena", "fullerton"];
 const quiet = LOCATIONS.filter((store) => store.taxRate === undefined).map((s) => s.id);
-ok("every LA counter stays quiet about tax",
-   quiet.join(",") === LOCATIONS.filter((s) => s.id !== "pasadena").map((s) => s.id).join(","),
+ok("every LA County counter stays quiet about tax",
+   quiet.join(",") === LOCATIONS.filter((s) => !named.includes(s.id)).map((s) => s.id).join(","),
    quiet.join(","));
 ok("Koreatown among them", WILSHIRE.taxRate === undefined);
 
@@ -93,6 +106,10 @@ console.log("\n— the thing that would go unnoticed —");
 ok("a Pasadena order is not taxed at the county rate",
    totalsFor({ subtotalCents: 5000, taxRate: PASADENA.taxRate }).taxCents !==
      totalsFor({ subtotalCents: 5000 }).taxCents);
+ok("nor is a Fullerton one, and it comes out lower",
+   totalsFor({ subtotalCents: 5000, taxRate: FULLERTON.taxRate }).taxCents <
+     totalsFor({ subtotalCents: 5000 }).taxCents,
+   `${totalsFor({ subtotalCents: 5000, taxRate: FULLERTON.taxRate }).taxCents}`);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

@@ -122,8 +122,22 @@ function project(
 }
 
 export type DeliveryArea = {
-  /** The boundary, as [lat, lng] pairs, closed by the consumer. */
-  ring: [number, number][];
+  /** The boundaries, each a closed loop of [lat, lng] pairs.
+   *
+   *  ——— ⚠️ Plural, and it was one ———
+   *
+   *  A single ring can only describe one connected patch, and the shop stopped
+   *  being one connected patch when it opened in Fullerton — twenty-three miles
+   *  from the nearest other counter, which is more than twice the radius. Their
+   *  reaches do not touch, so what the shop serves is two areas with a gap in
+   *  between, and a polygon has no way to say "not here".
+   *
+   *  ⚠️ Drawn as one ring it did not merely look wrong, it over-claimed:
+   *  measured, the ring covered points around Pico Rivera that are eleven miles
+   *  from any counter. That is the exact failure the note at the top of this
+   *  file says a coverage map cannot have — somebody reads it, fills a basket,
+   *  and finds out at the checkout. */
+  rings: [number, number][][];
   /** The counters it is measured from — every one a delivery can leave from.
    *  Plural because the radius is a reach around each of them, and the map
    *  pins them all: a shape with one pin in the corner of it reads as one shop
@@ -136,6 +150,51 @@ export type DeliveryArea = {
   radiusMiles: number;
 };
 
+/** Counters grouped into patches whose reaches touch.
+ *
+ *  ——— ⚠️ Why a ray search needs this ———
+ *
+ *  The search assumes that going outward from a centre you cross the boundary
+ *  once. That holds while every counter's reach overlaps its neighbour's: the
+ *  patch is one blob and a ray leaves it exactly once. It fails the moment two
+ *  counters are further apart than twice the radius, because then a ray can
+ *  leave one reach, cross open country nobody serves, and enter another — and
+ *  a single ring has no way to describe the middle.
+ *
+ *  Two counters are put in the same patch when the straight line between them
+ *  is under twice the radius, which is the condition for their discs to touch
+ *  at all. Straight line rather than road, deliberately: a road is never
+ *  shorter, so counters this test separates are certainly separate. The error
+ *  it can make runs the other way — two counters near in a line and far by
+ *  road, in the hills, would be grouped when their reaches do not quite meet.
+ *  That draws a slightly generous waist between two lobes rather than a whole
+ *  county nobody serves, and the sweep in tests/deliveryArea.test.ts is what
+ *  would catch it. */
+function patches(points: [number, number][]): [number, number][][] {
+  const touching = 2 * DELIVERY_RADIUS_MILES;
+  const taken = points.map(() => false);
+  const groups: [number, number][][] = [];
+
+  for (let seed = 0; seed < points.length; seed += 1) {
+    if (taken[seed]) continue;
+    taken[seed] = true;
+    const group = [seed];
+    // Grows while it finds neighbours, so a chain of counters each within
+    // reach of the next is one patch however long the chain is.
+    for (let at = 0; at < group.length; at += 1) {
+      for (let other = 0; other < points.length; other += 1) {
+        if (taken[other]) continue;
+        if (milesBetween(points[group[at]], points[other]) < touching) {
+          taken[other] = true;
+          group.push(other);
+        }
+      }
+    }
+    groups.push(group.map((index) => points[index]));
+  }
+  return groups;
+}
+
 async function measure(): Promise<DeliveryArea | null> {
   // Every counter a delivery can leave from, at its resolved address rather
   // than the coordinates typed beside it — the same points the courier is
@@ -143,57 +202,103 @@ async function measure(): Promise<DeliveryArea | null> {
   const origins = await deliveryOrigins();
   if (origins.length === 0) return null;
 
-  // The centre the rays go out from. Not a counter: a point that has all of
-  // them around it, so a ray in any direction crosses the boundary once
-  // rather than clipping one shop's circle and missing another's.
-  const centre: [number, number] = [
-    origins.reduce((sum, [lat]) => sum + lat, 0) / origins.length,
-    origins.reduce((sum, [, lng]) => sum + lng, 0) / origins.length,
-  ];
-
-  // Straight-line bounds for the search. The lower bound is zero. The upper
-  // bound is the radius plus the furthest a counter sits from the centre, and
-  // it is safe for the same reason the single-shop version's was: a road route
-  // is never shorter than the straight line, so a point within N road miles of
-  // some counter is within N straight-line miles of it, and therefore within
-  // N + that counter's offset of the centre. The answer is always inside this
-  // interval.
-  const spread = origins.reduce(
-    (furthest, point) => Math.max(furthest, milesBetween(centre, point)),
-    0,
-  );
-  const low = new Array<number>(BEARINGS).fill(0);
-  const high = new Array<number>(BEARINGS).fill(DELIVERY_RADIUS_MILES + spread);
+  // One search per patch, all of them advanced together so a step is still a
+  // single Route Matrix call however many patches there are. See patches().
+  const groups = patches(origins);
+  const searches = groups.map((group) => {
+    // The centre this patch's rays go out from. Not a counter: a point that
+    // has all of the patch around it, so a ray in any direction crosses the
+    // boundary once rather than clipping one shop's circle and missing
+    // another's.
+    const centre: [number, number] = [
+      group.reduce((sum, [lat]) => sum + lat, 0) / group.length,
+      group.reduce((sum, [, lng]) => sum + lng, 0) / group.length,
+    ];
+    // Straight-line bounds. The lower bound is zero. The upper bound is the
+    // radius plus the furthest counter in this patch from its centre, and it
+    // is safe because a road route is never shorter than the straight line: a
+    // point within N road miles of some counter is within N straight-line
+    // miles of it, and therefore within N + that counter's offset of the
+    // centre. The answer is always inside this interval.
+    const spread = group.reduce(
+      (furthest, point) => Math.max(furthest, milesBetween(centre, point)),
+      0,
+    );
+    return {
+      centre,
+      low: new Array<number>(BEARINGS).fill(0),
+      high: new Array<number>(BEARINGS).fill(DELIVERY_RADIUS_MILES + spread),
+    };
+  });
 
   for (let step = 0; step < STEPS; step += 1) {
-    const mids = low.map((lo, i) => (lo + high[i]) / 2);
-    const probes = mids.map((miles, i) => project(centre, (i * 360) / BEARINGS, miles));
+    // Every patch's probes in one list, so the whole rebuild is STEPS calls
+    // rather than STEPS per patch.
+    const probes: [number, number][] = [];
+    for (const search of searches) {
+      for (let i = 0; i < BEARINGS; i += 1) {
+        probes.push(project(search.centre, (i * 360) / BEARINGS, (search.low[i] + search.high[i]) / 2));
+      }
+    }
 
-    // How far the *nearest* counter is, for each probe, in one call.
+    // ⚠️ Asked against *every* counter, not only the patch's own. The patches
+    // are meant to be far enough apart that it makes no difference, and asking
+    // globally means a mistake in the grouping can only change the shape, never
+    // the distances behind it. It costs elements in a call already being made.
     const measured = await driveMatrixMin(origins, probes);
     // One failed call and the whole shape is a guess. Better to have no map
     // than a boundary drawn half from measurement and half from an interval
     // that never got narrowed.
     if (!measured) return null;
 
-    for (let i = 0; i < BEARINGS; i += 1) {
-      const miles = measured[i]?.miles ?? null;
-      // Unreachable counts as too far. That is what pulls the western edge
-      // off the water: no road route to a point in the Pacific, so the
-      // search stops reaching for it.
-      if (miles === null || miles > DELIVERY_RADIUS_MILES) high[i] = mids[i];
-      else low[i] = mids[i];
-    }
+    searches.forEach((search, patch) => {
+      for (let i = 0; i < BEARINGS; i += 1) {
+        const mid = (search.low[i] + search.high[i]) / 2;
+        const miles = measured[patch * BEARINGS + i]?.miles ?? null;
+        // Unreachable counts as too far. That is what pulls the western edge
+        // off the water: no road route to a point in the Pacific, so the
+        // search stops reaching for it.
+        if (miles === null || miles > DELIVERY_RADIUS_MILES) search.high[i] = mid;
+        else search.low[i] = mid;
+      }
+    });
   }
 
-  // `low` is the last distance known to be inside the rule, so the polygon is
-  // conservative by up to one final step. Deliberate: on a map that says
-  // where we deliver, erring inward means the edge cases are people we do
-  // serve being told to check, rather than people we do not being told we do.
+  // ——— ⚠️ Pulled in, because a vertex being inside is not the polygon being
+  //     inside ———
+  //
+  // `low` is the last distance known to obey the rule, so every vertex sits
+  // inside the boundary. The straight edge *between* two vertices does not: it
+  // is a chord across a curve, and a chord cuts outside wherever the curve
+  // bends away from it. Where two counters' reaches meet, the outline has a
+  // notch, and an edge spanning it bulges into ground nobody serves.
+  //
+  // Measured, that was 154 feet of over-claim north of Studio City — small, and
+  // still the one direction this map is not allowed to be wrong in. So each
+  // ring is drawn a little inside its own measurement.
+  //
+  // The margin is the worst a chord can sag for this bearing spacing at this
+  // search's reach — R(1 − cos(half a step)) — plus one search step. That is
+  // the exact bound for a convex arc and headroom for a notch, and it comes to
+  // a few hundred feet: about a pixel at the zoom the page opens on, and always
+  // on the side of telling somebody to check rather than telling them yes.
+  const sag = 1 - Math.cos(Math.PI / BEARINGS);
   return {
-    ring: low.map((miles, i) => project(centre, (i * 360) / BEARINGS, miles)),
+    rings: searches.map((search) => {
+      const ceiling = Math.max(...search.high);
+      const inset = ceiling * sag + ceiling / 2 ** STEPS;
+      return search.low.map((miles, i) =>
+        project(search.centre, (i * 360) / BEARINGS, Math.max(0, miles - inset)),
+      );
+    }),
     origins,
-    centre,
+    // The framing centre, across every patch — what the map opens on. Not one
+    // of the patch centres: with two lobes, opening on either one puts the
+    // other off screen.
+    centre: [
+      origins.reduce((sum, [lat]) => sum + lat, 0) / origins.length,
+      origins.reduce((sum, [, lng]) => sum + lng, 0) / origins.length,
+    ],
     radiusMiles: DELIVERY_RADIUS_MILES,
   };
 }

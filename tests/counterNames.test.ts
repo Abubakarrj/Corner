@@ -56,6 +56,7 @@ for (const [id, name] of [
   ["wilshire", "Koreatown"],
   ["larchmont", "Larchmont"],
   ["pasadena", "Pasadena"],
+  ["fullerton", "Fullerton"],
   ["glendon", "Westwood"],
   ["ventura", "Studio City"],
 ] as const) {
@@ -77,7 +78,7 @@ ok("and would go last when it returns, after the full stores",
 // every past order and every Square variable stops resolving.
 console.log("\n— and the ids that did not move —");
 ok("the ids are still the street handles",
-   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura,pasadena",
+   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura,pasadena,fullerton",
    LOCATIONS.map((l) => l.id).join(","));
 
 // ——— The street names still find their shops ———
@@ -100,6 +101,8 @@ for (const [query, id] of [
   ["142 larchmont", "larchmont"],
   ["fair oaks", "pasadena"],
   ["14 fair oaks", "pasadena"],
+  ["euclid", "fullerton"],
+  ["112 euclid", "fullerton"],
 ] as const) {
   const hits = searchLocations(query, "shop");
   ok(`"${query}" still finds ${id} first`, hits[0]?.id === id,
@@ -118,6 +121,9 @@ for (const [query, id] of [
   ["pasadena", "pasadena"],
   ["old pasadena", "pasadena"],
   ["91105", "pasadena"],
+  ["fullerton", "fullerton"],
+  ["downtown fullerton", "fullerton"],
+  ["92832", "fullerton"],
 ] as const) {
   const hits = searchLocations(query, "shop");
   ok(`"${query}" finds ${id} first`, hits[0]?.id === id,

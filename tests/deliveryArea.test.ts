@@ -93,8 +93,26 @@ async function main() {
     process.exit(1);
   }
 
+  // ⚠️ The shape is several loops now, not one — the counters stopped forming
+  // a single connected patch when Fullerton opened. `vertices` is every point
+  // on every loop, for the assertions that are about the boundary; insideAny()
+  // is for the ones about whether somewhere is covered.
+  const vertices = area.rings.flat();
+  function inLoop(point: [number, number], poly: [number, number][]): boolean {
+    let hit = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i, i += 1) {
+      const [yi, xi] = poly[i];
+      const [yj, xj] = poly[j];
+      if ((yi > point[0]) !== (yj > point[0]) &&
+          point[1] < ((xj - xi) * (point[0] - yi)) / (yj - yi) + xi) hit = !hit;
+    }
+    return hit;
+  }
+  const insideAny = (point: [number, number]) =>
+    area.rings.some((loop) => inLoop(point, loop));
+
   const origins = LOCATIONS.filter((l) => l.delivery !== false).map((l) => l.position);
-  console.log(`  ${area.origins.length} origins, ${area.ring.length} vertices, ` +
+  console.log(`  ${area.origins.length} origins, ${vertices.length} vertices, ` +
     `${matrixCalls} matrix calls, ${elementsAsked} elements`);
 
   // ——— It asked about every counter ———
@@ -112,12 +130,12 @@ async function main() {
   ok("it stayed at one call per step, not one set per counter",
      matrixCalls === STEPS, `${matrixCalls} calls for ${STEPS} steps`);
   ok("asking every counter at once, not in sequence",
-     elementsAsked === STEPS * origins.length * area.ring.length,
+     elementsAsked === STEPS * origins.length * vertices.length,
      String(elementsAsked));
 
   // ——— Every vertex obeys the rule ———
   const reach = (p: [number, number]) => Math.min(...origins.map((o) => milesBetween(p, o)));
-  const worst = Math.max(...area.ring.map(reach));
+  const worst = Math.max(...vertices.map(reach));
   ok("no vertex is outside the radius", worst <= DELIVERY_RADIUS_MILES, worst.toFixed(3));
   ok("and none is more than one search step inside it",
      worst > DELIVERY_RADIUS_MILES - 0.25, worst.toFixed(3));
@@ -129,28 +147,18 @@ async function main() {
   // ray from the centre meets the edge whichever way it points. A search
   // ceiling set too low pulls the far bearings in and leaves the near ones
   // alone, and a maximum cannot see that.
-  const least = Math.min(...area.ring.map(reach));
+  const least = Math.min(...vertices.map(reach));
   ok("every bearing reaches the boundary, not just the nearest",
      least > DELIVERY_RADIUS_MILES - 0.25, least.toFixed(3));
   // The proto3 notch: bearing zero is the destination whose index is omitted.
   ok("bearing zero is not pulled in to the shop",
-     reach(area.ring[0]) > DELIVERY_RADIUS_MILES - 0.25, reach(area.ring[0]).toFixed(3));
+     reach(vertices[0]) > DELIVERY_RADIUS_MILES - 0.25, reach(vertices[0]).toFixed(3));
 
   // ——— It is the union, checked against one computed independently ———
   //
   // With a straight-line ruler the true boundary is four exact circles. Every
   // vertex should sit on the edge of the nearest one, and a point that only the
   // Studio City counter reaches should be inside the ring.
-  function inside(point: [number, number], poly: [number, number][]): boolean {
-    let hit = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i, i += 1) {
-      const [yi, xi] = poly[i];
-      const [yj, xj] = poly[j];
-      if ((yi > point[0]) !== (yj > point[0]) &&
-          point[1] < ((xj - xi) * (point[0] - yi)) / (yj - yi) + xi) hit = !hit;
-    }
-    return hit;
-  }
   const ven = LOCATIONS.find((l) => l.id === "ventura")!.position;
   const wil = LOCATIONS.find((l) => l.id === "wilshire")!.position;
   // North of Studio City: deep in the Valley, inside Ventura Blvd's reach and
@@ -167,7 +175,7 @@ async function main() {
   console.log(`  valley point: ${milesBetween(valley, ven).toFixed(1)}mi from Ventura Blvd, ` +
     `${milesBetween(valley, wil).toFixed(1)}mi from Wilshire`);
   ok("a point only the Studio City counter reaches is inside the drawn ring",
-     inside(valley, area.ring));
+     insideAny(valley));
 
   // And the far side of Wilshire, which only Wilshire reaches, is in it too —
   // so the union grew without losing what it already covered.
@@ -180,7 +188,7 @@ async function main() {
     throw new Error("no such point");
   })();
   ok("and a point only Wilshire reaches is still inside it",
-     inside(eastOfWilshire, area.ring));
+     insideAny(eastOfWilshire));
 
   // Somewhere outside every counter's reach must be outside the ring, or the
   // shape is not a boundary at all.
@@ -190,45 +198,55 @@ async function main() {
   // landed inside the ring and failed for the right reason with the wrong
   // explanation.
   const faraway: [number, number] = [wil[0] - 0.45, wil[1]];
-  ok("a point beyond every counter is outside the ring", !inside(faraway, area.ring),
+  ok("a point beyond every counter is outside the ring", !insideAny(faraway),
      reach(faraway).toFixed(1));
 
-  // ——— ⚠️ The search interval reaches the far edge ———
+  // ——— ⚠️ The sweep: the map never claims what the checkout would refuse ———
   //
-  // This asked that no vertex sit within 0.05 miles of the ceiling, on the
-  // reasoning that a vertex pinned there means the interval was too short and
-  // the shape is clipped. That reasoning was right for a coarse search and
-  // stopped being right when the search got finer.
+  // This is the assertion the whole file is for, and it is here because the
+  // shape got it wrong. With counters in Los Angeles and one in Fullerton the
+  // single ring bridged the twenty-three miles between them, and points around
+  // Pico Rivera — eleven miles from any counter — were drawn inside it. Read
+  // off a published map that is somebody filling a basket and being turned down
+  // at the end.
   //
-  // With a straight-line ruler the furthest reachable point IS the ceiling
-  // exactly: it lies on the ray through the furthest counter, at that
-  // counter's offset from the centre plus the radius, which is how the ceiling
-  // is defined. So a search precise enough will always converge to just under
-  // it, and "close to the ceiling" stopped distinguishing a clipped shape from
-  // a well-measured one. Nine steps got precise enough and this failed while
-  // measuring better than it ever had.
+  // Everything above tests the boundary. This tests the inside: a grid across
+  // the whole area, every point asked twice — is it drawn, and is it within the
+  // rule — with over-claiming the only outcome that fails. Under-claiming is
+  // allowed and expected, because the polygon is conservative by up to one
+  // search step and a 48-gon sits inside the curve it approximates.
   //
-  // What it was protecting is still protected, one screen up: a ceiling set too
-  // short pulls vertices *inside* the radius, and `least` catches that with a
-  // real reach measurement. What is checked here now is the bound's formula —
-  // that the interval covers the furthest a counter can reach — which is the
-  // thing a wrong ceiling would actually get wrong.
-  const spread = Math.max(...origins.map((p) => milesBetween(area.centre, p)));
-  const ceiling = DELIVERY_RADIUS_MILES + spread;
-  const reachable = Math.max(
-    ...origins.map((p) => milesBetween(area.centre, p) + DELIVERY_RADIUS_MILES),
-  );
-  ok("the search ceiling covers the furthest a counter can reach",
-     ceiling >= reachable - 1e-9, `${ceiling.toFixed(2)} vs ${reachable.toFixed(2)}`);
+  // The assertions above cannot see this. They check that every *vertex* obeys
+  // the rule, and a vertex on each side of a gap can both be right while the
+  // edge between them crosses a county nobody serves.
+  const lats = origins.map(([lat]) => lat);
+  const lngs = origins.map(([, lng]) => lng);
+  const pad = DELIVERY_RADIUS_MILES / 60; // a bit over the radius, in degrees
+  let swept = 0;
+  const overclaimed: string[] = [];
+  for (let lat = Math.min(...lats) - pad; lat <= Math.max(...lats) + pad; lat += 0.02) {
+    for (let lng = Math.min(...lngs) - pad; lng <= Math.max(...lngs) + pad; lng += 0.02) {
+      const point: [number, number] = [lat, lng];
+      swept += 1;
+      const nearest = Math.min(...origins.map((o) => milesBetween(point, o)));
+      if (insideAny(point) && nearest > DELIVERY_RADIUS_MILES) {
+        overclaimed.push(`${lat.toFixed(3)},${lng.toFixed(3)} is ${nearest.toFixed(4)}mi out (${((nearest - DELIVERY_RADIUS_MILES) * 5280).toFixed(0)} ft over)`);
+      }
+    }
+  }
+  ok(`swept ${swept} points across the area`, swept > 1000, String(swept));
+  ok("⚠️ nothing is drawn that the rule would refuse",
+     overclaimed.length === 0,
+     `${overclaimed.length} points: ${overclaimed.slice(0, 4).join(" | ")}`);
 
-  const furthest = Math.max(...area.ring.map((p) => milesBetween(area.centre, p)));
-  ok("and no vertex is outside it", furthest <= ceiling + 1e-9,
-     `${furthest.toFixed(2)} of ${ceiling.toFixed(2)}`);
-  // One binary-search step of slack: `low` is the last distance known to be
-  // inside, so the furthest vertex lands within one step of the true edge.
-  ok("while the far edge is resolved to within a step",
-     ceiling - furthest <= ceiling / 2 ** STEPS + 1e-9,
-     `${(ceiling - furthest).toFixed(3)}mi vs ${(ceiling / 2 ** STEPS).toFixed(3)}mi step`);
+  // And the shape is genuinely in pieces, which is the fact that made the
+  // sweep necessary. Asserted so that a future change merging them back into
+  // one ring has to explain itself here.
+  ok("the counters are drawn as more than one patch", area.rings.length > 1,
+     `${area.rings.length} ring(s)`);
+  ok("and every patch is a closed loop of its own",
+     area.rings.every((loop) => loop.length === vertices.length / area.rings.length),
+     area.rings.map((l) => l.length).join(","));
 
   // ——— And it is cached ———
   const before = matrixCalls;
