@@ -134,15 +134,26 @@ export const SEA_MARGIN_MILES = 0.6;
 /** The Ports of Los Angeles and Long Beach, which are land and are not in the
  *  data. See the note at the top.
  *
- *  ⚠️ A box, and a generous one, on purpose. It is drawn to contain every made
- *  acre out to Pier 400 and it takes in some genuine harbour water doing that.
- *  That is the direction to be wrong in: the alternative was cutting the port
- *  off the map, and the water it takes in is inside the federal breakwater —
- *  a place that reads as harbour on a map rather than as the open sea.
+ *  ⚠️ A box, drawn to contain every made acre out to Pier 400 and Pier J. It
+ *  takes in some genuine harbour water doing that, which is the direction to be
+ *  wrong in: the alternative was cutting the port off the map, and the water it
+ *  takes in is inside the federal breakwater — a place that reads as harbour
+ *  rather than as the open sea.
+ *
+ *  ⚠️ It was bigger, and being generous with it cost a real defect. The south
+ *  and east edges reached to 33.700 and -118.120, which put the mouth of San
+ *  Pedro Bay inside the box — so a ray from the Garden Grove counter measured a
+ *  point two miles out in open water, was told it was land, and kept it. A
+ *  vertex out there cannot be repaired by anything downstream: aroundTheWater
+ *  bends edges *between* good vertices and has no answer for a bad one.
+ *
+ *  So the edges are drawn to the port rather than to the bay. Everything the
+ *  box exists for is still inside it — Terminal Island, Pier 400, Piers G, J
+ *  and T — and tests/coastline.test.ts holds it to that.
  *
  *  It only ever *adds* land. Nothing here can remove somewhere the rest of the
  *  file would have kept. */
-const HARBOUR = { south: 33.700, north: 33.790, west: -118.300, east: -118.120 };
+const HARBOUR = { south: 33.715, north: 33.790, west: -118.300, east: -118.150 };
 
 function inHarbour([lat, lng]: Point): boolean {
   return (

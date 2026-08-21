@@ -185,6 +185,12 @@ const RESOLUTIONS: Resolution[] = [
   { bearings: 60, targetFeet: 60 },
   { bearings: 48, targetFeet: 125 },
   { bearings: 33, targetFeet: 125 },
+  // ⚠️ Thirty bearings at nine steps exists for one reason: it is what ten
+  // counters can afford on the default quota. Without it the tenth counter
+  // dropped to eight steps and a 495ft inset — coarser than the map drew
+  // before any of this — and the budget suite said so. Trading three bearings
+  // for the ninth step keeps it at 392ft, which is finer.
+  { bearings: 30, targetFeet: 125 },
   // ⚠️ Everything below here is coarser than the map drew in August 2026. A
   // rebuild landing on one of these is a shop that has outgrown its quota, not
   // a tuning choice. matrixBudget says so out loud.
@@ -581,13 +587,169 @@ async function ringFor(
   // vertex on one side of the water to the first on the other, which is the
   // shape of a shop with the sea on one side.
   const inset = insetMilesFor(resolution);
-  const ring: [number, number][] = [];
+  const fan: Spoke[] = [];
   low.forEach((miles, i) => {
     const reach = miles - inset;
     if (reach <= 0) return;
-    ring.push(project(counter, (i * 360) / bearings, reach));
+    fan.push({ bearing: (i * 360) / bearings, miles: reach });
   });
-  return ring;
+  return aroundTheWater(counter, fan).map((spoke) =>
+    project(counter, spoke.bearing, spoke.miles),
+  );
+}
+
+/** One measured direction, as drawn: the bearing and how far along it the
+ *  boundary sits after the inset. */
+type Spoke = { bearing: number; miles: number };
+
+/** How far along a bearing you can go before the water starts, up to a cap.
+ *
+ *  Pure geometry against app/coastline.ts — no probe, no element, no call. It
+ *  answers "how far could a road possibly go this way", which is an upper bound
+ *  on the reach and never a claim that a road goes there.
+ *
+ *  ⚠️ It marches outward rather than bisecting, and that is the whole
+ *  correctness of it. Bisection needs "once wet, always wet", and a bay is
+ *  exactly where that is false: a ray from Garden Grove across Alamitos Bay
+ *  comes down dry on the Belmont Shore peninsula, so an endpoint test says the
+ *  whole ray is fine and the edge keeps its tongue across the water. The first
+ *  version did that and the tongue survived it.
+ *
+ *  So: step out until the water starts, then bisect that step. Thirty-two steps
+ *  over ten miles is a look every thousand feet, which is finer than any inlet
+ *  the drawn coastline resolves. */
+function dryReach(counter: [number, number], bearing: number, cap: number): number {
+  const STEPS = 32;
+  let dry = 0;
+  let wet = -1;
+  for (let i = 1; i <= STEPS; i += 1) {
+    const at = (cap * i) / STEPS;
+    if (inThePacific(project(counter, bearing, at))) {
+      wet = at;
+      break;
+    }
+    dry = at;
+  }
+  if (wet < 0) return cap;
+  // Ten halvings of a thousand feet is about a foot, far finer than the
+  // coastline being searched against.
+  for (let i = 0; i < 10; i += 1) {
+    const mid = (dry + wet) / 2;
+    if (inThePacific(project(counter, bearing, mid))) wet = mid;
+    else dry = mid;
+  }
+  return dry;
+}
+
+/** How long the straight edge between two drawn vertices is, in miles. */
+function edgeMiles(counter: [number, number], a: Spoke, b: Spoke): number {
+  const from = project(counter, a.bearing, a.miles);
+  const to = project(counter, b.bearing, b.miles);
+  return Math.hypot((to[0] - from[0]) * 69, (to[1] - from[1]) * 57.4);
+}
+
+/** Whether the straight edge between two drawn vertices passes through the sea. */
+function edgeCrossesWater(counter: [number, number], a: Spoke, b: Spoke): boolean {
+  const from = project(counter, a.bearing, a.miles);
+  const to = project(counter, b.bearing, b.miles);
+  const span = edgeMiles(counter, a, b);
+  const samples = Math.max(8, Math.ceil(span / 0.1));
+  for (let i = 1; i < samples; i += 1) {
+    const t = i / samples;
+    const at: [number, number] = [
+      from[0] + (to[0] - from[0]) * t,
+      from[1] + (to[1] - from[1]) * t,
+    ];
+    if (inThePacific(at)) return true;
+  }
+  return false;
+}
+
+/** ⚠️ Bend the edges that cut across water back to the shore.
+ *
+ *  ——— Why the rays stopping at the water is not enough ———
+ *
+ *  Every vertex is a measured point on land — the search refuses a probe in the
+ *  sea, so no ray ends there. The straight edge *between* two of them is not
+ *  measured at all, and where the coast is concave it can leave the land
+ *  entirely: two rays twelve degrees apart from a counter sitting inland of a
+ *  bay reach the shore on either side of it, and the chord spans the water in
+ *  between.
+ *
+ *  ⚠️ This was dismissed once, correctly and then wrongly. With nine counters
+ *  it did not happen — measured, the drawn area covered a tenth of a square
+ *  mile of sea. Garden Grove is five miles inland of Anaheim Bay and the same
+ *  arithmetic put a two-and-a-third mile tongue across Alamitos Bay. Nothing
+ *  about the code changed; the geometry of where the shops are did.
+ *
+ *  ——— What it does ———
+ *
+ *  An edge over water gets a vertex in the middle of it, at the bearing between
+ *  its two ends and no further out than three things allow: either neighbour's
+ *  reach, and the point where that bearing meets the sea. Repeated a few times,
+ *  the edge walks around the head of the bay instead of across it.
+ *
+ *  ⚠️ It only ever claims *less*. Every inserted vertex is nearer the counter
+ *  than the chord it replaces, so the shape this returns is contained in the
+ *  shape it was given. That is what makes it safe to do with geometry rather
+ *  than with measurement: it cannot invent coverage, only decline some.
+ *
+ *  It costs no probes, no elements and no round trips, which is the other
+ *  reason it is here rather than in the bearing count. Buying the same fix with
+ *  bearings would have cost the whole remaining quota and fixed it everywhere
+ *  except where it matters. */
+function aroundTheWater(counter: [number, number], fan: Spoke[]): Spoke[] {
+  if (fan.length < 3) return fan;
+
+  // ⚠️ Until the edges are dry, not a fixed number of passes.
+  //
+  // Each pass halves the angular gap of an offending edge, so the polyline
+  // creeps toward the shoreline and stops when nothing crosses. Three passes
+  // was the first guess and it was not enough: Alamitos Bay took three
+  // insertions and still had two and a quarter miles of water under the edge,
+  // which looked exactly like the fix not working rather than like the fix
+  // being rationed.
+  //
+  // Both bounds below are there so a coastline nobody anticipated costs a
+  // slightly wrong map rather than a request that never returns: eight passes,
+  // and no more than twice the original vertex count. Neither is reached by
+  // any counter the shop has.
+  const CEILING = fan.length * 2;
+  let current = fan;
+  for (let pass = 0; pass < 8; pass += 1) {
+    if (current.length >= CEILING) break;
+    const next: Spoke[] = [];
+    let inserted = 0;
+    for (let i = 0; i < current.length; i += 1) {
+      const a = current[i];
+      const b = current[(i + 1) % current.length];
+      next.push(a);
+      // ⚠️ Below this the edge is shorter than the coastline it is being
+      // checked against, and subdividing stops converging on anything: the
+      // trace showed the same bearing inserted eight times, each pass halving a
+      // hundred-foot edge because one sample of it landed in a sliver of
+      // drawn-in water. A vertex every hundred feet is finer than the data
+      // deserves.
+      if (edgeMiles(counter, a, b) < 0.05) continue;
+      if (!edgeCrossesWater(counter, a, b)) continue;
+      // The bearing halfway between them, the short way round.
+      let sweep = b.bearing - a.bearing;
+      if (sweep < 0) sweep += 360;
+      const bearing = (a.bearing + sweep / 2) % 360;
+      const cap = Math.min(a.miles, b.miles);
+      const miles = dryReach(counter, bearing, cap);
+      // A midpoint with nothing left is a spike at the counter. Leaving the
+      // edge alone is the better of the two: it is the shape that was already
+      // being drawn, rather than a new and worse one.
+      if (miles > 0) {
+        next.push({ bearing, miles });
+        inserted += 1;
+      }
+    }
+    current = next;
+    if (inserted === 0) break;
+  }
+  return current;
 }
 
 async function measure(): Promise<DeliveryArea | null> {

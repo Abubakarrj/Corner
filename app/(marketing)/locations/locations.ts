@@ -812,6 +812,70 @@ export const VENTURA: StoreLocation = {
 // opens somewhere new — it is the only assertion here that can see a hole,
 // because every other one checks the boundary and a gap lives between two
 // perfectly correct vertices.
+// West Garden Grove. A full store.
+//
+// ——— ⚠️ This one was chosen to fill a hole the map found ———
+//
+// The delivery boundary is measured rather than drawn, and one thing a measured
+// boundary does that a drawn one cannot is show you where you are *not*. Two
+// real gaps came out of it: Monterey Park, ringed by Koreatown and Pasadena,
+// and West Garden Grove, ringed by Long Beach and Fullerton. Both are places
+// more than ten road miles from every counter while being surrounded by places
+// that are not — the shape of a freeway network rather than of a city.
+//
+// This counter sits in the second one. Valley View at the Los Alamitos line is
+// about six miles from Long Beach and eight from Fullerton by road, which is
+// inside both of their reaches, and its own ten miles cover the ground neither
+// of them could. Rossmoor, Los Alamitos, Cypress and Stanton come in with it.
+export const GARDENGROVE: StoreLocation = {
+  id: "gardengrove",
+  name: "Garden Grove",
+  kind: "shop",
+  address: "12452 Valley View St",
+  city: "Garden Grove, CA 92845",
+  hours: SHOP_HOURS,
+  // ⚠️⚠️ 7.75% is Orange County's base rate, and this is the one record where
+  // that is a *guess about the city* rather than a derivation.
+  //
+  // Fullerton and San Clemente are 7.75% because neither adds a city
+  // transactions tax. Garden Grove may well add one — several north Orange
+  // County cities passed district taxes in 2018 and after — and this figure was
+  // set without being able to check: CDTFA is not reachable from where it was
+  // written.
+  //
+  // ⚠️ LOOK THIS UP BEFORE THE STORE TAKES AN ORDER, at
+  // cdtfa.ca.gov/taxes-and-fees/rates.aspx, by street address rather than by
+  // city name. If Garden Grove has a district tax this is a point too low, and
+  // too low means the shop pays the difference out of its own margin on every
+  // order rather than the customer paying it — quietly, and for as long as
+  // nobody checks.
+  taxRate: 0.0775,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // ⚠️ Estimated, not surveyed, and more loosely than most of these. Valley
+  // View runs north to south along the western edge of the city and the 12400
+  // block falls between Lampson and Garden Grove Blvd; this is that stretch of
+  // the street rather than a rooftop. storePlaces.ts geocodes the address at
+  // runtime and uses that instead, so what this affects is the pin before the
+  // geocode lands. Read the drift-guard warning above these records.
+  position: [33.7787, -118.0235],
+  catering: true,
+  aliases: [
+    "garden grove",
+    "gardengrove",
+    "west garden grove",
+    "valley view",
+    "valley view st",
+    "12452 valley view",
+    "los alamitos",
+    "rossmoor",
+    "cypress",
+    "stanton",
+    "west orange county",
+    "92845",
+  ],
+};
+
 // ⚠️ WESTERN is deliberately absent — paused, not closed. See the note above
 // its record. Adding it back to the end of this array is the whole of
 // reopening it.
@@ -825,6 +889,7 @@ export const LOCATIONS: StoreLocation[] = [
   LONGBEACH,
   TORRANCE,
   SANCLEMENTE,
+  GARDENGROVE,
 ];
 
 /** When a counter opens, as an hour of the day.

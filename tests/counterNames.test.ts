@@ -79,7 +79,7 @@ ok("and would go last when it returns, after the full stores",
 console.log("\n— and the ids that did not move —");
 ok("the ids are still the street handles",
    LOCATIONS.map((l) => l.id).join(",") ===
-     "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach,torrance,sanclemente",
+     "wilshire,larchmont,glendon,ventura,pasadena,fullerton,longbeach,torrance,sanclemente,gardengrove",
    LOCATIONS.map((l) => l.id).join(","));
 
 // ——— The street names still find their shops ———

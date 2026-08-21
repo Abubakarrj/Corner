@@ -355,9 +355,31 @@ async function main() {
 
   ok("the counters are drawn as more than one patch", area.rings.length > 1,
      `${area.rings.length} ring(s)`);
+  // ⚠️ This used to assert every ring had the *same* number of vertices, which
+  // was a fair proxy for "a full fan of bearings" right up until rings stopped
+  // being full fans. Two things break it now and both are deliberate: a bearing
+  // pointing out to sea contributes no vertex, and an edge that would cut
+  // across water gets extra ones bent back to the shore. So the assertions are
+  // about what a drawn patch has to be rather than about a count.
   ok("and every patch is a closed loop of its own",
-     area.rings.every((loop) => loop.length === vertices.length / area.rings.length),
+     area.rings.every((loop) => loop.length >= 3),
      area.rings.map((l) => l.length).join(","));
+  ok("⚠️ and no patch collapsed to a sliver",
+     area.rings.every((loop) => loop.length > area.resolution.bearings / 2),
+     `${area.resolution.bearings} bearings → ${area.rings.map((l) => l.length).join(",")}`);
+  // The bound aroundTheWater is written to respect. Past it something is
+  // subdividing without converging, which is a request path that gets slower
+  // every time somebody opens a shop near a bay.
+  ok("and none grew past twice its bearing count",
+     area.rings.every((loop) => loop.length <= area.resolution.bearings * 2),
+     area.rings.map((l) => l.length).join(","));
+  ok("with no repeated vertex, which would be a zero-length edge for the union",
+     area.rings.every((loop) =>
+       loop.every((p, i) => {
+         const next = loop[(i + 1) % loop.length];
+         return Math.abs(p[0] - next[0]) > 1e-9 || Math.abs(p[1] - next[1]) > 1e-9;
+       })),
+     "a ring repeats a point");
 
   // ——— And it is cached ———
   const before = matrixCalls;
