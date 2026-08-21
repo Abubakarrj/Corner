@@ -87,7 +87,7 @@ export default function GiftAuthModal({
       {guestHref ? (
         <Link
           href={guestHref}
-          className="cb-press mx-auto mt-4 block cursor-pointer text-center text-[14px] text-muted underline underline-offset-2 hover:text-ink"
+          className="cb-tap cb-press mx-auto mt-4 block cursor-pointer text-center text-[14px] text-muted underline underline-offset-2 hover:text-ink"
         >
           {t("gift.continueAsGuest")}
         </Link>
@@ -95,7 +95,7 @@ export default function GiftAuthModal({
       <button
         type="button"
         onClick={onClose}
-        className="cb-press mx-auto mt-4 block cursor-pointer text-[14px] text-muted underline underline-offset-2 hover:text-ink"
+        className="cb-tap cb-press mx-auto mt-4 block cursor-pointer text-[14px] text-muted underline underline-offset-2 hover:text-ink"
       >
         {t("gift.continueAsGuest")}
       </button>

@@ -129,7 +129,7 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
                     type="button"
                     aria-label={t("cart.decreaseOf", { name: menu.name(product) })}
                     onClick={() => setQuantity(key, line.quantity - 1)}
-                    className="h-7 w-7 cursor-pointer rounded-full text-[13px] text-ink transition-opacity hover:opacity-60"
+                    className="cb-tap h-7 w-7 cursor-pointer rounded-full text-[13px] text-ink transition-opacity hover:opacity-60"
                   >
                     −
                   </button>
@@ -141,7 +141,7 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
                     aria-label={t("cart.increaseOf", { name: menu.name(product) })}
                     onClick={() => setQuantity(key, line.quantity + 1)}
                     disabled={line.quantity >= MAX_PER_LINE}
-                    className="h-7 w-7 cursor-pointer rounded-full text-[13px] text-ink transition-opacity hover:opacity-60 disabled:opacity-30"
+                    className="cb-tap h-7 w-7 cursor-pointer rounded-full text-[13px] text-ink transition-opacity hover:opacity-60 disabled:opacity-30"
                   >
                     +
                   </button>
@@ -149,7 +149,7 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
                 <button
                   type="button"
                   onClick={() => removeItem(key)}
-                  className="cursor-pointer text-[11px] text-quiet underline transition-opacity hover:opacity-70"
+                  className="cb-tap cursor-pointer text-[11px] text-quiet underline transition-opacity hover:opacity-70"
                 >
                   {t("common.remove")}
                 </button>

@@ -151,7 +151,7 @@ export function FulfillmentBanner() {
       <button
         type="button"
         onClick={() => setChanging(true)}
-        className="cb-press shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
+        className="cb-tap cb-press shrink-0 cursor-pointer text-[12px] underline underline-offset-2 transition-opacity hover:opacity-70"
         style={{ color: ink }}
       >
         {t("shop.change")}

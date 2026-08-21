@@ -27,6 +27,17 @@ export default function ProductListRow({ product }: { product: Product }) {
     <div className="group flex items-center gap-4 border-b border-line-faint py-4 first:pt-0 last:border-b-0">
       <Link
         href={`/shop/product/${product.slug}`}
+        // ⚠️ Hidden from assistive technology and from the tab order, not
+        // because it does nothing but because the named link beside it already
+        // does exactly this. Two links to one page meant a screen reader
+        // announced every product twice — once as "link" with no name at all,
+        // since an image link with no alt text reaches the accessibility tree
+        // unnamed. Twenty-seven items, twenty-seven dead stops.
+        //
+        // The picture stays clickable for anybody using a pointer; it is just
+        // no longer a second stop for anybody who is not.
+        aria-hidden
+        tabIndex={-1}
         className="shrink-0 cursor-pointer overflow-hidden rounded-xl"
       >
         <ProductImage

@@ -41,6 +41,8 @@ export const ja: Table = {
   "consent.ok": "OK",
   "consent.label": "クッキーの同意",
 
+  "finder.title": "店舗を探す",
+  "home.title": "Corner Bagel",
   "finder.pickup": "受け取り",
   "finder.outlet": "アウトレット",
   "finder.outletNote": "ベーグル、シュメア、ドリンク。サンドイッチなし",
@@ -319,6 +321,12 @@ export const ja: Table = {
   "deliveryFee.quotedFresh":
     "Uber は注文時点でお客様の住所の料金を算出します。天候や交通状況で変わることがあります。",
 
+  "lost.title": "このページはありません。",
+  "lost.lede": "リンクが古いか、ページが移動した可能性があります。すべてはメニューから始まります。",
+  "lost.goHome": "ホームへ",
+  "broke.title": "こちら側で問題が起きました。",
+  "broke.lede": "お客様のせいではありませんし、注文は入っていません。もう一度お試しか、メニューからどうぞ。",
+  "broke.retry": "もう一度試す",
   "order.notFound": "そのご注文が見つかりません。",
   "order.keptOnDevice": "サインアウト中は、注文した端末に注文が残ります。サインインすれば引き継がれます。",
   "order.callShop": "店舗に電話",

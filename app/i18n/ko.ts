@@ -41,6 +41,8 @@ export const ko: Table = {
   "consent.ok": "확인",
   "consent.label": "쿠키 동의",
 
+  "finder.title": "매장 찾기",
+  "home.title": "Corner Bagel",
   "finder.pickup": "픽업",
   "finder.outlet": "간이 매장",
   "finder.outletNote": "베이글, 슈미어, 음료. 샌드위치 없음",
@@ -319,6 +321,12 @@ export const ko: Table = {
   "deliveryFee.quotedFresh":
     "우버는 주문하는 시점에 주소별 요금을 계산합니다. 날씨와 교통 상황에 따라 달라질 수 있습니다.",
 
+  "lost.title": "이 페이지는 없습니다.",
+  "lost.lede": "링크가 오래되었거나 페이지가 옮겨졌을 수 있습니다. 모든 것은 메뉴에서 시작합니다.",
+  "lost.goHome": "홈으로",
+  "broke.title": "저희 쪽에서 문제가 생겼습니다.",
+  "broke.lede": "고객님 잘못이 아니며 주문된 것은 없습니다. 다시 시도하시거나 메뉴에서 시작해 주세요.",
+  "broke.retry": "다시 시도",
   "order.notFound": "해당 주문을 찾을 수 없습니다.",
   "order.keptOnDevice": "로그아웃 상태에서는 주문한 기기에 주문이 남습니다. 로그인하면 따라옵니다.",
   "order.callShop": "매장에 전화하기",

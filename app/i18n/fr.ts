@@ -42,6 +42,8 @@ export const fr: Table = {
   "consent.label": "Consentement aux cookies",
 
   // ——— The finder ———
+  "finder.title": "Nous trouver",
+  "home.title": "Corner Bagel",
   "finder.pickup": "À emporter",
   "finder.outlet": "Point de vente",
   "finder.outletNote": "Bagels, Schmear, Boissons. Pas de Sandwichs",
@@ -350,6 +352,12 @@ export const fr: Table = {
   "deliveryFee.quotedFresh":
     "Uber tarife votre adresse au moment de la commande. La météo et la circulation peuvent la faire varier.",
 
+  "lost.title": "Cette page n'est pas ici.",
+  "lost.lede": "Le lien est peut-être ancien, ou la page a été déplacée. Tout commence au menu.",
+  "lost.goHome": "Aller à l'accueil",
+  "broke.title": "Quelque chose s'est mal passé de notre côté.",
+  "broke.lede": "Vous n'y êtes pour rien et rien n'a été commandé. Réessayez, ou repartez du menu.",
+  "broke.retry": "Réessayer",
   "order.notFound": "Nous ne trouvons pas cette commande.",
   "order.keptOnDevice": "Déconnecté, les commandes restent sur l'appareil d'origine. Connectez-vous et elles vous suivent.",
   "order.callShop": "Appeler la boutique",

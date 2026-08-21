@@ -136,9 +136,14 @@ export default function CartDrawer({
           <div className="min-h-0 flex-1 divide-y divide-line-faint overflow-y-auto overscroll-contain px-6">
             {rows.map(({ line, product, key, unitCents, chosen, complete }) => (
               <div key={key} className="flex gap-4 py-5">
+                {/* aria-hidden and out of the tab order: the name link
+                    beside it is the same destination, named. See
+                    ProductCard.tsx. */}
                 <Link
                   href={`/shop/product/${product.slug}`}
                   onClick={onClose}
+                  aria-hidden
+                  tabIndex={-1}
                   className="shrink-0 cursor-pointer"
                 >
                   <ProductImage
@@ -195,7 +200,7 @@ export default function CartDrawer({
                         type="button"
                         aria-label={t("cart.decreaseOf", { name: menu.name(product) })}
                         onClick={() => setQuantity(key, line.quantity - 1)}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
+                        className="cb-tap h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
                         −
                       </button>
@@ -207,7 +212,7 @@ export default function CartDrawer({
                         aria-label={t("cart.increaseOf", { name: menu.name(product) })}
                         onClick={() => setQuantity(key, line.quantity + 1)}
                         disabled={line.quantity >= MAX_PER_LINE}
-                        className="h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
+                        className="cb-tap h-8 w-8 cursor-pointer rounded-full text-[14px] text-ink transition-opacity hover:opacity-60"
                       >
                         +
                       </button>
@@ -215,7 +220,7 @@ export default function CartDrawer({
                     <button
                       type="button"
                       onClick={() => removeItem(key)}
-                      className="cursor-pointer text-[11px] text-quiet underline transition-opacity hover:opacity-70"
+                      className="cb-tap cursor-pointer text-[11px] text-quiet underline transition-opacity hover:opacity-70"
                     >
                       {t("common.remove")}
                     </button>
@@ -274,7 +279,7 @@ export default function CartDrawer({
             <Link
               href="/shop/cart"
               onClick={onClose}
-              className="mt-3 block cursor-pointer text-center text-[11px] text-body underline transition-opacity hover:opacity-70"
+              className="cb-tap mt-3 block cursor-pointer text-center text-[11px] text-body underline transition-opacity hover:opacity-70"
             >
               {t("cart.viewFull")}
             </Link>

@@ -58,7 +58,7 @@ export default function GiftGallery() {
               <button
                 type="button"
                 onClick={() => setRedeeming(true)}
-                className="cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
+                className="cb-tap cursor-pointer underline underline-offset-2 transition-opacity hover:opacity-70"
               >
                 {t("gift.redeemNow")}
               </button>

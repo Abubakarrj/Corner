@@ -36,6 +36,7 @@ export type TabId = "home" | "menu" | "reorder" | "gift" | "account";
 // — it sits outside the marketing route group and has no tab bar at all.
 export const TAB_BAR_ROUTES = ["/locations", "/membership", "/gift"];
 
+
 export function hasTabBar(pathname: string): boolean {
   return TAB_BAR_ROUTES.includes(pathname);
 }

@@ -125,7 +125,7 @@ function GiftCard({ gift, covered }: { gift: GiftEntry; covered: boolean }) {
           <button
             type="button"
             onClick={gift.clearGift}
-            className="cb-press cursor-pointer text-[13px] text-muted underline hover:text-ink"
+            className="cb-tap cb-press cursor-pointer text-[13px] text-muted underline hover:text-ink"
           >
             {t("common.remove")}
           </button>

@@ -49,6 +49,8 @@ export const en = {
   "consent.label": "Cookie consent",
 
   // ——— The finder ———
+  "finder.title": "Find us",
+  "home.title": "Corner Bagel",
   "finder.pickup": "Pickup",
   "finder.outlet": "Outlet",
   "finder.outletNote": "Bagels, Schmear, Drinks. No Sandwiches",
@@ -366,6 +368,12 @@ export const en = {
   "deliveryFee.quotedFresh":
     "Uber prices your address at the moment you order. Weather and traffic can move it.",
 
+  "lost.title": "This page isn't here.",
+  "lost.lede": "The link may be old, or the page may have moved. The menu is where everything starts.",
+  "lost.goHome": "Go home",
+  "broke.title": "Something went wrong on our end.",
+  "broke.lede": "Nothing you did caused this and nothing has been ordered. Try again, or start from the menu.",
+  "broke.retry": "Try again",
   "order.notFound": "We can't find that order.",
   "order.keptOnDevice": "Signed out, orders stay on the device they were placed from. Sign in and they follow you.",
   "order.callShop": "Call the shop",

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import PageTitle from "../ui/PageTitle";
 import ThemeToggle from "../ui/ThemeToggle";
 import LanguagePicker from "../ui/LanguagePicker";
 import AboutMenu from "../ui/AboutMenu";
@@ -24,7 +25,12 @@ import OrderStatusBar from "../shop/OrderStatusBar";
 
 export default function Home() {
   return (
-    <div className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-page p-6">
+    // <main>, because there was no landmark on this page at all — no header,
+    // no nav, no main — which leaves a screen reader's "skip to content" with
+    // nowhere to skip to. The logo is the page; naming it as the main region
+    // costs nothing on screen.
+    <main className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-page p-6">
+      <PageTitle k="home.title" />
       {/* The logo is the front door into the app: tapping it opens the map,
           which is where an order starts.
 
@@ -100,6 +106,6 @@ export default function Home() {
           one screen whose whole composition is that it is centred. Renders
           nothing when no order is in flight, which is nearly always. */}
       <OrderStatusBar dock />
-    </div>
+    </main>
   );
 }

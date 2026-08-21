@@ -48,7 +48,15 @@ export default function CrossSellStrip({
       <div className="flex gap-3 overflow-x-auto pb-1">
         {products.map((product) => (
           <div key={product.slug} className="w-24 shrink-0">
-            <Link href={`/shop/product/${product.slug}`} onClick={onNavigate} className="relative block cursor-pointer">
+            {/* aria-hidden and out of the tab order: the name link below is
+                the same destination, named. See ProductCard.tsx. */}
+            <Link
+              href={`/shop/product/${product.slug}`}
+              onClick={onNavigate}
+              aria-hidden
+              tabIndex={-1}
+              className="relative block cursor-pointer"
+            >
               <ProductImage
                 swatch={product.swatch}
                 category={product.category}

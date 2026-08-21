@@ -48,6 +48,43 @@
    * makes it worth writing down — the name is the whole difference. */
   --cb-knob-track: #ffffff;
 
+/* ——— Reaching a small control ———
+ *
+ * WCAG 2.5.8 sets 24x24px as the floor for a pointer target; Apple and
+ * Material both ask for 44. Several controls here sat under the floor, not
+ * merely under the guidance: "Remove" in a cart row measured 41x17, sitting
+ * beside a 42x18 "Change" — a mis-tap that deletes somebody's order line.
+ *
+ * The fix is a hit area, not a bigger control. Growing the type or the padding
+ * would redraw screens that are already right; this lays an invisible 44x44
+ * box over the middle of whatever it is applied to and leaves every visible
+ * pixel where it was.
+ *
+ * ⚠️ Two things to watch when applying it:
+ *
+ *   · the parent needs no positioning of its own, but a sibling with its own
+ *     .cb-tap must be far enough away that the two boxes do not overlap —
+ *     two overlapping hit areas mean one of them wins and the other is dead.
+ *   · it is for controls that are visually small on purpose. A control that
+ *     could simply be bigger should simply be bigger.
+ */
+.cb-tap {
+  position: relative;
+}
+
+.cb-tap::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  /* max(the control, 44px) in each direction. */
+  width: 100%;
+  height: 100%;
+  min-width: 44px;
+  min-height: 44px;
+}
+
 /* ——— Motion ———
  *
  * Three durations and three curves, and every transition in the product

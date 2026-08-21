@@ -14,6 +14,7 @@ import SearchResults, { type ResolvedPlace } from "./SearchResults";
 import PinPicker, { type PinResult } from "./PinPicker";
 import { PALETTE, SHOP_FONT } from "../../shop/shopControls";
 import TabBar from "../TabBar";
+import PageTitle from "../../ui/PageTitle";
 import { useLocale, useT, type StringKey } from "../../i18n";
 import {
   nearestLocations,
@@ -503,6 +504,9 @@ export default function LocationFinder() {
       className="cb-app-shell flex w-full flex-col overflow-hidden"
       style={{ backgroundColor: cream, fontFamily: SHOP_FONT }}
     >
+      {/* The map is the page and a map has no title, so this one is for the
+          accessibility tree only. See PageTitle.tsx. */}
+      <PageTitle k="finder.title" />
       {/* Spacings measured off the reference frame rather than eyeballed: at
           its 440px width the pill row is 34px tall sitting 21px down, the
           rule under the search field lands 116px into the header, and the

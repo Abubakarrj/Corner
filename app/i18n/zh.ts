@@ -43,6 +43,8 @@ export const zh: Table = {
   "consent.ok": "好的",
   "consent.label": "Cookie 同意",
 
+  "finder.title": "找到我们",
+  "home.title": "Corner Bagel",
   "finder.pickup": "自取",
   "finder.outlet": "外卖点",
   "finder.outletNote": "贝果、抹酱、饮品。不供应三明治",
@@ -321,6 +323,12 @@ export const zh: Table = {
   "deliveryFee.quotedFresh":
     "Uber 在您下单时为您的地址计价。天气和路况可能会改变它。",
 
+  "lost.title": "这个页面不在这里。",
+  "lost.lede": "链接可能已过期，或页面已移动。一切都从菜单开始。",
+  "lost.goHome": "回到首页",
+  "broke.title": "我们这边出了点问题。",
+  "broke.lede": "这不是你的问题，也没有下任何订单。请重试，或从菜单开始。",
+  "broke.retry": "重试",
   "order.notFound": "找不到该订单。",
   "order.keptOnDevice": "未登录时，订单保存在下单的设备上。登录后订单会跟着你。",
   "order.callShop": "致电门店",

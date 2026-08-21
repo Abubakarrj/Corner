@@ -12,7 +12,10 @@ import { servesCategory } from "./storeMenu";
 // category names over a hairline, with the active one darkened and
 // underlined. Scrolls sideways on narrow screens rather than wrapping.
 const tabBase =
-  "-mb-px shrink-0 snap-start cursor-pointer whitespace-nowrap border-b-2 pb-3 text-[16px] transition-colors";
+  "cb-tap -mb-px shrink-0 snap-start cursor-pointer whitespace-nowrap border-b-2 pb-3 text-[16px] transition-colors";
+// cb-tap because "All" is 18px wide — under the WCAG floor on its short axis.
+// The rail's gap-7 is 28px, so two neighbouring 44px hit boxes reach 13px each
+// and still clear one another.
 const tabActive = "border-ink font-medium text-ink";
 const tabIdle = "border-transparent text-muted hover:text-ink";
 
