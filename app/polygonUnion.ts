@@ -33,12 +33,23 @@
 //   loops may overlap, touch, or be entirely separate.
 //
 // Nothing here is a general-purpose geometry kernel. It handles the union of
-// simple loops and nothing else — no intersection, no difference, no holes.
-// Holes are the one real limitation and they are worth naming: three counters
-// arranged in a ring with a gap in the middle would have that gap filled in.
-// Whether that ever happens is a question about where the shop opens, and
-// tests/polygonUnion.test.ts asserts the shapes it does handle rather than
-// pretending otherwise.
+// simple loops and nothing else — no intersection, no difference.
+//
+// ——— ⚠️ Holes, which it does produce, and which are usually real ———
+//
+// Counters arranged around a gap leave a hole in the union: somewhere further
+// than the radius from every one of them, ringed by ground that is not. The
+// walk traces those as loops wound the other way, and Google renders an
+// opposite-wound path in the same Polygon as a hole — so they come out right
+// without this file doing anything special.
+//
+// That is the correct answer and the map should show it. Measured against a
+// non-zero winding fill — which is what Google actually paints — the union of
+// nine irregular reaches punches no hole in ground a counter covers and claims
+// no ground none of them do, on every arrangement tried.
+//
+// ⚠️ The exception is a hole thinner than the margin the rings were already
+// pulled in by, and that one is not a measurement. See closeGapsUnderMiles.
 
 export type Point = [number, number];
 export type Ring = Point[];
@@ -142,6 +153,38 @@ function outerArcs(rings: Ring[]): [Point, Point][] {
   return arcs;
 }
 
+/** Roughly how wide a loop is, in miles: twice its area over its perimeter.
+ *
+ *  Exact for a circle, where it is the radius, and for a long thin shape it
+ *  comes out at about the width — which is the case this is for. A flat-earth
+ *  approximation at the loop's own latitude, because the loops in question are
+ *  a few hundred feet across and the curvature of the earth is not what decides
+ *  whether to draw them. */
+function widthMiles(loop: Ring): number {
+  const MILES_PER_DEGREE = 69.0;
+  const lat = loop.reduce((sum, p) => sum + p[0], 0) / loop.length;
+  const scale = Math.cos((lat * Math.PI) / 180);
+  const xy = loop.map((p) => [p[1] * scale * MILES_PER_DEGREE, p[0] * MILES_PER_DEGREE]);
+
+  let twiceArea = 0;
+  let perimeter = 0;
+  for (let i = 0, j = xy.length - 1; i < xy.length; j = i, i += 1) {
+    twiceArea += xy[j][0] * xy[i][1] - xy[i][0] * xy[j][1];
+    perimeter += Math.hypot(xy[i][0] - xy[j][0], xy[i][1] - xy[j][1]);
+  }
+  if (perimeter === 0) return 0;
+  return Math.abs(twiceArea) / perimeter;
+}
+
+/** Signed area, whose sign is which way a loop is wound. */
+function winding(loop: Ring): number {
+  let twice = 0;
+  for (let i = 0, j = loop.length - 1; i < loop.length; j = i, i += 1) {
+    twice += loop[j][1] * loop[i][0] - loop[i][1] * loop[j][0];
+  }
+  return twice / 2;
+}
+
 /** The outline of the union: one closed ring per connected piece.
  *
  *  ⚠️ Returns the input unchanged when there is one ring or none, so the common
@@ -149,8 +192,37 @@ function outerArcs(rings: Ring[]): [Point, Point][] {
  *
  *  Rings that share no ground come back as separate loops, which is what the
  *  map wants: San Clemente is thirty miles from anything and drawing a line to
- *  it would claim the sea. */
-export function unionRings(rings: Ring[]): Ring[] {
+ *  it would claim the sea.
+ *
+ *  Holes come back too, wound the other way, which is how Google draws one.
+ *
+ *  ——— ⚠️ closeGapsUnderMiles, and the trade it makes ———
+ *
+ *  Drops holes narrower than this, leaving the ground filled.
+ *
+ *  It exists because the caller does not hand over what it measured — it hands
+ *  over rings already pulled in by a few hundred feet, to cover the straight
+ *  edge between two rays cutting outside a curve. Where two reaches nearly
+ *  meet, that margin opens a gap between them, and sometimes invents one that
+ *  the measurement did not have. Measured on nine irregular reaches: the inset
+ *  widened every real hole and, on one arrangement in five, added a hole that
+ *  was not there before. On screen they are red needles a few hundred feet
+ *  wide, and they read as the map being broken.
+ *
+ *  ⚠️ Closing them is the one place this file knowingly draws ground that may
+ *  be out of range, so the size of that is worth stating: at most this many
+ *  miles, at the edge of a boundary that was itself pulled in by the same
+ *  amount. An address in a closed sliver measures something like 10.07 miles,
+ *  and the check under the map — which asks the routing API about that exact
+ *  address — still says no. Set it to zero and every hole is drawn as measured.
+ *
+ *  A real gap is much bigger than this and is left alone. It should be: a place
+ *  further than the radius from every counter, ringed by places that are not,
+ *  is the honest answer and the reason the map is measured rather than drawn. */
+export function unionRings(
+  rings: Ring[],
+  options: { closeGapsUnderMiles?: number } = {},
+): Ring[] {
   const usable = rings.filter((ring) => ring.length >= 3);
   if (usable.length <= 1) return usable;
 
@@ -195,5 +267,14 @@ export function unionRings(rings: Ring[]): Ring[] {
     }
   }
 
-  return loops;
+  const gap = options.closeGapsUnderMiles ?? 0;
+  if (gap <= 0) return loops;
+
+  // Which way round the input was wound. Holes are the loops that came back
+  // the other way, and the input's own winding is what says which that is —
+  // rather than assuming a convention the caller might not share.
+  const outward = Math.sign(winding(usable[0]));
+  return loops.filter(
+    (loop) => Math.sign(winding(loop)) === outward || widthMiles(loop) >= gap,
+  );
 }

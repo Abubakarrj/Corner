@@ -281,6 +281,21 @@ export type DeliveryArea = {
  *  costs one origin per element rather than nine.
  *
  *  Null when a call fails, so the caller can refuse to publish half a shape. */
+/** How far inside its own measurement each ring is drawn, in miles.
+ *
+ *  The worst a straight edge can sag between two rays at this bearing spacing
+ *  and this reach — R(1 − cos(half a step)) — plus one search step. A few
+ *  hundred feet, always on the side of telling somebody to check.
+ *
+ *  ⚠️ Named rather than inlined because two places need the same number: the
+ *  ring that gets pulled in by it, and the union that has to know a gap this
+ *  narrow between two rings is the margin rather than a measurement. See
+ *  closeGapsUnderMiles in app/polygonUnion.ts. */
+export function insetMiles(): number {
+  const sag = 1 - Math.cos(Math.PI / BEARINGS);
+  return DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** stepsFor(DELIVERY_RADIUS_MILES));
+}
+
 async function ringFor(counter: [number, number]): Promise<[number, number][] | null> {
   // Straight-line bounds on the answer. Zero at the near end; the radius at the
   // far end, and that is safe because a road route is never shorter than the
@@ -328,8 +343,7 @@ async function ringFor(counter: [number, number]): Promise<[number, number][] | 
   // bound for a convex arc, and unlike the centroid version this arc really is
   // roughly convex: it is one shop's own reach, not a chain of eight shops'.
   // A few hundred feet, always on the side of telling somebody to check.
-  const sag = 1 - Math.cos(Math.PI / BEARINGS);
-  const inset = DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** steps);
+  const inset = insetMiles();
   return low.map((miles, i) =>
     project(counter, (i * 360) / BEARINGS, Math.max(0, miles - inset)),
   );
@@ -366,7 +380,12 @@ async function measure(): Promise<DeliveryArea | null> {
     // segment intersections — nothing — but it is also the answer to "what
     // shape is this", and an answer worked out separately by every visitor is
     // an answer that can differ between them.
-    outline: unionRings(rings),
+    // ⚠️ Gaps narrower than the inset are closed. Every ring here was already
+    // pulled in by that much, so two reaches that meet in the measurement can
+    // come out of it with a few hundred feet of daylight between them — a red
+    // needle on the map, drawn from a margin rather than from a road. Real
+    // gaps are miles across and stay. See closeGapsUnderMiles.
+    outline: unionRings(rings, { closeGapsUnderMiles: insetMiles() }),
     rings,
     origins,
     // The framing centre — what the map opens on before it fits the bounds.

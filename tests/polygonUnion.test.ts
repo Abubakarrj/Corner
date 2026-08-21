@@ -16,6 +16,52 @@
 
 import { inRing, unionRings, type Ring } from "../app/polygonUnion";
 
+/** ⚠️ The way Google actually fills a Polygon with several paths: non-zero
+ *  winding across all of them at once, so a loop wound the other way subtracts.
+ *
+ *  This suite used to test each loop on its own with inRing, which treats every
+ *  loop as solid — and a hole read as *extra* area under that rule rather than
+ *  as the missing area it is on screen. Two of the assertions below could not
+ *  have failed for the thing they are named after. What is on the map is the
+ *  winding rule, so that is what gets swept. */
+function filled(point: [number, number], loops: Ring[]): boolean {
+  let winding = 0;
+  for (const loop of loops) {
+    for (let i = 0, j = loop.length - 1; i < loop.length; j = i, i += 1) {
+      const [ay, ax] = loop[j];
+      const [by, bx] = loop[i];
+      const side = (bx - ax) * (point[0] - ay) - (point[1] - ax) * (by - ay);
+      if (ay <= point[0]) {
+        if (by > point[0] && side > 0) winding += 1;
+      } else if (by <= point[0] && side < 0) {
+        winding -= 1;
+      }
+    }
+  }
+  return winding !== 0;
+}
+
+/** A reach shaped like a road contour rather than a circle: the radius wobbles
+ *  per bearing, the way a real ten-mile drive does — a freeway reaches further,
+ *  the hills reach less. Deterministic, so a failure can be re-run.
+ *
+ *  ⚠️ The circles further up this file are the easy case and they were the only
+ *  case until the map went out with holes in it. A concave reach is what the
+ *  shop actually has, and it is where a union walk goes wrong. */
+function wobbly(centre: [number, number], radius: number, seed: number, points = 36): Ring {
+  let state = seed;
+  const next = () => {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    return state / 2147483648;
+  };
+  return Array.from({ length: points }, (_, i) => {
+    const r = radius * (0.55 + 0.75 * next());
+    const angle = (i / points) * 2 * Math.PI;
+    return [centre[0] + r * Math.cos(angle), centre[1] + r * Math.sin(angle)] as
+      [number, number];
+  });
+}
+
 let failures = 0;
 const ok = (what: string, cond: boolean, detail = "") => {
   if (cond) console.log("pass ", what);
@@ -35,6 +81,34 @@ function circle(centre: [number, number], radius: number, points = 36): Ring {
 /** Whether a point is inside any of these loops. */
 const insideAny = (point: [number, number], rings: Ring[]) =>
   rings.some((ring) => inRing(point, ring));
+
+/** ⚠️ Whether a point sits on an edge, where "inside" has no answer.
+ *
+ *  A sweep on a regular grid lands exactly on tangent points: the bottom of a
+ *  circle centred on a grid line is a grid point, and whether it counts as
+ *  inside is decided by the last bit of a float. One such point failed the
+ *  chain sweep below at a distance of 4e-16 from the rim.
+ *
+ *  Excluding them is not softening the assertion. A point on the boundary is
+ *  not evidence that the union lost area, because there is nothing there to
+ *  lose — the answer is undefined on both sides of the comparison. Everything
+ *  more than a billionth of a degree from an edge, which is every point
+ *  anybody could stand at, still has to agree. */
+function onEdge(point: [number, number], rings: Ring[], tolerance = 1e-9): boolean {
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+      const [ay, ax] = ring[j];
+      const [by, bx] = ring[i];
+      const dy = by - ay;
+      const dx = bx - ax;
+      const length = Math.hypot(dx, dy);
+      if (length === 0) continue;
+      const t = Math.max(0, Math.min(1, ((point[0] - ay) * dy + (point[1] - ax) * dx) / (length * length)));
+      if (Math.hypot(point[0] - (ay + t * dy), point[1] - (ax + t * dx)) < tolerance) return true;
+    }
+  }
+  return false;
+}
 
 // ——— The cases that must cost nothing ———
 console.log("\n— nothing to do —");
@@ -62,7 +136,8 @@ let missing = 0;
 for (let x = -1.5; x <= 2.5; x += 0.05) {
   for (let y = -1.5; y <= 1.5; y += 0.05) {
     const point: [number, number] = [y, x];
-    if (insideAny(point, [a, b]) && !insideAny(point, joined)) missing += 1;
+    if (onEdge(point, [a, b])) continue;
+    if (insideAny(point, [a, b]) && !filled(point, joined)) missing += 1;
   }
 }
 ok("⚠️ nothing that was covered has been lost", missing === 0, `${missing} points dropped`);
@@ -73,7 +148,8 @@ let gained = 0;
 for (let x = -1.5; x <= 2.5; x += 0.05) {
   for (let y = -1.5; y <= 1.5; y += 0.05) {
     const point: [number, number] = [y, x];
-    if (!insideAny(point, [a, b]) && insideAny(point, joined)) gained += 1;
+    if (onEdge(point, [a, b])) continue;
+    if (!insideAny(point, [a, b]) && filled(point, joined)) gained += 1;
   }
 }
 ok("⚠️ and nothing has been gained", gained === 0, `${gained} points added`);
@@ -112,7 +188,8 @@ let chainMissing = 0;
 for (let x = -1.5; x <= 7; x += 0.05) {
   for (let y = -1.5; y <= 1.5; y += 0.05) {
     const point: [number, number] = [y, x];
-    if (insideAny(point, chain) && !insideAny(point, linked)) chainMissing += 1;
+    if (onEdge(point, chain)) continue;
+    if (insideAny(point, chain) && !filled(point, linked)) chainMissing += 1;
   }
 }
 ok("⚠️ and covers everything the five did", chainMissing === 0, `${chainMissing} dropped`);
@@ -152,13 +229,81 @@ let realGained = 0;
 for (let lat = 33.2; lat <= 34.4; lat += 0.02) {
   for (let lng = -118.7; lng <= -117.4; lng += 0.02) {
     const point: [number, number] = [lat, lng];
-    if (!insideAny(point, real) && insideAny(point, shape)) realGained += 1;
+    if (onEdge(point, real)) continue;
+    if (!insideAny(point, real) && filled(point, shape)) realGained += 1;
   }
 }
 // ⚠️ The assertion that matters most on a published map: the union never
 // claims ground none of the rings covered.
 ok("⚠️ and it claims nothing the counters did not", realGained === 0,
    `${realGained} points gained`);
+
+// ——— ⚠️ Irregular reaches, which is what the shop actually has ———
+//
+// The circles above are the easy case. A real ten-mile road contour is lumpy
+// and concave, and that is where a union walk pinches off loops it should not
+// have. This is the shape that put holes in a published map.
+console.log("\n— nine road-shaped reaches —");
+const shops: [number, number][] = [
+  [34.0617, -118.3006], [34.0776, -118.3245], [34.06, -118.4432],
+  [34.14, -118.39], [34.145, -118.1503], [33.8712, -117.9345],
+  [33.759, -118.1293], [33.8573, -118.294], [33.4626, -117.6414],
+];
+for (const seed of [1, 7, 42, 99, 1234]) {
+  const reaches = shops.map((c, i) => wobbly(c, 0.145, seed * 31 + i));
+  const drawn = unionRings(reaches);
+  let punched = 0;
+  let claimed = 0;
+  for (let lat = 33.3; lat <= 34.4; lat += 0.004) {
+    for (let lng = -118.7; lng <= -117.5; lng += 0.004) {
+      const point: [number, number] = [lat, lng];
+      if (onEdge(point, reaches)) continue;
+      const covered = reaches.some((ring) => inRing(point, ring));
+      const shown = filled(point, drawn);
+      if (covered && !shown) punched += 1;
+      if (!covered && shown) claimed += 1;
+    }
+  }
+  // ⚠️ The two ways a union fails on a coverage map, both invisible in a
+  // vertex count. A hole punched in ground a counter covers is a shop turning
+  // away a customer it can serve; ground claimed that no counter covers is the
+  // failure app/deliveryArea.ts is written around.
+  ok(`seed ${seed}: no hole punched in covered ground`, punched === 0, `${punched} points`);
+  ok(`seed ${seed}: and nothing claimed that is not covered`, claimed === 0, `${claimed} points`);
+}
+
+// ——— ⚠️ Closing the gaps the inset opened ———
+//
+// The caller hands over rings already pulled in a few hundred feet, so two
+// reaches that meet in the measurement can arrive with daylight between them.
+// Those come out as red needles on the map. Real gaps are miles across.
+console.log("\n— narrow gaps —");
+const wide = unionRings(shops.map((c, i) => wobbly(c, 0.145, 31 + i)));
+const closed = unionRings(shops.map((c, i) => wobbly(c, 0.145, 31 + i)), {
+  closeGapsUnderMiles: 407 / 5280,
+});
+const holesIn = (loops: Ring[]) => {
+  const sign = (loop: Ring) => {
+    let a = 0;
+    for (let i = 0, j = loop.length - 1; i < loop.length; j = i, i += 1) {
+      a += loop[j][1] * loop[i][0] - loop[i][1] * loop[j][0];
+    }
+    return Math.sign(a);
+  };
+  const outward = sign(loops[0]);
+  return loops.filter((loop) => sign(loop) !== outward).length;
+};
+console.log(`  ${wide.length} loops as measured, ${closed.length} with slivers closed`);
+ok("closing narrows the loop count, or leaves it alone",
+   closed.length <= wide.length, `${closed.length} vs ${wide.length}`);
+// ⚠️ And it must not touch the real ones. A gap somebody could stand in the
+// middle of is the honest answer and the reason the map is measured.
+ok("⚠️ the big holes survive", holesIn(closed) > 0,
+   "every hole was closed, which would make the option a lie");
+// Zero means "draw it as measured", and that has to keep working — it is what
+// somebody sets when they want to see what is really there.
+ok("zero closes nothing", unionRings(shops.map((c, i) => wobbly(c, 0.145, 31 + i)),
+   { closeGapsUnderMiles: 0 }).length === wide.length);
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);
