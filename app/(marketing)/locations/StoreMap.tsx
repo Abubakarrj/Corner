@@ -10,7 +10,7 @@ import { INITIAL_BOUNDS, type MapBounds, type StoreLocation,
 import LocationSheet from "./LocationSheet";
 import { Button } from "../../ui/Button";
 import { useLocale, useT } from "../../i18n";
-import { locateMe, type Fix, type LocateFailure } from "../../geolocate";
+import { locateIfAllowed, locateMe, type Fix, type LocateFailure } from "../../geolocate";
 import { localeById } from "../../localeScript";
 import type { EngineFactory, MapEngine } from "./mapEngine";
 
@@ -93,6 +93,8 @@ export default function StoreMap({
   onSearchArea,
   onLocate,
   onLocateFailed,
+  onQuietLocate,
+  frame,
   onChoose,
   focus,
 }: {
@@ -129,6 +131,22 @@ export default function StoreMap({
   /** Refused, unavailable, or timed out. All three are the same thing to
    *  somebody looking at the screen: tell them, and say what to do instead. */
   onLocateFailed?: (why: LocateFailure) => void;
+  /** A fix taken without anybody pressing anything, on a tab that opens with
+   *  the counters already on it.
+   *
+   *  ⚠️ Separate from onLocate because it must not move the camera. onLocate is
+   *  the button, and the button's job is to take you somewhere — it frames on
+   *  the nearest counter at street zoom. This one only says where the visitor
+   *  is, so the ranking can use it and the dot can be drawn, while the map goes
+   *  on showing every counter. Zooming to one shop would be the opposite of
+   *  what the tab now opens for. */
+  onQuietLocate?: (fix: Fix) => void;
+  /** A rectangle to frame on, when the caller has one in mind.
+   *
+   *  Null means the map keeps whatever framing it has. Used by the pickup tab,
+   *  which opens on the counters rather than on the country and is the only
+   *  caller that knows which rectangle that is. */
+  frame?: MapBounds | null;
   // Committing to a location is the whole point of this screen: the menu
   // can't price or route an order without knowing where it's going.
   onChoose: (location: StoreLocation) => void;
@@ -329,9 +347,40 @@ export default function StoreMap({
   useEffect(() => {
     if (!ready) return;
     quiet();
-    engineRef.current?.home();
+    // ⚠️ Not when the caller has a framing of its own. The pickup tab opens on
+    // its counters, and going home first would put the whole country on screen
+    // for a frame before the effect below pulled it back — a flash on every
+    // tab change, for a camera move nobody asked for. `frame` is what says the
+    // caller is taking charge of this.
+    if (!frame) engineRef.current?.home();
     engineRef.current?.setYou(null);
+    // frame is read, not depended on: this effect is about the mode changing,
+    // and a new rectangle is the next effect's business.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, ready]);
+
+  // ——— The opening frame, when the caller has one ———
+  //
+  // ⚠️ Runs before the focus effect below in source order, which is the order
+  // React runs them in — so a mode that both frames on its counters and then
+  // focuses one ends up focused, not framed. That is the right way round: a
+  // frame is where the tab opens, a focus is somebody having chosen.
+  //
+  // Keyed on the rectangle's numbers rather than on the object, because the
+  // caller builds it with useMemo from a list and an identity check would
+  // refit the map on every render that recomputed it.
+  const framed = frame ? `${frame.south},${frame.west},${frame.north},${frame.east}` : "";
+  useEffect(() => {
+    if (!ready || !frame) return;
+    quiet();
+    // 48px, which is about a pin's height: a counter at the edge of the
+    // rectangle should sit inside the map rather than half under the bezel.
+    engineRef.current?.fitBounds(frame, 48);
+    // frame is covered by `framed`, which is its contents rather than its
+    // identity — see above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [framed, ready]);
+
 
   // ——— mode: delivery opens on you ———
   //
@@ -364,6 +413,38 @@ export default function StoreMap({
     return () => {
       cancelled = true;
     };
+  }, [mode, ready]);
+
+  // ——— mode: pickup opens with the counters, and puts you among them ———
+  //
+  // The same shape as the delivery effect above and one deliberate difference:
+  // this never asks. locateIfAllowed() consults the Permissions API and takes a
+  // fix only where the visitor has already granted the permission in a dialog
+  // they opened themselves — see app/geolocate.ts, which explains why a module
+  // that quietly triggers the prompt is the thing the prompt exists to stop.
+  //
+  // ⚠️ So on Safari this does nothing, because Safari does not answer a
+  // geolocation permission query. That is why the tab has to be worth opening
+  // without a fix: the counters are on the map either way, and this only
+  // decides whether the card under your thumb is the nearest one or the first
+  // one. A feature that degrades to "here are our shops" degrades well.
+  //
+  // Failure and refusal are both silent, for the reason the delivery effect
+  // gives: nobody pressed anything, so nobody is owed a sentence.
+  useEffect(() => {
+    if (!ready || mode !== "pickup") return;
+    let cancelled = false;
+    void locateIfAllowed().then((fix) => {
+      if (cancelled || !fix) return;
+      engineRef.current?.setYou(fix.point, fix.accuracyMeters);
+      onQuietLocate?.(fix);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // onQuietLocate is a stable callback from the parent; listing it would
+    // re-run the locate on every render of the finder.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, ready]);
 
   const onRailScroll = useCallback(() => {

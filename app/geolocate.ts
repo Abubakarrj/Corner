@@ -135,6 +135,46 @@ function toFix(position: GeolocationPosition): Fix {
   return fix;
 }
 
+/** A fix, but only if it costs the visitor nothing to take one.
+ *
+ *  ——— ⚠️ The rule this keeps, and how ———
+ *
+ *  The note at the top of the cache says it plainly: nothing in this module
+ *  requests a position, because a module that quietly triggered the browser's
+ *  location prompt to improve a dropdown is exactly what the prompt exists to
+ *  prevent. That rule is intact. This asks the Permissions API first and calls
+ *  locateMe() only when the answer is `granted` — which means the visitor has
+ *  already decided, deliberately, in a dialog they opened themselves.
+ *
+ *  So there is no case where this makes a prompt appear. `prompt` and `denied`
+ *  both return null, and so does a browser with no Permissions API at all.
+ *
+ *  ⚠️ That last one matters more than it looks. Safari does not answer
+ *  `permissions.query({ name: "geolocation" })`, so on an iPhone this returns
+ *  null however many times the visitor has granted the permission. The pickup
+ *  map has to be worth looking at without a fix for that reason alone — see
+ *  LocationFinder — and this is a bonus on top rather than the mechanism.
+ *
+ *  Returns the cached fix first when there is a fresh one, so opening the
+ *  finder twice in five minutes is one GPS read. */
+export async function locateIfAllowed(): Promise<Fix | null> {
+  const cached = recentFix();
+  if (cached) return cached;
+  if (typeof navigator === "undefined" || !navigator.permissions?.query) return null;
+  try {
+    // The name is not in every lib.dom, and a browser that does not know it
+    // throws rather than answering — which is the same "no" as `denied`.
+    const status = await navigator.permissions.query({
+      name: "geolocation" as PermissionName,
+    });
+    if (status.state !== "granted") return null;
+  } catch {
+    return null;
+  }
+  const result = await locateMe();
+  return result.ok ? result.fix : null;
+}
+
 /** Where the visitor is, as well as the phone will say.
  *
  *  Never throws and never rejects. Every outcome is a value, because the

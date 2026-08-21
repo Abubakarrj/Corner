@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { warmKitchenLoad } from "./KitchenLoad";
 import { setFulfillment } from "../../fulfillment";
 import type { Fix } from "../../geolocate";
@@ -191,11 +191,27 @@ export default function LocationFinder() {
   // What the search turned up: the pin on the map and the card under it, which
   // are one thing and appear together.
   //
-  // Empty until something is asked. The finder opens on a map with nothing on
-  // it, and typing is what puts our shop there. Presenting a card offering to
-  // take an order, next to a pin, before anybody has searched puts the last
-  // step of the flow on top of the first. Delivery always behaved this way;
-  // pickup and catering now match it.
+  // ——— ⚠️ Pickup opens on the counters. Delivery and catering do not ———
+  //
+  // This used to start empty in every mode, and the reasoning was that
+  // presenting a card offering to take an order, before anybody has asked
+  // anything, puts the last step of the flow on top of the first.
+  //
+  // That reasoning is right for delivery and wrong for pickup, and the
+  // difference is which way the question points. Delivery asks where *you*
+  // are, and there is no honest answer to draw before somebody says — a map of
+  // our kitchens does not tell you whether we reach your street. Pickup asks
+  // where *we* are, which is a fact we have had all along. Opening on an empty
+  // map and a prompt to search made somebody type a city to be told a thing
+  // this screen already knew.
+  //
+  // So pickup shows the counters, and the map is the answer rather than a form
+  // to fill in. Somebody who wants a particular one still searches; somebody
+  // who wants to know whether there is one near them can now see.
+  //
+  // Catering keeps the prompt. It is a different question again — a tray for
+  // an office next Tuesday — and the list of kitchens that could make one is
+  // not what somebody opening that tab is asking.
   const results: StoreLocation[] = useMemo(() => {
     if (mode === "delivery") return [];
 
@@ -211,7 +227,18 @@ export default function LocationFinder() {
       );
     }
 
-    if (!searched) return [];
+    if (!searched) {
+      if (mode !== "pickup") return [];
+      // Every counter, in whatever order pickupStores gives them — which is
+      // the order they are written down in, and is the right one when nothing
+      // is known about where the visitor is. A "nearest first" that secretly
+      // means "first in the file" would be a claim rather than a list.
+      //
+      // When there *is* a fix, `nearby` above has already ranked against it,
+      // so the card under somebody's thumb is the counter closest to them.
+      // That is the whole of what locateIfAllowed buys.
+      return locations.filter((location) => location.kind === "shop");
+    }
 
     const near = nearby.filter((hit) => hit.miles <= SEARCH_RADIUS_MILES);
     // Nothing in range still shows the closest one rather than an empty map.
@@ -222,6 +249,27 @@ export default function LocationFinder() {
       (hit) => hit.location,
     );
   }, [mode, bounds, searched, nearby, locations]);
+
+  // ——— The rectangle the pickup tab opens on ———
+  //
+  // Every counter it is about to draw, with the map left alone in every other
+  // case. Null once anything has been searched, because from then on the
+  // camera belongs to what was asked rather than to the whole estate.
+  //
+  // Computed here rather than in the map because the map is handed a list and
+  // has no idea whether that list is "all of them" or "the two near Pasadena",
+  // and the difference decides whether framing on it is helpful or rude.
+  const frame = useMemo(() => {
+    if (mode !== "pickup" || searched || bounds || results.length === 0) return null;
+    const lats = results.map((location) => location.position[0]);
+    const lngs = results.map((location) => location.position[1]);
+    return {
+      south: Math.min(...lats),
+      west: Math.min(...lngs),
+      north: Math.max(...lats),
+      east: Math.max(...lngs),
+    };
+  }, [mode, searched, bounds, results]);
 
   // `matching` is the Shops tab in the results: our own locations whose name
   // or address contains what's typed. That is a text search, and it's the
@@ -431,6 +479,18 @@ export default function LocationFinder() {
     );
   }
 
+  /** A fix the map took without being asked, on a tab that already shows the
+   *  counters.
+   *
+   *  ⚠️ Sets the point and nothing else. locateHere() is the button, and it
+   *  frames on the nearest counter at street zoom — right when somebody pressed
+   *  something and is being taken there, wrong here, where the whole reason the
+   *  tab opens on a map is to show more than one shop at once. So this ranks
+   *  and does not move the camera. */
+  const rankAround = useCallback((fix: Fix) => {
+    setSearched((current) => current ?? { point: fix.point, label: "" });
+  }, []);
+
   // What the bar along the bottom says, and whether it says anything.
   //
   // Four situations, and they are worth telling apart.
@@ -457,11 +517,18 @@ export default function LocationFinder() {
       ? query.trim().length > 0
       : searched !== null || bounds !== null;
 
+  // ⚠️ Prompting is about the map being empty, not about nobody having typed.
+  // It was `!asked`, which meant the pickup tab asked somebody to search for a
+  // thing it had just finished drawing for them. Delivery and catering still
+  // open on nothing and still prompt; pickup no longer does, because there is
+  // now an answer on screen to read instead.
+  const prompting = !asked && results.length === 0;
+
   const showToast =
     !toastDismissed &&
     (locateNote !== null ||
       deliveryOff ||
-      !asked ||
+      prompting ||
       missed !== null ||
       (mode !== "delivery" && results.length === 0));
 
@@ -475,7 +542,7 @@ export default function LocationFinder() {
       ? // The endpoint's own words, so the page and the API cannot drift into
         // telling somebody two different things about the same outage.
         t("api.deliveryDownPickupOpen")
-      : !asked
+      : prompting
         ? mode === "delivery"
           ? t("finder.startAddress")
           : t("finder.startSearch")
@@ -704,6 +771,8 @@ export default function LocationFinder() {
           setLocateNote(why);
           setToastDismissed(false);
         }}
+        onQuietLocate={rankAround}
+        frame={frame}
         onChoose={chooseLocation}
         focus={focus}
       />

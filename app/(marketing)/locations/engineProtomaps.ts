@@ -260,6 +260,16 @@ export const createProtomapsEngine: EngineFactory = async (holder, options) => {
       );
     },
 
+    fitBounds(bounds, padding) {
+      map.fitBounds(
+        [
+          [bounds.west, bounds.south],
+          [bounds.east, bounds.north],
+        ],
+        { animate: false, padding: padding ?? 0 },
+      );
+    },
+
     getZoom() {
       return map.getZoom();
     },

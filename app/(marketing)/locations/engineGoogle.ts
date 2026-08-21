@@ -223,6 +223,13 @@ export const createGoogleEngine: EngineFactory = async (holder, options) => {
       map.fitBounds(opening);
     },
 
+    fitBounds(bounds, padding) {
+      map.fitBounds(
+        { south: bounds.south, west: bounds.west, north: bounds.north, east: bounds.east },
+        padding ?? 0,
+      );
+    },
+
     getZoom() {
       return map.getZoom() ?? 4;
     },

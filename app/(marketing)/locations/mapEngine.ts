@@ -61,6 +61,19 @@ export type MapEngine = {
   // tapping Delivery after a pickup search landed on a blank neighbourhood
   // instead of the country view the finder opens on.
   home(): void;
+  // Frame on a rectangle of our choosing, rather than on the one the map was
+  // built with.
+  //
+  // ⚠️ Both engines already do exactly this at construction and again in
+  // home(); this only gives the caller the same primitive. It exists for the
+  // pickup layer, which opens on the counters instead of on the country and
+  // therefore has to say which rectangle that is — the shops span thirty-five
+  // miles now, so no fixed zoom frames them.
+  //
+  // Refits rather than flying to a remembered centre, for the reason home()
+  // gives: the framing depends on the holder's shape, and the holder is a flex
+  // child whose height changes when a phone's toolbars come and go.
+  fitBounds(bounds: MapBounds, padding?: number): void;
   getZoom(): number;
   setZoom(zoom: number): void;
   getBounds(): MapBounds | null;
