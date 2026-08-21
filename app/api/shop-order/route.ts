@@ -33,7 +33,6 @@ import {
   refundGiftCard,
 } from "../../squareGiftCards";
 import { giftSplit, spendable } from "../../giftTender";
-import { paysNow } from "../../shop/checkout/tender";
 import { clientIp, throttle } from "../../rateLimit";
 import { geocode } from "../../googleMaps";
 import {
@@ -743,31 +742,47 @@ export async function POST(request: Request) {
   // was configured. Somebody choosing to pay at the counter sends no token,
   // correctly, and was told their card could not be read.
   //
-  // Paying at the window is not an unpaid order; it is the tender this shop has
-  // always had, settled when the bag is handed over. The only thing that has to
-  // be true is that an order claiming it will pay *now* actually carries the
-  // means to.
+  // ——— ⚠️ Nothing about the tender decides this any more ———
   //
-  // ⚠️ Through paysNow() rather than `=== "card"`, and the difference is a whole
-  // class of bug. A string comparison here is correct only for the exact set of
-  // tenders that existed when it was written: Apple Pay arrives as "wallet",
-  // which is not "card", so this endpoint would have read it as paying at the
-  // counter — placing the order, sending it to the kitchen, telling the
-  // customer their card was charged, and charging nobody. The list of tenders
-  // that take money now lives in app/shop/checkout/tender.ts, which the browser
-  // reads too, so the two sides cannot disagree about it.
-  const payingNow = paysNow(readText(body, "tender", 16));
+  // This used to read the tender and charge only when it said "pay now",
+  // because one of the three tenders meant the money moved at the window. That
+  // tender is gone: every order is settled online before the kitchen sees it.
+  //
+  // Leaving the tender in the condition would have been the dangerous half of
+  // removing it. A page cached before the change sends `tender: "counter"` and
+  // no token; a server still asking "does this pay now" reads that as a counter
+  // order, sends a ticket to the kitchen and charges nobody. The whole class of
+  // bug disappears by not asking: if there is something to charge, an order has
+  // to bring the means to pay it, whatever word it used for itself.
+  //
+  // ⚠️ `dueNowCents > 0` is the other half and is not decoration. A gift card
+  // that covers the whole order leaves nothing to charge, and demanding a token
+  // there would refuse an order that is already fully paid for.
 
-  // ⚠️ `dueNowCents > 0` is the third condition, and it is not decoration. A
-  // gift card that covers the whole order leaves nothing to charge: demanding a
-  // card token here would refuse an order that is already fully paid for, which
-  // is the same shape of bug as the one that refused everybody paying at the
-  // window.
-  if (isSquarePaymentsConfigured() && payingNow && dueNowCents > 0) {
+  // ⚠️ And the case that used to be covered by the window: a deployment with no
+  // processor at all. While paying at the counter existed, an order here simply
+  // settled in person and everything was fine. It is not fine now — there is no
+  // second way to pay, so an order this endpoint cannot charge is an order the
+  // shop makes for free.
+  //
+  // Refused rather than placed, and the message names a phone number rather
+  // than an apology: somebody standing there wanting breakfast can still get
+  // it, just not through a form that cannot take their money.
+  if (!isSquarePaymentsConfigured() && dueNowCents > 0) {
+    console.error(
+      "[shop-order] refusing an order this deployment cannot charge for:" +
+        " Square is not configured and there is no counter tender any more." +
+        " Set SQUARE_ACCESS_TOKEN, SQUARE_LOCATION_ID and SQUARE_APPLICATION_ID.",
+    );
+    if (scheduledFor) await releaseSlot(scheduleId);
+    return Response.json({ error: "api.paymentsOff" }, { status: 503 });
+  }
+
+  if (isSquarePaymentsConfigured() && dueNowCents > 0) {
     if (!paymentToken) {
-      // Says it is paying now and brought nothing to pay with. That is a broken
+      // Money is owed and nothing arrived to pay it with. A broken or stale
       // client rather than a choice, and confirming it would promise the
-      // customer a charge that never happened.
+      // customer a charge that never happened while the kitchen made the food.
       if (scheduledFor) await releaseSlot(scheduleId);
       return Response.json({ error: "api.paymentRequired" }, { status: 402 });
     }

@@ -6,21 +6,31 @@
 //
 //   if (isSquarePaymentsConfigured()) { if (!paymentToken) refuse }
 //
-// which is right about card orders and catastrophic about every other one. The
+// which was right about card orders and catastrophic about every other one. The
 // moment Square was configured, choosing "pay at the window" — the tender this
-// shop has always had, and the default — was answered with "we couldn't read
+// shop had always had, and the default — was answered with "we couldn't read
 // your card". Every counter order in the shop, refused, by the feature that was
 // supposed to add a second way to pay rather than remove the first.
 //
-// Nothing caught it. The payment suite tested chargeSquare in isolation and the
-// browser check never pressed Place order, so the one interaction between the
-// two — *should this order be charged at all* — had no test between them.
+// ——— ⚠️ And what changed when the window went away ———
 //
-// This is that test. It is deliberately about the decision rather than the
-// endpoint: what the gate must answer, for each tender, in each configuration.
+// Paying at the counter is gone: every order is settled online before the
+// kitchen sees it. That turns the gate inside out.
+//
+// While the counter existed, the safe default for an unrecognised tender was
+// "not paying now" — guessing that way merely skipped a charge on an order
+// somebody was standing in front of. With one way to pay, that same default is
+// free food: a page cached before the change sends `tender: "counter"` and no
+// token, and an endpoint that still reads tenders sends a ticket to the kitchen
+// for nothing.
+//
+// So the endpoint stopped reading the tender. It asks whether anything is owed
+// and whether a token came with the order, and it refuses an order it cannot
+// charge — including on a deployment with no processor at all, which used to be
+// covered by the window and is now a shop giving breakfast away.
 
 import { readFileSync } from "node:fs";
-import { paysNow } from "../app/shop/checkout/tender";
+import { isTender } from "../app/shop/checkout/tender";
 import { isSquarePaymentsConfigured } from "../app/squarePayments";
 
 let failures = 0;
@@ -31,26 +41,16 @@ const ok = (what: string, cond: boolean, detail = "") => {
 
 /** The gate, as the endpoint states it.
  *
- *  Kept in step with /api/shop-order by being the same three clauses in the
- *  same order. If that endpoint's condition changes and this does not, the
- *  source check at the bottom of this file stops passing.
- *
- *  `dueNowCents` is what is left after a gift card has covered its part, and it
- *  is the newest clause. Zero means the order is already fully paid for. */
+ *  ⚠️ No tender in it. That is the whole change: what decides is what is owed
+ *  and whether a token arrived, so a stale or invented tender cannot talk its
+ *  way past the charge. The source check at the bottom is what keeps this copy
+ *  and the original in step. */
 function mustPayNow(
-  tender: string,
   hasToken: boolean,
   dueNowCents = 1,
-): "charge" | "refuse" | "proceed" {
-  // ⚠️ paysNow(), not `tender === "card"`, which is what this line used to be.
-  // A local copy of the endpoint's rule is only worth something while the two
-  // agree, and that copy silently stopped agreeing the moment a third tender
-  // existed: Apple Pay arrives as "wallet", the copy called it not-paying, and
-  // this suite would have gone green over orders reaching the kitchen unpaid.
-  // Reading the shared predicate is what makes the copy structural rather than
-  // a remembered duplicate. See app/shop/checkout/tender.ts.
-  const payingNow = paysNow(tender);
-  if (isSquarePaymentsConfigured() && payingNow && dueNowCents > 0) {
+): "charge" | "refuse" | "unavailable" | "proceed" {
+  if (!isSquarePaymentsConfigured() && dueNowCents > 0) return "unavailable";
+  if (isSquarePaymentsConfigured() && dueNowCents > 0) {
     return hasToken ? "charge" : "refuse";
   }
   return "proceed";
@@ -70,80 +70,54 @@ const unconfigure = () => {
 configure();
 ok("Square is configured for these", isSquarePaymentsConfigured() === true);
 
-// ——— The one that broke ———
+// ——— Paying, which is now the only way to order ———
+ok("an order with a token is charged", mustPayNow(true) === "charge", mustPayNow(true));
+// Owes money and brought nothing to pay with. A broken or stale client, and
+// confirming it would promise a charge that never happened while the kitchen
+// made the food.
+ok("an order with no token is refused", mustPayNow(false) === "refuse", mustPayNow(false));
+
+// ——— ⚠️ A gift card that covers the whole order ———
 //
-// No token, and correctly so: nobody typed a card. This must be an ordinary
-// order, settled when the bag is handed over.
-ok("paying at the window goes through without a token",
-   mustPayNow("counter", false) === "proceed", mustPayNow("counter", false));
+// The one case where no token is correct: there is nothing left to charge.
+// Demanding one here refuses an order that is already fully paid for.
+ok("a fully covered order needs no card",
+   mustPayNow(false, 0) === "proceed", mustPayNow(false, 0));
+ok("and is not charged a second time", mustPayNow(true, 0) === "proceed", mustPayNow(true, 0));
+ok("a partly covered order still charges the difference",
+   mustPayNow(true, 250) === "charge", mustPayNow(true, 250));
+ok("and is still refused without a card",
+   mustPayNow(false, 250) === "refuse", mustPayNow(false, 250));
 
-// ——— Paying now ———
-ok("paying by card with a token is charged",
-   mustPayNow("card", true) === "charge", mustPayNow("card", true));
-
-// Says it will pay now and brought nothing to pay with. A broken client, not a
-// choice — confirming it would promise a charge that never happened.
-ok("paying by card with no token is refused",
-   mustPayNow("card", false) === "refuse", mustPayNow("card", false));
-
-// ——— Apple Pay ———
+// ——— ⚠️ With no processor at all ———
 //
-// ⚠️ The tender this file's local copy of the gate used to get wrong. A wallet
-// is a card by another door: the same processor, the same single-use token, and
-// the same three clauses. Everything a card order must satisfy, a wallet order
-// must satisfy identically — which is the assertion, stated as an equality so
-// the two cannot drift apart one case at a time.
-ok("a wallet with a token is charged",
-   mustPayNow("wallet", true) === "charge", mustPayNow("wallet", true));
-ok("⚠️ a wallet with no token is refused, not quietly waved through",
-   mustPayNow("wallet", false) === "refuse", mustPayNow("wallet", false));
-ok("a wallet answers exactly as a card does, in every case",
-   [true, false].every((token) =>
-     [0, 1, 250].every(
-       (due) => mustPayNow("wallet", token, due) === mustPayNow("card", token, due),
-     ),
-   ));
-
-// ——— With no processor at all ———
-//
-// The shop this app had before any of this, and the one it falls back to.
-// Nothing is charged and nothing is refused.
+// This is the case the window used to cover, and the one that turned dangerous
+// when it went. There is no second way to pay now, so an order this endpoint
+// cannot charge is an order the shop makes for free. It has to be refused
+// rather than placed.
 unconfigure();
-ok("with no processor, the window still works",
-   mustPayNow("counter", false) === "proceed", mustPayNow("counter", false));
-ok("and a card order is not refused for want of a charge that cannot happen",
-   mustPayNow("card", false) === "proceed", mustPayNow("card", false));
+ok("⚠️ with no processor an order is refused, not placed unpaid",
+   mustPayNow(false) === "unavailable", mustPayNow(false));
+ok("⚠️ and having a token does not help, because nothing can charge it",
+   mustPayNow(true) === "unavailable", mustPayNow(true));
+// Still true with nothing to charge: a gift card covers it and no processor is
+// needed.
+ok("a fully covered order still goes through with no processor",
+   mustPayNow(false, 0) === "proceed", mustPayNow(false, 0));
 configure();
 
-// ——— An unrecognised tender is not a card ———
+// ——— What counts as a tender at all ———
 //
-// A client sending nothing, or something new, must not be treated as paying
-// now. Defaulting the other way turns every request that omits the field into a
-// refusal — which is exactly the shape of the bug above.
-for (const tender of ["", "cash", "counter", "COUNTER", "Card", "window"]) {
-  ok(`tender ${JSON.stringify(tender)} is not treated as paying now`,
-     mustPayNow(tender, false) === "proceed", mustPayNow(tender, false));
+// Nothing about charging depends on this any more; it guards what gets written
+// to the receipt, so a stale word cannot be printed as though it were a way to
+// pay.
+ok("a card is a tender", isTender("card"));
+ok("and a wallet is", isTender("wallet"));
+// ⚠️ The word a page cached before this change still sends.
+ok("⚠️ but the counter is not, any more", !isTender("counter"));
+for (const junk of ["", "cash", "COUNTER", "Card", "window", "bitcoin"]) {
+  ok(`${JSON.stringify(junk)} is not a tender`, !isTender(junk));
 }
-
-// ——— A gift card that covers the whole order ———
-//
-// ⚠️ The same shape as the bug at the top of this file, one clause further
-// along. Somebody whose gift card pays for everything sends no card token,
-// correctly — there is nothing to charge. Demanding one refuses an order that
-// is already paid for.
-ok("a fully covered order needs no card, even having chosen to pay now",
-   mustPayNow("card", false, 0) === "proceed", mustPayNow("card", false, 0));
-ok("and is not charged a second time",
-   mustPayNow("card", true, 0) === "proceed", mustPayNow("card", true, 0));
-// A card that covers part of it changes nothing about the rest: there is still
-// something to settle, and a card order still has to bring a card.
-ok("a partly covered order still charges the difference",
-   mustPayNow("card", true, 250) === "charge", mustPayNow("card", true, 250));
-ok("and is still refused without a card",
-   mustPayNow("card", false, 250) === "refuse", mustPayNow("card", false, 250));
-// And the window is the window whatever the card covered.
-ok("paying the rest at the window is fine",
-   mustPayNow("counter", false, 250) === "proceed", mustPayNow("counter", false, 250));
 
 // ——— And the endpoint still asks the same question ———
 //
@@ -151,22 +125,19 @@ ok("paying the rest at the window is fine",
 // while the copy and the original agree. The failure mode is somebody editing
 // /api/shop-order, leaving this file alone, and getting a green suite over the
 // exact regression it was written for.
-//
-// So the endpoint's own source is checked for the three clauses that matter: that
-// the charge is gated on the tender and on there being anything left to pay as
-// well as on the configuration, and that the tender is read from the request
-// rather than assumed.
 const endpoint = readFileSync("app/api/shop-order/route.ts", "utf8");
-ok("the endpoint reads the tender off the request",
-   /const payingNow = paysNow\(readText\(body, "tender"/.test(endpoint));
-ok("and gates the charge on it, not on configuration alone",
-   /if \(isSquarePaymentsConfigured\(\) && payingNow &&/.test(endpoint));
-// ⚠️ And on there being something left to charge. Without this clause a gift
-// card covering the whole order is answered "we couldn't read your card".
-ok("and on there being anything left to pay",
-   /if \(isSquarePaymentsConfigured\(\) && payingNow && dueNowCents > 0\)/.test(endpoint));
+ok("the charge is gated on what is owed, not on configuration alone",
+   /if \(isSquarePaymentsConfigured\(\) && dueNowCents > 0\)/.test(endpoint));
+// ⚠️ The line that closes the free-food hole. Without it a deployment with no
+// Square credentials takes orders it cannot charge for.
+ok("⚠️ and an order it cannot charge is refused rather than placed",
+   /if \(!isSquarePaymentsConfigured\(\) && dueNowCents > 0\)/.test(endpoint));
 ok("so no bare configuration check guards the token",
    !/if \(isSquarePaymentsConfigured\(\)\) \{\s*\n\s*if \(!paymentToken\)/.test(endpoint));
+// ⚠️ The tender must not be back in the condition. That is the shape that reads
+// "counter" as permission to skip the charge.
+ok("⚠️ and the tender is not part of the decision",
+   !/payingNow/.test(endpoint), "payingNow is back in the endpoint");
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

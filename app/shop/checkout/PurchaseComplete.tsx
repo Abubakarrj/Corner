@@ -5,7 +5,7 @@ import { useLocale, useT, type StringKey } from "../../i18n";
 import { localeById } from "../../localeScript";
 import { slotLabel } from "../../shopFacts";
 import { formatPrice } from "../products";
-import { amountOwing, orderTotals, type PlacedOrder } from "../../account";
+import { orderTotals, type PlacedOrder } from "../../account";
 import { Button, ButtonLink } from "../../ui/Button";
 import Confetti from "../../ui/Confetti";
 import { DISPLAY_FONT } from "../shopControls";
@@ -13,7 +13,6 @@ import { Money } from "./CheckoutSections";
 import DeliveryFeeInfo from "./DeliveryFeeInfo";
 import QueuePlace from "./QueuePlace";
 import UberDirectMark from "./UberDirectMark";
-import type { Tender } from "./tender";
 
 // What both surfaces show once the endpoint has said yes.
 //
@@ -26,17 +25,14 @@ import type { Tender } from "./tender";
 // It renders only after /api/shop-order returned 200, and it describes what
 // that means and nothing more. The reference this is modelled on ends with
 // "this was a demo checkout, so nothing was charged", which is true of a demo
-// and would be a lie here. What actually happens next depends on the tender:
-// pay at the window and no money has moved yet; pay by card and it moves when
-// the shop confirms. So the line under the tick is chosen from the tender
-// rather than written once and hoped over.
+// and would be a lie here. Every order is paid for by the time this screen
+// exists, so the line under the tick says which of the two ways paid for it.
 //
 // Riley never renders this by deciding to. She can open the sheet; the sheet
 // runs useCheckout, and useCheckout is what gets a 200. See the note there.
 export default function PurchaseComplete({
   order,
   where,
-  tender,
   // The sheet passes this and shows a Done button; the page leaves it out and
   // shows Track order + Back to the menu, because a page has somewhere to go
   // back to and a sheet has to be dismissed.
@@ -58,7 +54,6 @@ export default function PurchaseComplete({
 }: {
   order: PlacedOrder | null;
   where: { mode: StringKey; where: string } | null;
-  tender: Tender;
   onDone?: () => void;
   onLeave?: () => void;
   onTrack?: () => void;
@@ -66,7 +61,6 @@ export default function PurchaseComplete({
   const t = useT();
   const tag = localeById(useLocale()).tag;
   const bill = order ? orderTotals(order) : null;
-  const owing = order ? amountOwing(order) : null;
 
   return (
     // relative, because the confetti canvas fills this box rather than the
@@ -177,23 +171,16 @@ export default function PurchaseComplete({
           </div>
         ) : null}
 
-        {/* The money sentence, from what was settled rather than from the
-            tender alone. Getting this wrong in the reassuring direction —
-            telling somebody they have paid when they have not — is the one
-            failure this screen has to avoid, so the tender still decides
-            wording wherever anything is left owing.
+        {/* The money sentence. Two outcomes now, not three: the card was
+            charged, or a gift card covered the whole bill and no card was
+            needed. Paying later is gone with the window.
 
-            ⚠️ The tender on its own was wrong in the other direction too. A
-            gift card is spent whichever tender was chosen, so a card that
-            covered the whole bill left this saying "you pay at the window"
-            about an order with nothing left to pay. */}
+            ⚠️ Read off the card rather than the tender. A gift card is spent
+            whichever way the rest was paid, so a tender of "card" on an order
+            a gift card covered entirely would claim a charge that never
+            happened — and cardLast4 is written only when one actually was. */}
         <p className="mx-auto mt-3 max-w-xs text-[12px] leading-[1.5] text-quiet">
-          {tender === "card"
-            ? t("checkout.cardChargedDone")
-            : owing === 0
-              ? t("order.paidInFull")
-              : t("checkout.payAtWindow")}
-        </p>
+          {order?.cardLast4 ? t("checkout.cardChargedDone") : t("order.paidInFull")}        </p>
 
         {order && onTrack ? (
           <Button onClick={onTrack} className="mt-6 w-full max-w-[280px]">

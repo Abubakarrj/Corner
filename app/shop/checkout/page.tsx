@@ -96,8 +96,6 @@ export default function CheckoutPage() {
     setNote,
     tipCents,
     setTipCents,
-    tender,
-    setTender,
     status,
     error,
     placed,
@@ -119,7 +117,7 @@ export default function CheckoutPage() {
     // screen whose entire job is telling somebody what they owe. A
     // confirmation has to describe what happened, not recompute from state
     // that has since moved on.
-    return <PurchaseComplete order={placed} where={where} tender={tender} />;
+    return <PurchaseComplete order={placed} where={where} />;
   }
 
   if (rows.length === 0) {
@@ -464,8 +462,6 @@ export default function CheckoutPage() {
             <Section title={t("checkout.payment")}>
               <div className="flex flex-col gap-4">
                 <PaymentSection
-                  tender={tender}
-                  onTender={setTender}
                   cardEnabled={payments}
                   card={checkout.card}
                   hosted={checkout.hosted}
@@ -564,16 +560,6 @@ export default function CheckoutPage() {
                         })}
               </span>
             </Button>
-
-            {/* Says what actually happens, which depends on how the shop is set
-              up rather than on a hardcoded apology. Getting this wrong in the
-              reassuring direction — telling somebody they've paid when they
-              haven't — is the one failure mode worth designing against. */}
-            <p className="m-0 mt-3 text-center text-[11px] leading-[1.6] text-quiet">
-              {tender === "card"
-                ? t("checkout.cardCharged")
-                : t("checkout.payAtWindow")}
-            </p>
 
             <button
               type="button"

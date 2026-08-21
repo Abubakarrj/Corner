@@ -66,8 +66,6 @@ export default function ChatCheckout({
     setNote,
     tipCents,
     setTipCents,
-    tender,
-    setTender,
     subtotalCents,
     status,
     error,
@@ -233,8 +231,6 @@ export default function ChatCheckout({
           <div className="flex flex-col gap-2.5">
             <p className="m-0 text-[12px] text-muted">{t("checkout.payment")}</p>
             <PaymentSection
-              tender={tender}
-              onTender={setTender}
               cardEnabled={payments}
               card={checkout.card}
               hosted={checkout.hosted}

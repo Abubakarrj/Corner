@@ -1,42 +1,41 @@
-// How an order is paid for, named once for both sides of the wire.
+// How an order was paid for.
 //
-// ——— ⚠️ Why this is its own module ———
+// ——— ⚠️ What this used to decide, and no longer does ———
 //
-// The tender used to be a type in PaymentSection.tsx, which is a client
-// component, and the server could not import it. So /api/shop-order decided
-// whether to charge with a string comparison of its own:
+// There were three tenders and one of them, "counter", meant the money moved
+// when the bag was handed over. So this module answered a question the order
+// endpoint had to ask before it charged anything: *is this order paying now?*
 //
-//     const payingNow = readText(body, "tender", 16) === "card";
+// Paying at the window is gone. Every order is settled online, before it
+// reaches the kitchen, so there is no longer a tender that means "do not
+// charge" — and a module that still answered "does this pay now" would be
+// answering yes to everything while looking like it might say no.
 //
-// That worked while there were exactly two tenders and one of them took money.
-// It is a trap the moment a third arrives: a wallet tender would sail through
-// that check as "not card", the endpoint would place the order without
-// charging, and the customer would be told they had paid. An order that reaches
-// the kitchen unpaid is the worst bug this checkout can have, and it would have
-// been introduced by adding a word to a union in a different file.
+// ⚠️ The dangerous half of removing it is the direction the default now runs.
+// While the counter existed, an unrecognised tender had to mean "not paying",
+// because guessing wrong that way merely skipped a charge on an order somebody
+// was standing in front of. With the counter gone that same default is free
+// food: a page cached before this change sends `tender: "counter"` and no
+// token, and a server that reads it as a counter order sends a ticket to the
+// kitchen for nothing.
 //
-// So the answer lives here, in a module with no "use client" on it, and both
-// the browser and the endpoint read the same one. Adding a tender means adding
-// it to one of the two lists below, deliberately, rather than remembering to
-// grep for a string.
+// So the endpoint stopped asking about the tender at all. What it asks now is
+// whether there is anything to charge, and if there is, whether a token came
+// with the order — see /api/shop-order. The tender below is a record of which
+// door the money came through, and nothing branches on it but the receipt.
 
-/** The ways to pay. `wallet` is Apple Pay: a different sheet, the same
+/** The ways to pay, both of which take the money before the kitchen sees the
+ *  order. `wallet` is Apple Pay or Google Pay: a different sheet, the same
  *  single-use token, charged through the same processor as a typed card. */
-export type Tender = "counter" | "card" | "wallet";
+export type Tender = "card" | "wallet";
 
-/** The tenders that take the money before the order goes to the kitchen.
+/** Whether this is a tender the shop takes.
  *
- *  ⚠️ Paying at the window is not an unpaid order — it is the tender this shop
- *  has always had, settled at the counter. What this set decides is only which
- *  ones the *server* must charge before it accepts anything. */
-const PAYS_NOW: readonly string[] = ["card", "wallet"];
-
-/** Whether this tender means money moves now.
- *
- *  Takes a string rather than a Tender because the server's caller is a request
- *  body: anything can arrive, and an unrecognised word has to be false — an
- *  order that skips the charge is recoverable at the counter, and one that
- *  claims a charge that never happened is not. */
-export function paysNow(tender: string): boolean {
-  return PAYS_NOW.includes(tender);
+ *  Takes a string rather than a Tender because the caller is a request body:
+ *  anything can arrive, including "counter" from a page cached before it went
+ *  away. Nothing about charging depends on this — it guards what gets written
+ *  to the receipt, so a stale word cannot end up printed as though it were a
+ *  way to pay. */
+export function isTender(value: string): value is Tender {
+  return value === "card" || value === "wallet";
 }

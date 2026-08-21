@@ -19,6 +19,7 @@
 // Toast's hosted element is wired up.
 
 import { useServerText, useT } from "../../i18n";
+import { SHOP_PHONE } from "../../shopFacts";
 import { formatPrice } from "../products";
 import CardFields from "./CardFields";
 import WalletButtons from "./WalletButtons";
@@ -51,8 +52,6 @@ export type GiftEntry = {
 };
 
 export default function PaymentSection({
-  tender,
-  onTender,
   cardEnabled,
   card,
   hosted,
@@ -61,8 +60,6 @@ export default function PaymentSection({
   onWalletPay,
   gift,
 }: {
-  tender: Tender;
-  onTender: (next: Tender) => void;
   // Whether this deployment can take a card at all. Passed in rather than read
   // here so the surface decides, and so a shop with no processor offers no
   // card rather than collecting a number it can't charge.
@@ -74,10 +71,9 @@ export default function PaymentSection({
   hosted?: SquareCardEntry;
   /** The two wallets, each available only where its browser can offer it.
    *
-   *  ⚠️ Nothing is rendered disabled here. A greyed-out card tender says
-   *  something true and actionable — this shop has no processor — while a
-   *  greyed-out Apple Pay would be telling somebody on Android about a wallet
-   *  they cannot install. Absent is the honest state. */
+   *  ⚠️ Nothing is rendered disabled here. A greyed-out Apple Pay would be
+   *  telling somebody on Android about a wallet they cannot install; absent is
+   *  the honest state. */
   apple?: WalletEntry;
   google?: WalletEntry;
   /** Place the order through whichever wallet was tapped. Passed rather than
@@ -92,52 +88,29 @@ export default function PaymentSection({
   const t = useT();
   const covered = gift ? gift.dueNowCents === 0 && gift.giftAppliedCents > 0 : false;
   return (
-    <div className="flex flex-col gap-2">
-      {/* Above the tenders, deliberately. What a card covers changes which
-          tender is even needed — a card that pays for everything means there is
-          nothing to choose — so asking about it after the choice is asking in
-          the wrong order. */}
+    <div className="flex flex-col gap-3">
+      {/* Above the payment, because what a gift card covers changes whether
+          there is anything left to pay for. Asking after is asking in the
+          wrong order. */}
       {gift ? <GiftCard gift={gift} covered={covered} /> : null}
 
-      <Option
-        id="counter"
-        checked={tender === "counter"}
-        onSelect={() => onTender("counter")}
-        label={t("checkout.tenderCounter")}
-        hint={t("checkout.tenderCounterHint")}
-      />
+      {/* ——— ⚠️ No choice here, because there is not one ———
 
-      <Option
-        id="card"
-        checked={tender === "card"}
-        onSelect={() => onTender("card")}
-        disabled={!cardEnabled}
-        label={t("checkout.tenderCard")}
-        hint={t("checkout.tenderCardHint")}
-      />
+          This was two radios: pay at the window, or pay now. Paying at the
+          window is gone, and the honest shape for one option is no radio at
+          all. A single selected radio is a control nobody can operate and a
+          decision already made, drawn as though it were open — and it costs a
+          tap on the way to the only thing that works.
 
-      {/* ⚠️ No card fields when there is nothing left to charge. Showing an
-          empty card box under "the gift card covers this" is asking somebody to
-          pay twice, and the engine will not tokenize it anyway. */}
-      {/* ——— One tender, three ways to satisfy it ———
+          What is left is one payment: a wallet if the browser has one, the
+          card fields if not, the same charge either way.
 
-          Paying now used to mean typing a card, so the wallets started life as
-          a third radio beside it. That was one option too many: Apple Pay,
-          Google Pay and a typed card are not three decisions, they are three
-          doors onto the same one — money moves now, through the same processor,
-          producing the same token. The decision is *when* you pay, and it has
-          always had two answers.
-
-          So the wallets sit inside this branch, above the fields, with an "or"
-          between. Tapping one places the order; typing a number and pressing
-          Place order does the same thing by the longer route.
-
-          ⚠️ No card fields when there is nothing left to charge. Showing an
-          empty card box under "the gift card covers this" is asking somebody to
-          pay twice, and the engine will not tokenize it anyway. The wallets go
-          for the same reason: a sheet for nothing. */}
-      {tender === "card" && cardEnabled && !covered ? (
-        <div className="mt-1 flex flex-col">
+          ⚠️ Nothing at all when a gift card covers the bill. An empty card box
+          under "the gift card covers this" is asking somebody to pay twice, and
+          the engine will not tokenize it. The wallets go with it — a sheet for
+          nothing. */}
+      {cardEnabled && !covered ? (
+        <div className="flex flex-col">
           {apple && google && onWalletPay ? (
             <WalletButtons
               appleReady={apple.available}
@@ -147,7 +120,20 @@ export default function PaymentSection({
             />
           ) : null}
           <CardFields card={card} hosted={hosted} />
+          {/* When the money moves. It was the hint under a radio; with the
+              radio gone it belongs to the block. */}
+          <p className="m-0 mt-2 text-[11px] text-quiet">{t("checkout.chargedOnPlace")}</p>
         </div>
+      ) : null}
+
+      {/* ⚠️ The state the window used to cover: no processor. With two tenders
+          an order still settled in person; with one there is no way to pay at
+          all, so this says so and gives the phone number rather than drawing a
+          form that cannot work. */}
+      {!cardEnabled ? (
+        <p role="status" className="m-0 text-[13px] leading-[1.5] text-brand-red">
+          {t("checkout.paymentsOff", { phone: SHOP_PHONE })}
+        </p>
       ) : null}
     </div>
   );
@@ -226,43 +212,3 @@ function GiftCard({ gift, covered }: { gift: GiftEntry; covered: boolean }) {
   );
 }
 
-function Option({
-  id,
-  checked,
-  onSelect,
-  label,
-  hint,
-  disabled,
-}: {
-  id: string;
-  checked: boolean;
-  onSelect: () => void;
-  label: string;
-  hint?: string;
-  disabled?: boolean;
-}) {
-  return (
-    <label
-      htmlFor={`tender-${id}`}
-      className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${
-        disabled
-          ? "cursor-not-allowed border-line-faint opacity-70"
-          : `cb-press cursor-pointer ${checked ? "border-ink bg-raise" : "border-line-soft hover:border-line-mute"}`
-      }`}
-    >
-      <input
-        id={`tender-${id}`}
-        type="radio"
-        name="tender"
-        checked={checked}
-        disabled={disabled}
-        onChange={onSelect}
-        className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-[var(--cb-ink)] disabled:cursor-not-allowed"
-      />
-      <span className="min-w-0">
-        <span className="block text-[14px] text-ink">{label}</span>
-        {hint ? <span className="mt-0.5 block text-[12px] leading-[1.5] text-muted">{hint}</span> : null}
-      </span>
-    </label>
-  );
-}

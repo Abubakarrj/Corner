@@ -662,7 +662,6 @@ export default function ChatWidget() {
             <PurchaseComplete
               order={checkout.placed}
               where={checkout.where}
-              tender={checkout.tender}
               // Back to Riley, not out of the panel. Closing was standing in
               // for a dismissal this component couldn't express — the order is
               // still placed, so without marking it read the confirmation just

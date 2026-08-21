@@ -177,7 +177,6 @@ export type Checkout = {
   tipCents: number;
   setTipCents: (value: number) => void;
   tender: Tender;
-  setTender: (value: Tender) => void;
   /** The card fields. Nothing on this object reaches the network but its
       brand and last four — see the note at the top of card.ts. */
   card: CardEntry;
@@ -292,7 +291,11 @@ export function useCheckout(): Checkout {
     return known?.mode === "delivery" ? (known.instructions ?? "") : "";
   });
   const [tipCents, setTipCents] = useState(saved.tipCents);
-  const [tender, setTender] = useState<Tender>("counter");
+  // ⚠️ "card" rather than "counter", which is what this was. There is one way to
+  // pay now, and the tender is a record of which door the token came through
+  // rather than a choice anybody makes: a wallet press sets it to "wallet" at
+  // submit, and everything else is a typed card.
+  const [tender] = useState<Tender>("card");
 
   // ——— A gift card against this order ———
   //
@@ -1053,7 +1056,6 @@ export function useCheckout(): Checkout {
     tipCents,
     setTipCents,
     tender,
-    setTender,
     card,
     hosted,
     apple,
