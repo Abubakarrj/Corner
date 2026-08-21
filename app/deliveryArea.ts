@@ -1,5 +1,6 @@
 import "server-only";
 
+import { inThePacific } from "./coastline";
 import { driveMatrixMin } from "./googleMaps";
 import { unionRings } from "./polygonUnion";
 import { deliveryOrigins } from "./storePlaces";
@@ -296,6 +297,58 @@ export function insetMiles(): number {
   return DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** stepsFor(DELIVERY_RADIUS_MILES));
 }
 
+/** Slack on the "a road is never shorter than the straight line" test, in
+ *  miles. Two hundred and sixty feet, which is not a claim about roads — it is
+ *  the gap between two geodesics and a rounding to whole metres, plus the few
+ *  yards Google moves a waypoint to put it on the kerb. */
+const SNAP_SLACK_MILES = 0.05;
+
+/** Whether a reported drive distance is too short to be a drive to the point
+ *  that was asked about.
+ *
+ *  ——— ⚠️ The reason the map had the Pacific shaded in ———
+ *
+ *  A waypoint is a coordinate, not an address, so Routes puts it on the nearest
+ *  road before it measures anything. Ask about a point a mile out in Santa
+ *  Monica Bay and the answer is not a refusal: it is the distance to a road on
+ *  the beach, returned with `ROUTE_EXISTS` and no hint that the question was
+ *  changed. The search reads that as "in range", pushes the ray further out,
+ *  and the boundary walks into the sea until the water is wider than Google is
+ *  willing to reach across.
+ *
+ *  Measured against a stub that snaps the way Routes does: at a two-mile reach
+ *  the drawn area covered 73 square miles of ocean, at five miles 162 — and the
+ *  furthest the boundary got from the shore matched the reach almost exactly,
+ *  which is the fingerprint of snapping rather than of a polygon cutting a
+ *  corner. Thirty-five of the three hundred and twenty-four vertices were in
+ *  the water.
+ *
+ *  ——— What is being tested, and why it cannot be fooled ———
+ *
+ *  A road route between two points is never shorter than the straight line
+ *  between them. It is the same fact the search's upper bound rests on, three
+ *  lines above. So a reported distance *below* the straight line is not a claim
+ *  about a slow road: it is proof that at least one end of the route is not
+ *  where we put it, and the only end that moves is the far one.
+ *
+ *  ⚠️ It is exact in the direction that matters — it never rejects a point a
+ *  courier could reach — and it is weak in the other. The snap has to move the
+ *  point far enough for the shortfall to show, so the rejection bites once the
+ *  ray is roughly as far out as the counter is from the shoreline. A few
+ *  hundred yards of water can still be drawn where a counter sits on the beach.
+ *  That is the trade for a test that needs no coastline, no second API and no
+ *  extra element: everything it removes was certainly wrong, and everything it
+ *  keeps might be right.
+ *
+ *  ⚠️ Exported only so tests/deliveryOcean.test.ts can state that contract in
+ *  assertions. Nothing else calls it: on the coast the coastline decides, and
+ *  this is what is left for the reservoirs, the closed ranges and the far side
+ *  of a ridge, where there is no data to consult and a snapped answer would
+ *  otherwise go through unchallenged. */
+export function looksSnapped(miles: number, straightLineMiles: number): boolean {
+  return miles + SNAP_SLACK_MILES < straightLineMiles;
+}
+
 async function ringFor(counter: [number, number]): Promise<[number, number][] | null> {
   // Straight-line bounds on the answer. Zero at the near end; the radius at the
   // far end, and that is safe because a road route is never shorter than the
@@ -322,11 +375,28 @@ async function ringFor(counter: [number, number]): Promise<[number, number][] | 
 
     for (let i = 0; i < BEARINGS; i += 1) {
       const miles = measured[i]?.miles ?? null;
-      // Unreachable counts as too far. That is what pulls the western edge off
-      // the water: no road route to a point in the Pacific, so the search stops
-      // reaching for it.
-      if (miles === null || miles > DELIVERY_RADIUS_MILES) high[i] = mids[i];
-      else low[i] = mids[i];
+      // Unreachable counts as too far — and out in the open ocean, far enough
+      // from any road, that is what comes back.
+      //
+      // ⚠️ Nearer in it is not, and the map spent months saying so. See
+      // looksSnapped: a probe in the water a mile off Belmont Shore is not
+      // refused, it is quietly answered about somewhere else.
+      //
+      // ⚠️ And a probe in the water is refused whatever Routes said about it.
+      // That is the test that does the work; looksSnapped catches the same
+      // thing anywhere else it happens — a probe in the middle of a reservoir,
+      // a closed range, the far side of a ridge — where there is no coastline
+      // to consult. See app/coastline.ts.
+      if (
+        miles === null ||
+        miles > DELIVERY_RADIUS_MILES ||
+        looksSnapped(miles, mids[i]) ||
+        inThePacific(probes[i])
+      ) {
+        high[i] = mids[i];
+      } else {
+        low[i] = mids[i];
+      }
     }
   }
 
@@ -343,10 +413,24 @@ async function ringFor(counter: [number, number]): Promise<[number, number][] | 
   // bound for a convex arc, and unlike the centroid version this arc really is
   // roughly convex: it is one shop's own reach, not a chain of eight shops'.
   // A few hundred feet, always on the side of telling somebody to check.
+  //
+  // ⚠️ A bearing with nothing left after the inset contributes no vertex at
+  // all, rather than one at the counter. That case is now ordinary rather than
+  // theoretical: a counter on the beach has bearings pointing straight out to
+  // sea, and those searches correctly converge on almost nothing. Projecting
+  // them at zero would put several identical points on the shop's own doorstep
+  // — a spike through the middle of the ring, and a run of zero-length edges
+  // for the union to walk. Dropping them lets the outline run from the last
+  // vertex on one side of the water to the first on the other, which is the
+  // shape of a shop with the sea on one side.
   const inset = insetMiles();
-  return low.map((miles, i) =>
-    project(counter, (i * 360) / BEARINGS, Math.max(0, miles - inset)),
-  );
+  const ring: [number, number][] = [];
+  low.forEach((miles, i) => {
+    const reach = miles - inset;
+    if (reach <= 0) return;
+    ring.push(project(counter, (i * 360) / BEARINGS, reach));
+  });
+  return ring;
 }
 
 async function measure(): Promise<DeliveryArea | null> {
