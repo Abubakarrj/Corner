@@ -135,6 +135,27 @@ export default function LocationFinder() {
     point: [number, number];
     label: string;
   } | null>(null);
+  /** A fix the map took without being asked, on a tab that already shows the
+   *  counters.
+   *
+   *  ⚠️ Its own state, and the first version of this reused `searched` — which
+   *  quietly broke the thing the tab had just been changed to do. `searched`
+   *  means somebody asked about a place, so everything downstream narrows to
+   *  it: the list drops to counters within SEARCH_RADIUS_MILES, and the banner
+   *  starts talking about how far the nearest one is. Feeding a GPS fix into
+   *  it made the pickup tab open showing four counters out of nine, on a phone
+   *  that happened to have a recent position, and all nine on one that did
+   *  not. Same screen, different answer, no way to tell which you were looking
+   *  at.
+   *
+   *  A quiet fix is not a question. It orders the list and puts a dot on the
+   *  map, and it does not decide what is on the list or move the camera —
+   *  locateHere() is the button, and being taken somewhere is what a button is
+   *  for. */
+  const [around, setAround] = useState<[number, number] | null>(null);
+  const rankAround = useCallback((fix: Fix) => {
+    setAround(fix.point);
+  }, []);
   const [toastDismissed, setToastDismissed] = useState(false);
   // Set when the browser refuses or fails to give us a position. The locate
   // button used to swallow both cases, on the reasoning that a dialog over a
@@ -229,15 +250,15 @@ export default function LocationFinder() {
 
     if (!searched) {
       if (mode !== "pickup") return [];
-      // Every counter, in whatever order pickupStores gives them — which is
-      // the order they are written down in, and is the right one when nothing
-      // is known about where the visitor is. A "nearest first" that secretly
-      // means "first in the file" would be a claim rather than a list.
-      //
-      // When there *is* a fix, `nearby` above has already ranked against it,
-      // so the card under somebody's thumb is the counter closest to them.
-      // That is the whole of what locateIfAllowed buys.
-      return locations.filter((location) => location.kind === "shop");
+      // ⚠️ Every counter, always. Ordered by distance when the map managed to
+      // take a fix without asking, and in the order they are written down when
+      // it did not — but never *filtered* by either. This tab exists to answer
+      // "where are your shops", and a list that silently drops the far ones
+      // answers a question nobody asked while looking like it answered this
+      // one.
+      const shops = locations.filter((location) => location.kind === "shop");
+      if (!around) return shops;
+      return nearestLocations(around, "shop", shops).map((hit) => hit.location);
     }
 
     const near = nearby.filter((hit) => hit.miles <= SEARCH_RADIUS_MILES);
@@ -248,7 +269,7 @@ export default function LocationFinder() {
     return (near.length > 0 ? near : nearby.slice(0, 1)).map(
       (hit) => hit.location,
     );
-  }, [mode, bounds, searched, nearby, locations]);
+  }, [mode, bounds, searched, around, nearby, locations]);
 
   // ——— The rectangle the pickup tab opens on ———
   //
@@ -261,6 +282,9 @@ export default function LocationFinder() {
   // and the difference decides whether framing on it is helpful or rude.
   const frame = useMemo(() => {
     if (mode !== "pickup" || searched || bounds || results.length === 0) return null;
+    // ⚠️ Framed on every counter, including the ones a quiet fix pushed to the
+    // end of the rail. The rail and the camera have to agree about what is on
+    // screen, or swiping to the last card pans to a pin nobody could see.
     const lats = results.map((location) => location.position[0]);
     const lngs = results.map((location) => location.position[1]);
     return {
@@ -479,17 +503,7 @@ export default function LocationFinder() {
     );
   }
 
-  /** A fix the map took without being asked, on a tab that already shows the
-   *  counters.
-   *
-   *  ⚠️ Sets the point and nothing else. locateHere() is the button, and it
-   *  frames on the nearest counter at street zoom — right when somebody pressed
-   *  something and is being taken there, wrong here, where the whole reason the
-   *  tab opens on a map is to show more than one shop at once. So this ranks
-   *  and does not move the camera. */
-  const rankAround = useCallback((fix: Fix) => {
-    setSearched((current) => current ?? { point: fix.point, label: "" });
-  }, []);
+
 
   // What the bar along the bottom says, and whether it says anything.
   //

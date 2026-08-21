@@ -28,8 +28,15 @@ import { useT } from "../../i18n";
 
 type Area = {
   known: true;
-  /** One closed loop per patch the shop serves. Plural because the counters
-   *  no longer form one connected area — see app/deliveryArea.ts. */
+  /** The boundary of the union: one closed loop per connected piece of the
+   *  area, with the seams between overlapping counters already gone. This is
+   *  the shape to draw. See app/polygonUnion.ts for why it is computed on the
+   *  server rather than handed to Google as several overlapping paths. */
+  outline?: [number, number][][];
+  /** ⚠️ What `outline` was called before the rings were unioned, kept readable
+   *  for as long as a cached response can outlive a deploy. Drawing these
+   *  works — the fill unions correctly — it just shows every counter's whole
+   *  circle, seams and all, which is what the union exists to stop. */
   rings?: [number, number][][];
   /** ⚠️ What this field was called until the shape became several. Kept
    *  readable for as long as a cached response can outlive a deploy, which is
@@ -156,7 +163,7 @@ export default function DeliveryAreaMap() {
       // Every patch, as Google wants them: one Polygon with several paths
       // rather than several Polygons, so the overlap between two patches that
       // do touch is painted once instead of twice.
-      const loops = area.rings ?? (area.ring ? [area.ring] : []);
+      const loops = area.outline ?? area.rings ?? (area.ring ? [area.ring] : []);
       const paths = loops.map((loop) => loop.map(([lat, lng]) => ({ lat, lng })));
       const instance = new Map(holder.current, {
         disableDefaultUI: true,

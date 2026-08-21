@@ -21,8 +21,19 @@ export async function GET() {
   const area = await deliveryArea();
   if (!area) return Response.json({ known: false });
 
+  // ⚠️ `rings` is deliberately not sent. It is the per-counter measurement —
+  // nine loops of thirty-six points — and the map draws `outline`, which is
+  // their union and about half the size. Serving both would put the whole of
+  // the working-out on the wire so a browser could ignore it, and would give a
+  // second shape somebody could draw by mistake.
   return Response.json(
-    { known: true, ...area },
+    {
+      known: true,
+      outline: area.outline,
+      origins: area.origins,
+      centre: area.centre,
+      radiusMiles: area.radiusMiles,
+    },
     {
       // ——— ⚠️ Minutes, and it used to be a day ———
       //

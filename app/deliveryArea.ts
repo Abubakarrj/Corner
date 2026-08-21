@@ -1,6 +1,7 @@
 import "server-only";
 
 import { driveMatrixMin } from "./googleMaps";
+import { unionRings } from "./polygonUnion";
 import { deliveryOrigins } from "./storePlaces";
 import {
   DELIVERY_RADIUS_MILES,
@@ -52,10 +53,23 @@ import {
 //
 // So the ring is per counter now. Rays start at the counter itself and search
 // zero to the radius, which is the one arrangement where "once you are out you
-// stay out" is a fair assumption about a road network. The rings overlap and
-// that is fine: they go into one Polygon as several paths and the overlaps
-// fill, because every ring is wound the same way and Google fills by winding
-// rather than by parity. What the map shows is their union, which is the rule.
+// stay out" is a fair assumption about a road network.
+//
+// ——— ⚠️ And then the rings are unioned, because overlapping outlines are not
+//     a shape ———
+//
+// Handed to Google as several paths in one Polygon, the fill unions and the
+// stroke does not: every ring draws its whole outline including the arcs buried
+// inside its neighbours. Nine counters came out as nine red circles crossing
+// each other — a picture of the algorithm rather than a picture of where the
+// shop delivers.
+//
+// So `outline` is the boundary of the union, computed in app/polygonUnion.ts,
+// and it is what the map draws. `rings` stays as the per-counter measurements
+// because that is what the assertions in tests/deliveryArea.test.ts are about:
+// whether each shop's reach was measured correctly is a different question
+// from how the total is drawn, and collapsing them would leave the first one
+// with no test.
 //
 // It is also simpler. There is no clustering heuristic any more, no centroid,
 // no question of whether two counters belong in the same group — the shape of
@@ -208,9 +222,28 @@ function project(
 }
 
 export type DeliveryArea = {
-  /** The boundaries, each a closed loop of [lat, lng] pairs.
+  /** ⚠️ The outline of the union: what the map draws.
    *
-   *  ——— ⚠️ Plural, and it was one ———
+   *  One closed loop per connected piece of the area, with the seams between
+   *  overlapping counters gone. Fewer loops than `rings` whenever two counters
+   *  reach the same ground, and the same number when none of them do.
+   *
+   *  This exists because Google unions the *fill* of several paths in one
+   *  Polygon and does not union the *stroke*: every ring drew its whole
+   *  outline, including the arcs buried inside its neighbours, so nine counters
+   *  came out as nine red circles crossing each other. See app/polygonUnion.ts.
+   *
+   *  It covers exactly the ground `rings` covers — no more, which is the
+   *  direction that matters on a published map, and no less. */
+  outline: [number, number][][];
+  /** The per-counter measurements, each a closed loop of [lat, lng] pairs.
+   *
+   *  ⚠️ Not what the map draws — see `outline`. Kept because it is the thing
+   *  that was actually *measured*, one ring per shop, and whether each shop's
+   *  reach came out right is a different question from how the total is
+   *  rendered. tests/deliveryArea.test.ts asks the first question of these.
+   *
+   *  ——— ⚠️ Why there is more than one of them ———
    *
    *  A single ring can only describe one connected patch, and the shop stopped
    *  being one connected patch when it opened in Fullerton — twenty-three miles
@@ -218,11 +251,11 @@ export type DeliveryArea = {
    *  reaches do not touch, so what the shop serves is two areas with a gap in
    *  between, and a polygon has no way to say "not here".
    *
-   *  ⚠️ Drawn as one ring it did not merely look wrong, it over-claimed:
-   *  measured, the ring covered points around Pico Rivera that are eleven miles
-   *  from any counter. That is the exact failure the note at the top of this
-   *  file says a coverage map cannot have — somebody reads it, fills a basket,
-   *  and finds out at the checkout. */
+   *  ⚠️ One ring for the whole shop did not merely look wrong, it over-claimed:
+   *  measured, it covered points around Pico Rivera that are eleven miles from
+   *  any counter. That is the exact failure the note at the top of this file
+   *  says a coverage map cannot have — somebody reads it, fills a basket, and
+   *  finds out at the checkout. */
   rings: [number, number][][];
   /** The counters it is measured from — every one a delivery can leave from.
    *  Plural because the radius is a reach around each of them, and the map
@@ -329,6 +362,11 @@ async function measure(): Promise<DeliveryArea | null> {
   const rings = drawn as [number, number][][];
 
   return {
+    // ⚠️ Computed once, here, rather than in the browser. It is a few hundred
+    // segment intersections — nothing — but it is also the answer to "what
+    // shape is this", and an answer worked out separately by every visitor is
+    // an answer that can differ between them.
+    outline: unionRings(rings),
     rings,
     origins,
     // The framing centre — what the map opens on before it fits the bounds.

@@ -122,8 +122,14 @@ async function main() {
     }
     return hit;
   }
+  // ⚠️ The *outline*, not the per-counter rings. Everything below that asks
+  // "is this covered" is asking about the shape the map draws and the page
+  // publishes, and that is the union — so the sweep that decides whether the
+  // map over-claims tests the thing on screen rather than the working-out
+  // behind it. The per-ring assertions above stay on `rings`, because whether
+  // each shop's reach was measured correctly is the other question.
   const insideAny = (point: [number, number]) =>
-    area.rings.some((loop) => inLoop(point, loop));
+    area.outline.some((loop) => inLoop(point, loop));
 
   const origins = LOCATIONS.filter((l) => l.delivery !== false).map((l) => l.position);
   console.log(`  ${area.origins.length} origins, ${vertices.length} vertices, ` +
@@ -324,6 +330,29 @@ async function main() {
   // And the shape is genuinely in pieces, which is the fact that made the
   // sweep necessary. Asserted so that a future change merging them back into
   // one ring has to explain itself here.
+  // ——— ⚠️ The union, which is what stops the map being a pile of circles ———
+  console.log("\n— one shape, not nine —");
+  console.log(`  ${area.rings.length} rings measured → ${area.outline.length} loops drawn, ` +
+    `${area.outline.reduce((n, l) => n + l.length, 0)} vertices`);
+  ok("⚠️ overlapping counters are drawn as one loop, not one each",
+     area.outline.length < area.rings.length,
+     `${area.outline.length} vs ${area.rings.length}`);
+  ok("and every drawn loop is closed and real",
+     area.outline.every((loop) => loop.length >= 3));
+  // ⚠️ The union must cover what the rings covered. A seam-removal that also
+  // removed area would be a map that quietly stopped offering delivery to
+  // somewhere the shop serves — the opposite failure to over-claiming, and
+  // just as invisible.
+  let lost = 0;
+  for (let lat = 33.2; lat <= 34.5; lat += 0.02) {
+    for (let lng = -118.8; lng <= -117.4; lng += 0.02) {
+      const point: [number, number] = [lat, lng];
+      const inRings = area.rings.some((loop) => inLoop(point, loop));
+      if (inRings && !insideAny(point)) lost += 1;
+    }
+  }
+  ok("⚠️ and covers everything the rings did", lost === 0, `${lost} points lost`);
+
   ok("the counters are drawn as more than one patch", area.rings.length > 1,
      `${area.rings.length} ring(s)`);
   ok("and every patch is a closed loop of its own",
