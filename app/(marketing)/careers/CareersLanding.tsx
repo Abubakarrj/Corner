@@ -354,7 +354,15 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                   // rather than stopping exactly on the text. The rule above
                   // stays the column's width, which is what keeps it reading
                   // as a list and not as a table with cells.
-                  className="cb-press group -mx-3 block cursor-pointer rounded-xl px-3 py-4 transition-colors hover:bg-raise"
+                  // ⚠️ py-2.5, and it was py-4. Four rows of padding is
+                  // generous on a list of four and heavy on a list of twenty:
+                  // the page went from one screen to five when the shop opened
+                  // four shops, and most of what grew was air. Ten pixels a
+                  // side still clears the 44px tap target — the row is three
+                  // lines of text before any padding at all — so this buys
+                  // back about a screen and a half without making anything
+                  // harder to hit.
+                  className="cb-press group -mx-3 block cursor-pointer rounded-xl px-3 py-2.5 transition-colors hover:bg-raise"
                 >
                   <span className="flex items-baseline gap-3">
                     {/* font-medium: the names were the only headings on the
@@ -365,8 +373,16 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                       style={{ fontFamily: DISPLAY_FONT }}
                     >
                       {t(label)}
+                      {/* ⚠️ sky, not sun, and the palette's own note had to move
+                          with it. globals.css listed "the tag on something new"
+                          under sun, which is reward — the keychain you are
+                          earning. A New badge is not a reward, it is the page
+                          telling you when this went up, which is what sky is
+                          for. The token pair rather than a hex, so night
+                          follows: sky-soft is a pale blue in light and a deep
+                          one in dark, with sky-ink legible on both. */}
                       {opening.isNew ? (
-                        <span className="ms-2 inline-block whitespace-nowrap rounded-full bg-sun-soft px-2 py-[3px] align-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sun-ink">
+                        <span className="ms-2 inline-block whitespace-nowrap rounded-full bg-sky-soft px-2 py-[2px] align-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sky-ink">
                           {t("careers.new")}
                         </span>
                       ) : null}
@@ -418,11 +434,11 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                       />
                     </svg>
                   </span>
-                  <span className="mt-1 block max-w-[38em] text-[13px] leading-[1.5] text-muted">
+                  <span className="mt-0.5 block max-w-[38em] text-[13px] leading-[1.45] text-muted">
                     {t(POSITION_NOTE[opening.role])}
                   </span>
                   {facts.length > 0 ? (
-                    <span className="mt-1 block text-[12px] leading-[1.5] text-quiet">
+                    <span className="mt-0.5 block text-[12px] leading-[1.45] text-quiet">
                       {facts.join(" · ")}
                     </span>
                   ) : null}

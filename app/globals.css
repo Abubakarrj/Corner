@@ -137,9 +137,15 @@
    *   olive  the brand's own green — pins, marks, the places that should
    *          still read as Corner Bagel rather than as any cream app
    *   sky    information and progress. Where an order is, what's estimated,
-   *          what the app is telling you rather than asking you
-   *   sun    reward and highlight. The keychain you're earning, the tag on
-   *          something new
+   *          when a job went up — what the app is telling you rather than
+   *          asking you
+   *   sun    reward and highlight. The keychain you're earning
+   *
+   * ⚠️ "The tag on something new" used to be listed under sun, and the New
+   * badge on /careers moved to sky. A badge saying when a job was posted is
+   * the page informing you, not the shop rewarding you, and sun is the colour
+   * reserved for something the reader has earned. Moved here rather than left
+   * describing a rule the code no longer follows.
    *
    * Each comes as a fill, a tint to lay under text, and an ink to set on that
    * tint — because "use the blue" without saying which blue is how a palette
