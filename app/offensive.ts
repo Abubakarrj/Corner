@@ -15,19 +15,41 @@ import "server-only";
 // being written and being noticed there is a gap, and the whole neighbourhood
 // reads the wall in that gap. This closes the obvious half of it.
 //
-// ——— ⚠️ A false positive costs more than a false negative ———
+// ——— ⚠️ Which way to be wrong, and who decided ———
 //
-// This is the decision the rest of the file follows from. A rude note that gets
-// through is up for an afternoon and then hidden. Somebody rejected at the form
-// has no appeal: they wrote their name, the shop told them no, and they leave.
-// If those two were symmetric the right list would be long. They are not, so the
-// list below is short and every entry is a word that is an insult in every
-// context it can appear in.
+// A filter is wrong in two directions and cannot minimise both. Let a slur
+// through, and it is on a public wall until somebody notices. Refuse an
+// innocent note, and a person was told no by a bagel shop and left, and nothing
+// anywhere records that it happened.
 //
-// That is why there is no `dick`, no `cock`, no `piss`, no `hell`. Dick is a
-// name, Hancock is a name, and a wall that turns away a Dick to catch a person
-// calling someone one has made the wrong trade. Anatomy and mild swearing are
-// not what this is for.
+// The shop's answer is to lean toward refusing. That is a call about the shop's
+// own wall and not a technical finding, so it is written down rather than
+// inferred: on a borderline word, this refuses. `nazi` is in even though it
+// takes a fond thing people say about delis with it. `chink` is in with no
+// exemption for the narrow-opening idiom, which means a note about a chink of
+// light is refused, and that is the intended behaviour and not an oversight.
+//
+// ——— ⚠️ The one thing leaning strict does not license ———
+//
+// Refusing words that are ordinary in a language this site is offered in. That
+// is not strictness, it is a broken filter, and it is invisible to whoever
+// wrote the list because they do not read the language it breaks.
+//
+// So `retard` is absent (French for a delay), `negro` is absent (Spanish for
+// the colour black), `puto` is absent (an intensifier across most of Mexico
+// before it is anything else), and `cracker` is absent for a reason particular
+// to this shop. Every one of those is a slur or a swear in English. None of
+// them can be on a list this site applies to ten languages.
+//
+// The same rule keeps `dick` and `cock` off it. Those are names — Dick,
+// Hancock, Dickens — and a name is not an offense, so refusing one buys
+// nothing. The insults built from them are on the list instead.
+//
+// ⚠️ ALLOW below is what makes leaning strict survivable: it takes the innocent
+// host out first, so `nazi` can be a prefix without refusing the Italian for
+// nationality. Adding a term without checking what it collides with is how this
+// file starts refusing the shop's own menu, and the suite runs it over all ten
+// languages of shipped copy for exactly that reason.
 //
 // ——— ⚠️ `server-only`, and not for the usual reason ———
 //
@@ -73,42 +95,117 @@ const TERMS: ReadonlyArray<readonly [string, Mode]> = [
   ["whore", "prefix"],
   ["slut", "prefix"],
   ["skank", "prefix"],
+  ["prick", "exact"],
+  ["arse", "exact"],
+  ["piss", "prefix"],
+  ["tosser", "prefix"],
+  ["bollocks", "prefix"],
+  ["scumbag", "prefix"],
+  ["douchebag", "prefix"],
+  ["douche", "exact"],
+  ["dumbass", "anywhere"],
+  ["jackass", "anywhere"],
+  ["cocksucker", "anywhere"],
+
+  // ⚠️ The compounds, and not the words they are built from. `dickhead` is
+  // only ever an insult; `dick` is a person's name. Same for cock. This is the
+  // line described at the top: strict about offense, not about names.
+  ["dickhead", "anywhere"],
+  ["dickwad", "anywhere"],
+  ["dickface", "anywhere"],
 
   // Slurs. These are the reason the file exists; the profanity above is the
   // easy part. Racial, ethnic, homophobic, transphobic, ableist.
   ["nigger", "anywhere"],
   ["nigga", "anywhere"],
+  ["negrata", "prefix"],
   ["faggot", "anywhere"],
+  // ⚠️ Spelled out rather than made a prefix, for the same reason as `spaz`
+  // below. As a prefix this refuses fagioli — Italian for beans, as in pasta e
+  // fagioli — along with fagiolini and fagocito, and Italian is one of the ten
+  // languages this site is offered in.
+  //
+  // The corpus sweep did not catch that one: the app's own copy never says
+  // beans. It was found by asking why a mutation of this exact line changed
+  // nothing, which is the answer to what a mutation run is for.
   ["fag", "exact"],
+  ["fags", "exact"],
+  ["faggy", "prefix"],
   ["dyke", "exact"],
   ["tranny", "prefix"],
   ["shemale", "prefix"],
+  ["ladyboy", "prefix"],
   ["kike", "exact"],
+  ["heeb", "exact"],
+  ["hymie", "exact"],
+  ["yid", "exact"],
   ["spic", "exact"],
   ["wetback", "prefix"],
   ["beaner", "prefix"],
-  ["chink", "exact"],
+  ["marica", "prefix"],
+
+  // ⚠️ `prefix` and no exemption for the narrow opening. A note about a chink
+  // of light is refused. That is the shop's call, described at the top.
+  ["chink", "prefix"],
+
   ["gook", "exact"],
   ["jap", "exact"],
+  ["chinaman", "prefix"],
+  ["zipperhead", "prefix"],
+  ["coolie", "exact"],
   ["raghead", "prefix"],
   ["towelhead", "prefix"],
+  ["camel jockey", "prefix"],
   ["sandnigger", "prefix"],
   ["paki", "exact"],
   ["coon", "exact"],
+  ["jigaboo", "prefix"],
+  ["porch monkey", "prefix"],
+  ["golliwog", "prefix"],
   ["darkie", "exact"],
+  ["honky", "prefix"],
+  ["whitey", "exact"],
+  // ⚠️ ALLOW keeps pollack and pollock off this. The repeat tolerance makes
+  // polack and pollack the same word, and this shop sells smoked fish.
+  ["polack", "prefix"],
+  ["wop", "exact"],
+  ["dago", "prefix"],
+  // ⚠️ ALLOW keeps redskin potatoes and redskin peanuts off this, which is a
+  // collision a food shop has and most sites do not.
+  ["redskin", "prefix"],
+  ["injun", "prefix"],
+  ["squaw", "prefix"],
+  // ⚠️ `spaz` is `exact` and its forms are spelled out, rather than one prefix
+  // plus an ALLOW list for Italian. As a prefix it refuses spazio, spazzola,
+  // spazzatura and spazzino — space, brush, rubbish, street sweeper — and the
+  // corpus sweep caught it on this app's own draw-pad label, which says "uno
+  // spazio per disegnare col dito".
+  //
+  // The tempting fix is ALLOW entries for those four. That fix is a list of
+  // Italian vocabulary maintained by somebody who does not speak Italian, and
+  // the fifth word nobody thought of fails silently on a real person's note.
+  // Naming the slur's own forms has no such tail: spazzino stays safe because
+  // nothing here matches it, not because somebody remembered it.
+  ["spaz", "exact"],
+  ["spazzed", "prefix"],
+  ["spazzing", "prefix"],
+  ["spazzy", "prefix"],
+  ["spastic", "prefix"],
+  ["mongoloid", "prefix"],
+  ["cretin", "exact"],
   ["midget", "prefix"],
 
-  // ⚠️ `exact`, and the reason was found by running this file over the app's
-  // own copy rather than by thinking about it. As a prefix it refuses the
-  // Italian for nationality — nazionalità — which appears in this shop's equal
-  // opportunity statement. A filter that cannot read the page it is defending
-  // is not calibrated.
+  // ⚠️ `prefix`, so nazis and naziism are caught as well. It was `exact` for
+  // one reason — as a prefix it refuses the Italian for nationality, which
+  // appears in this shop's own equal opportunity statement — and weakening the
+  // match was the wrong fix for that. The right one is ALLOW taking nazione,
+  // nazionale and nazionalità out first, which costs nothing and leaves this
+  // term at full strength.
   //
-  // ⚠️ Worth a second look before shipping: `nazi` on its own is also half of a
-  // fond thing people say about delis, which is a joke somebody will eventually
-  // try to leave here. Kept because of where it would land if it were not a
-  // joke, and because the slur list next to it exists for the same reason.
-  ["nazi", "exact"],
+  // Found by running this file over the app's own copy rather than by thinking
+  // about it. A filter that cannot read the page it is defending is not
+  // calibrated.
+  ["nazi", "prefix"],
 
   // ⚠️ `retarded` and not `retard`, and the reason is French. This site is
   // offered in ten languages, and `retard` is French for a delay — "désolé pour
@@ -161,11 +258,24 @@ const ALLOW: readonly RegExp[] = [
   /shi+ta+ke/g,
   // The town, which is the oldest false positive in this whole subject.
   /scunthorpe/g,
-  // A narrow opening. Always followed by `of` or `in` when it means that.
-  /chink (of|in)\b/g,
   // Clean. Spelled both ways.
   /spick? and span/g,
+  // ⚠️ Italian for nation and everything built on it — nazione, nazionale,
+  // nazionalità. Without this, `nazi` cannot be a prefix. Found by the corpus
+  // sweep in tests/offensive.test.ts, in this shop's own careers page.
+  /nazion[a-z]*/g,
+  // Surnames that begin with a slur. Fagin is out of Oliver Twist.
+  /fagan|fagin|fagot/g,
+  // ⚠️ The fish, and the film director. `polack` and `pollack` are the same
+  // word to the repeat tolerance, and this shop sells smoked fish.
+  /pollacks?|pollocks?/g,
+  // ⚠️ A potato and a peanut, both of which a food shop's wall will mention.
+  /redskins? (potato|peanut)[a-z]*/g,
 ];
+
+// ⚠️ There is deliberately no entry here for the narrow-opening sense of
+// `chink`. It was removed: this wall refuses that note. See the top of the file
+// for whose call that is.
 
 /** Digits and punctuation people substitute for letters. Nothing exotic — this
  *  is the keyboard-adjacent set, which is what somebody actually reaches for.
