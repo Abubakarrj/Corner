@@ -22,7 +22,7 @@ import {
 // finds out at the end.
 //
 // So the boundary is measured with the same API the checkout measures with.
-// Along each of BEARINGS directions, binary-search outward for the point whose
+// Along each of a ring of directions, binary-search outward for the point whose
 // *road* distance is the radius. The result is a polygon every vertex of which
 // is a real address-sized point that a real quote would accept.
 //
@@ -98,16 +98,18 @@ import {
 // steps; and the code asked every counter about every group's probes. Each
 // multiplies the others, and the product went past the quota in one move.
 //
-// Per-counter rings make it linear and legible: BEARINGS × steps × counters,
+// Per-counter rings make it linear and legible: bearings × steps × counters,
 // one origin per call, nothing asked twice.
 //
-//   9 counters, nine rings                       2,592 elements
+//   9 counters, nine rings                       2,673 elements
 //
-// ⚠️ Linear is still growth. Somewhere around eleven counters this passes the
-// default quota and the Cloud console raise stops being optional — Routes API
-// → Quotas → Compute Route Matrix elements per minute, which is free.
-// tests/matrixBudget.test.ts computes it from the location list and names the
-// counter that does it.
+// ⚠️ Linear is still growth, and the answer to it is no longer a constant
+// somebody has to remember to edit. The resolution is picked at measure time
+// from what the quota will carry — see RESOLUTIONS — so a tenth counter costs
+// detail rather than costing the map. tests/matrixBudget.test.ts prints the
+// rung each future counter count lands on, names the one that makes the map
+// coarser than it is today, and names the one past the bottom of the ladder
+// that would take it away entirely.
 //
 // ——— What it is not ———
 //
@@ -117,21 +119,90 @@ import {
 // the rule; it does not enforce it, and the two cannot disagree because
 // neither one is a copy of the other.
 
-// How many directions each counter's reach is sampled in.
+/** How finely one rebuild measures: directions per counter, and how precisely
+ *  each of those is resolved. */
+export type Resolution = {
+  /** Directions each counter's reach is sampled in. */
+  bearings: number;
+  /** How close to the true boundary each ray is driven, in feet. */
+  targetFeet: number;
+};
+
+// ——— ⚠️ Why this is a ladder and not two constants ———
 //
-// ——— ⚠️ Thirty-six, and it was forty-eight ———
+// It was two constants: thirty-six bearings, two hundred and fifty feet. They
+// were chosen against the *default* quota with nine counters, and both of those
+// are things that change without anybody editing this file — a shop opens, or
+// somebody raises the quota in the Cloud console. When they changed, the
+// constants did not, and the failure mode was the whole map disappearing.
 //
-// Forty-eight was chosen for one ring drawn around a whole city, where the
-// polygon was twenty miles across and its facets showed. A ring is now a single
-// counter's ten-mile reach, so thirty-six bearings put a vertex every 1.7 miles
-// of circumference — finer than forty-eight ever managed on the old shape, and
-// nine of them overlapping read as a blob rather than as a polygon.
+// So the resolution is chosen at measure time from what the budget will carry.
+// Two things follow, and both are the point:
 //
-// The other half of the reason is the quota. Bearings multiply every ring, so
-// this is the one number that costs nine times whatever it is set to, and
-// forty-eight would put a nine-counter rebuild over the default allowance on
-// its own. See the element arithmetic above.
-export const BEARINGS = 36;
+//   raising the quota in the console is the only step needed to get a finer
+//   map. There is no second deploy to remember, and no window where the code
+//   is asking for more than the project will give;
+//
+//   opening a counter can no longer take the map down. It costs resolution
+//   instead, which is a map that is slightly coarser rather than a page with
+//   nothing on it. tests/matrixBudget.test.ts prints the rung each counter
+//   count lands on and fails if the next one would drop below what is drawn
+//   today.
+//
+// ——— ⚠️ What each rung costs, measured ———
+//
+// Against a 360-bearing ground truth in a simulated world, comparing the drawn
+// shape with what the rule actually covers. Error is almost entirely
+// *under*-claim: the map drawing less than the shop delivers.
+//
+//   bearings × steps   elements (9 counters)   inset    error
+//        24 × 8              1,728             658 ft   43.6 sq mi
+//        36 × 8              2,592             407 ft   29.5 sq mi   ← was here
+//        33 × 9              2,673             342 ft   23.8 sq mi
+//        48 × 9              3,888             216 ft   14.4 sq mi
+//        60 × 10             5,400             124 ft    7.7 sq mi
+//        72 × 10             6,480             102 ft    6.8 sq mi
+//        90 × 11             8,910              58 ft    3.6 sq mi
+//
+// ⚠️ Steps are the better buy and that is not obvious. A step costs
+// `bearings × counters`; a bearing costs `steps × counters` and you need
+// several of them to move anything. Half the error was the inset rather than
+// the chords — 15.8 square miles of it against 13.7 — and only steps shrink the
+// half of the inset that is not sag. Thirty-three bearings and nine steps beats
+// thirty-six and eight for eighty-one more elements.
+//
+// ⚠️ And the thing that was tried and is not here: placing bearings adaptively,
+// finer where the reach changes sharply. Measured, the chord error is spread
+// around the whole perimeter rather than concentrated at the coast — going from
+// twenty-four bearings to a hundred and twenty only takes it from 18.7 to 7.1
+// square miles. Uniform bearings at a raised quota beat anything adaptive
+// placement could reach, with no second search pass and no new algorithm.
+//
+// Ordered finest first. The first rung the budget can afford wins.
+const RESOLUTIONS: Resolution[] = [
+  { bearings: 90, targetFeet: 30 },
+  { bearings: 72, targetFeet: 60 },
+  { bearings: 60, targetFeet: 60 },
+  { bearings: 48, targetFeet: 125 },
+  { bearings: 33, targetFeet: 125 },
+  // ⚠️ Everything below here is coarser than the map drew in August 2026. A
+  // rebuild landing on one of these is a shop that has outgrown its quota, not
+  // a tuning choice. matrixBudget says so out loud.
+  { bearings: 30, targetFeet: 250 },
+  { bearings: 24, targetFeet: 250 },
+];
+
+/** Every rung, finest first. Exported so tests/matrixBudget.test.ts can hold
+ *  all of them to the per-call limit rather than only the one in use: a raised
+ *  quota promotes the app to a finer rung with no code change, and a rung that
+ *  only breaks once it is reached is a rung nobody tested. */
+export function resolutionLadder(): Resolution[] {
+  return RESOLUTIONS.slice();
+}
+
+/** The rung the map drew before the ladder existed, so tests and the budget
+ *  report have something to say "no worse than" about. */
+export const RESOLUTION_FLOOR: Resolution = { bearings: 36, targetFeet: 250 };
 
 /** ⚠️ Google's default Compute Route Matrix quota: elements per minute, per
  *  project.
@@ -159,6 +230,82 @@ export const BEARINGS = 36;
  *  have told them. */
 export const MATRIX_ELEMENT_QUOTA = 3000;
 
+/** How much of a minute's quota one rebuild may spend.
+ *
+ *  ⚠️ Not all of it, and the missing tenth is not caution for its own sake. The
+ *  address check under the map spends one element per counter every time
+ *  somebody types an address, and Riley's check_delivery spends the same. A
+ *  rebuild that fills the minute leaves nothing for the people the map is for —
+ *  and the failure lands on them, as an address that cannot be checked, rather
+ *  than on the rebuild.
+ *
+ *  At the default quota this leaves three hundred elements a minute, which is
+ *  thirty-three address checks against nine counters. */
+const MATRIX_BUDGET_SHARE = 0.9;
+
+/** Elements a minute this project actually has.
+ *
+ *  ⚠️ MATRIX_ELEMENT_QUOTA is Google's *default*, not this project's setting.
+ *  Raising it under Routes API → Quotas is free and takes a minute, and once it
+ *  is done the only thing standing between the shop and a finer map is telling
+ *  the app about it. That is this variable.
+ *
+ *  Set ROUTES_MATRIX_QUOTA to the console's number and the next rebuild climbs
+ *  the ladder on its own. Leave it unset and nothing changes.
+ *
+ *  ⚠️ Set it to what the console says and nothing else. Claiming an allowance
+ *  the project does not have is exactly the outage this whole file is about: a
+ *  429 in the middle of the search, `measure()` returning null, and a page with
+ *  no map on it and no error anywhere a person would look. A value below the
+ *  default is honoured — some projects have theirs lowered — but a value that
+ *  is not a number is ignored rather than guessed at. */
+export function matrixElementQuota(): number {
+  return readMatrixQuota().quota;
+}
+
+/** The same answer, with whether the environment was believed.
+ *
+ *  ⚠️ Split out because "unset" and "set to something I could not use" are
+ *  different problems with the same symptom, and telling somebody their
+ *  variable is unset when they have just typed one is how an afternoon goes
+ *  missing. tests/matrixBudget.test.ts prints which of the two it is. */
+export function readMatrixQuota(): { quota: number; from: "default" | "env" | "ignored" } {
+  const set = process.env.ROUTES_MATRIX_QUOTA;
+  if (set === undefined || set.trim() === "") {
+    return { quota: MATRIX_ELEMENT_QUOTA, from: "default" };
+  }
+  const raw = Number(set);
+  // One call's worth is the floor. Below that nothing can be measured at all,
+  // and a value that small is a typo rather than a quota.
+  if (!Number.isFinite(raw) || raw < 600) {
+    return { quota: MATRIX_ELEMENT_QUOTA, from: "ignored" };
+  }
+  return { quota: Math.floor(raw), from: "env" };
+}
+
+/** The finest rung this many counters can afford.
+ *
+ *  Falls back to the coarsest rung when nothing fits, rather than refusing to
+ *  measure: a coarse map is worse than a fine one and far better than none, and
+ *  the shop is told which it is getting by tests/matrixBudget.test.ts rather
+ *  than by the map quietly going away. */
+export function resolutionFor(
+  counters: number,
+  quota: number = matrixElementQuota(),
+): Resolution {
+  const budget = quota * MATRIX_BUDGET_SHARE;
+  const affordable = RESOLUTIONS.find(
+    (rung) => elementsFor(rung, counters) <= budget,
+  );
+  return affordable ?? RESOLUTIONS[RESOLUTIONS.length - 1];
+}
+
+/** What one rebuild costs at this rung: exact, not a ceiling. One origin per
+ *  call, every probe asked once, nothing asked twice. */
+export function elementsFor(resolution: Resolution, counters: number): number {
+  return resolution.bearings * stepsFor(DELIVERY_RADIUS_MILES, resolution.targetFeet) * counters;
+}
+
 /** How finely the boundary is resolved, in feet.
  *
  *  ——— ⚠️ A target, not a step count, and that is the fix for a real outage ———
@@ -176,12 +323,14 @@ export const MATRIX_ELEMENT_QUOTA = 3000;
  *  Route Matrix elements — which is the currency that ran out. See the note on
  *  MATRIX_ELEMENT_QUOTA below.
  *
- *  So the constant is the answer's precision and the step count is derived per
- *  patch. Two hundred and fifty feet is about a building, which is as exact as
- *  a published coverage map can honestly claim: the chord between two vertices
- *  sags further than that, which is why the ring is inset by both terms
- *  together at the end. */
-const TARGET_FEET = 250;
+ *  So the number asked for is the answer's precision and the step count is
+ *  derived from it. Two hundred and fifty feet is about a building; the rungs
+ *  above it in RESOLUTIONS ask for less, which costs a step each time it halves.
+ *
+ *  ⚠️ The precision asked for here is not the accuracy of the drawn boundary.
+ *  The chord between two vertices sags further than this, and the ring is inset
+ *  by both terms together at the end — see insetMilesFor. */
+const DEFAULT_TARGET_FEET = 250;
 
 /** Binary-search steps for a search of this span, each halving the interval.
  *
@@ -189,8 +338,8 @@ const TARGET_FEET = 250;
  *  get more steps rather than a silently coarser boundary. It is clamped at the
  *  bottom because zero steps is a ring drawn at whatever the interval started
  *  at, which is not a measurement at all. */
-export function stepsFor(spanMiles: number): number {
-  const target = TARGET_FEET / 5280;
+export function stepsFor(spanMiles: number, targetFeet: number = DEFAULT_TARGET_FEET): number {
+  const target = targetFeet / 5280;
   return Math.max(1, Math.ceil(Math.log2(Math.max(spanMiles, target) / target)));
 }
 
@@ -268,6 +417,9 @@ export type DeliveryArea = {
   centre: [number, number];
   /** The rule it draws, so the page can say the number rather than hardcode it. */
   radiusMiles: number;
+  /** The rung this rebuild could afford. Carried so a person looking at a
+   *  coarse map can find out why it is coarse without reading this file. */
+  resolution: Resolution;
 };
 
 /** The reach of one counter, as a closed ring of points.
@@ -292,9 +444,10 @@ export type DeliveryArea = {
  *  ring that gets pulled in by it, and the union that has to know a gap this
  *  narrow between two rings is the margin rather than a measurement. See
  *  closeGapsUnderMiles in app/polygonUnion.ts. */
-export function insetMiles(): number {
-  const sag = 1 - Math.cos(Math.PI / BEARINGS);
-  return DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** stepsFor(DELIVERY_RADIUS_MILES));
+export function insetMilesFor({ bearings, targetFeet }: Resolution): number {
+  const sag = 1 - Math.cos(Math.PI / bearings);
+  const steps = stepsFor(DELIVERY_RADIUS_MILES, targetFeet);
+  return DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** steps);
 }
 
 /** Slack on the "a road is never shorter than the straight line" test, in
@@ -349,22 +502,26 @@ export function looksSnapped(miles: number, straightLineMiles: number): boolean 
   return miles + SNAP_SLACK_MILES < straightLineMiles;
 }
 
-async function ringFor(counter: [number, number]): Promise<[number, number][] | null> {
+async function ringFor(
+  counter: [number, number],
+  resolution: Resolution,
+): Promise<[number, number][] | null> {
+  const bearings = resolution.bearings;
   // Straight-line bounds on the answer. Zero at the near end; the radius at the
   // far end, and that is safe because a road route is never shorter than the
   // straight line — a point more than the radius away in a straight line is
   // more than the radius away by road, so the boundary is always inside this.
-  const low = new Array<number>(BEARINGS).fill(0);
-  const high = new Array<number>(BEARINGS).fill(DELIVERY_RADIUS_MILES);
-  const steps = stepsFor(DELIVERY_RADIUS_MILES);
+  const low = new Array<number>(bearings).fill(0);
+  const high = new Array<number>(bearings).fill(DELIVERY_RADIUS_MILES);
+  const steps = stepsFor(DELIVERY_RADIUS_MILES, resolution.targetFeet);
 
   for (let step = 0; step < steps; step += 1) {
     const probes: [number, number][] = [];
     const mids: number[] = [];
-    for (let i = 0; i < BEARINGS; i += 1) {
+    for (let i = 0; i < bearings; i += 1) {
       const mid = (low[i] + high[i]) / 2;
       mids.push(mid);
-      probes.push(project(counter, (i * 360) / BEARINGS, mid));
+      probes.push(project(counter, (i * 360) / bearings, mid));
     }
 
     const measured = await driveMatrixMin([counter], probes);
@@ -373,7 +530,7 @@ async function ringFor(counter: [number, number]): Promise<[number, number][] | 
     // that never got narrowed.
     if (!measured) return null;
 
-    for (let i = 0; i < BEARINGS; i += 1) {
+    for (let i = 0; i < bearings; i += 1) {
       const miles = measured[i]?.miles ?? null;
       // Unreachable counts as too far — and out in the open ocean, far enough
       // from any road, that is what comes back.
@@ -423,12 +580,12 @@ async function ringFor(counter: [number, number]): Promise<[number, number][] | 
   // for the union to walk. Dropping them lets the outline run from the last
   // vertex on one side of the water to the first on the other, which is the
   // shape of a shop with the sea on one side.
-  const inset = insetMiles();
+  const inset = insetMilesFor(resolution);
   const ring: [number, number][] = [];
   low.forEach((miles, i) => {
     const reach = miles - inset;
     if (reach <= 0) return;
-    ring.push(project(counter, (i * 360) / BEARINGS, reach));
+    ring.push(project(counter, (i * 360) / bearings, reach));
   });
   return ring;
 }
@@ -455,7 +612,13 @@ async function measure(): Promise<DeliveryArea | null> {
   // it takes. An earlier draft of this loop was sequential on the reasoning
   // that firing nine at once would blow the allowance, and that reasoning was
   // simply wrong about which unit the allowance is in.
-  const drawn = await Promise.all(origins.map((counter) => ringFor(counter)));
+  //
+  // ⚠️ The resolution is chosen once, here, from the counter list this rebuild
+  // is actually measuring — not per ring. Rings measured at different rungs
+  // would carry different insets, and unionRings is handed one gap threshold
+  // for the whole shape.
+  const resolution = resolutionFor(origins.length);
+  const drawn = await Promise.all(origins.map((counter) => ringFor(counter, resolution)));
   if (drawn.some((ring) => ring === null)) return null;
   const rings = drawn as [number, number][][];
 
@@ -469,7 +632,7 @@ async function measure(): Promise<DeliveryArea | null> {
     // come out of it with a few hundred feet of daylight between them — a red
     // needle on the map, drawn from a margin rather than from a road. Real
     // gaps are miles across and stay. See closeGapsUnderMiles.
-    outline: unionRings(rings, { closeGapsUnderMiles: insetMiles() }),
+    outline: unionRings(rings, { closeGapsUnderMiles: insetMilesFor(resolution) }),
     rings,
     origins,
     // The framing centre — what the map opens on before it fits the bounds.
@@ -480,6 +643,7 @@ async function measure(): Promise<DeliveryArea | null> {
       origins.reduce((sum, [, lng]) => sum + lng, 0) / origins.length,
     ],
     radiusMiles: DELIVERY_RADIUS_MILES,
+    resolution,
   };
 }
 
@@ -524,10 +688,16 @@ const TTL_MS = 60 * 60 * 1000;
  *  every read, and reaching for storePlaces here would put a Geocoding attempt
  *  on the path of every request whenever Google is unreachable. */
 function counterFingerprint(): string {
+  // ⚠️ The quota is in here as well as the counters. It is read from the
+  // environment, so a deploy that raises it would otherwise keep serving the
+  // coarse shape measured before it — for an hour, which is exactly as long as
+  // somebody's patience while they refresh the page wondering whether the
+  // console change took.
+  const quota = matrixElementQuota();
   return (
     deliveringStores()
       .map((store) => `${store.id}@${store.position[0]},${store.position[1]}`)
-      .join("|") + `#${DELIVERY_RADIUS_MILES}`
+      .join("|") + `#${DELIVERY_RADIUS_MILES}@${quota}`
   );
 }
 

@@ -33,7 +33,15 @@ import {
   DELIVERY_RADIUS_MILES,
   deliveringStores,
 } from "../app/(marketing)/locations/locations";
-import { BEARINGS, MATRIX_ELEMENT_QUOTA, stepsFor } from "../app/deliveryArea";
+import {
+  RESOLUTION_FLOOR,
+  elementsFor,
+  insetMilesFor,
+  readMatrixQuota,
+  resolutionFor,
+  resolutionLadder,
+  stepsFor,
+} from "../app/deliveryArea";
 import { MATRIX_MAX_ELEMENTS } from "../app/googleMaps";
 
 let failures = 0;
@@ -43,33 +51,57 @@ const ok = (what: string, cond: boolean, detail = "") => {
 };
 
 const counters = deliveringStores();
-const steps = stepsFor(DELIVERY_RADIUS_MILES);
-const perRing = BEARINGS * steps;
+const { quota, from: quotaFrom } = readMatrixQuota();
+const resolution = resolutionFor(counters.length, quota);
+const steps = stepsFor(DELIVERY_RADIUS_MILES, resolution.targetFeet);
 
-/** Elements for a rebuild with this many counters. Exact, not a ceiling: one
- *  origin per call and every probe asked exactly once. */
-const costOf = (shops: number) => shops * perRing;
+/** Elements for a rebuild with this many counters, at the rung that many can
+ *  afford. Exact, not a ceiling: one origin per call, every probe asked once. */
+const costOf = (shops: number) => elementsFor(resolutionFor(shops, quota), shops);
 
 console.log("\n— today —");
 console.log(`  ${counters.length} counters: ${counters.map((s) => s.name).join(", ")}`);
-console.log(`  each ring: ${BEARINGS} bearings × ${steps} steps = ${perRing} elements` +
-            ` in ${steps} calls`);
+console.log(`  quota: ${quota} elements a minute` + {
+  default: " (Google's default; ROUTES_MATRIX_QUOTA is unset)",
+  env: " (from ROUTES_MATRIX_QUOTA)",
+  ignored: ` (⚠️ ROUTES_MATRIX_QUOTA is set to "${process.env.ROUTES_MATRIX_QUOTA}",` +
+    " which is not a usable number of elements, so it was ignored)",
+}[quotaFrom]);
+ok("⚠️ the quota in the environment was usable, or is not set at all",
+   quotaFrom !== "ignored", `ROUTES_MATRIX_QUOTA="${process.env.ROUTES_MATRIX_QUOTA}"`);
+console.log(`  each ring: ${resolution.bearings} bearings × ${steps} steps` +
+            ` = ${resolution.bearings * steps} elements in ${steps} calls`);
 const today = costOf(counters.length);
 console.log(`  rebuild: ${today} elements in ${counters.length * steps} calls ` +
-            `(${Math.round((today / MATRIX_ELEMENT_QUOTA) * 100)}% of a minute's quota)`);
+            `(${Math.round((today / quota) * 100)}% of a minute's quota)`);
 
 // ——— ⚠️ The assertion the outage would have failed ———
 console.log("\n— against the quota —");
 ok("⚠️ a rebuild fits inside one minute's element quota",
-   today < MATRIX_ELEMENT_QUOTA, `${today} vs ${MATRIX_ELEMENT_QUOTA}`);
+   today < quota, `${today} vs ${quota}`);
 // ⚠️ Headroom, not just "fits". A rebuild is a burst; every address check on
 // the site shares the same per-minute allowance, and a deploy that restarts two
 // instances has two cold caches. Ninety per cent is the line: past it the map
 // works until something else happens in the same minute, which is the worst
 // kind of working.
 ok("and leaves headroom for the address checks sharing the quota",
-   today < MATRIX_ELEMENT_QUOTA * 0.9,
-   `${today} is ${Math.round((today / MATRIX_ELEMENT_QUOTA) * 100)}% of ${MATRIX_ELEMENT_QUOTA}`);
+   today <= quota * 0.9,
+   `${today} is ${Math.round((today / quota) * 100)}% of ${quota}`);
+
+// ——— ⚠️ The rung, which is chosen rather than written down ———
+//
+// resolutionFor picks the finest rung the budget carries, so the map gets
+// better on its own when the quota is raised and coarser on its own when a
+// counter opens. Both of those are improvements on what it used to do — draw
+// nothing — and both are things somebody should be told about rather than left
+// to notice.
+const floorElements = elementsFor(RESOLUTION_FLOOR, counters.length);
+ok("⚠️ the rung in use is no coarser than the map drew before the ladder existed",
+   resolution.bearings >= RESOLUTION_FLOOR.bearings ||
+     insetMilesFor(resolution) <= insetMilesFor(RESOLUTION_FLOOR),
+   `${resolution.bearings}×${steps} draws a ${(insetMilesFor(resolution) * 5280).toFixed(0)}ft inset,` +
+     ` against ${(insetMilesFor(RESOLUTION_FLOOR) * 5280).toFixed(0)}ft at` +
+     ` ${RESOLUTION_FLOOR.bearings} bearings (${floorElements} elements)`);
 
 // ——— ⚠️ The counter that will need the console ———
 //
@@ -78,44 +110,76 @@ ok("and leaves headroom for the address checks sharing the quota",
 // than only asserted, because it is a number somebody should read before
 // signing a lease and not after a map goes blank.
 console.log("\n— and the counters that have not opened yet —");
-let firstOver = 0;
+// ⚠️ What changes as counters open is no longer whether the map draws — it is
+// how well. The number to watch is the rung, and the counter to watch for is
+// the one that drops it below what is drawn today.
+let firstCoarser = 0;
+let firstBlank = 0;
+const todayInset = insetMilesFor(resolution);
 for (let shops = counters.length; shops <= counters.length + 8; shops += 1) {
+  const rung = resolutionFor(shops, quota);
   const cost = costOf(shops);
-  const share = Math.round((cost / MATRIX_ELEMENT_QUOTA) * 100);
-  const flag = cost >= MATRIX_ELEMENT_QUOTA * 0.9 ? "  ⚠️" : "";
-  console.log(`  ${String(shops).padStart(2)} counters: ${cost} elements (${share}%)${flag}`);
-  if (firstOver === 0 && cost >= MATRIX_ELEMENT_QUOTA * 0.9) firstOver = shops;
+  const inset = insetMilesFor(rung);
+  const coarser = inset > todayInset;
+  // ⚠️ Past the last rung there is nowhere left to fall. The ladder stops
+  // protecting the map and the old failure comes back: a 429 mid-search and a
+  // page with nothing on it.
+  const overflows = cost > quota;
+  if (firstCoarser === 0 && coarser) firstCoarser = shops;
+  if (overflows && firstBlank === 0) firstBlank = shops;
+  console.log(
+    `  ${String(shops).padStart(2)} counters: ${String(cost).padStart(5)} elements` +
+      ` (${String(Math.round((cost / quota) * 100)).padStart(3)}%)` +
+      `  ${rung.bearings} bearings × ${stepsFor(DELIVERY_RADIUS_MILES, rung.targetFeet)} steps` +
+      `  ${(inset * 5280).toFixed(0).padStart(4)}ft inset` +
+      `${overflows ? "  ⚠️⚠️ OVER QUOTA — no map at all" : coarser ? "  ⚠️ coarser than today" : ""}`,
+  );
 }
 console.log(
-  firstOver
-    ? `\n  ⚠️ Counter ${firstOver} needs the Cloud console quota raised first.` +
-        " It is free: Routes API → Quotas → Compute Route Matrix elements per" +
-        " minute. Nothing in the code will do it and nothing but this line and" +
-        " a blank map will mention it."
-    : "\n  every projected count fits.",
+  firstCoarser
+    ? `\n  ⚠️ Counter ${firstCoarser} makes the published map coarser than it is` +
+        " today. It will still draw — the rung drops instead of the map going" +
+        " blank — but the fix is free and takes a minute: raise Routes API →" +
+        " Quotas → Compute Route Matrix elements per minute in the Cloud" +
+        " console, then set ROUTES_MATRIX_QUOTA to the new number."
+    : "\n  every projected count holds today's resolution.",
 );
-ok("the projection reaches far enough to find the limit", firstOver > 0,
-   "nothing projected goes over, so this table stopped being a warning");
+ok("the projection reaches far enough to find where the quota starts to bite",
+   firstCoarser > 0,
+   "nothing projected coarsens, so this table stopped being a warning");
+if (firstBlank) {
+  console.log(
+    `  ⚠️⚠️ And counter ${firstBlank} is past the bottom of the ladder: there is no` +
+      " coarser rung to fall to, so that one takes the map away entirely. The" +
+      " console raise is not optional by then.",
+  );
+}
 
 // ——— One call at a time ———
 console.log("\n— and one call at a time —");
 const GOOGLE_PER_CALL = 625;
 ok("the app's per-call budget is inside Google's per-call limit",
    MATRIX_MAX_ELEMENTS <= GOOGLE_PER_CALL, `${MATRIX_MAX_ELEMENTS} vs ${GOOGLE_PER_CALL}`);
-// ⚠️ One origin and BEARINGS destinations, so a ring's step is BEARINGS
-// elements and never needs splitting. Asserted so that raising BEARINGS past
-// the budget is caught here rather than by a 400 in production.
-ok("a ring's step is one call, not several",
-   BEARINGS <= MATRIX_MAX_ELEMENTS, `${BEARINGS} vs ${MATRIX_MAX_ELEMENTS}`);
+// ⚠️ One origin and `bearings` destinations, so a ring's step is that many
+// elements and never needs splitting. Asserted for every rung, not just the one
+// in use: a raised quota promotes the app to a finer rung with no code change,
+// and a rung whose bearings exceed the per-call budget would start splitting
+// calls — which doubles the call count without changing the element count, and
+// is the sort of thing that only shows up as latency.
+for (const rung of resolutionLadder()) {
+  ok(`a ring's step at ${rung.bearings} bearings is one call, not several`,
+     rung.bearings <= MATRIX_MAX_ELEMENTS, `${rung.bearings} vs ${MATRIX_MAX_ELEMENTS}`);
+}
 
 // ——— stepsFor, which is where precision is decided ———
 console.log("\n— the search depth —");
 const feet = (DELIVERY_RADIUS_MILES / 2 ** steps) * 5280;
-ok("the radius resolves to under 250 feet", feet <= 250, `${feet.toFixed(0)}ft`);
+ok("the radius resolves to at least as fine as the rung asked for",
+   feet <= resolution.targetFeet, `${feet.toFixed(0)}ft vs ${resolution.targetFeet}ft asked`);
 // ⚠️ And not far under, which would be quota spent on a boundary nobody can
 // see. One step less has to be too coarse, or the step count is padded.
-const coarser = (DELIVERY_RADIUS_MILES / 2 ** (steps - 1)) * 5280;
-ok("and one step fewer would not", coarser > 250, `${coarser.toFixed(0)}ft`);
+const oneFewer = (DELIVERY_RADIUS_MILES / 2 ** (steps - 1)) * 5280;
+ok("and one step fewer would not", oneFewer > resolution.targetFeet, `${oneFewer.toFixed(0)}ft`);
 ok("a narrower span needs fewer steps than a wider one",
    stepsFor(5) < stepsFor(20), `${stepsFor(5)} vs ${stepsFor(20)}`);
 let monotonic = true;
@@ -130,9 +194,9 @@ ok("and a wider span never needs fewer", monotonic);
 // can sag between two neighbouring rays. Fewer bearings is cheaper and sags
 // more, so the two numbers trade against each other and the trade should be
 // visible rather than buried in a constant.
-const sag = 1 - Math.cos(Math.PI / BEARINGS);
-const insetFeet = DELIVERY_RADIUS_MILES * (sag + 1 / 2 ** steps) * 5280;
-console.log(`\n— the inset —\n  ${BEARINGS} bearings → ${insetFeet.toFixed(0)}ft pulled in`);
+const insetFeet = insetMilesFor(resolution) * 5280;
+console.log(`\n— the inset —\n  ${resolution.bearings} bearings × ${steps} steps` +
+            ` → ${insetFeet.toFixed(0)}ft pulled in`);
 // A tenth of a mile on a ten-mile reach: about a pixel at the zoom the page
 // opens on, and always on the side of telling somebody to check.
 ok("the ring is drawn inside its measurement by under a tenth of a mile",
@@ -140,7 +204,28 @@ ok("the ring is drawn inside its measurement by under a tenth of a mile",
 // ⚠️ And by *something*. A zero inset means the polygon is drawn exactly on the
 // measured vertices, and the straight edges between them then claim ground the
 // rule refuses — which is the failure tests/deliveryArea.test.ts sweeps for.
-ok("and by more than nothing", insetFeet > 100, `${insetFeet.toFixed(0)}ft`);
+//
+// Deliberately not a floor in feet. It used to be "over 100ft", which was true
+// of every rung that existed when it was written and is false of the finest one
+// now: 90 bearings and 11 steps earn a 58ft inset, and that is the map being
+// better rather than the check being violated.
+ok("and by more than nothing", insetFeet > 0, `${insetFeet.toFixed(0)}ft`);
+
+// ——— ⚠️ The ladder has to be ordered, or the wrong rung gets picked ———
+//
+// resolutionFor takes the *first* rung the budget can afford. That is only the
+// best rung if the list runs finest to coarsest, and nothing about the shape of
+// the data enforces it — a rung inserted in the wrong place would quietly cost
+// the map resolution it had paid for. Ordering is the invariant, so assert it
+// on the thing that actually measures fineness.
+const ladder = resolutionLadder();
+let ordered = true;
+for (let i = 1; i < ladder.length; i += 1) {
+  if (insetMilesFor(ladder[i]) <= insetMilesFor(ladder[i - 1])) ordered = false;
+}
+ok("the rungs run finest to coarsest, which is what makes the first affordable one the best",
+   ordered,
+   ladder.map((r) => `${r.bearings}→${(insetMilesFor(r) * 5280).toFixed(0)}ft`).join(", "));
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);
