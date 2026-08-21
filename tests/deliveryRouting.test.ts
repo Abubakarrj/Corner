@@ -1,4 +1,14 @@
-// Which kitchen a delivery near USC leaves from, now that there is one there.
+// Which kitchen a delivery leaves from, now that the counters are spread across
+// the city rather than clustered in one neighbourhood.
+//
+// ——— ⚠️ What changed under this suite ———
+//
+// It used to be written against three counters inside a four-mile box, two of
+// them in Koreatown and one by USC. USC has closed and Westwood and Studio City
+// have opened, so several assertions here do not just move — they invert. The
+// clearest is Santa Monica: it used to be the example of an address the shop
+// had to refuse, and with a counter in Westwood it is now four miles from a
+// kitchen. That flip is the point of the change and it is asserted as one.
 import { kitchensFor, earliestDeliveryHour } from "../app/storePlaces";
 import {
   DELIVERY_RADIUS_MILES,
@@ -16,52 +26,79 @@ const ok = (what: string, cond: boolean, detail = "") => {
 
 // Los Angeles is UTC-7 in August. 2026-08-19 is a Wednesday.
 const la = (hour: number, minute = 0) => new Date(Date.UTC(2026, 7, 19, hour + 7, minute));
-const nearUSC: [number, number] = [34.0224, -118.2851];
+const ids = (pool: StoreLocation[]) => pool.map((s) => s.id).join(",");
+
+const nearWestwood: [number, number] = [34.0635, -118.4455]; // UCLA campus edge
+const nearStudioCity: [number, number] = [34.1478, -118.3965]; // Ventura & Laurel Canyon
+const onWilshire: [number, number] = [34.0616, -118.3005];
 
 // ——— At 9am the outlet is dark ———
 const nine = la(9);
-const bagelKitchens = kitchensFor(["single-bagel"], nine).map((s) => s.id);
-ok("at 9am only the two full stores are lit", bagelKitchens.join(",") === "wilshire,figueroa",
-   bagelKitchens.join(","));
-ok("and a USC address collects from the USC store",
-   nearestDelivering(nearUSC, kitchensFor(["single-bagel"], nine))?.id === "figueroa");
+const bagelKitchens = kitchensFor(["single-bagel"], nine);
+ok("at 9am only the three full stores are lit",
+   ids(bagelKitchens) === "wilshire,glendon,ventura", ids(bagelKitchens));
+ok("and a Westwood address collects from Glendon",
+   nearestDelivering(nearWestwood, kitchensFor(["single-bagel"], nine))?.id === "glendon",
+   nearestDelivering(nearWestwood, kitchensFor(["single-bagel"], nine))?.id);
+ok("and a Studio City address collects from Ventura",
+   nearestDelivering(nearStudioCity, kitchensFor(["single-bagel"], nine))?.id === "ventura",
+   nearestDelivering(nearStudioCity, kitchensFor(["single-bagel"], nine))?.id);
 
-// ——— At noon all three are open, and the basket decides ———
+// ——— At noon all four are open, and the basket decides ———
 const noon = la(12);
-const withSandwich = kitchensFor(["the-veggie-stack"], noon).map((s) => s.id);
-ok("a sandwich narrows to the full stores", withSandwich.join(",") === "wilshire,figueroa",
-   withSandwich.join(","));
-ok("and a USC sandwich leaves from the USC store",
-   nearestDelivering(nearUSC, kitchensFor(["the-veggie-stack"], noon))?.id === "figueroa");
+const withSandwich = kitchensFor(["the-veggie-stack"], noon);
+ok("a sandwich narrows to the full stores",
+   ids(withSandwich) === "wilshire,glendon,ventura", ids(withSandwich));
+ok("and a Westwood sandwich leaves from Glendon",
+   nearestDelivering(nearWestwood, kitchensFor(["the-veggie-stack"], noon))?.id === "glendon");
 
 // ——— The outlet preference, and the bound on it ———
 //
 // A basket every counter can make prefers the outlets, so the full stores keep
 // their line free for the orders only they can take. With no destination in
 // hand that is still the whole rule.
-const bagelsOnly = kitchensFor(["single-bagel"], noon).map((s) => s.id);
 ok("with no destination, bagels prefer the outlet",
-   bagelsOnly.join(",") === "western", bagelsOnly.join(","));
+   ids(kitchensFor(["single-bagel"], noon)) === "western",
+   ids(kitchensFor(["single-bagel"], noon)));
 
 // On the store's own block the outlet is seven tenths of a mile further, which
 // is the detour the rule was written to buy. It still buys it.
-const onWilshire: [number, number] = [34.0616, -118.3005];
 ok("a bagel to Wilshire's own block still leaves from the outlet",
-   kitchensFor(["single-bagel"], noon, onWilshire).map((s) => s.id).join(",") === "western",
-   kitchensFor(["single-bagel"], noon, onWilshire).map((s) => s.id).join(","));
+   ids(kitchensFor(["single-bagel"], noon, onWilshire)) === "western",
+   ids(kitchensFor(["single-bagel"], noon, onWilshire)));
 
-// By USC the outlet is 3.5 miles away and a full store is 0.8. That is not a
-// detour, it is a different delivery, so distance wins.
-// The pool widens rather than narrowing to the outlet — every able kitchen is
-// a candidate again, and the distance decides between them. Asserted on the
-// choice rather than on the pool: the outlet is still a kitchen that could
-// make this, and there is nothing wrong with it being in the list.
-const uscPool = kitchensFor(["single-bagel"], noon, nearUSC).map((s) => s.id);
-ok("a bagel to USC is not narrowed to the outlet alone",
-   uscPool.length > 1 && uscPool.includes("figueroa"), uscPool.join(","));
-ok("and leaves from the USC store",
-   nearestDelivering(nearUSC, kitchensFor(["single-bagel"], noon, nearUSC))?.id === "figueroa",
-   nearestDelivering(nearUSC, kitchensFor(["single-bagel"], noon, nearUSC))?.id);
+// ⚠️ And the bound, which the new geography makes obvious rather than marginal.
+// The only outlet is in Koreatown, eight miles from Westwood and seven from
+// Studio City. A bagel to either is nowhere near OUTLET_DETOUR_MILES, so the
+// preference does not apply and the near kitchen takes it. Under an unbounded
+// preference every bagel in Westwood would cross the city to Koreatown.
+for (const [where, point, expected] of [
+  ["Westwood", nearWestwood, "glendon"],
+  ["Studio City", nearStudioCity, "ventura"],
+] as const) {
+  const pool = kitchensFor(["single-bagel"], noon, point);
+  ok(`a bagel to ${where} is not narrowed to the outlet`,
+     !(pool.length === 1 && pool[0].id === "western"), ids(pool));
+  ok(`and leaves from ${expected}`,
+     nearestDelivering(point, pool)?.id === expected,
+     nearestDelivering(point, pool)?.id);
+}
+
+// ——— ⚠️ The coverage the spread bought ———
+//
+// Santa Monica was the worked example of an address out of range: with every
+// counter in or near Koreatown the nearest kitchen was eleven straight-line
+// miles off, and this suite asserted the refusal. Glendon Ave is four miles
+// from it, so the same address now has a kitchen — and it is the only one of
+// the four within the radius, which is why the pool is exactly one.
+const santaMonica: [number, number] = [34.0195, -118.4912];
+const smSandwich = kitchensFor(["the-veggie-stack"], noon, santaMonica);
+ok("a sandwich to Santa Monica now has a kitchen", smSandwich.length > 0, "(empty)");
+ok("and it is Glendon alone, the only counter within the radius",
+   ids(smSandwich) === "glendon", ids(smSandwich));
+ok("which is inside the rule by a real margin",
+   milesBetween(santaMonica, smSandwich[0].position) < DELIVERY_RADIUS_MILES,
+   milesBetween(santaMonica, smSandwich[0].position).toFixed(1));
 
 // ——— The earliest a delivery can go ———
 ok("a sandwich delivery cannot go before 7", earliestDeliveryHour(["the-veggie-stack"]) === 7,
@@ -81,18 +118,22 @@ ok("at 4am nothing is lit", kitchensFor(["single-bagel"], la(4)).length === 0);
 //
 // The menu filter runs first now, and an order nobody open can make comes back
 // empty so the endpoint refuses it.
-const santaMonica: [number, number] = [34.0195, -118.4912];
+//
+// ⚠️ Long Beach rather than Santa Monica. This scenario needs a point that no
+// real counter can reach, and Santa Monica stopped being one the day Westwood
+// opened — which is exactly the sort of quiet invalidation that leaves a test
+// passing for the wrong reason. Long Beach is twenty miles from the nearest.
+const longBeach: [number, number] = [33.7701, -118.1937];
 const island: StoreLocation = {
   id: "test-island-outlet", name: "Island", kind: "shop", outlet: true,
   address: "x", city: "Los Angeles, CA", hours: "x",
-  position: santaMonica, aliases: [], menu: ["Bagels", "Spreads", "Drinks"],
+  position: longBeach, aliases: [], menu: ["Bagels", "Spreads", "Drinks"],
 };
 LOCATIONS.push(island);
 try {
-  const bagels = kitchensFor(["single-bagel"], noon, santaMonica);
+  const bagels = kitchensFor(["single-bagel"], noon, longBeach);
   ok("a distant outlet does take the bagels near it",
-     bagels.map((s) => s.id).join(",") === "test-island-outlet",
-     bagels.map((s) => s.id).join(","));
+     ids(bagels) === "test-island-outlet", ids(bagels));
 
   // Asserted as a positive, and that matters. "The outlet is not in the pool"
   // is satisfied by an empty pool, so the first version of this passed against
@@ -100,17 +141,16 @@ try {
   // only naming who *should* be there separates them. An empty pool is safe
   // and still wrong: it refuses with a shrug where the real answer is a road
   // distance and a number the customer can act on.
-  const sandwiches = kitchensFor(["the-veggie-stack"], noon, santaMonica);
+  const sandwiches = kitchensFor(["the-veggie-stack"], noon, longBeach);
   ok("but never the sandwiches it cannot make",
-     !sandwiches.some((s) => s.id === "test-island-outlet"),
-     sandwiches.map((s) => s.id).join(","));
-  ok("those stay with the counters that can, both of them",
-     sandwiches.map((s) => s.id).sort().join(",") === "figueroa,wilshire",
-     sandwiches.map((s) => s.id).join(",") || "(empty)");
+     !sandwiches.some((s) => s.id === "test-island-outlet"), ids(sandwiches));
+  ok("those stay with the counters that can, all three of them",
+     sandwiches.map((s) => s.id).sort().join(",") === "glendon,ventura,wilshire",
+     ids(sandwiches) || "(empty)");
   // And the honest consequence: too far to deliver, refused rather than
   // dispatched to a counter that would have to say no in person.
   const nearestAble = Math.min(
-    ...sandwiches.map((s) => milesBetween(santaMonica, s.position)),
+    ...sandwiches.map((s) => milesBetween(longBeach, s.position)),
   ) * 1.3;
   ok("so a sandwich there is out of range, which the quote will say",
      nearestAble > DELIVERY_RADIUS_MILES, nearestAble.toFixed(1));
@@ -118,7 +158,7 @@ try {
   // Nothing open at all is an empty pool.
   const shut = new Date(Date.UTC(2026, 7, 19, 11, 0)); // 4am in Los Angeles
   ok("and when nothing is open, the pool is empty",
-     kitchensFor(["the-veggie-stack"], shut, santaMonica).length === 0);
+     kitchensFor(["the-veggie-stack"], shut, longBeach).length === 0);
 } finally {
   LOCATIONS.pop();
 }
@@ -141,9 +181,9 @@ try {
   for (const l of LOCATIONS) if (l.menu === undefined) l.delivery = false;
   const pool = kitchensFor(["the-veggie-stack"], noon, [34.0685, -118.3092]);
   ok("with only outlets delivering, a sandwich has no kitchen at all",
-     pool.length === 0, pool.map((s) => s.id).join(","));
+     pool.length === 0, ids(pool));
   const bagelPool = kitchensFor(["single-bagel"], noon, [34.0685, -118.3092]);
-  ok("while a bagel still has one", bagelPool.length > 0, bagelPool.map((s) => s.id).join(","));
+  ok("while a bagel still has one", bagelPool.length > 0, ids(bagelPool));
 } finally {
   LOCATIONS.splice(0, LOCATIONS.length, ...saved);
 }

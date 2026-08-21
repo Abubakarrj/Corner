@@ -88,10 +88,23 @@ export function isSquareConfigured(): boolean {
  *  and the real account, and a value that differs per deployment is a value
  *  that belongs in the deployment.
  *
- *  SQUARE_LOCATION_WILSHIRE, SQUARE_LOCATION_FIGUEROA, SQUARE_LOCATION_WESTERN
- *  — the counter's id, uppercased. Anything unmapped falls back to
- *  SQUARE_LOCATION_ID, which is right for a shop with one Square location and
- *  visible in the log when it is not. */
+ *  SQUARE_LOCATION_WILSHIRE, SQUARE_LOCATION_GLENDON, SQUARE_LOCATION_VENTURA,
+ *  SQUARE_LOCATION_WESTERN — the counter's id, uppercased. Anything unmapped
+ *  falls back to SQUARE_LOCATION_ID, which is right for a shop with one Square
+ *  location and visible in the log when it is not.
+ *
+ *  ⚠️ The names come from the ids in locations.ts, so opening a counter needs a
+ *  matching variable on the deploy and closing one leaves a variable behind.
+ *  GLENDON and VENTURA are new and unset until somebody adds them; until then
+ *  Westwood's and Studio City's takings are filed against SQUARE_LOCATION_ID
+ *  and Square's per-location reporting attributes four shops to one. The warning
+ *  below says so once per counter.
+ *
+ *  SQUARE_LOCATION_FIGUEROA is read by nothing now that the USC store has
+ *  closed. It is inert rather than harmful — this function only ever looks up
+ *  the ids it is given — but it should come off the deploy, and Square's own
+ *  location for that store should be deactivated in the dashboard so it stops
+ *  showing up in reporting as a counter with no sales. */
 export function squareLocationFor(counter: string | undefined): string | null {
   const config = squareConfig();
   if (!config) return null;

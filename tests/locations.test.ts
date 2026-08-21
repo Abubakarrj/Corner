@@ -1,4 +1,14 @@
-// The new counter, as everything downstream of the record sees it.
+// The counters, as everything downstream of the records sees them.
+//
+// ——— What this suite is for ———
+//
+// Opening or closing a shop is supposed to be one edit: a record added to or
+// deleted from LOCATIONS, and every other screen follows because nothing else
+// in the app names a location. This checks that claim from the outside — menu,
+// hours, pickup, delivery, catering, courier docket, search and nearest — for
+// the two counters that just opened, and checks the other half for the one that
+// closed: that it is gone from all of them rather than lingering in one.
+
 import {
   LOCATIONS,
   addressParts,
@@ -8,6 +18,7 @@ import {
   opensAt,
   pickupStores,
   searchLocations,
+  type StoreLocation,
 } from "../app/(marketing)/locations/locations";
 import { notServedAt, servesCategory, storeById } from "../app/shop/storeMenu";
 import { hoursLine } from "../app/shopFacts";
@@ -18,79 +29,131 @@ const ok = (what: string, cond: boolean, detail = "") => {
   else { failures += 1; console.log("FAIL ", what, detail); }
 };
 
-const usc = LOCATIONS.find((l) => l.id === "figueroa")!;
-
-ok("it is in the list", usc !== undefined);
-ok("named as the shop named it", usc.name === "USC Neighborhood", usc.name);
-ok("street", usc.address === "2528 S Figueroa St", usc.address);
-ok("city and ZIP", usc.city === "Los Angeles, CA 90007", usc.city);
-
-// ——— Full menu means saying nothing about the menu ———
-ok("no menu restriction on the record", usc.menu === undefined, JSON.stringify(usc.menu));
-for (const category of ["Bagels", "Spreads", "Sandwiches", "Drinks", "Gift Cards"]) {
-  ok(`makes ${category}`, servesCategory("figueroa", category));
-}
-// The comparison that matters: the outlet does not.
-ok("and the outlet still does not make sandwiches", !servesCategory("western", "Sandwiches"));
-ok(
-  "a sandwich basket is refused at the outlet and not here",
-  notServedAt("western", ["the-veggie-stack"]).length === 1 &&
-    notServedAt("figueroa", ["the-veggie-stack"]).length === 0,
-);
-
-// ——— The usual hours, because none were given ———
-ok("opens at the default hour", opensAt(usc) === 7, String(opensAt(usc)));
-ok("and its hours line matches", usc.hours === hoursLine(7), usc.hours);
-
-// ——— It collects, delivers and caters ———
-ok("collects", pickupStores().some((s) => s.id === "figueroa"));
-ok("delivers", deliveringStores().some((s) => s.id === "figueroa"));
-ok("caters", usc.catering === true);
-ok("is not an outlet", usc.outlet !== true);
-
-// ——— Address parts, which is what a courier docket is built from ———
-const parts = addressParts(usc);
-ok(
-  "address splits for the courier",
-  parts.street === "2528 S Figueroa St" && parts.city === "Los Angeles" &&
-    parts.state === "CA" && parts.zip === "90007",
-  JSON.stringify(parts),
-);
-
-// ——— Found by the words somebody would actually type ———
-for (const query of [
-  "usc", "figueroa", "fig", "90007", "university park", "expo park",
-  "2528 figueroa", "trojans", "corner bagel usc",
-]) {
+// ——— ⚠️ The USC store is closed ———
+//
+// Checked first, and checked through every list rather than only through
+// LOCATIONS. A record deleted from the array but still reachable through one
+// helper is the failure worth catching: it would be a counter that cannot be
+// found on the map and can still be ordered from.
+console.log("\n— 2528 S Figueroa St, closed —");
+ok("not in the list", LOCATIONS.every((l) => l.id !== "figueroa"));
+ok("not collectable from", !pickupStores().some((s) => s.id === "figueroa"));
+ok("no delivery leaves from it", !deliveringStores().some((s) => s.id === "figueroa"));
+ok("storeById does not resolve it", storeById("figueroa") === undefined || storeById("figueroa") === null);
+for (const query of ["usc", "figueroa", "trojans", "90007"]) {
   const hits = searchLocations(query, "shop");
-  ok(`"${query}" finds it first`, hits[0]?.id === "figueroa",
+  ok(`"${query}" no longer finds it`, hits.every((h) => h.id !== "figueroa"),
      hits.map((h) => h.id).join(",") || "(none)");
 }
-// And does not swallow the others.
+// ⚠️ And searching near where it stood returns the surviving counters rather
+// than nothing. An empty answer there would be the finder saying "no shops in
+// Los Angeles" to somebody a few miles from three of them.
+const nearUSC: [number, number] = [34.0224, -118.2851];
+ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 4,
+   String(nearestLocations(nearUSC, "shop").length));
+
+// ——— The two that opened ———
+const glendon = LOCATIONS.find((l) => l.id === "glendon")!;
+const ventura = LOCATIONS.find((l) => l.id === "ventura")!;
+
+const opened: { store: StoreLocation; street: string; city: string; zip: string; town: string }[] = [
+  { store: glendon, street: "1129 Glendon Ave", city: "Los Angeles, CA 90024", zip: "90024", town: "Los Angeles" },
+  // ⚠️ Studio City, not Los Angeles. Inside LA city limits and on the same tax
+  // rate, but it is what a courier's address form expects — and addressParts
+  // puts this string on the docket.
+  { store: ventura, street: "11128 Ventura Blvd", city: "Studio City, CA 91604", zip: "91604", town: "Studio City" },
+];
+
+for (const { store, street, city, zip, town } of opened) {
+  console.log(`\n— ${store.name} —`);
+  ok("it is in the list", store !== undefined);
+  ok("street", store.address === street, store.address);
+  ok("city and ZIP", store.city === city, store.city);
+
+  // Full menu means saying nothing about the menu.
+  ok("no menu restriction on the record", store.menu === undefined, JSON.stringify(store.menu));
+  for (const category of ["Bagels", "Spreads", "Sandwiches", "Drinks", "Gift Cards"]) {
+    ok(`makes ${category}`, servesCategory(store.id, category));
+  }
+  ok("a sandwich basket is accepted here",
+     notServedAt(store.id, ["the-veggie-stack"]).length === 0);
+
+  // The usual hours, because none were given.
+  ok("opens at the default hour", opensAt(store) === 7, String(opensAt(store)));
+  ok("and its hours line matches", store.hours === hoursLine(7), store.hours);
+
+  // It collects, delivers and caters.
+  ok("collects", pickupStores().some((s) => s.id === store.id));
+  ok("delivers", deliveringStores().some((s) => s.id === store.id));
+  ok("caters", store.catering === true);
+  ok("is not an outlet", store.outlet !== true);
+
+  // What a courier docket is built from.
+  const parts = addressParts(store);
+  ok("address splits for the courier",
+     parts.street === street && parts.city === town && parts.state === "CA" && parts.zip === zip,
+     JSON.stringify(parts));
+}
+
+// The comparison that matters: the outlet still does not make sandwiches.
+console.log("\n— and the outlet is unchanged —");
+ok("the outlet still does not make sandwiches", !servesCategory("western", "Sandwiches"));
+ok("a sandwich basket is still refused there",
+   notServedAt("western", ["the-veggie-stack"]).length === 1);
+ok("it still opens at 11", opensAt(LOCATIONS.find((l) => l.id === "western")) === 11);
+
+// ——— Found by the words somebody would actually type ———
+console.log("\n— search —");
+for (const [query, id] of [
+  ["glendon", "glendon"], ["westwood", "glendon"], ["ucla", "glendon"],
+  ["1129 glendon", "glendon"], ["90024", "glendon"], ["bruins", "glendon"],
+  ["ventura", "ventura"], ["studio city", "ventura"], ["91604", "ventura"],
+  ["11128 ventura", "ventura"], ["the valley", "ventura"], ["noho", "ventura"],
+] as const) {
+  const hits = searchLocations(query, "shop");
+  ok(`"${query}" finds ${id} first`, hits[0]?.id === id,
+     hits.map((h) => h.id).join(",") || "(none)");
+}
+// And they do not swallow the others.
 ok('"wilshire" still finds Wilshire', searchLocations("wilshire", "shop")[0]?.id === "wilshire");
 ok('"western" still finds Western', searchLocations("western", "shop")[0]?.id === "western");
 ok('"ktown" finds a Koreatown counter',
    ["wilshire", "western"].includes(searchLocations("ktown", "shop")[0]?.id ?? ""));
-ok('"los angeles" finds all three', searchLocations("los angeles", "shop").length === 3);
-ok("it is offered for catering too", searchLocations("usc", "catering")[0]?.id === "figueroa");
+ok('"los angeles" finds all four', searchLocations("los angeles", "shop").length === 4,
+   String(searchLocations("los angeles", "shop").length));
+ok("Westwood is offered for catering too",
+   searchLocations("westwood", "catering")[0]?.id === "glendon");
+ok("so is Studio City", searchLocations("studio city", "catering")[0]?.id === "ventura");
 
-// ——— Nearest, from somewhere it should win ———
+// ——— Nearest, from places each should win ———
 //
-// The point is that adding a counter three miles south changes the answer for
-// a good part of the city, and that everything asking uses the list rather
-// than a named store.
-const nearUSC: [number, number] = [34.0224, -118.2851]; // USC campus
+// ⚠️ The point of these three: the counters are now spread far enough that
+// "which is nearest" has a different answer in three parts of the city, and
+// everything asking uses the list rather than a named store.
+console.log("\n— nearest —");
+const nearWestwood: [number, number] = [34.0635, -118.4455]; // UCLA campus edge
+const nearStudioCity: [number, number] = [34.1478, -118.3965]; // Ventura & Laurel Canyon
 const nearKtown: [number, number] = [34.0616, -118.3005];
-ok("nearest to USC is the USC store", nearestDelivering(nearUSC)?.id === "figueroa",
-   nearestDelivering(nearUSC)?.id);
+
+ok("nearest to Westwood is Glendon", nearestDelivering(nearWestwood)?.id === "glendon",
+   nearestDelivering(nearWestwood)?.id);
+ok("nearest to Studio City is Ventura", nearestDelivering(nearStudioCity)?.id === "ventura",
+   nearestDelivering(nearStudioCity)?.id);
 ok("nearest to Koreatown is still Wilshire", nearestDelivering(nearKtown)?.id === "wilshire",
    nearestDelivering(nearKtown)?.id);
-const ranked = nearestLocations(nearUSC, "shop");
-ok("and it ranks first in the finder from there", ranked[0].location.id === "figueroa",
-   ranked.map((r) => `${r.location.id}:${r.miles.toFixed(1)}`).join(" "));
-console.log("  from USC:", ranked.map((r) => `${r.location.id} ${r.miles.toFixed(1)}mi`).join(", "));
 
-ok("storeById resolves it", storeById("figueroa")?.id === "figueroa");
+for (const [where, point, first] of [
+  ["Westwood", nearWestwood, "glendon"],
+  ["Studio City", nearStudioCity, "ventura"],
+] as const) {
+  const ranked = nearestLocations(point, "shop");
+  ok(`and ${first} ranks first in the finder from ${where}`, ranked[0].location.id === first,
+     ranked.map((r) => `${r.location.id}:${r.miles.toFixed(1)}`).join(" "));
+  console.log(`  from ${where}:`, ranked.map((r) => `${r.location.id} ${r.miles.toFixed(1)}mi`).join(", "));
+}
+
+ok("storeById resolves Glendon", storeById("glendon")?.id === "glendon");
+ok("storeById resolves Ventura", storeById("ventura")?.id === "ventura");
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
 process.exit(failures === 0 ? 0 : 1);

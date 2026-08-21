@@ -133,9 +133,9 @@ async function main() {
 
   // ——— It is the union, checked against one computed independently ———
   //
-  // With a straight-line ruler the true boundary is three exact circles. Every
+  // With a straight-line ruler the true boundary is four exact circles. Every
   // vertex should sit on the edge of the nearest one, and a point that only the
-  // USC counter reaches should be inside the ring.
+  // Studio City counter reaches should be inside the ring.
   function inside(point: [number, number], poly: [number, number][]): boolean {
     let hit = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i, i += 1) {
@@ -146,36 +146,45 @@ async function main() {
     }
     return hit;
   }
-  const usc = LOCATIONS.find((l) => l.id === "figueroa")!.position;
+  const ven = LOCATIONS.find((l) => l.id === "ventura")!.position;
   const wil = LOCATIONS.find((l) => l.id === "wilshire")!.position;
-  const south: [number, number] = (() => {
+  // North of Studio City: deep in the Valley, inside Ventura Blvd's reach and
+  // outside Wilshire's. The counter furthest from the rest is the one that
+  // makes "is this really a union" a question worth asking.
+  const valley: [number, number] = (() => {
     for (let d = 0; d < 0.4; d += 0.001) {
-      const p: [number, number] = [usc[0] - d, usc[1]];
-      if (milesBetween(p, usc) <= DELIVERY_RADIUS_MILES - 0.5 &&
+      const p: [number, number] = [ven[0] + d, ven[1]];
+      if (milesBetween(p, ven) <= DELIVERY_RADIUS_MILES - 0.5 &&
           milesBetween(p, wil) > DELIVERY_RADIUS_MILES) return p;
     }
     throw new Error("no such point");
   })();
-  console.log(`  south point: ${milesBetween(south, usc).toFixed(1)}mi from USC, ` +
-    `${milesBetween(south, wil).toFixed(1)}mi from Wilshire`);
-  ok("a point only the USC counter reaches is inside the drawn ring",
-     inside(south, area.ring));
+  console.log(`  valley point: ${milesBetween(valley, ven).toFixed(1)}mi from Ventura Blvd, ` +
+    `${milesBetween(valley, wil).toFixed(1)}mi from Wilshire`);
+  ok("a point only the Studio City counter reaches is inside the drawn ring",
+     inside(valley, area.ring));
 
   // And the far side of Wilshire, which only Wilshire reaches, is in it too —
   // so the union grew without losing what it already covered.
-  const north: [number, number] = (() => {
+  const eastOfWilshire: [number, number] = (() => {
     for (let d = 0; d < 0.4; d += 0.001) {
-      const p: [number, number] = [wil[0] + d, wil[1]];
+      const p: [number, number] = [wil[0], wil[1] + d];
       if (milesBetween(p, wil) <= DELIVERY_RADIUS_MILES - 0.5 &&
-          milesBetween(p, usc) > DELIVERY_RADIUS_MILES) return p;
+          milesBetween(p, ven) > DELIVERY_RADIUS_MILES) return p;
     }
     throw new Error("no such point");
   })();
-  ok("and a point only Wilshire reaches is still inside it", inside(north, area.ring));
+  ok("and a point only Wilshire reaches is still inside it",
+     inside(eastOfWilshire, area.ring));
 
   // Somewhere outside every counter's reach must be outside the ring, or the
   // shape is not a boundary at all.
-  const faraway: [number, number] = [wil[0] + 0.35, wil[1]];
+  //
+  // ⚠️ South, not north. This walked north from Wilshire, which used to leave
+  // every counter behind and now heads straight for Studio City — it would have
+  // landed inside the ring and failed for the right reason with the wrong
+  // explanation.
+  const faraway: [number, number] = [wil[0] - 0.45, wil[1]];
   ok("a point beyond every counter is outside the ring", !inside(faraway, area.ring),
      reach(faraway).toFixed(1));
 

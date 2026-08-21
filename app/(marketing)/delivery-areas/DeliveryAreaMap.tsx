@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { loadMaps, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { MAP_STYLE } from "../locations/mapStyle";
 import { PIN_SIZE, pinDataUri } from "../locations/mapEngine";
-import { DELIVERY_ORIGIN } from "../locations/locations";
+import { SHOPS_CENTRE } from "../locations/locations";
 import { searchBias } from "../../geolocate";
 import { useResolvedTheme } from "../../theme";
 import { useT } from "../../i18n";
@@ -100,7 +100,7 @@ export default function DeliveryAreaMap() {
     }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void suggestAddresses(input, "address", searchBias(DELIVERY_ORIGIN.position), controller.signal)
+      void suggestAddresses(input, "address", searchBias(SHOPS_CENTRE), controller.signal)
         .then((items) => setHints(items))
         // A failed lookup leaves the field working as a plain input. The
         // Check button geocodes server-side either way, so losing

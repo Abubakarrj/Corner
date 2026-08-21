@@ -32,7 +32,7 @@ const ok = (what: string, cond: boolean, detail = "") => {
 
 process.env.SQUARE_ACCESS_TOKEN = "token";
 process.env.SQUARE_LOCATION_ID = "L-default";
-process.env.SQUARE_LOCATION_FIGUEROA = "L-figueroa";
+process.env.SQUARE_LOCATION_GLENDON = "L-glendon";
 delete process.env.SQUARE_ENV;
 
 type Wire = Record<string, unknown>;
@@ -256,9 +256,9 @@ async function main() {
 
   // ——— Per counter ———
   reset({ gift_card: { id: "gc-3", gan: "778332" } });
-  await createGiftCard("gift-abc", "figueroa");
+  await createGiftCard("gift-abc", "glendon");
   ok("a counter's cards are issued at its own Square location",
-     wire().location_id === "L-figueroa", String(wire().location_id));
+     wire().location_id === "L-glendon", String(wire().location_id));
 
   // ——— And nothing at all without credentials ———
   delete process.env.SQUARE_ACCESS_TOKEN;

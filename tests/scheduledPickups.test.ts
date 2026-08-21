@@ -85,12 +85,12 @@ async function main() {
 
   // ——— Counters do not share seats ———
   ok("another counter's slot is its own",
-     (await bookSlot("b1", "figueroa", slotA, 2)) === true);
+     (await bookSlot("b1", "glendon", slotA, 2)) === true);
   const wil = await slotCounts("wilshire");
-  const fig = await slotCounts("figueroa");
+  const glen = await slotCounts("glendon");
   ok("and the counts do not bleed",
-     wil.get(slotA.getTime()) === 2 && fig.get(slotA.getTime()) === 1,
-     `wilshire=${wil.get(slotA.getTime())} figueroa=${fig.get(slotA.getTime())}`);
+     wil.get(slotA.getTime()) === 2 && glen.get(slotA.getTime()) === 1,
+     `wilshire=${wil.get(slotA.getTime())} glendon=${glen.get(slotA.getTime())}`);
 
   // ——— Releasing gives the seat back ———
   await releaseSlot("a1");

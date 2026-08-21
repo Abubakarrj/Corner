@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerText, useT } from "../../i18n";
 import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
-import { DELIVERY_ORIGIN, nearestLocations, type StoreLocation } from "./locations";
+import { SHOPS_CENTRE, nearestLocations, type StoreLocation } from "./locations";
 import { searchBias } from "../../geolocate";
 
 const { ink, onInk, controlBorder, muted, faint, border } = PALETTE;
@@ -123,7 +123,7 @@ export default function SearchResults({
         const items = await suggestAddresses(
           input,
           isDelivery ? "address" : "region",
-          searchBias(DELIVERY_ORIGIN.position),
+          searchBias(SHOPS_CENTRE),
           controller.signal,
         );
         setSuggestions({ forQuery: input, items });

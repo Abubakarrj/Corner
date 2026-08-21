@@ -16,8 +16,12 @@ const ok = (what: string, cond: boolean, detail = "") => {
 };
 
 const WILSHIRE: [number, number] = [34.06, -118.30];
-const USC: [number, number] = [34.03, -118.27];
-const SANTA_MONICA: [number, number] = [34.02, -118.49];
+// ⚠️ Was USC and Santa Monica. The USC counter closed and Westwood opened, so
+// the point that used to sit on top of a counter now sits three miles from
+// none, and Santa Monica went from "far enough to be refused" to four miles
+// inside the rule. Both fixtures moved with the shops.
+const WESTWOOD: [number, number] = [34.06, -118.4432];
+const LONG_BEACH: [number, number] = [33.77, -118.19];
 
 const row = (over: Partial<DayRow>): DayRow => ({
   mode: "pickup", outcome: "placed", channel: "order", counter: "wilshire",
@@ -44,14 +48,14 @@ ok("and does not skip a day across the UTC boundary",
 // ——— A day with everything in it ———
 const busy: DayRow[] = [
   row({ mode: "pickup", counter: "wilshire", n: 14 }),
-  row({ mode: "pickup", counter: "figueroa", at: USC, n: 9 }),
+  row({ mode: "pickup", counter: "glendon", at: WESTWOOD, n: 9 }),
   row({ mode: "pickup", counter: "western", n: 3 }),
   row({ mode: "delivery", counter: "wilshire", at: [34.07, -118.34], n: 6 }),
-  row({ mode: "delivery", counter: "figueroa", at: USC, n: 2 }),
-  row({ mode: "catering", outcome: "interest", channel: "catering", counter: "figueroa",
-        at: USC, n: 4 }),
+  row({ mode: "delivery", counter: "glendon", at: WESTWOOD, n: 2 }),
+  row({ mode: "catering", outcome: "interest", channel: "catering", counter: "glendon",
+        at: WESTWOOD, n: 4 }),
   row({ mode: "delivery", outcome: "refused", channel: "checkout", counter: "",
-        at: SANTA_MONICA, n: 5, averageMiles: 14.2 }),
+        at: LONG_BEACH, n: 5, averageMiles: 14.2 }),
   row({ mode: "delivery", outcome: "refused", channel: "area", counter: "",
         at: [34.15, -118.45], n: 2, averageMiles: 12.7 }),
 ];
@@ -62,7 +66,7 @@ ok("the subject names the day and both headline numbers",
    busyOut.subject === "Corner Bagel — 2026-08-19 — 34 orders, 7 turned away",
    busyOut.subject);
 ok("pickup is broken out by counter",
-   /14× Wilshire Blvd/.test(busyText) && /9× USC Neighborhood/.test(busyText),
+   /14× Wilshire Blvd/.test(busyText) && /9× Glendon Ave/.test(busyText),
    busyText);
 // Named by counter and distance rather than by a coordinate — the report is
 // read over coffee, not plotted. The first version of this assertion named
@@ -76,7 +80,7 @@ ok("and never by a raw coordinate",
    !/-?\d{2}\.\d{2,}/.test(deliveryLines.join(" ").replace(/\(\d+\.\d mi\)/g, "")),
    deliveryLines.join(" | "));
 ok("a delivery that stayed near its own counter does not say so twice",
-   deliveryLines.some((line) => /near USC Neighborhood/.test(line) && !/from USC/.test(line)),
+   deliveryLines.some((line) => /near Glendon Ave/.test(line) && !/from /.test(line)),
    deliveryLines.join(" | "));
 ok("while one that crossed the city names both ends",
    deliveryLines.some((line) => /near Western Ave/.test(line) && /from Wilshire Blvd/.test(line)),

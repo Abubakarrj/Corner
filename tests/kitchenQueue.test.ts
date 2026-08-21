@@ -31,7 +31,7 @@ const ok = (what: string, cond: boolean, detail = "") => {
   else { failures += 1; console.log("FAIL ", what, detail); }
 };
 
-const COUNTERS = ["wilshire", "figueroa", "western"];
+const COUNTERS = ["wilshire", "glendon", "western"];
 
 // ——— Which number a sheet shows ———
 //
@@ -39,11 +39,11 @@ const COUNTERS = ["wilshire", "figueroa", "western"];
 // which count does one location sheet render. It is four lines and it is where
 // the original bug lived — every sheet reading the same number — so it gets
 // asked directly rather than inferred from the shape of the payload.
-const answered = { known: true as const, counters: { wilshire: 4, figueroa: 1, western: 0 } };
+const answered = { known: true as const, counters: { wilshire: 4, glendon: 1, western: 0 } };
 ok("a sheet shows its own counter's number", countFor(answered, "wilshire") === 4,
    String(countFor(answered, "wilshire")));
-ok("⚠️ and not another counter's", countFor(answered, "figueroa") === 1,
-   String(countFor(answered, "figueroa")));
+ok("⚠️ and not another counter's", countFor(answered, "glendon") === 1,
+   String(countFor(answered, "glendon")));
 // A real, checked zero. This is the one that renders "no orders ahead", and it
 // has to be reachable or a quiet counter says nothing when it has something
 // worth saying.
@@ -89,12 +89,12 @@ async function main() {
   await joinQueue("w-1", { counter: "wilshire" });
   await joinQueue("w-2", { counter: "wilshire" });
   await joinQueue("w-3", { counter: "wilshire" });
-  await joinQueue("f-1", { counter: "figueroa" });
+  await joinQueue("f-1", { counter: "glendon" });
 
   ok("a counter counts its own orders", (await ordersAhead("wilshire")) === 3,
      String(await ordersAhead("wilshire")));
-  ok("and not another counter's", (await ordersAhead("figueroa")) === 1,
-     String(await ordersAhead("figueroa")));
+  ok("and not another counter's", (await ordersAhead("glendon")) === 1,
+     String(await ordersAhead("glendon")));
   // ⚠️ The whole point. Three tickets at Wilshire must not make Western look
   // busy — that is the number that sends somebody to the wrong door, or stops
   // them walking to the right one.
@@ -115,7 +115,7 @@ async function main() {
 
   const all = await ordersAheadByCounter(COUNTERS);
   ok("every counter comes back at once",
-     same(all, { wilshire: 3, figueroa: 1, western: 0 }), JSON.stringify(all));
+     same(all, { wilshire: 3, glendon: 1, western: 0 }), JSON.stringify(all));
   // ⚠️ Present and zero, not absent. A GROUP BY on its own returns rows only
   // for counters that have work, and a missing key renders as "we cannot say"
   // — which is a different sentence from "nothing waiting".
@@ -147,9 +147,9 @@ async function main() {
   //
   // It occupies that kitchen exactly as a pickup does; where the bag goes
   // afterwards does not change how long the food takes.
-  await joinQueue("d-1", { counter: "figueroa" });
+  await joinQueue("d-1", { counter: "glendon" });
   ok("a delivery counts at the counter it is collected from",
-     (await ordersAhead("figueroa")) === 2, String(await ordersAhead("figueroa")));
+     (await ordersAhead("glendon")) === 2, String(await ordersAhead("glendon")));
   ok("and nowhere else", (await ordersAhead("western")) === 0);
 
   // ——— A ticket nobody could attribute ———
@@ -169,7 +169,7 @@ async function main() {
      String(await ordersAhead("wilshire")));
   const withOrphan = await ordersAheadByCounter(COUNTERS);
   ok("the batch answer agrees with the single one",
-     same(withOrphan, { wilshire: 4, figueroa: 3, western: 1 }), JSON.stringify(withOrphan));
+     same(withOrphan, { wilshire: 4, glendon: 3, western: 1 }), JSON.stringify(withOrphan));
   await client.query(`DELETE FROM ${SCHEMA}.kitchen_queue WHERE id = 'orphan'`);
 
   // ——— Marked ready ———

@@ -36,7 +36,7 @@ const ok = (what: string, cond: boolean, detail = "") => {
 
 process.env.SQUARE_ACCESS_TOKEN = "token";
 process.env.SQUARE_LOCATION_ID = "L-default";
-process.env.SQUARE_LOCATION_FIGUEROA = "L-figueroa";
+process.env.SQUARE_LOCATION_GLENDON = "L-glendon";
 // Left unset on purpose: SQUARE_LOCATION_WILSHIRE. The fallback is the case
 // that goes wrong quietly on a real account, so it is the one under test.
 delete process.env.SQUARE_LOCATION_WILSHIRE;
@@ -322,16 +322,16 @@ async function main() {
 
   // ——— Which counter is which Square location ———
   reset();
-  await createSquareOrder({ ...draft, counter: "figueroa" });
+  await createSquareOrder({ ...draft, counter: "glendon" });
   ok("a mapped counter goes to its own Square location",
-     order().location_id === "L-figueroa", String(order().location_id));
+     order().location_id === "L-glendon", String(order().location_id));
 
   reset();
   await createSquareOrder({ ...draft, counter: "wilshire" });
   ok("an unmapped counter falls back to the default location",
      order().location_id === "L-default", String(order().location_id));
-  ok("squareLocationFor agrees", squareLocationFor("figueroa") === "L-figueroa",
-     String(squareLocationFor("figueroa")));
+  ok("squareLocationFor agrees", squareLocationFor("glendon") === "L-glendon",
+     String(squareLocationFor("glendon")));
 
   // ——— Production is opt-in ———
   process.env.SQUARE_ENV = "production";
@@ -423,8 +423,8 @@ async function main() {
   // Western outlet's sheet.
   reset({
     order_entries: [
-      { location_id: "L-figueroa" },
-      { location_id: "L-figueroa" },
+      { location_id: "L-glendon" },
+      { location_id: "L-glendon" },
       { location_id: "L-default" },
     ],
   });
@@ -449,14 +449,14 @@ async function main() {
   process.env.SQUARE_LOCATION_WESTERN = "L-western";
   reset({
     order_entries: [
-      { location_id: "L-figueroa" },
-      { location_id: "L-figueroa" },
+      { location_id: "L-glendon" },
+      { location_id: "L-glendon" },
       { location_id: "L-wilshire" },
     ],
   });
   const open = await countOpenSquareOrders();
   ok("with a location each, the count is split by counter",
-     open?.byCounter?.figueroa === 2 && open?.byCounter?.wilshire === 1,
+     open?.byCounter?.glendon === 2 && open?.byCounter?.wilshire === 1,
      JSON.stringify(open?.byCounter));
   // A counter with nothing on the rail has to be a zero. Leaving it out would
   // render as "we cannot say", and quiet is not the same as unknown.
@@ -466,24 +466,24 @@ async function main() {
   // something this assertion is about.
   ok("and every counter's location is searched",
      JSON.stringify([...(wire().location_ids as string[])].sort()) ===
-       JSON.stringify(["L-figueroa", "L-western", "L-wilshire"]),
+       JSON.stringify(["L-default", "L-glendon", "L-western", "L-wilshire"]),
      JSON.stringify(wire().location_ids));
 
   // An entry Square declines to attribute is counted in the total and against
   // no counter — inventing one would put somebody else's ticket on this rail.
-  reset({ order_entries: [{ location_id: "L-figueroa" }, {}] });
+  reset({ order_entries: [{ location_id: "L-glendon" }, {}] });
   const orphan = await countOpenSquareOrders();
   ok("an entry with no location still counts toward the whole",
      orphan?.total === 2, JSON.stringify(orphan));
   ok("but is not assigned to a counter",
-     orphan?.byCounter?.figueroa === 1 && orphan?.byCounter?.wilshire === 0,
+     orphan?.byCounter?.glendon === 1 && orphan?.byCounter?.wilshire === 0,
      JSON.stringify(orphan?.byCounter));
 
   // Back to the shared-location shape for the assertions below, which are
   // about the request rather than the split.
   delete process.env.SQUARE_LOCATION_WILSHIRE;
   delete process.env.SQUARE_LOCATION_WESTERN;
-  reset({ order_entries: [{ location_id: "L-figueroa" }] });
+  reset({ order_entries: [{ location_id: "L-glendon" }] });
   await countOpenSquareOrders();
   const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;
   ok("only OPEN orders are asked for",
@@ -493,11 +493,11 @@ async function main() {
      JSON.stringify((filter.fulfillment_filter as Wire)?.fulfillment_states) ===
        JSON.stringify(["PROPOSED", "RESERVED", "PREPARED"]),
      JSON.stringify(filter.fulfillment_filter));
-  // Three counters, two distinct Square locations: figueroa is mapped, the
+  // Three counters, two distinct Square locations: glendon is mapped, the
   // other two fall back to the default. Asking about one location would
   // undercount a shop with three tills.
   ok("every counter's location is searched, deduplicated",
-     JSON.stringify(wire().location_ids) === JSON.stringify(["L-default", "L-figueroa"]),
+     JSON.stringify(wire().location_ids) === JSON.stringify(["L-default", "L-glendon"]),
      JSON.stringify(wire().location_ids));
 
   // ⚠️ Null and zero are different answers. A confident zero tells the next

@@ -19,30 +19,34 @@ const la = (hour: number) => new Date(Date.UTC(2026, 7, 19, hour + 7, 0));
 const noon = la(12);
 
 const wilshire = LOCATIONS.find((l) => l.id === "wilshire")!;
-const figueroa = LOCATIONS.find((l) => l.id === "figueroa")!;
+const ventura = LOCATIONS.find((l) => l.id === "ventura")!;
 const western = LOCATIONS.find((l) => l.id === "western")!;
 
 // ——— The reach is a union, and the union is bigger ———
 //
-// A point due south of the USC store: inside its ten miles, outside Wilshire's.
-// This is the whole of what the change buys, expressed as one address.
+// A point north of the Studio City counter: inside its ten miles, outside
+// Wilshire's. This is the whole of what a second origin buys, expressed as one
+// address, and the Valley is where it now buys the most — the Santa Monica
+// Mountains are between Ventura Blvd and every other counter, so its reach
+// overlaps theirs hardly at all.
+//
 // Found by walking rather than by a hand-picked offset: a degree of latitude
 // is not a round number of miles, and the first version of this probe put the
 // point at 11.1 miles and called the app wrong for agreeing.
-const south: [number, number] = (() => {
+const north: [number, number] = (() => {
   for (let d = 0; d < 0.4; d += 0.001) {
-    const p: [number, number] = [figueroa.position[0] - d, figueroa.position[1]];
+    const p: [number, number] = [ventura.position[0] + d, ventura.position[1]];
     if (
-      milesBetween(p, figueroa.position) <= DELIVERY_RADIUS_MILES &&
+      milesBetween(p, ventura.position) <= DELIVERY_RADIUS_MILES &&
       milesBetween(p, wilshire.position) > DELIVERY_RADIUS_MILES
     ) return p;
   }
   throw new Error("no such point");
 })();
-const toFig = milesBetween(south, figueroa.position);
-const toWil = milesBetween(south, wilshire.position);
-console.log(`  south point: ${toFig.toFixed(1)}mi from USC, ${toWil.toFixed(1)}mi from Wilshire`);
-ok("it is inside the USC counter's reach", toFig <= DELIVERY_RADIUS_MILES);
+const toVen = milesBetween(north, ventura.position);
+const toWil = milesBetween(north, wilshire.position);
+console.log(`  north point: ${toVen.toFixed(1)}mi from Ventura Blvd, ${toWil.toFixed(1)}mi from Wilshire`);
+ok("it is inside the Studio City counter's reach", toVen <= DELIVERY_RADIUS_MILES);
 ok("and outside Wilshire's, so one origin would have refused it",
    toWil > DELIVERY_RADIUS_MILES, toWil.toFixed(1));
 
@@ -52,7 +56,10 @@ ok("and outside Wilshire's, so one origin would have refused it",
 // line and therefore beyond it by road. Nothing is filtered to nothing: the
 // order is out of range whichever counter is named, and the quote is where
 // that gets said with a road distance.
-const faraway: [number, number] = [wilshire.position[0] + 0.30, wilshire.position[1]];
+// ⚠️ South, not north. This walked north from Wilshire, which used to lead away
+// from every counter and now leads straight at Studio City — the probe would
+// have landed inside Ventura Blvd's reach and stopped testing anything.
+const faraway: [number, number] = [wilshire.position[0] - 0.40, wilshire.position[1]];
 const farPool = kitchensFor([], noon, faraway);
 ok("nothing survives being unreachable, so the pool is left whole",
    farPool.length === LOCATIONS.filter((l) => l.delivery !== false).length,

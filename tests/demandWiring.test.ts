@@ -118,10 +118,15 @@ async function main() {
   ok("and nothing is counted", (await counted()).n === 0, String((await counted()).n));
 
   // ——— Out of range: answered, and counted once ———
-  answerAt = [34.0195, -118.4912]; // Santa Monica
-  const far = await ask("Somewhere in Santa Monica");
+  // ⚠️ Long Beach, not Santa Monica. This was Santa Monica, and the counter in
+  // Westwood put it four miles inside the rule — so the address chosen to be
+  // refused started being accepted, and a suite about recording refusals had
+  // nothing to record. Twenty miles out is out under any radius this shop
+  // would plausibly set.
+  answerAt = [33.7701, -118.1937]; // Long Beach
+  const far = await ask("Somewhere in Long Beach");
   const farBody = await far.json();
-  ok("a Santa Monica address is out of range", farBody.inRange === false,
+  ok("a Long Beach address is out of range", farBody.inRange === false,
      JSON.stringify(farBody));
   const after = await counted();
   ok("and it is counted once", after.n === 1, String(after.n));
@@ -133,13 +138,15 @@ async function main() {
     `SELECT cell_lat::text, cell_lng::text, channel FROM ${SCHEMA}.demand_daily
       WHERE outcome = 'refused'`,
   );
-  ok("stored as a rounded cell", cells[0].cell_lat === "34.02" && cells[0].cell_lng === "-118.49",
+  ok("stored as a rounded cell", cells[0].cell_lat === "33.77" && cells[0].cell_lng === "-118.19",
      `${cells[0].cell_lat},${cells[0].cell_lng}`);
   ok("tagged as the area check", cells[0].channel === "area", cells[0].channel);
 
   // A second refusal on the same block increments rather than adding a row —
   // which is what makes the table a tally and not a log of visits.
-  answerAt = [34.0199, -118.4915];
+  // The neighbour has to be on the same block as the refusal above, so it
+  // moved to Long Beach with it. It rounds into the same cell.
+  answerAt = [33.7705, -118.194];
   await ask("Another door on the same block");
   const { rows: still } = await client.query<{ n: string }>(
     `SELECT count(*)::text AS n FROM ${SCHEMA}.demand_daily WHERE outcome = 'refused'`,
@@ -178,7 +185,7 @@ async function main() {
       headers: { "Content-Type": "application/json", "x-forwarded-for": "203.0.113.9" },
       body: JSON.stringify({ locationId }),
     }));
-  await tap("figueroa");
+  await tap("glendon");
   const { rows: cater } = await client.query<{ n: string; mode: string; outcome: string }>(
     `SELECT n::text, mode, outcome FROM ${SCHEMA}.demand_daily WHERE mode = 'catering'`,
   );

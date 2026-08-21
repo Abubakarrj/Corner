@@ -214,12 +214,22 @@ export async function deliveryReach(to: [number, number]): Promise<Drive | null>
 /** How much further than the nearest able kitchen an outlet may be and still
  *  be preferred over it.
  *
- *  A mile and a half, chosen against the two facts it sits between: the
- *  Koreatown counters are seven tenths of a mile apart, so every delivery
- *  around them keeps the behaviour the rule was written for; and the USC store
- *  is three and a half miles from the outlet, so deliveries down there stop
- *  crossing the city to save a sandwich line. Anything a customer would notice
- *  on an ETA is too far to spend on a preference they did not ask for. */
+ *  A mile and a half. It was chosen against the Koreatown pair and a store by
+ *  USC three and a half miles from the outlet; the USC store has closed and the
+ *  number holds for a better reason than it was picked for.
+ *
+ *  The near end is unchanged: the two Koreatown counters are seven tenths of a
+ *  mile apart, so every delivery around them still behaves the way the outlet
+ *  preference was written for, and a bagel order on Wilshire's own block still
+ *  leaves from Western to keep the sandwich line free.
+ *
+ *  ⚠️ The far end stopped being a judgement call. With counters in Westwood and
+ *  Studio City, the only outlet is eight miles from one and seven from the
+ *  other, so a bagel delivery in either neighbourhood is nowhere near this
+ *  threshold and the preference simply does not apply. Any number under about
+ *  six would read the new geography the same way — which means this constant is
+ *  now doing its work entirely inside Koreatown, and the day a second outlet
+ *  opens next to a full store somewhere else is the day it matters again. */
 export const OUTLET_DETOUR_MILES = 1.5;
 
 export function kitchensFor(

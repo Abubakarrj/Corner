@@ -10,7 +10,7 @@ import { pinDataUri } from "./mapEngine";
 import { PIN_STYLE } from "./mapStyle";
 import { useResolvedTheme } from "../../theme";
 import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
-import { DELIVERY_ORIGIN, DELIVERY_RADIUS_MILES } from "./locations";
+import { SHOPS_CENTRE, DELIVERY_RADIUS_MILES } from "./locations";
 
 // Where the courier actually goes, placed by the person who lives there.
 //
@@ -830,7 +830,7 @@ function PinSearch({ onPick }: { onPick: (point: [number, number]) => void }) {
     // A pause, not a request per character. Places bills per session and per
     // keystroke is a lot of both.
     const timer = window.setTimeout(() => {
-      void suggestAddresses(typed, "address", searchBias(DELIVERY_ORIGIN.position), controller.signal)
+      void suggestAddresses(typed, "address", searchBias(SHOPS_CENTRE), controller.signal)
         .then((items) => {
           setFound({ forQuery: typed, items });
           setOpen(true);

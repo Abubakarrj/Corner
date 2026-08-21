@@ -6,7 +6,7 @@ import SlidingTabs from "../../ui/SlidingTabs";
 import { useT } from "../../i18n";
 import { PALETTE } from "../shopControls";
 import { setFulfillment, useFulfillment } from "../../fulfillment";
-import { DELIVERY_ORIGIN } from "../../(marketing)/locations/locations";
+import { SHOPS_CENTRE } from "../../(marketing)/locations/locations";
 import PinPicker, { type PinResult } from "../../(marketing)/locations/PinPicker";
 import CounterList from "./CounterList";
 
@@ -62,7 +62,7 @@ export default function ChangeFulfillment({
     typeof fulfillment.lat === "number" &&
     typeof fulfillment.lng === "number"
       ? [fulfillment.lat, fulfillment.lng]
-      : DELIVERY_ORIGIN.position;
+      : SHOPS_CENTRE;
 
   function confirmDelivery(result: PinResult) {
     setFulfillment({

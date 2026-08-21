@@ -31,7 +31,7 @@ const ok = (what: string, cond: boolean, detail = "") => {
 
 process.env.SQUARE_ACCESS_TOKEN = "token";
 process.env.SQUARE_LOCATION_ID = "L-default";
-process.env.SQUARE_LOCATION_FIGUEROA = "L-figueroa";
+process.env.SQUARE_LOCATION_GLENDON = "L-glendon";
 process.env.SQUARE_APPLICATION_ID = "sandbox-sq0idb-app";
 delete process.env.SQUARE_ENV;
 
@@ -221,9 +221,9 @@ async function main() {
 
   // ——— Per-counter money ———
   reset(good);
-  await chargeSquare({ ...charge, counter: "figueroa" });
+  await chargeSquare({ ...charge, counter: "glendon" });
   ok("a counter's takings go to its own Square location",
-     wire().location_id === "L-figueroa", String(wire().location_id));
+     wire().location_id === "L-glendon", String(wire().location_id));
 
   // ——— 3-D Secure, when the browser got one ———
   reset(good);
