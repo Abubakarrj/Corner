@@ -30,7 +30,7 @@ import { claim, offered } from "../app/pickupSchedule";
 import { bookSlot, releaseSlot, slotCounts } from "../app/scheduledPickups";
 import { RAMP_CAPACITY, SLOT_CAPACITY } from "../app/pickupSlots";
 import { shopClock } from "../app/shopFacts";
-import { LOCATIONS } from "../app/(marketing)/locations/locations";
+import { LOCATIONS, WESTERN } from "../app/(marketing)/locations/locations";
 
 let failures = 0;
 const ok = (what: string, cond: boolean, detail = "") => {
@@ -39,7 +39,12 @@ const ok = (what: string, cond: boolean, detail = "") => {
 };
 
 const wilshire = LOCATIONS.find((l) => l.id === "wilshire")!;
-const western = LOCATIONS.find((l) => l.id === "western")!;
+// ⚠️ The exported record, not a lookup in LOCATIONS. The shop paused this
+// counter, and it is the only one with an `opensAt` of its own — so the
+// non-default opening hour that the whole block below tests would otherwise
+// have no record to test against. Pausing a shop must not quietly delete
+// coverage of the code that serves it.
+const western = WESTERN;
 
 // 2026-08-19 is a Wednesday. Los Angeles is UTC-7 in August.
 const la = (hour: number, minute = 0) => new Date(Date.UTC(2026, 7, 19, hour + 7, minute));

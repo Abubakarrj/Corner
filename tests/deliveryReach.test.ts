@@ -5,7 +5,7 @@
 // answer is the one that counts, and whether a counter that cannot possibly be
 // in range is offered as one. A real Route Matrix would test Google.
 
-import { LOCATIONS, DELIVERY_RADIUS_MILES, milesBetween }
+import { LOCATIONS, WESTERN, DELIVERY_RADIUS_MILES, milesBetween }
   from "../app/(marketing)/locations/locations";
 import { kitchensFor } from "../app/storePlaces";
 
@@ -20,7 +20,10 @@ const noon = la(12);
 
 const wilshire = LOCATIONS.find((l) => l.id === "wilshire")!;
 const ventura = LOCATIONS.find((l) => l.id === "ventura")!;
-const western = LOCATIONS.find((l) => l.id === "western")!;
+// ⚠️ Off the exported record, not out of LOCATIONS. The shop paused this
+// counter, so it is not in the open list — and the reachability filter it
+// exercises below is still live code. See the block that pushes it back.
+const western = WESTERN;
 
 // ——— The reach is a union, and the union is bigger ———
 //
@@ -65,6 +68,15 @@ ok("nothing survives being unreachable, so the pool is left whole",
    farPool.length === LOCATIONS.filter((l) => l.delivery !== false).length,
    farPool.map((s) => s.id).join(","));
 
+// ——— ⚠️ The outlet, put back for the length of this block ———
+//
+// Everything below is about the interaction between the outlet preference and
+// the reachability filter, and the shop has paused its only outlet. The real
+// record goes back into LOCATIONS rather than a stand-in, so the day it reopens
+// these assertions are already describing it.
+LOCATIONS.push(WESTERN);
+try {
+
 // Eleven miles from Western but two from Wilshire: Western is provably out of
 // range and must not be picked, however much the outlet preference likes it.
 const nearWilshireFarWestern: [number, number] = [
@@ -97,6 +109,10 @@ console.log(
 const eastPool = kitchensFor(["single-bagel"], noon, east).map((s) => s.id);
 ok("an out-of-range outlet is not preferred", !eastPool.includes("western"), eastPool.join(","));
 ok("and a counter that is in range is", eastPool.includes("wilshire"), eastPool.join(","));
+
+} finally {
+  LOCATIONS.pop();
+}
 
 // ——— No destination changes nothing ———
 ok("with no destination the pool is unfiltered",

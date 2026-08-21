@@ -13,6 +13,7 @@ import { kitchensFor, earliestDeliveryHour } from "../app/storePlaces";
 import {
   DELIVERY_RADIUS_MILES,
   LOCATIONS,
+  WESTERN,
   milesBetween,
   nearestDelivering,
   type StoreLocation,
@@ -54,35 +55,57 @@ ok("and a Westwood sandwich leaves from Glendon",
 
 // ——— The outlet preference, and the bound on it ———
 //
-// A basket every counter can make prefers the outlets, so the full stores keep
-// their line free for the orders only they can take. With no destination in
-// hand that is still the whole rule.
-ok("with no destination, bagels prefer the outlet",
-   ids(kitchensFor(["single-bagel"], noon)) === "western",
-   ids(kitchensFor(["single-bagel"], noon)));
+// ⚠️ Run against the real Koreatown Outlet record, pushed back into LOCATIONS
+// for the length of this block. The shop paused that counter, so there is no
+// outlet in the live list — and the preference, OUTLET_DETOUR_MILES and
+// outletChipFor are all still live code one array entry away from running.
+//
+// Deleting these assertions with the record would have left that code with no
+// coverage at all, and pushing a made-up outlet would test a shape rather than
+// the shop. Pushing WESTERN itself means that when it comes back, nothing here
+// needs rewriting: it is already the case being tested.
+LOCATIONS.push(WESTERN);
+try {
+  // A basket every counter can make prefers the outlets, so the full stores
+  // keep their line free for the orders only they can take. With no destination
+  // in hand that is still the whole rule.
+  ok("with no destination, bagels prefer the outlet",
+     ids(kitchensFor(["single-bagel"], noon)) === "western",
+     ids(kitchensFor(["single-bagel"], noon)));
 
-// On the store's own block the outlet is seven tenths of a mile further, which
-// is the detour the rule was written to buy. It still buys it.
-ok("a bagel to Wilshire's own block still leaves from the outlet",
-   ids(kitchensFor(["single-bagel"], noon, onWilshire)) === "western",
-   ids(kitchensFor(["single-bagel"], noon, onWilshire)));
+  // On the store's own block the outlet is seven tenths of a mile further,
+  // which is the detour the rule was written to buy. It still buys it.
+  ok("a bagel to Wilshire's own block still leaves from the outlet",
+     ids(kitchensFor(["single-bagel"], noon, onWilshire)) === "western",
+     ids(kitchensFor(["single-bagel"], noon, onWilshire)));
 
-// ⚠️ And the bound, which the new geography makes obvious rather than marginal.
-// The only outlet is in Koreatown, eight miles from Westwood and seven from
-// Studio City. A bagel to either is nowhere near OUTLET_DETOUR_MILES, so the
-// preference does not apply and the near kitchen takes it. Under an unbounded
-// preference every bagel in Westwood would cross the city to Koreatown.
-for (const [where, point, expected] of [
-  ["Westwood", nearWestwood, "glendon"],
-  ["Studio City", nearStudioCity, "ventura"],
-] as const) {
-  const pool = kitchensFor(["single-bagel"], noon, point);
-  ok(`a bagel to ${where} is not narrowed to the outlet`,
-     !(pool.length === 1 && pool[0].id === "western"), ids(pool));
-  ok(`and leaves from ${expected}`,
-     nearestDelivering(point, pool)?.id === expected,
-     nearestDelivering(point, pool)?.id);
+  // ⚠️ And the bound. The outlet is in Koreatown, eight miles from Westwood and
+  // seven from Studio City. A bagel to either is nowhere near
+  // OUTLET_DETOUR_MILES, so the preference does not apply and the near kitchen
+  // takes it. Under an unbounded preference every bagel in Westwood would cross
+  // the city to Koreatown.
+  for (const [where, point, expected] of [
+    ["Westwood", nearWestwood, "glendon"],
+    ["Studio City", nearStudioCity, "ventura"],
+  ] as const) {
+    const pool = kitchensFor(["single-bagel"], noon, point);
+    ok(`a bagel to ${where} is not narrowed to the outlet`,
+       !(pool.length === 1 && pool[0].id === "western"), ids(pool));
+    ok(`and leaves from ${expected}`,
+       nearestDelivering(point, pool)?.id === expected,
+       nearestDelivering(point, pool)?.id);
+  }
+} finally {
+  LOCATIONS.pop();
 }
+
+// ——— ⚠️ And with the outlet paused, nothing prefers anything ———
+//
+// The state the shop is actually in. No record carries `outlet`, so the
+// preference branch never fires and the nearest able kitchen simply wins.
+ok("with the outlet out, a bagel goes to the nearest kitchen",
+   nearestDelivering(onWilshire, kitchensFor(["single-bagel"], noon, onWilshire))?.id === "wilshire",
+   ids(kitchensFor(["single-bagel"], noon, onWilshire)));
 
 // ——— ⚠️ The coverage the spread bought ———
 //
@@ -182,8 +205,17 @@ try {
   const pool = kitchensFor(["the-veggie-stack"], noon, [34.0685, -118.3092]);
   ok("with only outlets delivering, a sandwich has no kitchen at all",
      pool.length === 0, ids(pool));
-  const bagelPool = kitchensFor(["single-bagel"], noon, [34.0685, -118.3092]);
-  ok("while a bagel still has one", bagelPool.length > 0, ids(bagelPool));
+  // ⚠️ The bagel half of this needs an outlet to exist, since the block above
+  // switched every full store's delivery off. With the Koreatown Outlet paused
+  // there is nothing left delivering at all, so the real record goes in for the
+  // length of the check.
+  LOCATIONS.push({ ...WESTERN });
+  try {
+    const bagelPool = kitchensFor(["single-bagel"], noon, [34.0685, -118.3092]);
+    ok("while a bagel still has one", bagelPool.length > 0, ids(bagelPool));
+  } finally {
+    LOCATIONS.pop();
+  }
 } finally {
   LOCATIONS.splice(0, LOCATIONS.length, ...saved);
 }

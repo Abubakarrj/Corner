@@ -11,6 +11,7 @@
 
 import {
   LOCATIONS,
+  WESTERN,
   addressParts,
   deliveringStores,
   nearestDelivering,
@@ -49,7 +50,7 @@ for (const query of ["usc", "figueroa", "trojans", "90007"]) {
 // than nothing. An empty answer there would be the finder saying "no shops in
 // Los Angeles" to somebody a few miles from three of them.
 const nearUSC: [number, number] = [34.0224, -118.2851];
-ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 5,
+ok("somewhere near USC still finds counters", nearestLocations(nearUSC, "shop").length === 4,
    String(nearestLocations(nearUSC, "shop").length));
 
 // ——— The ones that opened ———
@@ -101,12 +102,42 @@ for (const { store, street, city, zip, town } of opened) {
      JSON.stringify(parts));
 }
 
-// The comparison that matters: the outlet still does not make sandwiches.
-console.log("\n— and the outlet is unchanged —");
-ok("the outlet still does not make sandwiches", !servesCategory("western", "Sandwiches"));
-ok("a sandwich basket is still refused there",
-   notServedAt("western", ["the-veggie-stack"]).length === 1);
-ok("it still opens at 11", opensAt(LOCATIONS.find((l) => l.id === "western")) === 11);
+// ——— ⚠️ The Koreatown Outlet is paused, not closed ———
+//
+// A different state from the USC store above, and the assertions have to be
+// able to tell them apart. USC is gone: no record, nothing to check but its
+// absence. This one is absent from every list a customer can reach *and* still
+// present as a record, because the shop asked for it back "for now" and putting
+// it back is meant to be one word in an array.
+console.log("\n— 355 S Western Ave, paused —");
+ok("not in the open list", LOCATIONS.every((l) => l.id !== "western"));
+ok("not collectable from", !pickupStores().some((s) => s.id === "western"));
+ok("no delivery leaves from it", !deliveringStores().some((s) => s.id === "western"));
+for (const query of ["western", "355 western", "outlet"]) {
+  const hits = searchLocations(query, "shop");
+  ok(`"${query}" does not find it`, hits.every((h) => h.id !== "western"),
+     hits.map((h) => h.id).join(",") || "(none)");
+}
+
+// ⚠️ And the record survived the pause whole. Every one of these is something
+// somebody would otherwise have to reconstruct from memory to reopen it.
+ok("the record is still exported", WESTERN.id === "western");
+ok("with its address", WESTERN.address === "355 S Western Ave #101", WESTERN.address);
+ok("its ZIP", WESTERN.city === "Los Angeles, CA 90020", WESTERN.city);
+ok("its 11am opening", opensAt(WESTERN) === 11, String(opensAt(WESTERN)));
+ok("and its shortened menu",
+   JSON.stringify(WESTERN.menu) === JSON.stringify(["Bagels", "Spreads", "Drinks"]),
+   JSON.stringify(WESTERN.menu));
+
+// ⚠️ While it is out, no counter refuses anything. The outlet was the only
+// record with a `menu`, so notServedAt is empty for every basket at every shop.
+// Correct for the counters that are open, and it means the shortened-menu path
+// has no live data behind it until this comes back.
+ok("every open counter makes sandwiches",
+   LOCATIONS.every((l) => servesCategory(l.id, "Sandwiches")),
+   LOCATIONS.filter((l) => !servesCategory(l.id, "Sandwiches")).map((l) => l.id).join(","));
+ok("so a sandwich is refused nowhere",
+   LOCATIONS.every((l) => notServedAt(l.id, ["the-veggie-stack"]).length === 0));
 
 // ——— Found by the words somebody would actually type ———
 console.log("\n— search —");
@@ -122,10 +153,9 @@ for (const [query, id] of [
 }
 // And they do not swallow the others.
 ok('"wilshire" still finds Wilshire', searchLocations("wilshire", "shop")[0]?.id === "wilshire");
-ok('"western" still finds Western', searchLocations("western", "shop")[0]?.id === "western");
-ok('"ktown" finds a Koreatown counter',
-   ["wilshire", "western"].includes(searchLocations("ktown", "shop")[0]?.id ?? ""));
-ok('"los angeles" finds all five', searchLocations("los angeles", "shop").length === 5,
+ok('"ktown" finds the Koreatown counter',
+   searchLocations("ktown", "shop")[0]?.id === "wilshire");
+ok('"los angeles" finds all four', searchLocations("los angeles", "shop").length === 4,
    String(searchLocations("los angeles", "shop").length));
 ok("Westwood is offered for catering too",
    searchLocations("westwood", "catering")[0]?.id === "glendon");

@@ -452,7 +452,6 @@ async function main() {
   // counters apart, exactly as the assertion above describes. Opening a shop
   // adds a variable to this list as well as to the deploy.
   process.env.SQUARE_LOCATION_WILSHIRE = "L-wilshire";
-  process.env.SQUARE_LOCATION_WESTERN = "L-western";
   process.env.SQUARE_LOCATION_LARCHMONT = "L-larchmont";
   process.env.SQUARE_LOCATION_VENTURA = "L-ventura";
   reset({
@@ -468,13 +467,18 @@ async function main() {
      JSON.stringify(open?.byCounter));
   // A counter with nothing on the rail has to be a zero. Leaving it out would
   // render as "we cannot say", and quiet is not the same as unknown.
+  //
+  // ⚠️ Ventura rather than Western. The quiet counter used to be the Koreatown
+  // Outlet, and the shop paused it, so it is not one of the counters Square is
+  // asked about any more. Any open counter with nothing on the rail does the
+  // job — what is being checked is that zero is reported rather than omitted.
   ok("a quiet counter is a zero rather than missing",
-     open?.byCounter?.western === 0, JSON.stringify(open?.byCounter));
+     open?.byCounter?.ventura === 0, JSON.stringify(open?.byCounter));
   // Sorted, because which order LOCATIONS happens to be declared in is not
   // something this assertion is about.
   ok("and every counter's location is searched",
      JSON.stringify([...(wire().location_ids as string[])].sort()) ===
-       JSON.stringify(["L-glendon", "L-larchmont", "L-ventura", "L-western", "L-wilshire"]),
+       JSON.stringify(["L-glendon", "L-larchmont", "L-ventura", "L-wilshire"]),
      JSON.stringify(wire().location_ids));
 
   // An entry Square declines to attribute is counted in the total and against
@@ -490,7 +494,6 @@ async function main() {
   // Back to the shared-location shape for the assertions below, which are
   // about the request rather than the split.
   delete process.env.SQUARE_LOCATION_WILSHIRE;
-  delete process.env.SQUARE_LOCATION_WESTERN;
   delete process.env.SQUARE_LOCATION_LARCHMONT;
   delete process.env.SQUARE_LOCATION_VENTURA;
   reset({ order_entries: [{ location_id: "L-glendon" }] });

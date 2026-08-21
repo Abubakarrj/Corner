@@ -21,6 +21,7 @@
 
 import {
   LOCATIONS,
+  WESTERN,
   outletChipFor,
   searchLocations,
 } from "../app/(marketing)/locations/locations";
@@ -53,7 +54,6 @@ const chipLabel = (table: Partial<Record<string, string>>, tag: string): string 
 console.log("\n— names —");
 for (const [id, name] of [
   ["wilshire", "Koreatown"],
-  ["western", "Koreatown Outlet"],
   ["larchmont", "Larchmont"],
   ["glendon", "Westwood"],
   ["ventura", "Studio City"],
@@ -61,11 +61,22 @@ for (const [id, name] of [
   ok(`${id} is called ${name}`, byId(id).name === name, byId(id).name);
 }
 
+// ⚠️ The outlet is paused, not deleted — read off the exported record rather
+// than out of LOCATIONS, which is the difference. Its name has to survive the
+// pause intact, because putting it back is meant to be one word in an array
+// and not a rewrite of the record.
+ok("the paused outlet keeps its name", WESTERN.name === "Koreatown Outlet", WESTERN.name);
+ok("and is not in the open list", LOCATIONS.every((l) => l.id !== "western"),
+   LOCATIONS.map((l) => l.id).join(","));
+ok("and would go last when it returns, after the full stores",
+   WESTERN.outlet === true && WESTERN.menu !== undefined,
+   JSON.stringify({ outlet: WESTERN.outlet, menu: WESTERN.menu }));
+
 // ⚠️ The ids are the handles, not the labels. If these ever follow the names,
 // every past order and every Square variable stops resolving.
 console.log("\n— and the ids that did not move —");
 ok("the ids are still the street handles",
-   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura,western",
+   LOCATIONS.map((l) => l.id).join(",") === "wilshire,larchmont,glendon,ventura",
    LOCATIONS.map((l) => l.id).join(","));
 
 // ——— The street names still find their shops ———
@@ -77,8 +88,6 @@ console.log("\n— the streets still reach them —");
 for (const [query, id] of [
   ["wilshire", "wilshire"],
   ["3450 wilshire", "wilshire"],
-  ["western", "western"],
-  ["355 western", "western"],
   ["glendon", "glendon"],
   ["1129 glendon", "glendon"],
   ["ventura", "ventura"],
@@ -108,18 +117,17 @@ for (const [query, id] of [
   ok(`"${query}" finds ${id} first`, hits[0]?.id === id,
      hits.map((h) => h.id).join(",") || "(none)");
 }
-// ⚠️ Both Koreatown counters answer to it, and the full store comes first.
-// They tie on score — each name starts with the word — so this is really an
-// assertion about LOCATIONS order, which is why it says so out loud.
+// ⚠️ One Koreatown counter answers to it while the outlet is paused. Both did,
+// and they tied on score with the full store first by array order — which is
+// the behaviour to check again the day the outlet comes back, since the tie is
+// broken by nothing more than where it sits in LOCATIONS.
 const ktown = searchLocations("koreatown", "shop").map((h) => h.id);
-ok("both Koreatown counters answer to it",
-   ktown.includes("wilshire") && ktown.includes("western"), ktown.join(","));
-ok("and the full store is offered before the outlet",
-   ktown.indexOf("wilshire") < ktown.indexOf("western"), ktown.join(","));
+ok("the Koreatown store answers to it", ktown.includes("wilshire"), ktown.join(","));
+ok("and the paused outlet does not", !ktown.includes("western"), ktown.join(","));
 
 // ——— The chip ———
 console.log("\n— the outlet chip —");
-const western = byId("western");
+const western = WESTERN;
 const wilshire = byId("wilshire");
 
 ok("suppressed in English, because the name already says it",

@@ -110,8 +110,8 @@ export type StoreLocation = {
 // Each given by the shop with the city, which is how an address should
 // arrive. The two Koreatown ones replace 650 S Catalina St, which the shop
 // moved off; anything still saying Catalina St, or 3064 W 8th St before it, is
-// stale and should be corrected rather than worked around. All five are inside
-// Los Angeles city limits — Westwood, Studio City and Larchmont are LA
+// stale and should be corrected rather than worked around. All of them are
+// inside Los Angeles city limits — Westwood, Studio City and Larchmont are LA
 // neighbourhoods, not separate cities — and on the same sales-tax rate, so
 // nothing downstream of an address changes except the address.
 //
@@ -145,7 +145,7 @@ export type StoreLocation = {
 // guard in storePlaces.ts, so a good geocode is accepted rather than refused —
 // which is the check to re-run if either address is ever corrected.
 //
-// None has a `door` yet. All five need one, and the Wilshire suite needs it
+// None has a `door` yet. They all need one, and the Wilshire suite needs it
 // most: see the note on the field above, and the note on that record.
 //
 // ⚠️ For the addresses added since launch the typed pair is doing more work
@@ -218,6 +218,32 @@ export const WILSHIRE: StoreLocation = {
   ],
 };
 
+// ——— ⚠️ PAUSED. Not in LOCATIONS, and not deleted either ———
+//
+// The shop took the Koreatown Outlet off the list "for now", which is a
+// different instruction from the one that closed the USC store. That record was
+// deleted; this one is kept whole and left out of the array below, so putting
+// it back is adding one word to LOCATIONS rather than reconstructing an
+// address, a ZIP, an opening hour, a shortened menu and eighteen aliases from
+// memory.
+//
+// ⚠️ It is the only outlet, so while it is out, three things in this app are
+// live code with no live data behind them: the outlet preference in
+// kitchensFor, OUTLET_DETOUR_MILES, and outletChipFor. None of them is dead —
+// they are one array entry from running again — so none of them was removed,
+// and the suites that cover them now build a synthetic outlet rather than
+// leaning on this record. See tests/deliveryRouting.test.ts.
+//
+// ⚠️ It is also the only record with a `menu` restriction, so with it out
+// every counter makes everything and notServedAt() returns empty for every
+// basket. A sandwich cannot currently be refused at a counter. That is correct
+// for the shops that are open and it means the shortened-menu path is untested
+// against real data until this comes back.
+//
+// ⚠️ Orders already placed here carry `orderAt: "western"`, which nothing
+// resolves while it is out of the array — those rows render without a counter
+// name, the same as the USC ones. Putting the record back fixes them.
+//
 // The outlet: a counter, not a full store.
 //
 // It is `outlet` rather than a second `kind` because it is not a different
@@ -429,7 +455,7 @@ export const VENTURA: StoreLocation = {
   ],
 };
 
-// Five counters, and everything around them is written for several.
+// Four counters open, and everything around them is written for several.
 //
 // That generality was here before the second address arrived, on the shop's
 // stated plan to hold a ten-mile radius until it opened more counters, and it
@@ -439,15 +465,16 @@ export const VENTURA: StoreLocation = {
 // both of which take the list as it is.
 //
 // Order matters slightly and only as a fallback: deliveringStores()[0] is
-// where a delivery leaves from when nothing better is known, so the full
-// stores come first and the outlet last.
+// where a delivery leaves from when nothing better is known. The full stores
+// come first and an outlet goes last, which is where WESTERN belongs when it
+// comes back.
 //
 // ——— ⚠️ What spreading out actually did to the coverage ———
 //
 // Three counters used to sit inside a four-mile box, so their ten-mile reaches
 // were nearly the same circle and the union was barely bigger than any one of
-// them. These five span roughly Studio City to Westwood to Koreatown, and the
-// union of five ten-mile road reaches around points that far apart is a much
+// them. These span roughly Studio City to Westwood to Koreatown, and the union
+// of four ten-mile road reaches around points that far apart is a much
 // larger and much less circular area — the Valley comes in over the hill from
 // Ventura Blvd, the Westside from Glendon, and the reach east of downtown still
 // comes from Koreatown.
@@ -466,7 +493,10 @@ export const VENTURA: StoreLocation = {
 // The centroid sits within about five miles of all of them, and each reaches ten,
 // so the union stays connected around it — but that is an argument, not a
 // measurement, and the map is the place it would show up.
-export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA, WESTERN];
+// ⚠️ WESTERN is deliberately absent — paused, not closed. See the note above
+// its record. Adding it back to the end of this array is the whole of
+// reopening it.
+export const LOCATIONS: StoreLocation[] = [WILSHIRE, LARCHMONT, GLENDON, VENTURA];
 
 /** When a counter opens, as an hour of the day.
  *
