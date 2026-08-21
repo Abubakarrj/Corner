@@ -286,7 +286,42 @@ export default function NotesWall({
           className="cb-press cb-tap mx-auto inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line-soft px-4 py-2 text-[13px] text-muted transition-colors hover:text-ink"
         >
           {t("notes.seeAll")}
-          <span aria-hidden>→</span>
+          {/* ⚠️ Drawn, not typed. This was a "→" character, and a font glyph
+              is not a sized icon: the arrow in a system UI font is drawn to
+              its own optical weight and cap height, so beside 13px text it
+              came out heavier and taller than the label it belonged to and
+              sat off the baseline. Nothing about the pill could fix that,
+              because the shape was the font's rather than ours.
+
+              A stroked chevron at 1.7, matching BackButton, which is the only
+              other arrow this app draws.
+
+              ⚠️ Sized in em rather than pixels, so it is exactly as tall as
+              the type it sits beside and stays that way if the label's size
+              ever changes. A fixed 14 next to 13px text is the same drift the
+              glyph had, one pixel smaller.
+
+              `rtl:-scale-x-100`, matching CareersLanding, because "onward" is
+              leftward in Urdu and Persian and this is the one arrow in the app
+              that points along the reading direction. Mirrored rather than
+              rotated: at this weight a 180° turn and a flip look identical,
+              and the flip is the idiom already in the codebase. */}
+          <svg
+            width="1em"
+            height="1em"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden
+            className="shrink-0 rtl:-scale-x-100"
+          >
+            <path
+              d="M3.4 8h9.2M9 4.4 12.6 8 9 11.6"
+              stroke="currentColor"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </Link>
       ) : null}
     </div>
