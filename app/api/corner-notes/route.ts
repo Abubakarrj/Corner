@@ -179,8 +179,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "notes.language" }, { status: 422 });
   }
 
-  const id = await addNote({ name, neighborhood, note, drawing, photo });
-  if (!id) {
+  const saved = await addNote({ name, neighborhood, note, drawing, photo });
+  if (!saved) {
     // ⚠️ Not counted. A database that was asleep is not a note somebody wrote,
     // and charging them for it means an outage quietly eats the allowance of
     // everybody who tried during it.
@@ -206,9 +206,13 @@ export async function POST(request: Request) {
   if (photo) {
     after(async () => {
       const verdict = await reviewPhoto(photo);
-      await setPhotoState(id, verdict);
+      await setPhotoState(saved.id, verdict);
     });
   }
 
-  return Response.json({ ok: true, id }, { status: 201 });
+  // ⚠️ The token, once, here, and in no other response this app makes. It is
+  // what lets the browser that wrote this note take it down again, and it is
+  // the only proof of authorship a wall with no accounts can have. See
+  // app/noteOwner.ts.
+  return Response.json({ ok: true, id: saved.id, unpin: saved.token }, { status: 201 });
 }

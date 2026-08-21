@@ -3,6 +3,7 @@ import "server-only";
 import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "./db";
 import { cleanDrawing, hasInk, type Drawing } from "./drawing";
 import { isPhotoState, photoOnWall, type PhotoState } from "./notePhoto";
+import { hashUnpinToken, mintUnpinToken, tokenMatches } from "./noteOwner";
 import {
   MAX_NAME,
   MAX_NEIGHBORHOOD,
@@ -69,7 +70,12 @@ const DDL = `
     photo_state   TEXT,
     at            TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- Taken down, without being lost. See the note at the top.
-    hidden        BOOLEAN NOT NULL DEFAULT false
+    hidden        BOOLEAN NOT NULL DEFAULT false,
+    -- ⚠️ A SHA-256 of the secret handed to the browser that wrote this note,
+    -- which is the only thing on the wall that can prove who left it — there
+    -- are no accounts. The secret itself is never here and never comes back out
+    -- of this table. See app/noteOwner.ts.
+    unpin_hash    TEXT
   );
   -- ⚠️ Here rather than in a script somebody runs: ready() executes this whole
   -- string on every process, and CREATE TABLE IF NOT EXISTS does nothing to a
@@ -79,6 +85,7 @@ const DDL = `
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS hidden BOOLEAN NOT NULL DEFAULT false;
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS photo BYTEA;
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS photo_state TEXT;
+  ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS unpin_hash TEXT;
   -- The wall reads newest first and skips the hidden ones, so that is the index.
   CREATE INDEX IF NOT EXISTS corner_notes_wall
     ON ${SCHEMA}.corner_notes (at DESC) WHERE hidden = false;
@@ -132,9 +139,14 @@ export function isWorthKeeping(
 
 /** Write a note to the wall.
  *
- *  Returns the id, or null when there is no database — the caller turns that
- *  into an honest "we couldn't save that" rather than a confirmation for a
- *  note nobody kept. */
+ *  Returns the id and the secret that takes it down again, or null when there
+ *  is no database — the caller turns that into an honest "we couldn't save
+ *  that" rather than a confirmation for a note nobody kept.
+ *
+ *  ⚠️ The token is returned here and nowhere else, ever. It is not on the note
+ *  shape, it is not in listNotes, and it is not in any response but the 201 for
+ *  the request that created the note. A wall that handed out unpin tokens with
+ *  its cards would be a wall anybody could clear. */
 export async function addNote(input: {
   name: string;
   neighborhood: string;
@@ -146,7 +158,7 @@ export async function addNote(input: {
    *  or is not stored, and that decision does not belong in the middle of an
    *  INSERT. */
   photo?: Uint8Array | null;
-}): Promise<string | null> {
+}): Promise<{ id: string; token: string } | null> {
   const client = db();
   if (!client) return null;
 
@@ -160,12 +172,16 @@ export async function addNote(input: {
   // Not sequential, and not guessable. Nothing is authorised by knowing one,
   // but an id somebody can count through is an invitation to walk the table.
   const id = `n_${crypto.randomUUID()}`;
+  // Minted here rather than in the route, so there is no path that writes a
+  // note without one and no caller that has to remember to.
+  const token = mintUnpinToken();
 
   try {
     await prepared();
     await client.query(
-      `INSERT INTO ${SCHEMA}.corner_notes (id, name, neighborhood, note, drawing, photo, photo_state)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO ${SCHEMA}.corner_notes
+         (id, name, neighborhood, note, drawing, photo, photo_state, unpin_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         id,
         // A wall of "anonymous" is friendlier than a wall of blanks, and the
@@ -183,9 +199,10 @@ export async function addNote(input: {
         // state is a photo no serving rule covers, and the window in which one
         // could exist is the window in which it could be served.
         photo ? ("pending" satisfies PhotoState) : null,
+        hashUnpinToken(token),
       ],
     );
-    return id;
+    return { id, token };
   } catch (error) {
     console.error(`[corner-notes] could not save a note: ${explainDbError(error)}`);
     return null;
@@ -312,6 +329,56 @@ export async function notePhotoBytes(id: string): Promise<Uint8Array | null> {
   } catch (error) {
     console.error(`[corner-notes] could not read a photo: ${explainDbError(error)}`);
     return null;
+  }
+}
+
+/** Take a note down, on the say-so of the browser that wrote it.
+ *
+ *  ——— ⚠️ Why the answer is the same either way ———
+ *
+ *  True when the note is now down, false when it is not, and deliberately no
+ *  reason attached. A wrong token, an id nobody issued, a note somebody else
+ *  wrote, a note already taken down: one answer for all of them. Distinguishing
+ *  them turns this into an oracle — post a guess, learn whether the id exists,
+ *  learn whether the token was close. There is nothing a caller can do
+ *  differently with the distinction and something an attacker can.
+ *
+ *  ⚠️ Idempotent on purpose. Unpinning a note that is already hidden answers
+ *  true, because the caller's question is "is my note off the wall" and it is.
+ *  Answering false there would make a double tap look like a failure.
+ *
+ *  Hidden rather than deleted, like every other takedown on this wall — see the
+ *  note at the top of this file. Somebody who changes their mind has lost the
+ *  card, not the words, and the shop can put it back. */
+export async function unpinNote(id: string, token: string): Promise<boolean> {
+  const client = db();
+  if (!client) return false;
+  // Cheap and total: ids are minted here as `n_` plus a UUID, so anything else
+  // is not an id we issued and there is no reason to ask the database about it.
+  if (!/^n_[0-9a-f-]{36}$/.test(id)) return false;
+
+  try {
+    await prepared();
+    const rows = await client.query<{ unpin_hash: string | null; hidden: boolean }>(
+      `SELECT unpin_hash, hidden FROM ${SCHEMA}.corner_notes WHERE id = $1`,
+      [id],
+    );
+    const row = rows.rows[0];
+    // ⚠️ The comparison happens whether or not the row exists, against a null
+    // that always fails — see tokenMatches. Returning early on a missing row
+    // would make "no such note" measurably faster than "wrong token", which is
+    // the distinction the paragraph above refuses to state out loud.
+    if (!tokenMatches(token, row?.unpin_hash ?? null)) return false;
+    if (row?.hidden) return true;
+
+    await client.query(
+      `UPDATE ${SCHEMA}.corner_notes SET hidden = true WHERE id = $1`,
+      [id],
+    );
+    return true;
+  } catch (error) {
+    console.error(`[corner-notes] could not unpin a note: ${explainDbError(error)}`);
+    return false;
   }
 }
 

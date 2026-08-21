@@ -8,6 +8,7 @@ import { MAX_NAME, MAX_NEIGHBORHOOD, MAX_NOTE } from "../../cornerNotesShape";
 import type { Drawing } from "../../drawing";
 import DrawPad from "./DrawPad";
 import { takePhoto } from "./takePhoto";
+import { rememberNote } from "./mine";
 
 // Writing one, in two steps.
 //
@@ -122,6 +123,16 @@ export default function NoteComposer() {
                 : t("notes.errSaveFailed"),
         );
         return;
+      }
+      // ⚠️ The token comes back once, in this response and no other. Kept
+      // before anything else happens, because a refresh that lands first would
+      // re-render the wall with a card this browser cannot prove it wrote.
+      // See app/noteOwner.ts.
+      const saved = (await response.json().catch(() => null)) as
+        | { id?: unknown; unpin?: unknown }
+        | null;
+      if (typeof saved?.id === "string" && typeof saved.unpin === "string") {
+        rememberNote(saved.id, saved.unpin);
       }
       setStep("done");
       // The page re-reads itself, filter and ordering intact. See the note at

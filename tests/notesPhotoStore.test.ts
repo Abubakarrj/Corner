@@ -70,11 +70,12 @@ async function main() {
 
   // ——— A note with a photograph ———
   console.log("\n— what happens when somebody sends one —");
-  const withPhoto = await addNote({
+  const withPhotoRow = await addNote({
     name: "emeka", neighborhood: "Koreatown", note: "morning",
     drawing: [], photo: jpeg(1),
   });
-  ok("the note is saved", typeof withPhoto === "string", String(withPhoto));
+  ok("the note is saved", typeof withPhotoRow?.id === "string", JSON.stringify(withPhotoRow));
+  const withPhoto = withPhotoRow?.id ?? null;
   if (!withPhoto) { console.log("\nnothing to test"); process.exit(1); }
 
   const born = await client.query<{ state: string | null; has: boolean }>(
@@ -106,10 +107,11 @@ async function main() {
 
   // ——— Refused ———
   console.log("\n— and when it is refused —");
-  const refused = await addNote({
+  const refusedRow = await addNote({
     name: "ana", neighborhood: "Echo Park", note: "hello",
     drawing: [], photo: jpeg(2),
   });
+  const refused = refusedRow?.id ?? null;
   if (!refused) { console.log("\nnothing to test"); process.exit(1); }
   await setPhotoState(refused, "refused");
   ok("the note is still on the wall", (await find(refused)) !== undefined);
@@ -140,9 +142,10 @@ async function main() {
 
   // ——— Notes without one ———
   console.log("\n— the ordinary note, which is most of them —");
-  const plain = await addNote({
+  const plainRow = await addNote({
     name: "sam", neighborhood: "", note: "just words", drawing: [],
   });
+  const plain = plainRow?.id ?? null;
   if (!plain) { console.log("\nnothing to test"); process.exit(1); }
   ok("a note with no photo says so on the wall", (await find(plain))?.photo === null);
   const noState = await client.query<{ state: string | null }>(
@@ -154,9 +157,10 @@ async function main() {
 
   // ⚠️ A photograph on its own is a note. Nobody has to write anything to leave
   // one, the same way a drawing on its own has always counted.
-  const photoOnly = await addNote({
+  const photoOnlyRow = await addNote({
     name: "", neighborhood: "", note: "", drawing: [], photo: jpeg(3),
   });
+  const photoOnly = photoOnlyRow?.id ?? null;
   ok("a photograph with no words is still a note", typeof photoOnly === "string",
      String(photoOnly));
   ok("signed anonymous, like a drawing with no name",

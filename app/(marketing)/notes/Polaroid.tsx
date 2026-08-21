@@ -1,5 +1,6 @@
 import type { NotePhoto } from "../../cornerNotesShape";
 import { CANVAS, strokePath, type Drawing } from "../../drawing";
+import UnpinNote from "./UnpinNote";
 
 // A note, as a polaroid.
 //
@@ -188,6 +189,13 @@ export default function Polaroid({
             {note}
           </p>
         ) : null}
+        {/* ——— Yours to take down, if this is the browser that wrote it ———
+
+            Renders nothing on anybody else's card and nothing at all on the
+            server, so a wall of a hundred notes is a hundred of these and none
+            of them shows. See UnpinNote.tsx for why it has to appear after
+            mount rather than during render. */}
+        {id ? <UnpinNote id={id} /> : null}
       </figcaption>
     </figure>
   );

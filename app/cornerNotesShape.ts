@@ -22,6 +22,18 @@ export const MAX_NAME = 40;
 export const MAX_NEIGHBORHOOD = 40;
 export const MAX_NOTE = 240;
 
+/** Where a browser keeps the notes it wrote, and the secrets that take them
+ *  down again. See app/(marketing)/notes/mine.ts.
+ *
+ *  Versioned in the name, like the locale key, so a change to the stored shape
+ *  is a new key rather than a parse of somebody's old one. */
+export const NOTES_STORAGE_KEY = "cb-notes-v1";
+
+/** How many of them to keep. Fifty is far past the six-an-hour the endpoint
+ *  allows anybody, and the oldest are the ones somebody is least likely to
+ *  come back and take down. */
+export const MAX_NOTES_REMEMBERED = 50;
+
 /** The longest edge, in pixels, the browser reduces a photo to before sending.
  *
  *  A thousand is more than a polaroid on a phone screen ever shows and small

@@ -534,7 +534,7 @@ const enPrivacy: Policy = {
         },
         {
           kind: "p",
-          text: "We may take a note down at any time, and we will take yours down if you ask. Because notes carry no account and no contact details, tell us enough to find it — roughly when you left it and what it said — and write to {email}. A note that is taken down stops being shown immediately.",
+          text: "You can take your own note down. On the device you wrote it from, the card carries an “Unpin” control that nobody else sees: when a note is saved, that browser is given a secret for it, and holding the secret is what proves the note is yours. It never leaves your device and it is the only thing we have that connects a note to anybody, which is why the control does not follow you to another phone and is lost if you clear the site’s data. In that case, or for anything else, write to {email} and tell us enough to find the note — roughly when you left it and what it said. We may also take a note down ourselves at any time. Either way it stops being shown immediately, and the words are kept rather than deleted so that a note taken down by mistake can be put back.",
         },
       ],
     },
