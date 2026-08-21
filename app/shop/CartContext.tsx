@@ -137,6 +137,10 @@ function getServerSnapshot() {
 // already knows.
 function onStorage(event: StorageEvent) {
   if (event.key !== null && event.key !== STORAGE_KEY) return;
+  // ⚠️ Not through commit(), so the undo has to be ended by hand. The other
+  // tab has rewritten the whole basket; putting a line back at index 2 of an
+  // array this tab no longer knows is how a restore lands in the wrong place.
+  forgetRemoved();
   lines = readStoredLines();
   listeners.forEach((listener) => listener());
 }
@@ -150,6 +154,11 @@ function subscribe(callback: () => void) {
   };
 }
 function commit(next: CartLine[]) {
+  // Any change that is not the removal itself ends the undo. See the block
+  // below: the offer is about the *last* thing that happened, and an "undo"
+  // that reaches back past two adds and a quantity change would put a line
+  // into a basket somebody has since rearranged.
+  forgetRemoved();
   lines = next;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -157,6 +166,74 @@ function commit(next: CartLine[]) {
     // Private browsing or blocked storage — the cart just doesn't persist.
   }
   listeners.forEach((listener) => listener());
+}
+
+// ——— The last thing taken out, and the way back ———
+//
+// Tapping − at a quantity of one deletes the line. That is the ordinary
+// behaviour of a stepper and it is what people expect; the problem is what it
+// costs when it is wrong. The − is a 32px target sitting a few pixels from a
+// "Remove" link, and the line it deletes carries the choices somebody made —
+// the flavour, the schmear, the toasting — none of which are recoverable by
+// tapping + again. Adding it back means going to the product page and
+// answering every question a second time.
+//
+// The two usual answers are both worse than this one. A confirm on every
+// decrement puts a dialog in front of the one gesture people use most, to
+// guard the one time in fifty it was a mistake. Refusing to delete at one —
+// making them press "Remove" instead — is a stepper that stops working at the
+// bottom of its range, and the "Remove" beside it is a smaller target than the
+// button they were already hitting.
+//
+// So: let it delete, and keep the line. The offer covers the last removal only
+// and dies the moment anything else changes the basket, because an undo whose
+// meaning has drifted is worse than none — see commit().
+//
+// Deliberately not persisted. This lives for as long as the basket is on
+// screen; a reload is a fresh start, and an "undo" waiting in a tab opened
+// tomorrow is an offer nobody asked for about a decision they have forgotten
+// making.
+let removed: { line: CartLine; at: number } | null = null;
+const removedListeners = new Set<() => void>();
+
+function notifyRemoved() {
+  removedListeners.forEach((listener) => listener());
+}
+
+function forgetRemoved() {
+  if (removed === null) return;
+  removed = null;
+  notifyRemoved();
+}
+
+/** Take a line out and remember where it was.
+ *
+ *  The index matters. Restoring to the end reorders a basket somebody has
+ *  read, which makes the undo itself a change — and on a long basket the row
+ *  reappears somewhere they are not looking. */
+function dropLine(key: string) {
+  const at = lines.findIndex((line) => lineKey(line.slug, line.options) === key);
+  if (at < 0) return;
+  const line = lines[at];
+  commit(lines.filter((_, index) => index !== at));
+  removed = { line, at };
+  notifyRemoved();
+}
+
+function getRemoved() {
+  return removed;
+}
+function getRemovedServer(): { line: CartLine; at: number } | null {
+  return null;
+}
+function subscribeRemoved(callback: () => void) {
+  removedListeners.add(callback);
+  return () => removedListeners.delete(callback);
+}
+
+/** The line the last tap took out, while putting it back is still on offer. */
+export function useRemovedLine(): CartLine | null {
+  return useSyncExternalStore(subscribeRemoved, getRemoved, getRemovedServer)?.line ?? null;
 }
 
 // ——— Lines the chosen counter cannot make ———
@@ -279,6 +356,10 @@ type CartContextValue = {
   subtotalCents: number;
   addItem: (slug: string, quantity?: number, options?: SelectedOptions) => void;
   removeItem: (key: string) => void;
+  /** Put the last removed line back. A no-op once anything else has changed
+   *  the basket — see useRemovedLine, which is what decides whether to offer
+   *  it at all. */
+  undoRemove: () => void;
   setQuantity: (key: string, quantity: number) => void;
   setLineOptions: (key: string, options: SelectedOptions) => void;
   clear: () => void;
@@ -345,7 +426,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removeItem = useCallback((key: string) => {
-    commit(lines.filter((line) => lineKey(line.slug, line.options) !== key));
+    dropLine(key);
+  }, []);
+
+  // Put the last removed line back where it was.
+  //
+  // The offer is spent either way, including when the line cannot go back:
+  // leaving it on screen after a refusal is a button that does nothing, and
+  // pressing it twice is how somebody ends up with two of something.
+  const undoRemove = useCallback(() => {
+    const last = removed;
+    if (!last) return;
+    const product = getProduct(last.line.slug);
+    // The counter can change while the offer is up — the tab bar switches it
+    // from anywhere — and the basket's prune only fires for lines it actually
+    // takes out, so this one can outlive the counter that made it. Restoring
+    // it would put back a row checkout refuses. Said, not silent, through the
+    // channel that already exists for exactly this.
+    if (!product || product.offsite || !servesAtCurrentCounter(product)) {
+      forgetRemoved();
+      if (product) noteRefused(product.name);
+      return;
+    }
+    const next = [...lines];
+    next.splice(Math.min(last.at, next.length), 0, last.line);
+    // commit() forgets the offer, which is the whole of the cleanup here.
+    commit(next);
   }, []);
 
   const setQuantity = useCallback((key: string, quantity: number) => {
@@ -354,8 +460,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // likely to have leaned on the + button than to want 999 sandwiches.
     // Catering is the door for a real bulk order — see CateringModal.
     quantity = Math.min(quantity, MAX_PER_LINE);
+    // ⚠️ Down from one is a deletion, and it goes through the same door as
+    // the Remove link so it is undoable too. That is the whole point: the
+    // stepper is where the accidental deletion happens, not the link.
     if (quantity <= 0) {
-      commit(lines.filter((line) => lineKey(line.slug, line.options) !== key));
+      dropLine(key);
       return;
     }
     commit(
@@ -430,6 +539,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       subtotalCents,
       addItem,
       removeItem,
+      undoRemove,
       setQuantity,
       setLineOptions,
       clear,
@@ -440,6 +550,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       subtotalCents,
       addItem,
       removeItem,
+      undoRemove,
       setQuantity,
       setLineOptions,
       clear,

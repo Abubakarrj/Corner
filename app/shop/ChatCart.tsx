@@ -6,6 +6,7 @@ import { useCart, useCartRows, MAX_PER_LINE } from "./CartContext";
 import { formatPrice } from "./products";
 import ProductImage from "./ProductImage";
 import OptionPicker from "./OptionPicker";
+import RemovedNotice from "./RemovedNotice";
 import { Button } from "../ui/Button";
 
 // The basket, inside the chat panel.
@@ -47,6 +48,10 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
   if (rows.length === 0) {
     return (
       <div className="flex min-h-[188px] flex-col items-center justify-center px-6 py-10 text-center">
+        {/* The empty bag is reachable by mis-tapping the last −, so the way
+            back has to be here too rather than only beside a list that no
+            longer exists. */}
+        <RemovedNotice className="mb-4 w-full text-left" />
         <span
           aria-hidden
           className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-raise text-ink"
@@ -70,6 +75,7 @@ export default function ChatCart({ onCheckout }: { onCheckout: () => void }) {
 
   return (
     <div className="flex flex-col">
+      <RemovedNotice className="mx-3.5 mt-3" />
       <div className="flex flex-col divide-y divide-line-faint px-3.5">
         {rows.map(({ line, product, key, unitCents, lineCents, chosen, complete, gone }) => (
           <div key={key} className="flex gap-3 py-3">

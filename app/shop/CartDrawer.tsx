@@ -8,6 +8,7 @@ import ProductImage from "./ProductImage";
 import FreeDeliveryBar from "./FreeDeliveryBar";
 import CrossSellStrip from "./CrossSellStrip";
 import DroppedNotice from "./DroppedNotice";
+import RemovedNotice from "./RemovedNotice";
 import { useCart, useCartRows, MAX_PER_LINE } from "./CartContext";
 import OptionPicker from "./OptionPicker";
 import { formatPrice, getCrossSellProducts } from "./products";
@@ -105,6 +106,12 @@ export default function CartDrawer({
           <CloseIcon />
         </button>
       </div>
+
+      {/* Above the branch, not inside it. Emptying the basket by mis-tapping
+          the last − is the case the undo exists for, and that is exactly the
+          case where the list below is replaced by the empty state — an offer
+          rendered beside the rows would vanish at the moment it is needed. */}
+      <RemovedNotice className="mx-6 mb-3" />
 
       {rows.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-8 text-center">

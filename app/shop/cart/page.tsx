@@ -5,6 +5,7 @@ import { useT } from "../../i18n";
 import { useMenu } from "../../i18n/menu";
 import { useBasketMoved, useCart, useCartRows, MAX_PER_LINE } from "../CartContext";
 import DroppedNotice from "../DroppedNotice";
+import RemovedNotice from "../RemovedNotice";
 import OptionPicker from "../OptionPicker";
 import { formatPrice } from "../products";
 import { Button, ButtonLink } from "../../ui/Button";
@@ -39,6 +40,9 @@ export default function CartPage() {
       ) : null}
 
       <DroppedNotice className="mb-4" />
+      {/* Above the branch: removing the last line swaps the list for the empty
+          state, and that is the removal somebody most wants back. */}
+      <RemovedNotice className="mb-4" />
       {rows.length === 0 ? (
         <div>
           <p className="text-[14px] text-muted">{t("cart.empty")}</p>
