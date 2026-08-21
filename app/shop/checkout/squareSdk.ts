@@ -39,6 +39,13 @@ export type SquarePayments = {
    *  the Wallet, an unverified domain. Callers treat a throw as "not
    *  available" rather than as an error worth showing. */
   applePay: (request: PaymentRequest) => Promise<SquareWallet>;
+  /** Throws for the same class of reasons applePay does — an unsupported
+   *  browser, no card on the Google account, plain HTTP.
+   *
+   *  ⚠️ Unlike Apple Pay, this one has an `attach`. Google render the button
+   *  themselves into a node this app supplies, which is the opposite of Apple's
+   *  rule and the reason the two cannot share one component. */
+  googlePay: (request: PaymentRequest) => Promise<SquareGooglePay>;
   verifyBuyer: (token: string, details: unknown) => Promise<{ token?: string } | null>;
 };
 
@@ -55,6 +62,18 @@ export type PaymentRequest = object;
 export type SquareWallet = {
   tokenize: () => Promise<TokenizeResult>;
   destroy?: () => Promise<void>;
+};
+
+/** Google Pay: a wallet that draws its own button into a node of ours. */
+export type SquareGooglePay = SquareWallet & {
+  attach: (
+    selector: string | HTMLElement,
+    options?: {
+      buttonColor?: "default" | "black" | "white";
+      buttonType?: "long" | "short" | "buy" | "plain" | "pay";
+      buttonSizeMode?: "static" | "fill";
+    },
+  ) => Promise<void>;
 };
 
 export type TokenizeResult = {

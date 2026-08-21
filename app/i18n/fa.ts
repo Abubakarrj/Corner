@@ -229,10 +229,9 @@ export const fa: Table = {
   "checkout.tenderCounter": "پرداخت سر پیشخوان",
   "checkout.tenderCounterHint":
     "آماده نگه می‌داریم. هنگام تحویل با کارت، Apple Pay، Google Pay یا نقدی.",
-  "checkout.tenderWallet": "Apple Pay",
-  "checkout.tenderWalletHint": "هنگام ثبت سفارش کسر می‌شود. نیازی به وارد کردن کارت نیست.",
+  "checkout.orTypeCard": "یا کارت خود را وارد کنید",
   "checkout.payWithApplePay": "پرداخت با Apple Pay",
-  "checkout.tenderCard": "همین حالا با کارت پرداخت کنید",
+  "checkout.tenderCard": "پرداخت اکنون",
   "checkout.giftCard": "کارت هدیه",
   "checkout.dueNow": "باقی‌ماندهٔ پرداخت",
   "checkout.giftCardNumber": "شمارهٔ کارت هدیه",

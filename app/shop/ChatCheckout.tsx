@@ -238,10 +238,11 @@ export default function ChatCheckout({
               cardEnabled={payments}
               card={checkout.card}
               hosted={checkout.hosted}
-              wallet={checkout.wallet}
+              apple={checkout.apple}
+              google={checkout.google}
               // Nothing awaited between the tap and the sheet — see the same
-              // note on the page, and useApplePay for why it matters.
-              onWalletPay={() => void checkout.submit()}
+              // note on the page, and useSquareWallet for why it matters.
+              onWalletPay={(via) => void checkout.submit(via)}
             />
             <SecureNote />
           </div>
@@ -284,11 +285,6 @@ export default function ChatCheckout({
             </p>
           ) : null}
 
-          {/* ⚠️ Apple's button is the submit while their tender is chosen, and
-              it is rendered up in PaymentSection. Same rule as the page: Apple
-              require their button to open the sheet, so this one would be a
-              second submit that is not allowed to do the job. */}
-          {tender === "wallet" && checkout.wallet.available ? null : (
           <Button type="submit" block disabled={status === "sending"}>
             {status === "sending"
               ? t("checkout.placingOrder")
@@ -300,7 +296,6 @@ export default function ChatCheckout({
                     total: formatPrice(totals.totalCents),
                   })}
           </Button>
-          )}
         </>
       )}
 

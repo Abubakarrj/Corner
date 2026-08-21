@@ -23,7 +23,7 @@ import {
   type SquareCardEntry,
   type TokenizedCard,
 } from "./useSquareCard";
-import { useApplePay, type ApplePayEntry } from "./useApplePay";
+import { useSquareWallet, type WalletEntry, type WalletKind } from "./useSquareWallet";
 import { clearDraft, readDraft, writeDraft } from "./draft";
 import { completed, refused } from "../../haptics";
 import { closeFunnel } from "../../navigationDepth";
@@ -184,9 +184,11 @@ export type Checkout = {
   /** Square's hosted fields, when this shop charges cards. `enabled` false
    *  means the local `card` fields above are the ones on screen. */
   hosted: SquareCardEntry;
-  /** Apple Pay, when this browser can offer it for this amount. `available`
-   *  false everywhere else, which is most of the web — see useApplePay. */
-  wallet: ApplePayEntry;
+  /** The two wallets, each available only where its browser can offer it for
+   *  this amount. `available` false everywhere else, which for either one is
+   *  most of the web — see useSquareWallet. */
+  apple: WalletEntry;
+  google: WalletEntry;
 
   // ——— A gift card against this order ———
   //
@@ -226,7 +228,13 @@ export type Checkout = {
   /** Whether the visitor has pressed the button once, which is what un-hides
       the field errors. Nothing is marked wrong before somebody tries. */
   tried: boolean;
-  submit: () => Promise<void>;
+  /** Place the order.
+   *
+   *  `via` names the wallet whose button was pressed, and is absent for the
+   *  ordinary Place order press. It decides two things: which sheet is opened
+   *  for the token, and which tender the endpoint is told about — see
+   *  app/shop/checkout/tender.ts. */
+  submit: (via?: WalletKind) => Promise<void>;
 };
 
 export function useCheckout(): Checkout {
@@ -515,11 +523,9 @@ export function useCheckout(): Checkout {
   // covers all of it means there is nothing to authorise at all. The hook
   // rebuilds the request when this number moves, which is what keeps the sheet
   // and the charge the same figure after a tip.
-  const applePay = useApplePay({
-    amountCents: dueNowCents,
-    label: "Corner Bagel",
-    enabled: step === "payment",
-  });
+  const wallets = { amountCents: dueNowCents, label: "Corner Bagel", enabled: step === "payment" };
+  const apple = useSquareWallet("apple", wallets);
+  const google = useSquareWallet("google", wallets);
 
   /** Look up a card, so the customer sees what it covers before they commit.
    *
@@ -576,6 +582,14 @@ export function useCheckout(): Checkout {
     setStep("details");
   }
 
+  // The one requirement a wallet does not have to meet: a card typed into the
+  // fields. Named rather than inlined so submit() can lift exactly this clause
+  // for a wallet press and nothing else — see the note there.
+  const cardOnlyBlocked =
+    tender === "card" &&
+    dueNowCents > 0 &&
+    !(hosted.enabled ? hosted.ready : card.complete);
+
   const valid =
     detailsValid &&
     rows.length > 0 &&
@@ -603,22 +617,22 @@ export function useCheckout(): Checkout {
     // ⚠️ Unless the gift card already covers it. Somebody whose card pays for
     // everything has nothing to type into a card field, and greying out Place
     // order until they do would refuse an order that is already paid for.
-    (tender !== "card" ||
-      dueNowCents === 0 ||
-      (hosted.enabled ? hosted.ready : card.complete)) &&
-    // ⚠️ And paying by wallet means the wallet has to be there. Apple Pay is
-    // only ever selectable while `available` is true, but it can go false
-    // underneath a selection — the amount changes and the payment request is
-    // rebuilt, and for that moment there is no sheet to open. Placing the order
-    // then would send it to the kitchen with no authorisation behind it.
-    (tender !== "wallet" || dueNowCents === 0 || applePay.available);
+    !cardOnlyBlocked;
 
-  async function submit() {
+  async function submit(via?: WalletKind) {
     setTried(true);
     // A press that refuses is the case worth marking: the button doesn't move,
     // the errors appear somewhere above the fold, and on a long form that is
     // easy to miss entirely. Android only; see app/haptics.ts.
-    if (!valid || status !== "idle") {
+    // ⚠️ A wallet is exempt from the card half of `valid`, and has to be.
+    // Somebody tapping Apple Pay has not typed a number and never will — the
+    // sheet is where their card comes from — so requiring completed fields
+    // would make the wallet button refuse every time it was pressed.
+    //
+    // Everything else in `valid` still applies: a basket, a counter that is
+    // open or a slot that is booked, a priced delivery. Those are facts about
+    // the order rather than about how it is paid for.
+    if ((!valid && !(via && cardOnlyBlocked)) || status !== "idle") {
       if (status === "idle") refused();
       return;
     }
@@ -644,7 +658,13 @@ export function useCheckout(): Checkout {
     } | null = null;
     // And only for what is actually left to charge. A gift card covering the
     // whole order means there is no card to tokenize and nothing to verify.
-    if (hosted.enabled && tender === "card" && dueNowCents > 0) {
+    // ⚠️ `!via` first, and it is not redundant. A wallet press arrives with the
+    // card tender selected — the wallets live inside it — so without this the
+    // card fields are tokenized before the sheet ever opens. Square answers
+    // that with a refusal for an empty form, the checkout says "that card
+    // wasn't accepted", and the wallet button appears broken while the wallet
+    // is fine. Whoever tapped Apple Pay is not paying with the fields.
+    if (!via && hosted.enabled && tender === "card" && dueNowCents > 0) {
       payment = await hosted.tokenize({
         amountCents: dueNowCents,
         firstName: firstName.trim(),
@@ -666,14 +686,14 @@ export function useCheckout(): Checkout {
       }
     }
 
-    // ——— Or Apple's sheet, which is the same token by a different door ———
+    // ——— Or a wallet's sheet, which is the same token by a different door ———
     //
-    // ⚠️ This runs inside the tap that opened it. Safari will only summon the
-    // Apple Pay sheet from a user gesture, and an `await` between the press and
+    // ⚠️ This runs inside the tap that opened it. Both wallets only summon
+    // their sheet from a user gesture, and an `await` between the press and
     // this call spends that gesture — which is why the payment method is built
-    // ahead of time by useApplePay and why nothing above this line awaits.
-    if (tender === "wallet" && dueNowCents > 0) {
-      const authorized = await applePay.tokenize();
+    // ahead of time by useSquareWallet and why nothing above this line awaits.
+    if (via && dueNowCents > 0) {
+      const authorized = await (via === "apple" ? apple : google).tokenize();
       if (!authorized) {
         // ⚠️ No error message, deliberately. The overwhelmingly likely reason
         // to be here is that somebody looked at the sheet and closed it, and
@@ -711,7 +731,14 @@ export function useCheckout(): Checkout {
           // Which tender was chosen, said rather than inferred. The server used
           // to guess from whether a token arrived, and guessed "this order is
           // broken" for everybody paying at the window.
-          tender,
+          // ⚠️ What actually paid, not what the radio said. The radio offers
+          // "pay now" and "pay at the window"; inside "pay now" the token can
+          // have come from a wallet sheet or from the card fields, and the
+          // endpoint charges both identically. Sending "wallet" keeps the
+          // record honest about which door it came through without inventing a
+          // third choice on screen — and paysNow() covers both, which is the
+          // point of that module.
+          tender: via ? "wallet" : tender,
           // ⚠️ The gift card, if there is one. Sent only when the lookup above
           // found something spendable, so a half-typed number never reaches the
           // order endpoint and counts against its throttle. The server checks
@@ -1029,7 +1056,8 @@ export function useCheckout(): Checkout {
     setTender,
     card,
     hosted,
-    wallet: applePay,
+    apple,
+    google,
 
     giftGan,
     setGiftGan,

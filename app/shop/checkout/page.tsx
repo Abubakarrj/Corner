@@ -469,11 +469,12 @@ export default function CheckoutPage() {
                   cardEnabled={payments}
                   card={checkout.card}
                   hosted={checkout.hosted}
-                  wallet={checkout.wallet}
+                  apple={checkout.apple}
+                  google={checkout.google}
                   // Straight to submit, with nothing awaited on the way: the
-                  // Apple Pay sheet opens from the tap itself and an await here
-                  // would spend the gesture. See useApplePay.
-                  onWalletPay={() => void checkout.submit()}
+                  // wallet sheet opens from the tap itself and an await here
+                  // would spend the gesture. See useSquareWallet.
+                  onWalletPay={(via) => void checkout.submit(via)}
                   gift={checkout}
                 />
                 <SecureNote />
@@ -507,12 +508,6 @@ export default function CheckoutPage() {
               </p>
             ) : null}
 
-            {/* ⚠️ Hidden while Apple Pay is the tender. Apple require their own
-                button to be what opens the sheet, so this one would be a second
-                submit that is not permitted to do the job — and two buttons
-                under one total is a checkout nobody can read. Theirs is
-                rendered by PaymentSection, where the card fields would be. */}
-            {tender === "wallet" && checkout.wallet.available ? null : (
             <Button
               type="submit"
               block
@@ -569,7 +564,6 @@ export default function CheckoutPage() {
                         })}
               </span>
             </Button>
-            )}
 
             {/* Says what actually happens, which depends on how the shop is set
               up rather than on a hardcoded apology. Getting this wrong in the
