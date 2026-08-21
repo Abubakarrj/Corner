@@ -1270,6 +1270,47 @@ body {
   }
 }
 
+/* ——— A polaroid coming up ———
+ *
+ * The window of a note whose photograph has been saved and not yet reviewed.
+ * See app/notePhoto.ts for what "not yet reviewed" means and why the card goes
+ * on the wall before the picture does.
+ *
+ * The colour is the point. #cfd2c6 is the milky green a real polaroid is for
+ * its first half minute, and the animation walks it towards the frame's own
+ * grey and back — an emulsion coming up, rather than a skeleton loader's
+ * shimmer sweeping across a box. It is slow (3.2s) because the thing it stands
+ * for takes seconds, and a fast pulse would read as a page waiting on a
+ * request that is late.
+ *
+ * ⚠️ Fixed colours, like everything else on this card. A polaroid is white in
+ * both themes on purpose (see Polaroid.tsx), so its window cannot take tokens
+ * that flip. */
+.cb-developing {
+  background-color: #cfd2c6;
+  animation: cbDeveloping 3200ms ease-in-out infinite;
+}
+
+@keyframes cbDeveloping {
+  0%,
+  100% {
+    background-color: #cfd2c6;
+  }
+  50% {
+    background-color: #e4e3da;
+  }
+}
+
+/* ⚠️ The colour stays, only the movement goes. The word "developing" is in the
+   frame either way — see Polaroid.tsx — so somebody who has asked for less
+   motion still learns what this card is doing. A pulse is the decoration here;
+   the text is the message. */
+@media (prefers-reduced-motion: reduce) {
+  .cb-developing {
+    animation: none;
+  }
+}
+
 /* ——— Swap: a value changing visibly ———
  *
  * See app/ui/Swap.tsx. The animation itself is transitions.dev's number

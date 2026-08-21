@@ -419,6 +419,13 @@ const enPrivacy: Policy = {
             "Website hosting providers",
             "Analytics providers",
             "Mapping and address lookup providers",
+            // ⚠️ Added when Corner Notes started accepting photographs. A
+            // picture somebody uploads is sent to Anthropic to be reviewed
+            // before it is published, and a job application written in another
+            // language is sent there to be translated — both are content
+            // leaving our servers for a third party, and a list of providers
+            // that did not say so would be an incomplete list.
+            "Automated content review and translation providers",
           ],
         },
         {
@@ -510,11 +517,20 @@ const enPrivacy: Policy = {
       blocks: [
         {
           kind: "p",
-          text: "Corner Notes is a public wall. If you leave one, the name, neighborhood, note and drawing you enter are shown on our website to anyone who visits it, right away and for as long as the note is up. Please treat it the way you would treat writing on a chalkboard in the shop: put nothing on it you would not want a stranger to read.",
+          text: "Corner Notes is a public wall. If you leave one, the name, neighborhood, note, drawing and photo you enter are shown on our website to anyone who visits it, right away and for as long as the note is up. Please treat it the way you would treat writing on a chalkboard in the shop: put nothing on it you would not want a stranger to read.",
         },
         {
           kind: "p",
-          text: "All four fields are optional and all four are yours to make up. You do not need an account and we do not ask for your email, your address, or anything that identifies you. We do not store your IP address next to your note; our servers hold addresses briefly and separately, only to limit how many notes one person can leave in an hour.",
+          text: "Every field is optional and every field is yours to make up. You do not need an account and we do not ask for your email, your address, or anything that identifies you. We do not store your IP address next to your note; our servers hold addresses briefly and separately, only to limit how many notes one person can leave in an hour.",
+        },
+        // ⚠️ The photograph gets its own paragraph, because it is the only
+        // field where what somebody sends is not what they typed. Two things
+        // have to be said plainly: what is taken out of the file before it
+        // leaves their phone, and that a third party looks at it. Neither is
+        // guessable from the sentence above.
+        {
+          kind: "p",
+          text: "A photo is the one part of a note that we look at before it goes up. Your phone or computer shrinks the picture and saves it again before it is sent, which removes what the camera wrote into the file: the device, the time, and the place the photo was taken. What arrives is then reviewed automatically, by Anthropic’s Claude, before anybody else can see it, and until that finishes the card on the wall shows an empty frame. A photo we do not publish stays with the note and is shown to nobody. Please do not photograph other people without asking them, and keep names, addresses, screens and cards out of the shot.",
         },
         {
           kind: "p",

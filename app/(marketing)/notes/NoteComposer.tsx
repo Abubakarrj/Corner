@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "../../i18n";
 import { Button } from "../../ui/Button";
 import { MAX_NAME, MAX_NEIGHBORHOOD, MAX_NOTE } from "../../cornerNotesShape";
 import type { Drawing } from "../../drawing";
 import DrawPad from "./DrawPad";
+import { takePhoto } from "./takePhoto";
 
 // Writing one, in two steps.
 //
@@ -37,6 +38,17 @@ import DrawPad from "./DrawPad";
 //
 // So the server re-renders and decides for itself whether the new note belongs
 // in what is on screen. It costs a round trip and it cannot be wrong.
+//
+// ——— The camera sits on the drawing step, not on a third one ———
+//
+// A photograph and a scribble are the same act here: the picture on the card.
+// They also compose — the photo becomes the pad's background and the strokes go
+// on top, so drawing on your own photo is not a feature anybody had to build,
+// it is what happens when the two share a square.
+//
+// ⚠️ Everything about the picture is decided in this browser. takePhoto()
+// shrinks and re-encodes it, which is what removes the location the phone wrote
+// into the file. See the note at the top of takePhoto.ts.
 
 type Step = "closed" | "who" | "draw" | "done";
 
@@ -48,6 +60,11 @@ export default function NoteComposer() {
   const [neighborhood, setNeighborhood] = useState("");
   const [note, setNote] = useState("");
   const [drawing, setDrawing] = useState<Drawing>([]);
+  // The photo, as the data URL that gets sent. One at a time: a polaroid has
+  // one window.
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [loadingPhoto, setLoadingPhoto] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +88,7 @@ export default function NoteComposer() {
       const response = await fetch("/api/corner-notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, neighborhood, note, drawing }),
+        body: JSON.stringify({ name, neighborhood, note, drawing, photo }),
       });
       if (!response.ok) {
         const answer = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -95,7 +112,14 @@ export default function NoteComposer() {
             ? t("notes.errTooMany")
             : answer?.error === "notes.empty"
               ? t("notes.errEmpty")
-              : t("notes.errSaveFailed"),
+              : // Both photo refusals say the same thing, because from where
+                // somebody is standing they are the same thing: the picture did
+                // not go. One is "that file was not a photo we can take" and
+                // the other is "the whole request was too large", and neither
+                // is worth two sentences to a person holding a phone.
+                answer?.error === "notes.photoBad" || answer?.error === "notes.tooBig"
+                ? t("notes.errPhoto")
+                : t("notes.errSaveFailed"),
         );
         return;
       }
@@ -108,15 +132,39 @@ export default function NoteComposer() {
     } finally {
       setSending(false);
     }
-  }, [drawing, name, neighborhood, note, router, sending, t]);
+  }, [drawing, name, neighborhood, note, photo, router, sending, t]);
 
   const startOver = () => {
     setName("");
     setNeighborhood("");
     setNote("");
     setDrawing([]);
+    setPhoto(null);
     setStep("closed");
   };
+
+  /** A file off the camera or the library, made into something sendable.
+   *
+   *  ⚠️ The input's value is cleared at the end whatever happened. Without it,
+   *  choosing a photo, removing it, and choosing the same one again fires no
+   *  change event at all — the value did not change — and the camera button
+   *  looks broken for exactly the person who is being careful. */
+  const choosePhoto = useCallback(
+    async (file: File | undefined) => {
+      if (!file) return;
+      setLoadingPhoto(true);
+      setError(null);
+      try {
+        const shrunk = await takePhoto(file);
+        if (shrunk) setPhoto(shrunk);
+        else setError(t("notes.errPhoto"));
+      } finally {
+        setLoadingPhoto(false);
+        if (fileRef.current) fileRef.current.value = "";
+      }
+    },
+    [t],
+  );
 
   if (step === "closed") {
     return (
@@ -208,7 +256,54 @@ export default function NoteComposer() {
   return (
     <div className="flex w-full max-w-md flex-col gap-3 rounded-2xl border border-line-soft bg-surface p-4 text-start">
       <p className="m-0 text-[13px] leading-[1.5] text-muted">{t("notes.drawBlurb")}</p>
-      <DrawPad value={drawing} onChange={setDrawing} />
+      <DrawPad value={drawing} onChange={setDrawing} photo={photo} />
+
+      {/* ——— The camera ———
+
+          A file input styled as nothing and driven by the button beside it,
+          which is the only way to get a control that looks like the rest of
+          this form. `capture="environment"` is a hint, not a rule: on a phone
+          it opens the back camera straight away, and on a laptop the browser
+          ignores it and offers the file picker, which is the right answer
+          there. accept="image/*" rather than image/jpeg — a phone hands over
+          HEIC and the canvas turns it into a JPEG on the way through, and
+          refusing it at the picker would mean an iPhone could not take part. */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(event) => void choosePhoto(event.target.files?.[0])}
+      />
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={loadingPhoto}
+          className="cb-press cb-tap inline-flex cursor-pointer items-center gap-2 rounded-full border border-line-soft px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-ink disabled:cursor-default disabled:opacity-40"
+        >
+          <CameraIcon />
+          {loadingPhoto ? t("notes.photoBusy") : photo ? t("notes.retakePhoto") : t("notes.addPhoto")}
+        </button>
+        {photo ? (
+          <button
+            type="button"
+            onClick={() => setPhoto(null)}
+            className="cb-press cb-tap cursor-pointer rounded-full border border-line-soft px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-ink"
+          >
+            {t("notes.removePhoto")}
+          </button>
+        ) : null}
+      </div>
+
+      {/* ⚠️ Said before the photo is sent, not after it fails to appear. A
+          picture that goes up a minute after the note does is fine; a picture
+          that goes up a minute after the note with no warning is a shop that
+          looks broken to the person who just used it. */}
+      {photo ? (
+        <p className="m-0 text-[12px] leading-[1.45] text-quiet">{t("notes.photoWait")}</p>
+      ) : null}
 
       {error ? (
         <p role="alert" className="m-0 text-[13px] text-brand-red">
@@ -236,6 +331,31 @@ export default function NoteComposer() {
         </button>
       </div>
     </div>
+  );
+}
+
+/** A camera, at the size of the text beside it.
+ *
+ *  aria-hidden and no title: the button says what it does in ten languages, and
+ *  an icon that also announces itself makes a screen reader say it twice. */
+function CameraIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {/* The body, with the little raised bump over the lens that is the one
+          detail that makes a rounded rectangle read as a camera. */}
+      <path d="M3 8.5a2 2 0 0 1 2-2h2l1.2-2h7.6L17 6.5h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+      <circle cx="12" cy="12.5" r="3.4" />
+    </svg>
   );
 }
 

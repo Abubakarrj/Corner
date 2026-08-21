@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import {
   MAX_NAME,
   MAX_NEIGHBORHOOD,
@@ -6,9 +7,12 @@ import {
   countNotes,
   listNotes,
   readField,
+  setPhotoState,
 } from "../../cornerNotes";
 import { cleanDrawing } from "../../drawing";
+import { PHOTO_MAX_BYTES, readPhoto } from "../../notePhoto";
 import { isOffensive } from "../../offensive";
+import { reviewPhoto } from "../../photoReview";
 import { clientIp, throttle } from "../../rateLimit";
 
 // The visitor's log: reading the wall, and adding to it.
@@ -38,6 +42,18 @@ import { clientIp, throttle } from "../../rateLimit";
 // neighbourhood are printed on the card in the same typeface as the message —
 // a wall that checks the sentence and prints whatever somebody typed in the
 // name box has checked the wrong field.
+//
+// ——— ⚠️ And then there is the photograph, which is neither of those things ———
+//
+// A camera is the one thing here that can carry something this endpoint cannot
+// read. Words go through a regex; a drawing is rebuilt from integers; a JPEG is
+// a picture of anything at all, up to and including a stranger's face or a QR
+// code pointing anywhere. So a photo takes a different path from every other
+// field on this route: stored immediately, published by nobody, and looked at
+// afterwards by app/photoReview.ts before the wall will hand it out.
+//
+// The note itself does not wait. It goes up with an empty frame that is
+// visibly developing, which is both honest and what a polaroid does anyway.
 
 /** ⚠️ Notes per address per hour.
  *
@@ -107,6 +123,16 @@ export async function POST(request: Request) {
     return Response.json({ error: "notes.tooMany" }, { status: 429 });
   }
 
+  // ⚠️ Before the body is read, not after. A note is a few hundred bytes and a
+  // photo is under a megabyte, so anything past this cap is not a note that got
+  // long — and the point of refusing here is that request.json() has not yet
+  // been asked to buffer and parse it. Twice the photo cap leaves room for
+  // base64's third, the JSON around it, and a browser that rounded up.
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(declared) && declared > PHOTO_MAX_BYTES * 2) {
+    return Response.json({ error: "notes.tooBig" }, { status: 413 });
+  }
+
   let payload: unknown;
   try {
     payload = await request.json();
@@ -123,10 +149,21 @@ export async function POST(request: Request) {
   // whatever arrived.
   const drawing = cleanDrawing(body?.drawing);
 
+  const photo = readPhoto(body?.photo);
+  // ⚠️ "There was no photo" and "there was a photo and it was not one" are
+  // different answers, and readPhoto collapses them into null on purpose — it
+  // is a reader, not a validator. Separating them again here is what stops a
+  // camera failing silently: without it, a browser that sent a PNG, or four
+  // megabytes, or something that was never an image, gets a cheerful 201 and a
+  // note with no picture on it, and nobody ever finds out why.
+  if (typeof body?.photo === "string" && body.photo.length > 0 && photo === null) {
+    return Response.json({ error: "notes.photoBad" }, { status: 400 });
+  }
+
   // ⚠️ A note has to say something. Not a validation nicety: without it the
   // wall fills with blank cards from anybody who taps submit twice, and every
   // one of them pushes a real note further down.
-  if (note.length === 0 && drawing.length === 0) {
+  if (note.length === 0 && drawing.length === 0 && photo === null) {
     return Response.json({ error: "notes.empty" }, { status: 400 });
   }
 
@@ -142,7 +179,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "notes.language" }, { status: 422 });
   }
 
-  const id = await addNote({ name, neighborhood, note, drawing });
+  const id = await addNote({ name, neighborhood, note, drawing, photo });
   if (!id) {
     // ⚠️ Not counted. A database that was asleep is not a note somebody wrote,
     // and charging them for it means an outage quietly eats the allowance of
@@ -153,5 +190,25 @@ export async function POST(request: Request) {
   // Spent here and nowhere else: there is a note on the wall, so one of the six
   // is gone.
   posts.record(ip);
+
+  // ——— ⚠️ The review, after the answer has gone ———
+  //
+  // `after` rather than an await, because the person who took the picture is
+  // holding a phone waiting for a card to appear and the review is a vision
+  // call that can take several seconds. Their note is already saved and already
+  // on the wall; what is outstanding is whether the frame fills in, and that is
+  // a question the page can answer on its next visit.
+  //
+  // Nothing here can lose the note or unwrite it. The worst outcome is a state
+  // that stays pending — a card that keeps developing — which is the same
+  // outcome as the API being down, and is the direction this whole feature
+  // fails in on purpose. See app/photoReview.ts.
+  if (photo) {
+    after(async () => {
+      const verdict = await reviewPhoto(photo);
+      await setPhotoState(id, verdict);
+    });
+  }
+
   return Response.json({ ok: true, id }, { status: 201 });
 }

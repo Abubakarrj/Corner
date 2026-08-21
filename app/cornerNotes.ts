@@ -2,6 +2,7 @@ import "server-only";
 
 import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "./db";
 import { cleanDrawing, hasInk, type Drawing } from "./drawing";
+import { isPhotoState, photoOnWall, type PhotoState } from "./notePhoto";
 import {
   MAX_NAME,
   MAX_NEIGHBORHOOD,
@@ -52,6 +53,20 @@ const DDL = `
     -- cannot be written at all, and so this is queryable if it ever needs to
     -- be. Null for a note left without one, which is allowed.
     drawing       JSONB,
+    -- ⚠️ A photograph, and the exception to everything said above about images.
+    -- The bytes are one JPEG, re-encoded by the browser and checked here; see
+    -- app/notePhoto.ts, which is where the weaker guarantee a photo gets is
+    -- written down. Null for the notes that are words and a drawing, which is
+    -- most of them.
+    --
+    -- In the row rather than in a bucket somewhere: a note is a small object
+    -- that is taken down as one thing, and a photo living in object storage is
+    -- a second place to remember to hide it from. Bounded at PHOTO_MAX_BYTES
+    -- on the way in, so a row is under a megabyte in the worst case.
+    photo         BYTEA,
+    -- pending / clear / refused, and null when there is no photograph. ⚠️ Only
+    -- 'clear' is ever served. See photoIsPublic().
+    photo_state   TEXT,
     at            TIMESTAMPTZ NOT NULL DEFAULT now(),
     -- Taken down, without being lost. See the note at the top.
     hidden        BOOLEAN NOT NULL DEFAULT false
@@ -62,6 +77,8 @@ const DDL = `
   -- the first deployment to get it keeps the old shape.
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS neighborhood TEXT;
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS hidden BOOLEAN NOT NULL DEFAULT false;
+  ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS photo BYTEA;
+  ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS photo_state TEXT;
   -- The wall reads newest first and skips the hidden ones, so that is the index.
   CREATE INDEX IF NOT EXISTS corner_notes_wall
     ON ${SCHEMA}.corner_notes (at DESC) WHERE hidden = false;
@@ -96,9 +113,21 @@ export function readField(value: unknown, max: number): string {
 }
 
 /** Somebody has to have said something. A drawing on its own counts — that is
- *  a note too — and so does a line of text with no picture. Neither is not. */
-export function isWorthKeeping(note: string, drawing: Drawing): boolean {
-  return note.length > 0 || hasInk(drawing);
+ *  a note too — and so does a line of text with no picture, and so does a
+ *  photograph with neither. Nothing at all is not.
+ *
+ *  ⚠️ The photograph counts before anybody has looked at it. It has to: this
+ *  runs at the moment of the write and the review has not happened yet, so
+ *  requiring a cleared photo would mean a picture on its own could never be
+ *  saved and there would be nothing left to review. A note that turns out to be
+ *  a refused photo and no words is a card with an empty frame, which is a shape
+ *  the wall already has. */
+export function isWorthKeeping(
+  note: string,
+  drawing: Drawing,
+  photo: Uint8Array | null = null,
+): boolean {
+  return note.length > 0 || hasInk(drawing) || photo !== null;
 }
 
 /** Write a note to the wall.
@@ -111,6 +140,12 @@ export async function addNote(input: {
   neighborhood: string;
   note: string;
   drawing: unknown;
+  /** ⚠️ Already decoded and already checked — readPhoto() in app/notePhoto.ts,
+   *  not `unknown` like the drawing. The drawing can be cleaned into something
+   *  safe out of any input at all; a photograph either is a JPEG under the cap
+   *  or is not stored, and that decision does not belong in the middle of an
+   *  INSERT. */
+  photo?: Uint8Array | null;
 }): Promise<string | null> {
   const client = db();
   if (!client) return null;
@@ -119,7 +154,8 @@ export async function addNote(input: {
   const name = readField(input.name, MAX_NAME);
   const note = readField(input.note, MAX_NOTE);
   const neighborhood = readField(input.neighborhood, MAX_NEIGHBORHOOD);
-  if (!isWorthKeeping(note, drawing)) return null;
+  const photo = input.photo ?? null;
+  if (!isWorthKeeping(note, drawing, photo)) return null;
 
   // Not sequential, and not guessable. Nothing is authorised by knowing one,
   // but an id somebody can count through is an invitation to walk the table.
@@ -128,8 +164,8 @@ export async function addNote(input: {
   try {
     await prepared();
     await client.query(
-      `INSERT INTO ${SCHEMA}.corner_notes (id, name, neighborhood, note, drawing)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO ${SCHEMA}.corner_notes (id, name, neighborhood, note, drawing, photo, photo_state)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         id,
         // A wall of "anonymous" is friendlier than a wall of blanks, and the
@@ -139,6 +175,14 @@ export async function addNote(input: {
         neighborhood || null,
         note,
         drawing.length > 0 ? JSON.stringify(drawing) : null,
+        // Buffer rather than the Uint8Array: node-postgres writes a Buffer as
+        // bytea and does not know what to do with anything else.
+        photo ? Buffer.from(photo) : null,
+        // ⚠️ Born pending, in the same statement as the bytes. Not "written
+        // now, marked pending in a moment": a photo that exists with a null
+        // state is a photo no serving rule covers, and the window in which one
+        // could exist is the window in which it could be served.
+        photo ? ("pending" satisfies PhotoState) : null,
       ],
     );
     return id;
@@ -178,6 +222,8 @@ export async function listNotes(
       neighborhood: string | null;
       note: string;
       drawing: unknown;
+      has_photo: boolean;
+      photo_state: string | null;
       at: Date;
     }>(
       // ⚠️ The two orderings are literals chosen here, never interpolated
@@ -187,7 +233,13 @@ export async function listNotes(
       //
       // NULLS LAST so the notes from nobody-said-where sit at the end rather
       // than at the top, which is where an unqualified sort puts them.
-      `SELECT id, name, neighborhood, note, drawing, at
+      // ⚠️ `photo IS NOT NULL`, not `photo`. A hundred cards is a hundred
+      // JPEGs, and selecting the bytes to answer "is there a picture" would
+      // pull tens of megabytes across the connection to render a page that
+      // then fetches every one of them again by URL. The bytes have exactly
+      // one way out of this table and it is notePhotoBytes(), below.
+      `SELECT id, name, neighborhood, note, drawing,
+              photo IS NOT NULL AS has_photo, photo_state, at
          FROM ${SCHEMA}.corner_notes
         WHERE hidden = false
           AND ($3::text IS NULL OR lower(neighborhood) = lower($3))
@@ -209,11 +261,83 @@ export async function listNotes(
       // of it with a bug — and this is the last place before it becomes an
       // SVG path on somebody's screen.
       drawing: row.drawing === null ? null : cleanDrawing(row.drawing),
+      // ⚠️ Both halves, and in this order. `has_photo` is asked first because
+      // a state without bytes is a lie the wall would tell forever: a row whose
+      // photo failed to write but whose state says pending is a card that
+      // develops until somebody notices. And the state is run through
+      // isPhotoState because this column is TEXT — nothing in Postgres stops a
+      // hand-written UPDATE putting a word in it that no code here knows.
+      photo: row.has_photo && isPhotoState(row.photo_state)
+        ? photoOnWall(row.photo_state)
+        : null,
       at: row.at.toISOString(),
     }));
   } catch (error) {
     console.error(`[corner-notes] could not read the wall: ${explainDbError(error)}`);
     return null;
+  }
+}
+
+/** The bytes of one photograph, for the route that serves them.
+ *
+ *  ——— ⚠️ The rule is in the query, not in the caller ———
+ *
+ *  Both conditions are in the WHERE clause rather than fetched-then-checked,
+ *  and that is not a performance choice. A row that may not be shown is a row
+ *  this function never holds: there is no branch anywhere that has the bytes in
+ *  hand and is deciding what to do with them, so there is no branch anybody can
+ *  get wrong later.
+ *
+ *  `hidden = false` as well as the state, because the two say different things.
+ *  A cleared photo on a note that was taken down is still not for showing, and
+ *  taking a note down has to take its picture down with it — otherwise the one
+ *  moderation control this wall has works on the words and leaves the
+ *  photograph up at a URL. */
+export async function notePhotoBytes(id: string): Promise<Uint8Array | null> {
+  const client = db();
+  if (!client) return null;
+  // Cheap and total: ids are minted here as `n_` plus a UUID, so anything else
+  // is not an id we issued and there is no reason to ask the database about it.
+  if (!/^n_[0-9a-f-]{36}$/.test(id)) return null;
+
+  try {
+    await prepared();
+    const rows = await client.query<{ photo: Buffer }>(
+      `SELECT photo FROM ${SCHEMA}.corner_notes
+        WHERE id = $1 AND hidden = false AND photo_state = 'clear' AND photo IS NOT NULL`,
+      [id],
+    );
+    const photo = rows.rows[0]?.photo;
+    return photo ? Uint8Array.from(photo) : null;
+  } catch (error) {
+    console.error(`[corner-notes] could not read a photo: ${explainDbError(error)}`);
+    return null;
+  }
+}
+
+/** Record what the review decided.
+ *
+ *  ⚠️ The WHERE clause carries `photo_state = 'pending'`, which is the whole
+ *  point: the only transition this function may make is out of pending. A
+ *  review that
+ *  arrives late — a retry, a duplicated background task, a queue that fired
+ *  twice — must not be able to reopen a photo somebody already took down by
+ *  hand, and must not overwrite a verdict already recorded. Writing it as a
+ *  condition means that is true of every caller rather than of the careful
+ *  ones. */
+export async function setPhotoState(id: string, state: PhotoState): Promise<void> {
+  const client = db();
+  if (!client) return;
+  try {
+    await prepared();
+    await client.query(
+      `UPDATE ${SCHEMA}.corner_notes
+          SET photo_state = $2
+        WHERE id = $1 AND photo_state = 'pending'`,
+      [id, state],
+    );
+  } catch (error) {
+    console.error(`[corner-notes] could not record a photo verdict: ${explainDbError(error)}`);
   }
 }
 

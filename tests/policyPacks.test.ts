@@ -57,10 +57,24 @@ ok("and that the address is not stored beside the note",
    /IP address/i.test(enNotes));
 ok("and how to have one taken down", /taken down/i.test(enNotes));
 
+// ——— ⚠️ The photograph, which is the one field that is not what somebody typed ———
+//
+// Three things about a photo are not guessable from "this wall is public", and
+// each is something a person would want to have known beforehand: that the file
+// is stripped of where it was taken, that a third party looks at it, and that
+// it is held back until they have. A policy that described the wall and left
+// all three out would be accurate and still misleading.
+ok("⚠️ it names the photo as one of the things published", /photo/i.test(enNotes));
+ok("⚠️ and says the location is taken out of the file before it is sent",
+   /the place the photo was taken/i.test(enNotes) && /before it is sent/i.test(enNotes));
+ok("⚠️ and names who reviews it", /Anthropic/.test(enNotes) && /Claude/.test(enNotes));
+ok("and says nothing is shown until that is done",
+   /before anybody else can see it/i.test(enNotes));
+
 for (const [id, pack] of Object.entries(POLICY_PACKS)) {
   const section = pack.privacy.sections[notesAt];
   ok(`${id}: has the Corner Notes section in the same slot`, section !== undefined);
-  ok(`${id}: with three paragraphs`, section?.blocks.length === 3,
+  ok(`${id}: with four paragraphs`, section?.blocks.length === 4,
      String(section?.blocks.length));
   // ⚠️ The heading stays "Corner Notes" everywhere on purpose — it is the name
   // of the thing, like Corner Bagel — so this checks the *paragraphs* moved
@@ -70,6 +84,12 @@ for (const [id, pack] of Object.entries(POLICY_PACKS)) {
      !text.includes("public wall"), text.slice(0, 40));
   ok(`${id}: and long enough to be the actual explanation`,
      text.length > 300, String(text.length));
+  // ⚠️ Product names, so they survive translation and are the one string in
+  // this paragraph that can be checked from outside the language. What is
+  // being pinned is that the photograph paragraph is really there in every
+  // locale rather than a fourth paragraph about something else.
+  ok(`${id}: and names who looks at a photograph`,
+     text.includes("Anthropic") && text.includes("Claude"));
 }
 
 console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);

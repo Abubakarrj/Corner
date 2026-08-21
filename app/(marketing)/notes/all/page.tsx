@@ -112,10 +112,12 @@ export default async function AllNotesPage({
           {notes.map((entry) => (
             <li key={entry.id}>
               <Polaroid
+                id={entry.id}
                 name={entry.name}
                 neighborhood={entry.neighborhood}
                 note={entry.note}
                 drawing={entry.drawing}
+                photo={entry.photo}
               />
             </li>
           ))}

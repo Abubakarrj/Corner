@@ -37,10 +37,14 @@ import {
 export default function DrawPad({
   value,
   onChange,
+  photo = null,
   className = "",
 }: {
   value: Drawing;
   onChange: (next: Drawing) => void;
+  /** A photograph to draw on top of, as a data URL this browser just made
+   *  itself. See the note where it is rendered. */
+  photo?: string | null;
   className?: string;
 }) {
   const t = useT();
@@ -125,6 +129,32 @@ export default function DrawPad({
         aria-label={t("notes.padLabel")}
         className="relative aspect-square w-full cursor-crosshair touch-none select-none overflow-hidden rounded-xl border border-line-soft bg-white"
       >
+        {/* ——— ⚠️ The photograph, underneath the ink ———
+
+            The one <img> the notes wall has, and it is worth being clear about
+            what is in it: a data URL this browser produced a moment ago from a
+            file this person chose, on their own machine, and never anybody
+            else's bytes. Nothing here renders a stranger's image — that
+            happens on the wall, from an endpoint, and Polaroid.tsx says so
+            where it does it.
+
+            Under the svg on purpose, so the strokes go on top and a photo can
+            be drawn on. The pad and the polaroid window are both squares of
+            the same aspect, which is what makes what you see here the thing
+            that ends up on the card. object-cover, because a phone photo is
+            4:3 or 3:4 and a square frame has to crop something. */}
+        {photo ? (
+          // A local data URL: there is nothing for next/image to fetch, size
+          // or optimise, and nothing that leaves this browser.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photo}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+
         <svg viewBox={`0 0 ${CANVAS} ${CANVAS}`} className="absolute inset-0 h-full w-full">
           {shown.map((stroke, index) => (
             <path
@@ -141,7 +171,10 @@ export default function DrawPad({
 
         {/* The prompt, until there is a mark on the pad. Underneath the
             strokes and non-interactive, so it never eats the first touch. */}
-        {shown.length === 0 ? (
+        {/* ⚠️ Not over a photograph. "draw here" printed across somebody's
+            picture reads as a caption on it rather than as an instruction to
+            an empty pad, and the pad is no longer empty. */}
+        {shown.length === 0 && !photo ? (
           <span
             aria-hidden
             className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] text-faint"

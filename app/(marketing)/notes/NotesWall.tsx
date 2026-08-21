@@ -87,10 +87,13 @@ export default function NotesWall({
           {notes.map((entry) => (
             <li key={entry.id} style={scatterStyle(entry.id)}>
               <Polaroid
+                id={entry.id}
                 name={entry.name}
                 neighborhood={entry.neighborhood}
                 note={entry.note}
                 drawing={entry.drawing}
+                photo={entry.photo}
+                developingLabel={t("notes.developing")}
               />
             </li>
           ))}

@@ -1,17 +1,33 @@
+import type { NotePhoto } from "../../cornerNotesShape";
 import { CANVAS, strokePath, type Drawing } from "../../drawing";
 
 // A note, as a polaroid.
 //
 // ——— ⚠️ The drawing is drawn here, from numbers ———
 //
-// Nothing on this card is markup somebody else wrote. The name, the
-// neighbourhood and the note are text, which React escapes; the picture is an
-// SVG this file builds out of integers that app/drawing.ts has already bounded
-// to a 0–1000 square. There is no <img>, no data URL, no dangerouslySet
-// anything, and no path for a stranger's string to become an element.
+// The name, the neighbourhood and the note are text, which React escapes; the
+// scribble is an SVG this file builds out of integers that app/drawing.ts has
+// already bounded to a 0–1000 square. There is no data URL and no
+// dangerouslySet anything, so no string a stranger typed can become an element.
 //
 // That is the whole reason the pad stores strokes instead of an image. See the
 // note at the top of app/drawing.ts.
+//
+// ——— ⚠️ And then there is the photograph, which is somebody else's bytes ———
+//
+// This file used to say "there is no <img> here", and that sentence was the
+// short version of the guarantee above. It is no longer true and the guarantee
+// it stood for has moved: a photo is served by /api/note-photo/[id], which
+// hands out only reviewed pictures on notes that are still up, with a fixed
+// Content-Type and nosniff. The safety is in that endpoint now, not in the
+// absence of this tag. Read it before changing either.
+//
+// ⚠️ A plain <img> rather than next/image, deliberately. next/image would route
+// every photo through the image optimiser, which caches what it resizes — a
+// second copy of a moderated picture, in a cache this app cannot clear, which
+// would outlive taking the note down. The optimiser earns its keep on artwork a
+// shop ships; it is the wrong thing to point at user content that might have to
+// disappear.
 //
 // ——— Why a picture frame with no picture is still a polaroid ———
 //
@@ -21,18 +37,33 @@ import { CANVAS, strokePath, type Drawing } from "../../drawing";
 // a grid that jumps.
 
 export default function Polaroid({
+  id,
   name,
   neighborhood,
   note,
   drawing,
+  photo = null,
+  developingLabel = "developing",
   className = "",
 }: {
+  /** The note's id, which is where its photograph is fetched from. Only read
+   *  when there is one to fetch. */
+  id?: string;
   name: string;
   neighborhood?: string | null;
   note: string;
   drawing: Drawing | null;
+  photo?: NotePhoto;
+  /** ⚠️ Passed in rather than looked up, because this renders on both sides of
+   *  the line: the wall is a client component with the translator in hand, and
+   *  /notes/all is a server page that has no hook to call. A default in English
+   *  keeps the server page honest about what it can do instead of leaving a
+   *  blank frame with nothing in it. */
+  developingLabel?: string;
   className?: string;
 }) {
+  const developing = photo === "developing";
+  const src = photo === "ready" && id ? `/api/note-photo/${encodeURIComponent(id)}` : null;
   return (
     <figure
       // ——— ⚠️ Two shadows, because the card is white on white ———
@@ -56,7 +87,50 @@ export default function Polaroid({
     >
       {/* The window. Square, like a real one, and the same grey whether or not
           anybody drew — see the note above. */}
-      <div className="relative aspect-square w-full overflow-hidden bg-[#efefe9]">
+      <div
+        className={`relative aspect-square w-full overflow-hidden ${
+          developing ? "cb-developing" : "bg-[#efefe9]"
+        }`}
+      >
+        {/* ——— The photograph, under the ink ———
+
+            Same order as the pad it was made on, so a photo somebody drew over
+            arrives on the wall looking the way it looked when they made it.
+
+            alt="" and aria-hidden, for the same reason the drawing is: the
+            caption underneath is the note, and nobody can write alt text for a
+            stranger's photograph. Announcing "image" before every card would be
+            noise on a wall of ninety, and a made-up description would be worse
+            than silence.
+
+            Lazy, because this wall is a hundred cards and most of them are
+            below the fold on every screen it renders on. */}
+        {src ? (
+          // See the note at the top: the optimiser must not hold a copy of a
+          // picture that might have to come down.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={src}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+
+        {/* ⚠️ The word, not only the colour. A frame quietly pulsing says
+            nothing to somebody who has just left a photo and is wondering where
+            it went, and says nothing at all to a screen reader. This is the
+            only text on the card that the person who wrote the note did not
+            write, which is why it is small and lowercase: it is the shop
+            speaking, quietly, on somebody else's card. */}
+        {developing ? (
+          <span className="absolute inset-0 flex items-center justify-center text-[11px] tracking-wide text-[#6b675e]">
+            {developingLabel}
+          </span>
+        ) : null}
+
         {drawing && drawing.length > 0 ? (
           <svg
             viewBox={`0 0 ${CANVAS} ${CANVAS}`}

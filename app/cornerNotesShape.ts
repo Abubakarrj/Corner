@@ -22,12 +22,47 @@ export const MAX_NAME = 40;
 export const MAX_NEIGHBORHOOD = 40;
 export const MAX_NOTE = 240;
 
+/** The longest edge, in pixels, the browser reduces a photo to before sending.
+ *
+ *  A thousand is more than a polaroid on a phone screen ever shows and small
+ *  enough that the whole thing is tens of kilobytes. The reduction is not only
+ *  about size: re-drawing through a canvas is what drops EXIF, so a picture
+ *  arrives without the camera, the timestamp or the coordinates it was taken
+ *  at. See app/notePhoto.ts. */
+export const PHOTO_MAX_EDGE = 1000;
+
+/** JPEG quality for that re-encode. High enough that a photo of a person looks
+ *  like them, low enough that the file is small. */
+export const PHOTO_QUALITY = 0.72;
+
+/** The one format accepted, in and out. */
+export const PHOTO_TYPE = "image/jpeg";
+
+/** What the wall is told about a note's photograph.
+ *
+ *  ——— ⚠️ Three states on the server, two of them here ———
+ *
+ *  A stored photo is `pending`, `clear` or `refused` (app/notePhoto.ts). Only
+ *  the first two have a spelling on the wire, and that is the point: a refused
+ *  photo and a note that never had one are the same answer, `null`, so nothing
+ *  a browser receives says that a picture exists and is being withheld.
+ *
+ *  `developing` is a real state and not a placeholder for a slow request. The
+ *  note is up, the photo is saved, and nobody has looked at it yet — so the
+ *  card shows an empty frame coming up, which is what a polaroid does for its
+ *  first minute anyway. */
+export type NotePhoto = "developing" | "ready" | null;
+
 export type CornerNote = {
   id: string;
   name: string;
   neighborhood: string | null;
   note: string;
   drawing: Drawing | null;
+  /** Whether there is a photograph on this card, and whether it may be shown.
+   *  The bytes are not here — they come from /api/note-photo/[id], which is
+   *  the one place allowed to hand them out. */
+  photo: NotePhoto;
   /** ISO 8601. A string rather than a Date because this crosses the server to
    *  the client, where a Date does not survive serialisation. */
   at: string;
