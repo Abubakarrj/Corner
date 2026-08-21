@@ -3,6 +3,7 @@
 import { useId } from "react";
 import { useT } from "../../i18n";
 import { BRAND_LABEL, cvcDigits, type CardBrand } from "./card";
+import CardBrandMark from "./CardBrandMark";
 import type { CardEntry } from "./useCard";
 import type { SquareCardEntry } from "./useSquareCard";
 
@@ -23,20 +24,26 @@ import type { SquareCardEntry } from "./useSquareCard";
 const FIELD =
   "w-full rounded-xl border bg-surface px-3.5 py-3 text-[16px] tabular-nums text-ink outline-none transition-colors placeholder:text-quieter focus:border-ink";
 
+// The card in the corner of the number field.
+//
+// ⚠️ This was a generic card outline with a coloured stripe across it, and the
+// colour was the only thing that changed when the brand was recognised. That is
+// a detail somebody has to be told to look for. The mark is what people already
+// check a card against, and it is what the processor's own field shows a few
+// pixels away on a shop that charges cards — so an outline here made the two
+// halves of one payment step look like two different forms.
+//
+// Falls back to the outline while the brand is unknown, which is most of the
+// typing: there is nothing to name yet, and a placeholder mark would be naming
+// a card nobody has entered.
 function CardIcon({ brand }: { brand: CardBrand }) {
-  // The stripe takes the brand's colour once there is one to take. Not a logo:
-  // card marks are trademarked artwork with usage rules, and this only has to
-  // say "we know what you're typing".
-  const stripe =
-    brand === "visa"
-      ? "#1a1f71"
-      : brand === "mastercard"
-        ? "#eb001b"
-        : brand === "amex"
-          ? "#2e77bc"
-          : brand === "discover"
-            ? "#f76b1c"
-            : "currentColor";
+  if (brand !== "unknown") {
+    return (
+      <span className="flex overflow-hidden rounded-[4px] ring-1 ring-line-soft">
+        <CardBrandMark brand={brand} />
+      </span>
+    );
+  }
   return (
     <svg width="22" height="15" viewBox="0 0 22 15" fill="none" aria-hidden>
       <rect
@@ -49,7 +56,7 @@ function CardIcon({ brand }: { brand: CardBrand }) {
         strokeWidth="1.2"
         opacity="0.45"
       />
-      <rect x="0.7" y="3.9" width="20.6" height="2.6" fill={stripe} opacity="0.9" />
+      <rect x="0.7" y="3.9" width="20.6" height="2.6" fill="currentColor" opacity="0.35" />
     </svg>
   );
 }
@@ -166,7 +173,9 @@ export default function CardFields({
             value={card.number}
             aria-invalid={card.numberError ? true : undefined}
             onChange={(event) => card.setNumber(event.target.value)}
-            className={`${FIELD} pr-11 ${card.numberError ? "border-brand-red" : "border-line-soft"}`}
+            // pr-14, not pr-11: the mark is 32px where the outline was 22, and
+            // at pr-11 a full sixteen-digit number ran under it.
+            className={`${FIELD} pr-14 ${card.numberError ? "border-brand-red" : "border-line-soft"}`}
           />
           <span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-muted">
             <CardIcon brand={card.brand} />
@@ -206,9 +215,14 @@ export default function CardFields({
         </Line>
       </div>
 
-      {/* The brand, named, once it's known. A stripe that changed colour is a
-          detail somebody might not notice; this is the confirmation that the
-          form read the number the way they meant it. */}
+      {/* The brand, once it's known: the confirmation that the form read the
+          number the way they meant it.
+
+          The mark and the name together, not one or the other. The mark is
+          what somebody checks against the card in their hand, and it is the
+          same mark the accepted-cards row below shows — but a picture on its
+          own says nothing to a screen reader, and this line exists precisely
+          to be told the answer. */}
       {card.brand !== "unknown" ? (
         <p className="m-0 text-[11px] text-quiet">{BRAND_LABEL[card.brand]}</p>
       ) : null}

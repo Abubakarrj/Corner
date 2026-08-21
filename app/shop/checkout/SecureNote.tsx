@@ -1,6 +1,8 @@
 "use client";
 
 import { useT } from "../../i18n";
+import CardBrandMark from "./CardBrandMark";
+import type { CardBrand } from "./card";
 
 // The lock line and the card marks under the payment step.
 //
@@ -13,12 +15,26 @@ import { useT } from "../../i18n";
 // nothing on our side to leak. That happens to be true, which is why it's
 // worth saying.
 //
-// The marks are drawn rather than fetched. Real card-brand logos are
-// trademarked artwork with usage rules, and three <img> tags to a CDN on the
-// payment step is three more requests and three more things that can fail to
-// load at the worst moment. These read as "we take these" without pretending
-// to be the logos.
-const BRANDS = ["Visa", "Mastercard", "Amex"];
+// ——— Marks rather than words ———
+//
+// This row was three bordered text pills reading "Visa" "Mastercard" "Amex",
+// which is a list of words and reads as one. People scan a checkout for the
+// shape of their own card, and the marks answer that in a glance where a word
+// has to be parsed — the processor's own card field shows the mark a few
+// pixels above, so words here made one payment sheet look like two.
+//
+// See CardBrandMark.tsx for why they are drawn here rather than fetched, and
+// for what that file will and will not copy.
+//
+// ⚠️ The name goes with each mark, in sr-only text. This row is the only place
+// the payment step says which cards are taken, and a picture is not a sentence
+// — leaving the marks as decoration would have deleted the whole statement for
+// anybody using a screen reader.
+const BRANDS: { brand: CardBrand; name: string }[] = [
+  { brand: "visa", name: "Visa" },
+  { brand: "mastercard", name: "Mastercard" },
+  { brand: "amex", name: "Amex" },
+];
 
 function LockIcon() {
   return (
@@ -52,16 +68,21 @@ export default function SecureNote() {
         </span>
         {t("checkout.secure")}
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        {BRANDS.map((brand) => (
-          <span
-            key={brand}
-            className="rounded-md border border-line-soft px-1.5 py-[3px] text-[10px] font-medium leading-none text-muted"
-          >
-            {brand}
-          </span>
+      {/* A list, because it is one: these are the cards this shop takes, and a
+          screen reader should hear three items rather than a run-on line. */}
+      <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+        {BRANDS.map(({ brand, name }) => (
+          <li key={brand} className="flex">
+            {/* The hairline keeps the white marks from floating on a pale
+                ground. It is the same border the pills had, now doing a job:
+                a Mastercard tile on cream has no edge of its own. */}
+            <span className="flex overflow-hidden rounded-[4px] ring-1 ring-line-soft">
+              <CardBrandMark brand={brand} />
+            </span>
+            <span className="sr-only">{name}</span>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
