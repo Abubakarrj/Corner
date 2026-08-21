@@ -4,6 +4,7 @@ import { driveMatrixMin } from "./googleMaps";
 import { deliveryOrigins } from "./storePlaces";
 import {
   DELIVERY_RADIUS_MILES,
+  deliveringStores,
   milesBetween,
 } from "./(marketing)/locations/locations";
 
@@ -49,8 +50,8 @@ import {
 //
 // Naively this is BEARINGS × STEPS route requests. Route Matrix turns each
 // step into one call for every bearing at once, so it is STEPS calls total —
-// seven — for a shape that is then cached for a day. Roughly three hundred
-// matrix elements per rebuild.
+// seven — for a shape that is then cached until the counter list changes or an
+// hour passes. Roughly three hundred matrix elements per rebuild.
 //
 // ——— What it is not ———
 //
@@ -177,26 +178,66 @@ async function measure(): Promise<DeliveryArea | null> {
 
 // ——— The cache ———
 //
-// A day, because the road network does not move and the rule moves less. The
-// in-flight promise is shared as well as the result: without that, the first
-// two visitors after a deploy each start their own seven-call measurement.
+// The in-flight promise is shared as well as the result: without that, the
+// first two visitors after a deploy each start their own seven-call
+// measurement.
 //
-// Still seven calls with three counters, not twenty-one: the counters ride in
-// as extra origins on the calls the contour was already making.
-const TTL_MS = 24 * 60 * 60 * 1000;
+// Still seven calls however many counters there are, not seven per counter:
+// they ride in as extra origins on the calls the contour was already making.
+//
+// ——— ⚠️ An hour, and it used to be a day ———
+//
+// A day was chosen against how often the *road network* changes, and that was
+// the wrong question. What this holds is a shape derived from the counter list,
+// and the counter list changes whenever the shop opens or closes a shop — which
+// is exactly when somebody looks at this map to check their work.
+//
+// A counter opened and did not appear on the published map, because the shape
+// drawn before it opened was still inside its day. Nothing was wrong with the
+// measurement; it was answering a question asked before the shop had five
+// shops.
+//
+// So the two things the old number was conflating are now separate: how often
+// the boundary is *measured* (an hour, seven Routes calls, still nothing), and
+// how long a stale one may be *published* (see the endpoint's Cache-Control,
+// which is now minutes). Neither has to be long for the other to be cheap.
+const TTL_MS = 60 * 60 * 1000;
 
-let cached: { at: number; area: DeliveryArea } | null = null;
+/** What the cached shape was measured from.
+ *
+ *  ⚠️ The clock is not enough on its own. A cache that only expires by time
+ *  will keep serving a four-counter map for the rest of its window after a
+ *  fifth opens, and the window is exactly as long as somebody's patience while
+ *  they refresh the page wondering what they got wrong.
+ *
+ *  The counter list, the typed positions and the radius, which is everything
+ *  the shape depends on that a person edits. Deliberately synchronous and
+ *  computed off LOCATIONS rather than off the resolved geocodes: this runs on
+ *  every read, and reaching for storePlaces here would put a Geocoding attempt
+ *  on the path of every request whenever Google is unreachable. */
+function counterFingerprint(): string {
+  return (
+    deliveringStores()
+      .map((store) => `${store.id}@${store.position[0]},${store.position[1]}`)
+      .join("|") + `#${DELIVERY_RADIUS_MILES}`
+  );
+}
+
+let cached: { at: number; area: DeliveryArea; from: string } | null = null;
 let inFlight: Promise<DeliveryArea | null> | null = null;
 
 /** The delivery boundary, measured or remembered. Null when Routes could not
  *  answer — the page renders the shop and the address check without a shaded
  *  area, rather than a shape nobody measured. */
 export async function deliveryArea(): Promise<DeliveryArea | null> {
-  if (cached && Date.now() - cached.at < TTL_MS) return cached.area;
+  const fingerprint = counterFingerprint();
+  if (cached && cached.from === fingerprint && Date.now() - cached.at < TTL_MS) {
+    return cached.area;
+  }
   inFlight ??= measure()
     .catch(() => null)
     .then((area) => {
-      if (area) cached = { at: Date.now(), area };
+      if (area) cached = { at: Date.now(), area, from: fingerprint };
       inFlight = null;
       return area;
     });

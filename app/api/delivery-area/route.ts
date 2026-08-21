@@ -24,10 +24,28 @@ export async function GET() {
   return Response.json(
     { known: true, ...area },
     {
-      // A day at the edge, matching the measurement's own cache. The shape is
-      // seven Routes calls to produce and changes when the radius does, which
-      // is a decision somebody makes rather than something that drifts.
-      headers: { "Cache-Control": "public, max-age=3600, s-maxage=86400" },
+      // ——— ⚠️ Minutes, and it used to be a day ———
+      //
+      // The old header matched the measurement's own cache, on the reasoning
+      // that a shape costing seven Routes calls should not be re-fetched
+      // often. That conflated two different questions, and the difference
+      // showed up the day a counter opened and did not appear on the map: the
+      // server had already remeasured and included it, and every cache in
+      // front was still handing out the shape from before the shop existed.
+      //
+      // How often to *measure* is about cost, and it lives in
+      // app/deliveryArea.ts. How long a stale boundary may be *published* is
+      // about honesty, and it lives here. A shape held for a day at the edge
+      // survives the deploy that changed it — the one cache a shop cannot
+      // clear by shipping.
+      //
+      // Five minutes shared, with a day of stale-while-revalidate so nobody
+      // ever waits on the measurement. The origin cost of the shorter window
+      // is nothing: a revalidation hits the in-process cache and returns
+      // without asking Google at all.
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+      },
     },
   );
 }

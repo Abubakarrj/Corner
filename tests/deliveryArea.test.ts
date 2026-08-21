@@ -19,7 +19,7 @@
 // What this does NOT test is Routes itself: the field mask, the proto3 index
 // quirk, the stopover flags. scripts/check-maps.mjs asks the live API those.
 
-import { DELIVERY_RADIUS_MILES, LOCATIONS, milesBetween }
+import { DELIVERY_RADIUS_MILES, LOCATIONS, milesBetween, type StoreLocation }
   from "../app/(marketing)/locations/locations";
 
 let failures = 0;
@@ -199,6 +199,44 @@ async function main() {
   const before = matrixCalls;
   await deliveryArea();
   ok("a second read costs nothing", matrixCalls === before, String(matrixCalls));
+
+  // ——— ⚠️ But not cached past the counter list ———
+  //
+  // The failure this catches, in the words it happened in: a counter opened and
+  // did not show up as a pin on the published map. Nothing was wrong with the
+  // measurement — the shape drawn before the shop existed was still inside its
+  // window, and a cache that only expires on a clock has no way to know the
+  // question changed.
+  //
+  // So opening a counter has to invalidate the shape by itself. Asserted on the
+  // measurement actually re-running and on the new counter appearing in the
+  // origins, because "the cache was cleared" is satisfied by a cache that
+  // cleared and then measured the old list.
+  const opened: StoreLocation = {
+    id: "test-new-counter", name: "New", kind: "shop",
+    address: "x", city: "Los Angeles, CA", hours: "x",
+    position: [34.09, -118.36], aliases: [],
+  };
+  LOCATIONS.push(opened);
+  try {
+    const after = await deliveryArea();
+    ok("opening a counter remeasures rather than serving the old shape",
+       matrixCalls > before, `${matrixCalls} vs ${before}`);
+    ok("and the new counter is one of the origins",
+       (after?.origins ?? []).some((o) => milesBetween(o, opened.position) < 0.01),
+       JSON.stringify(after?.origins));
+  } finally {
+    LOCATIONS.pop();
+  }
+
+  // And closing one invalidates it too, which is the same rule read backwards.
+  const afterClose = matrixCalls;
+  const closed = await deliveryArea();
+  ok("closing it remeasures as well", matrixCalls > afterClose,
+     `${matrixCalls} vs ${afterClose}`);
+  ok("and the shape no longer reaches out to it",
+     !(closed?.origins ?? []).some((o) => milesBetween(o, opened.position) < 0.01),
+     JSON.stringify(closed?.origins));
 
   console.log(failures === 0 ? "\nALL PASS" : `\n${failures} FAILURES`);
   process.exit(failures === 0 ? 0 : 1);
