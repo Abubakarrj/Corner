@@ -741,7 +741,77 @@ export async function driveMatrixMiles(
  *  — which is a real answer. Null for the whole array means the call failed,
  *  so a caller can tell "we asked" from "we could not ask".
  */
+/** ⚠️ Google's ceiling on one Route Matrix call: origins × destinations.
+ *
+ *  ——— Why this is a constant and not a comment ———
+ *
+ *  It is 625 for DRIVE with TRAFFIC_UNAWARE, which is what this app sends. The
+ *  number is not the interesting part; the shape of the failure is. Exceeding
+ *  it is a 400 for the whole call, and the only caller that can get near it is
+ *  the delivery-area contour, whose response to a failed call is to draw no
+ *  map. So the boundary published on a public page disappears, silently,
+ *  because somebody opened a shop.
+ *
+ *  That is not a hypothetical. Six counters in two patches is 6 × 96 = 576
+ *  elements per step — inside the limit by a margin narrower than one more
+ *  counter. Splitting removes the cliff entirely rather than moving it.
+ *
+ *  Deliberately a little under 625. The budget is Google's and the arithmetic
+ *  is ours, and being wrong about a rounding is not worth a blank map. */
+export const MATRIX_MAX_ELEMENTS = 600;
+
+/** How long one Route Matrix call may take before it is given up on.
+ *
+ *  Generous: a matrix of several hundred elements is real work, and this runs
+ *  behind a cache rather than in front of a customer. Bounded all the same —
+ *  see the note where it is used. */
+const MATRIX_TIMEOUT_MS = 20_000;
+
+/** Google's own words about the last Route Matrix call that failed, or null.
+ *
+ *  ⚠️ Read by /api/maps-check and by nothing else. It is here rather than in
+ *  the diagnostic because that is where the failure happens and the sentence
+ *  Google returns is thrown away a line later. Cleared on the next call that
+ *  succeeds, so it never reports a problem that has since gone. */
+let lastMatrixProblem: string | null = null;
+
+export function matrixProblem(): string | null {
+  return lastMatrixProblem;
+}
+
 export async function driveMatrixMin(
+  origins: readonly [number, number][],
+  destinations: readonly [number, number][],
+): Promise<(Drive | null)[] | null> {
+  if (destinations.length === 0 || origins.length === 0) return null;
+
+  // ——— ⚠️ Split to fit Google's element budget ———
+  //
+  // See MATRIX_MAX_ELEMENTS. One call per batch, in sequence rather than in
+  // parallel: these are already the most expensive calls this app makes, and
+  // firing several at once is how a rebuild that was affordable becomes a
+  // burst that trips a per-minute quota.
+  //
+  // A single batch is the overwhelmingly common case — an address check is one
+  // destination — so this costs one comparison on the hot path.
+  const perCall = Math.max(1, Math.floor(MATRIX_MAX_ELEMENTS / origins.length));
+  if (destinations.length <= perCall) return matrixBatch(origins, destinations);
+
+  const merged: (Drive | null)[] = [];
+  for (let at = 0; at < destinations.length; at += perCall) {
+    const batch = await matrixBatch(origins, destinations.slice(at, at + perCall));
+    // ⚠️ One failed batch fails the whole answer. Returning the batches that
+    // did come back would hand the caller an array with real distances in some
+    // slots and nulls in others, and null already means "unreachable" — so a
+    // refused call would read as a hole in the delivery area rather than as a
+    // failure to measure it.
+    if (!batch) return null;
+    merged.push(...batch);
+  }
+  return merged;
+}
+
+async function matrixBatch(
   origins: readonly [number, number][],
   destinations: readonly [number, number][],
 ): Promise<(Drive | null)[] | null> {
@@ -782,25 +852,61 @@ export async function driveMatrixMin(
       // Whatever calls this does its own caching, and it caches the finished
       // shape rather than the pieces.
       cache: "no-store",
+      // ⚠️ A ceiling, because there was none. The delivery contour makes nine
+      // of these in sequence and every one of them is on the path of a request
+      // somebody is waiting on; a call that hangs used to hang all of them,
+      // and the page's own handling of that is to render no map at all. A
+      // bounded failure that says so in the log beats an unbounded wait that
+      // says nothing.
+      signal: AbortSignal.timeout(MATRIX_TIMEOUT_MS),
     });
 
-  let response = await send();
-  if (response.status === 400 && stopoverSupported) {
-    const detail = await response.text().catch(() => "");
-    if (dropStopover("Route Matrix", detail)) response = await send();
+  const shape = `${origins.length}x${destinations.length}`;
+  let response: Response;
+  try {
+    response = await send();
+    if (response.status === 400 && stopoverSupported) {
+      const detail = await response.text().catch(() => "");
+      if (dropStopover("Route Matrix", detail)) response = await send();
+    }
+  } catch (error) {
+    // ⚠️ A throw, which the old code let escape. The only caller that asks for
+    // a large matrix is the delivery-area contour, and it runs inside a
+    // Promise that turns any rejection into "no shape" — so an aborted call
+    // came out as a blank map with nothing recorded anywhere. Caught here so
+    // it lands in the log and in matrixProblem() like every other failure.
+    const why = error instanceof Error && error.name === "TimeoutError"
+      ? `no answer within ${Math.round(MATRIX_TIMEOUT_MS / 1000)}s`
+      : String(error);
+    console.error(`[maps] Route Matrix (${shape}) did not complete — ${why}`);
+    lastMatrixProblem = `Route Matrix (${shape}) did not complete: ${why}`;
+    return null;
   }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     console.error(
-      `[maps] Route Matrix failed (${response.status}) — ` +
+      `[maps] Route Matrix failed (${response.status}, ${shape}) — ` +
         `${explainRoutes(response.status, detail)} ${detail.slice(0, 400)}`,
     );
+    // ⚠️ Kept for /api/maps-check. Every Google failure in this app is
+    // survivable by design, which means the delivery map simply does not draw
+    // and the page says nothing — see the header of that route. A console line
+    // on a hosting dashboard was the only evidence, and the one question
+    // anybody has ("why is the map gone") is answerable from Google's own
+    // words. So the last one is held in memory for a diagnostic to read.
+    lastMatrixProblem =
+      `Route Matrix (${shape}) refused with ${response.status}: ` +
+      `${explainRoutes(response.status, detail)} ${detail.slice(0, 300)}`;
     return null;
   }
 
   const body = (await response.json().catch(() => null)) as unknown;
-  if (!Array.isArray(body)) return null;
+  if (!Array.isArray(body)) {
+    lastMatrixProblem = `Route Matrix (${shape}) answered 200 with something that is not a list of elements.`;
+    return null;
+  }
+  lastMatrixProblem = null;
 
   const best: (Drive | null)[] = destinations.map(() => null);
   for (const raw of body) {

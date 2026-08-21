@@ -1,5 +1,6 @@
 import { authorized, notFound } from "../../diagnostics";
-import { geocode, googleMapsKey, routeBetween, suggest } from "../../googleMaps";
+import { geocode, googleMapsKey, matrixProblem, routeBetween, suggest } from "../../googleMaps";
+import { deliveryArea } from "../../deliveryArea";
 import { deliveryOrigin } from "../../storePlaces";
 
 // Is Google answering? One request, a plain-English answer.
@@ -60,13 +61,30 @@ export async function GET(request: Request) {
   // a passing check here is a passing check for the thing that matters.
   const origin = await deliveryOrigin();
 
-  // All three at once, and none waiting on another. They are separate APIs
+  // All four at once, and none waiting on another. They are separate APIs
   // with separate enable switches, and any of them can be the broken one.
-  const [place, route, suggestions] = await Promise.all([
+  //
+  // ——— ⚠️ Why the fourth one was added ———
+  //
+  // The first three said "all three answered" on a deployment whose delivery
+  // map had disappeared, and they were not lying: geocoding worked, a single
+  // route worked, autocomplete worked. The boundary is drawn with a different
+  // call — computeRouteMatrix, several hundred elements at a time — and
+  // nothing here had ever touched it. So the one Google surface that can take
+  // the map off a public page was the one surface with no check on it.
+  //
+  // It is the real measurement rather than a probe shaped like one, because a
+  // two-by-two matrix proves the API is enabled and proves nothing about the
+  // call the app actually makes. It is also cached, so this costs Routes quota
+  // once an hour at most however often somebody refreshes this page.
+  const started = Date.now();
+  const [place, route, suggestions, area] = await Promise.all([
     geocode(PROBE_ADDRESS, origin),
     routeBetween(origin, PROBE_POINT),
     suggest("3450 Wilshire", "address", origin),
+    deliveryArea(),
   ]);
+  const areaMs = Date.now() - started;
 
   const checks = {
     geocoding: place
@@ -95,6 +113,33 @@ export async function GET(request: Request) {
             "Places autocomplete returned nothing for a partial address." +
             " Check Places API (New) is enabled on this project.",
         },
+    // The shaded shape on /delivery-areas, measured for real. `patches` is how
+    // many separate lobes the counters make — more than one is normal now that
+    // there is a shop in Orange County — and `counters` is how many origins
+    // every measurement was taken against.
+    deliveryArea: area
+      ? {
+          ok: true as const,
+          patches: area.rings.length,
+          counters: area.origins.length,
+          ms: areaMs,
+        }
+      : {
+          ok: false as const,
+          ms: areaMs,
+          // ⚠️ Google's own sentence when there is one. This is the whole
+          // point of the check: the page renders no map and says nothing about
+          // why, deliberately, so the reason has to be reachable from
+          // somewhere and this is the somewhere.
+          google: matrixProblem(),
+          why:
+            "The delivery boundary could not be measured, so /delivery-areas" +
+            " draws no shaded area at all — the address check underneath it" +
+            " still works, which is why this can go unnoticed. Route Matrix is" +
+            " a separate call from the single route above and can fail on its" +
+            " own: check Routes API is enabled, that the key has no HTTP" +
+            " referrer restriction, and that the project is not out of quota.",
+        },
   };
 
   const failing = Object.entries(checks)
@@ -105,7 +150,8 @@ export async function GET(request: Request) {
     ok: failing.length === 0,
     summary:
       failing.length === 0
-        ? "All three answered. Road distances, address search and geocoding are live."
+        ? "All four answered. Road distances, address search, geocoding and the" +
+          " delivery boundary are live."
         : `Failing: ${failing.join(", ")}. Each entry below says what Google returned.`,
     // Said on every response, passing or not, because it is the fix roughly
     // nine times out of ten and the person reading this is looking for it.

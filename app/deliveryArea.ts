@@ -66,7 +66,7 @@ import {
 // every 7.5°, which at ten miles is a vertex about every 1.3 miles of
 // circumference — fine enough that the polygon reads as a shape rather than
 // as a polygon, and coarse enough to stay one matrix call per step.
-const BEARINGS = 48;
+export const BEARINGS = 48;
 
 // Binary-search steps. Each halves the interval.
 //
@@ -170,7 +170,7 @@ export type DeliveryArea = {
  *  That draws a slightly generous waist between two lobes rather than a whole
  *  county nobody serves, and the sweep in tests/deliveryArea.test.ts is what
  *  would catch it. */
-function patches(points: [number, number][]): [number, number][][] {
+export function patches(points: [number, number][]): [number, number][][] {
   const touching = 2 * DELIVERY_RADIUS_MILES;
   const taken = points.map(() => false);
   const groups: [number, number][][] = [];
