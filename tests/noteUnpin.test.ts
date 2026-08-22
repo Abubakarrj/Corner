@@ -21,10 +21,12 @@
 // wall that handed out unpin tokens with its cards would be a wall anybody
 // could take down, and no amount of checking at the endpoint would matter.
 
+import { hashDeviceToken, mintDeviceToken } from "../app/noteDevice";
 import {
   addNote,
   listNotes,
   unpinNote,
+  noteIdsForDevice,
 } from "../app/cornerNotes";
 import {
   hashUnpinToken,
@@ -160,6 +162,55 @@ async function main() {
   ok("and your note is still up", await onWall(yours.id));
 
   console.log("\n— ids that are not ids —");
+  // ——— ⚠️ The device cookie, which is the other proof ———
+  //
+  // The one this exists for: Safari caps script-writable storage at seven days
+  // without a visit, so the token in localStorage is gone and the note is
+  // still up. Before the cookie that was the end of it — the person who wrote
+  // the note could not take it down and nothing on the page said why.
+  const deviceA = hashDeviceToken(mintDeviceToken());
+  const deviceB = hashDeviceToken(mintDeviceToken());
+  const onPhone = await addNote({
+    name: "phone", neighborhood: "", note: "written on a phone",
+    drawing: [], deviceHash: deviceA,
+  });
+  ok("a note can be written against a device", onPhone !== null);
+  if (!onPhone) return;
+
+  ok("⚠️ the device that wrote it can take it down with no token at all",
+     (await unpinNote(onPhone.id, "", deviceA)) === true);
+
+  const second = await addNote({
+    name: "phone", neighborhood: "", note: "and another",
+    drawing: [], deviceHash: deviceA,
+  });
+  if (!second) return;
+  ok("another device cannot", (await unpinNote(second.id, "", deviceB)) === false);
+  ok("and neither can no device at all", (await unpinNote(second.id, "", null)) === false);
+  ok("but its own token still works, so nothing was taken away",
+     (await unpinNote(second.id, second.token)) === true);
+
+  // ⚠️ A note written before device cookies existed has no device_hash. Every
+  // browser presenting a cookie must not be able to unpin it.
+  const legacy = await addNote({
+    name: "old", neighborhood: "", note: "from before the cookie", drawing: [],
+  });
+  if (!legacy) return;
+  ok("⚠️ a note with no device on it is not unpinnable by any device",
+     (await unpinNote(legacy.id, "", deviceA)) === false);
+  ok("and still comes down with its token", (await unpinNote(legacy.id, legacy.token)) === true);
+
+  // ——— Which notes a device may offer to take down ———
+  const third = await addNote({
+    name: "phone", neighborhood: "", note: "still up", drawing: [], deviceHash: deviceA,
+  });
+  if (!third) return;
+  const listed = await noteIdsForDevice(deviceA);
+  ok("a device's own note is listed", listed.has(third.id));
+  ok("⚠️ and one it already took down is not", !listed.has(onPhone.id));
+  ok("another device's list does not contain it", !(await noteIdsForDevice(deviceB)).has(third.id));
+  ok("and no device at all lists nothing", (await noteIdsForDevice(null)).size === 0);
+
   ok("an empty id does nothing", (await unpinNote("", yours.token)) === false);
   ok("a made-up id does nothing", (await unpinNote("n_not-a-uuid", yours.token)) === false);
   // The parameterised query would have been safe anyway; the shape test runs

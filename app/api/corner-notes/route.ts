@@ -1,4 +1,12 @@
 import { after } from "next/server";
+import { cookies } from "next/headers";
+import {
+  NOTE_DEVICE_COOKIE,
+  NOTE_DEVICE_MAX_AGE,
+  hashDeviceToken,
+  isDeviceToken,
+  mintDeviceToken,
+} from "../../noteDevice";
 import {
   MAX_NAME,
   MAX_NEIGHBORHOOD,
@@ -179,7 +187,22 @@ export async function POST(request: Request) {
     return Response.json({ error: "notes.language" }, { status: 422 });
   }
 
-  const saved = await addNote({ name, neighborhood, note, drawing, photo });
+  // ——— ⚠️ The device cookie, minted here if this browser has none ———
+  //
+  // Read before the write so the note can be stored against it, and set on the
+  // way out so the next visit is recognised. See app/noteDevice.ts for what a
+  // device claim is worth, which is one verb: hiding a note somebody wrote.
+  const jar = await cookies();
+  const existing = jar.get(NOTE_DEVICE_COOKIE)?.value;
+  const device = isDeviceToken(existing) ? existing : mintDeviceToken();
+  const saved = await addNote({
+    name,
+    neighborhood,
+    note,
+    drawing,
+    photo,
+    deviceHash: hashDeviceToken(device),
+  });
   if (!saved) {
     // ⚠️ Not counted. A database that was asleep is not a note somebody wrote,
     // and charging them for it means an outage quietly eats the allowance of
@@ -214,5 +237,21 @@ export async function POST(request: Request) {
   // what lets the browser that wrote this note take it down again, and it is
   // the only proof of authorship a wall with no accounts can have. See
   // app/noteOwner.ts.
+  // ⚠️ Set on every successful write, not only when it is new. A cookie that is
+  // only ever set once expires a year after the first note rather than a year
+  // after the last one, and somebody who leaves a note every month would find
+  // the whole run of them orphaned on the same afternoon.
+  //
+  // httpOnly, so no script on the page can read it and no XSS can carry it off;
+  // lax, so it rides an ordinary navigation but not a cross-site POST; secure
+  // everywhere but a local http dev server, matching the session cookie.
+  jar.set(NOTE_DEVICE_COOKIE, device, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: NOTE_DEVICE_MAX_AGE,
+  });
+
   return Response.json({ ok: true, id: saved.id, unpin: saved.token }, { status: 201 });
 }

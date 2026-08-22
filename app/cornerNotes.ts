@@ -3,6 +3,7 @@ import "server-only";
 import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "./db";
 import { cleanDrawing, hasInk, type Drawing } from "./drawing";
 import { isPhotoState, photoOnWall, type PhotoState } from "./notePhoto";
+import { deviceMatches } from "./noteDevice";
 import { hashUnpinToken, mintUnpinToken, tokenMatches } from "./noteOwner";
 import {
   MAX_NAME,
@@ -86,6 +87,15 @@ const DDL = `
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS photo BYTEA;
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS photo_state TEXT;
   ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS unpin_hash TEXT;
+  -- ⚠️ The second proof of authorship, and the one that survives Safari
+  -- throwing localStorage away after a week. See app/noteDevice.ts. Nullable
+  -- because every note written before it existed has none, and those are still
+  -- unpinnable by their token.
+  ALTER TABLE ${SCHEMA}.corner_notes ADD COLUMN IF NOT EXISTS device_hash TEXT;
+  -- "which of these did this browser write" is asked once per render of
+  -- /notes/all, against a table that only grows.
+  CREATE INDEX IF NOT EXISTS corner_notes_device
+    ON ${SCHEMA}.corner_notes (device_hash) WHERE device_hash IS NOT NULL;
   -- The wall reads newest first and skips the hidden ones, so that is the index.
   CREATE INDEX IF NOT EXISTS corner_notes_wall
     ON ${SCHEMA}.corner_notes (at DESC) WHERE hidden = false;
@@ -158,6 +168,11 @@ export async function addNote(input: {
    *  or is not stored, and that decision does not belong in the middle of an
    *  INSERT. */
   photo?: Uint8Array | null;
+  /** ⚠️ The hash of this browser's device cookie, not the cookie. The secret
+   *  stays in the header it arrived in; what is stored is what it hashes to,
+   *  so a copy of this table unpins nothing. Null when the browser has not been
+   *  given one yet, which is every request before the cookie is set. */
+  deviceHash?: string | null;
 }): Promise<{ id: string; token: string } | null> {
   const client = db();
   if (!client) return null;
@@ -180,8 +195,8 @@ export async function addNote(input: {
     await prepared();
     await client.query(
       `INSERT INTO ${SCHEMA}.corner_notes
-         (id, name, neighborhood, note, drawing, photo, photo_state, unpin_hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         (id, name, neighborhood, note, drawing, photo, photo_state, unpin_hash, device_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         id,
         // A wall of "anonymous" is friendlier than a wall of blanks, and the
@@ -200,6 +215,7 @@ export async function addNote(input: {
         // could exist is the window in which it could be served.
         photo ? ("pending" satisfies PhotoState) : null,
         hashUnpinToken(token),
+        input.deviceHash ?? null,
       ],
     );
     return { id, token };
@@ -350,7 +366,11 @@ export async function notePhotoBytes(id: string): Promise<Uint8Array | null> {
  *  Hidden rather than deleted, like every other takedown on this wall — see the
  *  note at the top of this file. Somebody who changes their mind has lost the
  *  card, not the words, and the shop can put it back. */
-export async function unpinNote(id: string, token: string): Promise<boolean> {
+export async function unpinNote(
+  id: string,
+  token: string,
+  deviceHash: string | null = null,
+): Promise<boolean> {
   const client = db();
   if (!client) return false;
   // Cheap and total: ids are minted here as `n_` plus a UUID, so anything else
@@ -359,8 +379,12 @@ export async function unpinNote(id: string, token: string): Promise<boolean> {
 
   try {
     await prepared();
-    const rows = await client.query<{ unpin_hash: string | null; hidden: boolean }>(
-      `SELECT unpin_hash, hidden FROM ${SCHEMA}.corner_notes WHERE id = $1`,
+    const rows = await client.query<{
+      unpin_hash: string | null;
+      device_hash: string | null;
+      hidden: boolean;
+    }>(
+      `SELECT unpin_hash, device_hash, hidden FROM ${SCHEMA}.corner_notes WHERE id = $1`,
       [id],
     );
     const row = rows.rows[0];
@@ -368,7 +392,18 @@ export async function unpinNote(id: string, token: string): Promise<boolean> {
     // that always fails — see tokenMatches. Returning early on a missing row
     // would make "no such note" measurably faster than "wrong token", which is
     // the distinction the paragraph above refuses to state out loud.
-    if (!tokenMatches(token, row?.unpin_hash ?? null)) return false;
+    // ⚠️ Either proof, and both are evaluated: the token this browser was
+    // handed when it wrote the note, or the device cookie the server set. A
+    // note written before device cookies existed has only the first; a browser
+    // whose localStorage Safari has since cleared has only the second.
+    //
+    // Both comparisons run whether or not the row exists and whether or not the
+    // first one succeeded — `||` would return early and make "right token"
+    // measurably faster than "right cookie", which is a distinction worth not
+    // publishing. See the paragraph above.
+    const byToken = tokenMatches(token, row?.unpin_hash ?? null);
+    const byDevice = deviceMatches(deviceHash, row?.device_hash ?? null);
+    if (!byToken && !byDevice) return false;
     if (row?.hidden) return true;
 
     await client.query(
@@ -379,6 +414,39 @@ export async function unpinNote(id: string, token: string): Promise<boolean> {
   } catch (error) {
     console.error(`[corner-notes] could not unpin a note: ${explainDbError(error)}`);
     return false;
+  }
+}
+
+/** The ids of the notes this browser wrote and that are still up.
+ *
+ *  ⚠️ Ids only, and only the ones still on the wall. It answers exactly the
+ *  question /notes/all asks — "which of these cards should offer an unpin
+ *  control" — and nothing beyond it. Handing back the notes themselves would
+ *  put a second copy of what somebody wrote on a page that already has it, and
+ *  handing back hidden ones would offer to take down something already down.
+ *
+ *  Empty for a browser with no cookie, an unknown cookie, or a database that
+ *  cannot answer. All three mean the same thing to the caller: no control on
+ *  any card, which is a wall that works and cannot take notes down — the same
+ *  place the localStorage path fails to. */
+export async function noteIdsForDevice(deviceHash: string | null): Promise<Set<string>> {
+  const empty = new Set<string>();
+  if (!deviceHash) return empty;
+  const client = db();
+  if (!client) return empty;
+  try {
+    await prepared();
+    const rows = await client.query<{ id: string }>(
+      `SELECT id FROM ${SCHEMA}.corner_notes
+        WHERE device_hash = $1 AND hidden = false
+        ORDER BY at DESC
+        LIMIT 200`,
+      [deviceHash],
+    );
+    return new Set(rows.rows.map((row) => row.id));
+  } catch (error) {
+    console.error(`[corner-notes] could not read a device's notes: ${explainDbError(error)}`);
+    return empty;
   }
 }
 

@@ -4,6 +4,7 @@ import { useList, useT } from "../../../i18n";
 import { useMenu } from "../../../i18n/menu";
 import { formatPrice, possibleAllergens, type Product } from "../../products";
 import ProductImage from "../../ProductImage";
+import { ViewTransition } from "react";
 import AddToCartForm from "./AddToCartForm";
 import { DISPLAY_FONT } from "../../shopControls";
 
@@ -49,12 +50,16 @@ export default function ProductView({
           without ever engaging. */}
       <div className="grid gap-8 sm:grid-cols-[320px_1fr]">
         <div className="relative">
-          <ProductImage
-            swatch={product.swatch}
-            category={product.category}
-            name={menu.name(product)}
-            className="aspect-square w-full rounded-2xl"
-          />
+          {/* The other half of the morph — see ProductCard. Same name, so the
+              card the person tapped grows into this. */}
+          <ViewTransition name={`product-${product.slug}`}>
+            <ProductImage
+              swatch={product.swatch}
+              category={product.category}
+              name={menu.name(product)}
+              className="aspect-square w-full rounded-2xl"
+            />
+          </ViewTransition>
           {product.tag ? (
             <span
               className="absolute left-3 top-3 rounded-full bg-ink px-2.5 py-0.5 text-[10px] font-medium text-on-ink"

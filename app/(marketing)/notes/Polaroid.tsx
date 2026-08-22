@@ -44,6 +44,7 @@ export default function Polaroid({
   note,
   drawing,
   photo = null,
+  mine = false,
   developingLabel = "developing",
   className = "",
 }: {
@@ -55,6 +56,13 @@ export default function Polaroid({
   note: string;
   drawing: Drawing | null;
   photo?: NotePhoto;
+  /** ⚠️ Whether the server recognised this browser as the one that wrote it.
+   *
+   *  Decided from the device cookie, which is httpOnly and therefore unreadable
+   *  from the page — so it has to arrive as a prop. False on the wall, which is
+   *  a client component with no server to ask; there the card falls back to the
+   *  token in localStorage. See UnpinNote. */
+  mine?: boolean;
   /** ⚠️ Passed in rather than looked up, because this renders on both sides of
    *  the line: the wall is a client component with the translator in hand, and
    *  /notes/all is a server page that has no hook to call. A default in English
@@ -195,7 +203,7 @@ export default function Polaroid({
             server, so a wall of a hundred notes is a hundred of these and none
             of them shows. See UnpinNote.tsx for why it has to appear after
             mount rather than during render. */}
-        {id ? <UnpinNote id={id} /> : null}
+        {id ? <UnpinNote id={id} mine={mine} /> : null}
       </figcaption>
     </figure>
   );

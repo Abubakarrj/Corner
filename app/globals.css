@@ -1866,3 +1866,33 @@ body {
 .cb-rewards-slot {
   min-height: 480px;
 }
+
+/* ——— View transitions ———
+
+   The product image morphs from the card into the page — see ProductCard and
+   ProductView, which name the same element on both sides. The browser does the
+   animation; what is here is the two things it gets wrong by default.
+
+   ⚠️ First: reduced motion. A view transition is a full-screen animation and
+   the default is to run it whatever the system setting says. Somebody who has
+   asked for less movement has asked for exactly this. `animation: none` on the
+   pseudo-elements skips the animation and keeps the navigation, rather than
+   turning the transition off and losing the morph's continuity — the new frame
+   simply appears, which is what the app did before any of this.
+
+   Second: the root crossfade. The default transition cross-fades the entire
+   old page into the new one *underneath* the morphing image, which on a page
+   whose background is already the same colour reads as a flash. Shortening it
+   leaves the morph as the thing you notice. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

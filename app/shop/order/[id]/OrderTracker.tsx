@@ -25,6 +25,7 @@ import UberDirectMark from "../../checkout/UberDirectMark";
 import ProductImage from "../../ProductImage";
 import { DISPLAY_FONT, PALETTE } from "../../shopControls";
 import TextSwap from "../../../ui/TextSwap";
+import { useWakeLock } from "../../../pwa/useWakeLock";
 
 const { ink, muted, faint, border, surface, controlBorder, sky } = PALETTE;
 
@@ -72,7 +73,17 @@ export default function OrderTracker({ id }: { id: string }) {
   const followable = handedToCourier(live?.courier) ?? true;
   const vehicle = vehicleKey(live?.courierVehicle);
 
-  if (!order) {
+  // ⚠️ Above the "no such order" return, because a hook cannot be called after
+  // one. While the order is *live*, not while this page is open: somebody
+  // coming back a day later to see what they ordered gets a screen that dims
+  // like every other one; somebody standing outside waiting for a courier does
+  // not have to keep waking their phone. See app/pwa/useWakeLock.ts.
+  const watching = order ? progressFor(order, tag, undefined, live) : null;
+  useWakeLock(watching !== null && !watching.settled && !watching.canceled);
+
+  // `!watching` is unreachable when `order` is set — it is here so the compiler
+  // can narrow it, which is cheaper than asserting it away.
+  if (!order || !watching) {
     return (
       <div className="mx-auto max-w-2xl px-5 py-12 text-center sm:px-6">
         <p className="text-[16px] font-medium" style={{ color: ink }}>
@@ -91,7 +102,8 @@ export default function OrderTracker({ id }: { id: string }) {
   // `undefined` for the clock, not Date.now(): progressFor defaults it, and
   // reading the clock in a render body is the impurity the lint rule is for.
   // The 15s tick above is what makes this recompute.
-  const progress = progressFor(order, tag, undefined, live);
+  // Already computed above the early return, where the hook needed it.
+  const progress = watching;
   const stage = progress.stages[progress.current];
 
   return (

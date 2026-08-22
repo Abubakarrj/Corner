@@ -7,6 +7,7 @@ import NavigationDepth from "./navigationDepth";
 import VisitLog from "./visits";
 import PressHaptics from "./pressHaptics";
 import { CapabilitiesProvider } from "./capabilities";
+import AppBadge from "./pwa/AppBadge";
 import { THEME_SCRIPT } from "./themeScript";
 import { LOCALE_SCRIPT } from "./localeScript";
 
@@ -133,6 +134,13 @@ export default function RootLayout({
               rather than something each new button has to remember. Here
               because it has to see the whole app. See pressHaptics.ts. */}
           <PressHaptics />
+          {/* Renders nothing. Puts a badge on the installed app's icon while an
+              order is in flight and takes it off when there is not one. Here
+              rather than beside the order bar because the badge belongs to the
+              app: the bar unmounts when you navigate away from it, and a badge
+              that clears itself because somebody opened the menu is worse than
+              no badge. See app/pwa/AppBadge.tsx. */}
+          <AppBadge />
         </CapabilitiesProvider>
       </body>
     </html>

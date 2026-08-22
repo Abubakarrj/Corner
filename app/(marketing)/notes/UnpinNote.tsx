@@ -39,7 +39,7 @@ import { forgetNote, subscribeMine, tokenFor } from "./mine";
 // phone and is now on a laptop, will not see this and has to ask the shop, the
 // way the privacy policy says.
 
-export default function UnpinNote({ id }: { id: string }) {
+export default function UnpinNote({ id, mine = false }: { id: string; mine?: boolean }) {
   const t = useT();
   const router = useRouter();
   const [asking, setAsking] = useState(false);
@@ -62,6 +62,11 @@ export default function UnpinNote({ id }: { id: string }) {
       const response = await fetch("/api/corner-notes/unpin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // ⚠️ The token may be null, and the endpoint accepts that: the device
+        // cookie rides along on its own and is enough by itself. It is sent
+        // when there is one because a note written before device cookies
+        // existed has no device_hash to match, and the token is the only thing
+        // that can take it down.
         body: JSON.stringify({ id, token }),
       });
       const answer = (await response.json().catch(() => null)) as { ok?: boolean } | null;
@@ -84,7 +89,12 @@ export default function UnpinNote({ id }: { id: string }) {
     }
   }, [id, router, sending, token]);
 
-  if (!token) return null;
+  // ⚠️ Either proof shows the control. `mine` is the server's answer, rendered
+  // into the markup and therefore right on the first paint and unaffected by
+  // anything Safari does to storage. The token is what a note written before
+  // the cookie existed has, and what the wall — a client component with no
+  // server to ask — has for everything.
+  if (!mine && !token) return null;
 
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">

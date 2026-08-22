@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { unpinNote } from "../../../cornerNotes";
+import { NOTE_DEVICE_COOKIE, hashDeviceToken, isDeviceToken } from "../../../noteDevice";
 import { isUnpinToken } from "../../../noteOwner";
 import { clientIp, throttle } from "../../../rateLimit";
 
@@ -23,6 +25,15 @@ import { clientIp, throttle } from "../../../rateLimit";
 // ⚠️ 200 rather than 403 or 404 for the same reason: the status code is a
 // message too. See app/api/auth/start, which answers identically for a known
 // and an unknown address on the same reasoning.
+//
+// ——— Two proofs, either of which is enough ———
+//
+// The token this browser was handed when it wrote the note, and the device
+// cookie the server set at the same moment. A note from before the cookie
+// existed has only the first. A browser whose localStorage Safari has since
+// cleared — seven days without a visit is all it takes — has only the second,
+// and before the cookie it had nothing, which is the bug this pair exists to
+// close. See app/noteDevice.ts.
 //
 // ——— What this cannot do ———
 //
@@ -57,13 +68,21 @@ export async function POST(request: Request) {
   const body = payload as Record<string, unknown> | null;
   const id = typeof body?.id === "string" ? body.id : "";
   const token = body?.token;
-  // The shape check is the one thing worth refusing loudly, because it is the
-  // one thing that cannot be a real attempt: our own client always sends a
-  // token of the right length, so anything else is a malformed request rather
-  // than a failed claim.
-  if (!id || !isUnpinToken(token)) {
+  const cookie = (await cookies()).get(NOTE_DEVICE_COOKIE)?.value;
+  const device = isDeviceToken(cookie) ? hashDeviceToken(cookie) : null;
+
+  // ⚠️ The shape check now passes on a missing token, which it did not before.
+  // A browser that has the cookie and no token is the ordinary case after
+  // Safari has cleared localStorage, and refusing it with a 400 would be this
+  // endpoint telling somebody their own note is not theirs.
+  //
+  // What is still refused loudly is a request carrying *neither*: our own
+  // client sends at least one, so that is a malformed request rather than a
+  // failed claim, and it never reaches the database.
+  const shapedToken = isUnpinToken(token) ? token : "";
+  if (!id || (!shapedToken && !device)) {
     return Response.json({ error: "api.badRequest" }, { status: 400 });
   }
 
-  return Response.json({ ok: await unpinNote(id, token) });
+  return Response.json({ ok: await unpinNote(id, shapedToken, device) });
 }

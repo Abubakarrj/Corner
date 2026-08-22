@@ -122,6 +122,10 @@ const enCookie: Policy = {
           kind: "p",
           text: "These cookies are required for browsing the website, viewing menus, submitting contact forms, and completing online orders. Without these cookies, requested services cannot be provided.",
         },
+        {
+          kind: "p",
+          text: "One of these identifies the browser that left a note on our visitor wall, so that the person who wrote a note can take it back down later. It is set only when you post a note, contains a random value and nothing else, is not readable by scripts, expires after one year, and is never used to identify you anywhere else on the site.",
+        },
       ],
     },
     {

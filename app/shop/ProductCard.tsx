@@ -15,6 +15,7 @@ import {
 } from "./products";
 import { useSoldOut } from "./soldOutStore";
 import ProductImage from "./ProductImage";
+import { ViewTransition } from "react";
 import OptionPicker from "./OptionPicker";
 import useOptionPrompt from "./useOptionPrompt";
 import { useCart } from "./CartContext";
@@ -110,12 +111,22 @@ export default function ProductCard({ product }: { product: Product }) {
         tabIndex={-1}
         className="relative cursor-pointer overflow-hidden rounded-2xl"
       >
-        <ProductImage
-          swatch={product.swatch}
-          category={product.category}
-          name={menu.name(product)}
-          className="aspect-square w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-        />
+        {/* ——— The same object either side of the cut ———
+
+            Named the same thing here and on the product page, so tapping a
+            card morphs this square into that one rather than replacing the
+            screen. The name has to be unique on the page, which is why it
+            carries the slug: two cards sharing a name is the one thing the
+            browser cannot animate, and it silently drops the whole transition
+            when it happens. See app/shop/product/[slug]/ProductView.tsx. */}
+        <ViewTransition name={`product-${product.slug}`}>
+          <ProductImage
+            swatch={product.swatch}
+            category={product.category}
+            name={menu.name(product)}
+            className="aspect-square w-full transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          />
+        </ViewTransition>
         {gone ? (
           <span className="absolute inset-x-0 bottom-0 bg-ink/80 py-1.5 text-center text-[10px] font-medium uppercase tracking-[0.09em] text-on-ink">
             {t("common.soldOutToday")}

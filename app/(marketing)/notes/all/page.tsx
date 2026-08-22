@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import PageTitle from "../../../ui/PageTitle";
 import BackButton from "../../../ui/BackButton";
-import { countNotes, listNeighborhoods, listNotes } from "../../../cornerNotes";
+import { cookies } from "next/headers";
+import { countNotes, listNeighborhoods, listNotes, noteIdsForDevice } from "../../../cornerNotes";
+import { NOTE_DEVICE_COOKIE, hashDeviceToken, isDeviceToken } from "../../../noteDevice";
 import Polaroid from "../Polaroid";
 import NoteComposer from "../NoteComposer";
 
@@ -42,12 +44,24 @@ export default async function AllNotesPage({
   searchParams: Promise<{ in?: string }>;
 }) {
   const { in: where } = await searchParams;
-  const [notes, places, total] = await Promise.all([
+  // ——— ⚠️ Whose notes these are, decided on the server ———
+  //
+  // This used to be a browser question: the unpin control read localStorage
+  // after mount and appeared a frame late on your own cards. Safari clears
+  // script-writable storage after seven idle days, so it stopped appearing at
+  // all on notes more than a week old — which is the bug this answers.
+  //
+  // The cookie is httpOnly, so only the server can read it, so the ownership
+  // has to be resolved here and handed down. The card gets a boolean.
+  const cookie = (await cookies()).get(NOTE_DEVICE_COOKIE)?.value;
+  const deviceHash = isDeviceToken(cookie) ? hashDeviceToken(cookie) : null;
+  const [notes, places, total, mine] = await Promise.all([
     // ⚠️ 120 is the cap listNotes() enforces anyway. Said here so the number on
     // screen and the number fetched are the same decision rather than two.
     listNotes(120, 0, { byPlace: true, ...(where ? { in: where } : {}) }),
     listNeighborhoods(),
     countNotes(),
+    noteIdsForDevice(deviceHash),
   ]);
 
   return (
@@ -118,6 +132,7 @@ export default async function AllNotesPage({
                 note={entry.note}
                 drawing={entry.drawing}
                 photo={entry.photo}
+                mine={mine.has(entry.id)}
               />
             </li>
           ))}
