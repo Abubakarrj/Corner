@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { loadMaps, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
+import { loadMaps, endAddressSession, newAddressSession, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { MAP_STYLE } from "../locations/mapStyle";
 import { PIN_SIZE, pinDataUri } from "../locations/mapEngine";
 import { SHOPS_CENTRE } from "../locations/locations";
@@ -60,6 +60,20 @@ type Check =
   | { state: "failed" };
 
 export default function DeliveryAreaMap() {
+  // ⚠️ One autocomplete session for one address being typed. Places bills per
+  // request without a token and per session with one, and this box is debounced
+  // into several requests. Held in a ref so a re-render does not start a new
+  // session mid-word — a fresh token per keystroke is billed exactly like no
+  // token at all.
+  const session = useRef<string | null>(null);
+  useEffect(() => {
+    session.current ??= newAddressSession();
+    return () => {
+      endAddressSession(session.current);
+      session.current = null;
+    };
+  }, []);
+
   const t = useT();
   const theme = useResolvedTheme();
   const holder = useRef<HTMLDivElement>(null);
@@ -114,7 +128,7 @@ export default function DeliveryAreaMap() {
     }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void suggestAddresses(input, "address", searchBias(SHOPS_CENTRE), controller.signal)
+      void suggestAddresses(input, "address", searchBias(SHOPS_CENTRE), controller.signal, session.current)
         .then((items) => setHints(items))
         // A failed lookup leaves the field working as a plain input. The
         // Check button geocodes server-side either way, so losing

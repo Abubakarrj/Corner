@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerText, useT } from "../../i18n";
 import { OUTLET_CHIP, PALETTE } from "../../shop/shopControls";
-import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
+import { endAddressSession, newAddressSession, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { SHOPS_CENTRE, nearestLocations, type StoreLocation,
   outletChipFor,
 } from "./locations";
@@ -78,6 +78,20 @@ export default function SearchResults({
   onResolvedAddress: (place: ResolvedPlace) => void;
 }) {
   // /api/geo answers with string keys rather than sentences — see serverText().
+  // ⚠️ One autocomplete session for one address being typed. Places bills per
+  // request without a token and per session with one, and this box is debounced
+  // into several requests. Held in a ref so a re-render does not start a new
+  // session mid-word — a fresh token per keystroke is billed exactly like no
+  // token at all.
+  const session = useRef<string | null>(null);
+  useEffect(() => {
+    session.current ??= newAddressSession();
+    return () => {
+      endAddressSession(session.current);
+      session.current = null;
+    };
+  }, []);
+
   const t = useT();
   const st = useServerText();
   const isDelivery = mode === "delivery";
@@ -127,6 +141,7 @@ export default function SearchResults({
           isDelivery ? "address" : "region",
           searchBias(SHOPS_CENTRE),
           controller.signal,
+          session.current,
         );
         setSuggestions({ forQuery: input, items });
       } catch (searchError) {

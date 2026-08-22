@@ -16,14 +16,34 @@ import "server-only";
 //               "Protomaps © OpenStreetMap". You host the file and refresh it
 //               when you want newer data.
 //
-// Set MAP_PROVIDER to pick the default. ?map=google or ?map=protomaps on
-// /locations overrides it per visit, which is how you compare them on one
-// deployment without a redeploy.
+// ——— ⚠️ Which one is the default, and why that changed ———
+//
+// It used to be google unless MAP_PROVIDER said otherwise, which meant the
+// free engine was fully built, sitting in the repository, and switched off —
+// and every map load on /locations, /delivery-areas, the checkout and the chat
+// pin picker was billed. Two variables had to be set to stop that, and one of
+// them existed only to say "yes, really".
+//
+// So the tiles decide. Point PMTILES_URL at an archive and that is the map;
+// leave it unset and there is nothing to draw with, so it is Google. The
+// failure direction is the one that matters: a missing PMTILES_URL falls back
+// to a map that works and costs money, never to a blank canvas.
+//
+// MAP_PROVIDER still wins when it is set, both ways — including
+// MAP_PROVIDER=google with tiles configured, which is how you go back without
+// deleting anything. ?map=google or ?map=protomaps on /locations overrides it
+// per visit, for comparing them on one deployment without a redeploy.
 
 export type MapProvider = "google" | "protomaps";
 
 export function mapProvider(): MapProvider {
-  return process.env.MAP_PROVIDER?.trim() === "protomaps" ? "protomaps" : "google";
+  const asked = process.env.MAP_PROVIDER?.trim();
+  if (asked === "protomaps" || asked === "google") return asked;
+  // ⚠️ Read through pmtilesUrl() rather than process.env directly, so "set to
+  // an empty string" means the same thing in both places. It is declared below
+  // this; function declarations hoist, and keeping the export order as it was
+  // matters more than reading top to bottom here.
+  return pmtilesUrl() ? "protomaps" : "google";
 }
 
 // Where the .pmtiles archive lives.

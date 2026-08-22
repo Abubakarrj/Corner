@@ -1051,6 +1051,12 @@ export async function suggest(
   query: string,
   kind: SuggestKind,
   near: [number, number],
+  /** ⚠️ The autocomplete session this request belongs to. Places bills per
+   *  request without one and per session with one, and a debounced address box
+   *  is several requests. Undefined keeps the old per-request billing rather
+   *  than inventing a session per call, which would be the same thing wearing a
+   *  token. See newAddressSession() in googleMapsPublic.ts. */
+  session?: string,
 ): Promise<Suggestion[]> {
   const key = googleMapsKey();
   if (!key) return [];
@@ -1069,6 +1075,7 @@ export async function suggest(
             radius: 20000,
           },
         },
+        ...(session ? { sessionToken: session } : null),
       }),
     });
 

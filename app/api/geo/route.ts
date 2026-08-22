@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     placeId?: unknown;
     point?: unknown;
     name?: unknown;
+    session?: unknown;
   } | null;
   const query = typeof body?.query === "string" ? body.query.trim() : "";
   const placeId = typeof body?.placeId === "string" ? body.placeId.trim() : "";
@@ -66,7 +67,16 @@ export async function POST(request: Request) {
 
   if (body?.action === "suggest") {
     if (query.length < 3) return Response.json({ suggestions: [] });
-    const suggestions = await suggest(query, kind, await deliveryOrigin());
+    // ⚠️ Shape-checked and capped rather than passed through. This ends up in a
+    // request body to Google, and it is a string off the wire — a session id is
+    // a UUID this app minted, so anything longer or stranger is not one and is
+    // dropped rather than forwarded.
+    const asked = body?.session;
+    const session =
+      typeof asked === "string" && asked.length > 0 && asked.length <= 64
+        ? asked
+        : undefined;
+    const suggestions = await suggest(query, kind, await deliveryOrigin(), session);
     return Response.json({ suggestions });
   }
 

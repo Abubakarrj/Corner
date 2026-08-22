@@ -23,7 +23,7 @@ import {
 } from "./application";
 import { FRESH, clearDraft, saveDraft, started, useSavedDraft, type Draft } from "./draft";
 import { codeFor, matchStates } from "./states";
-import { suggestAddresses } from "../../googleMapsPublic";
+import { endAddressSession, newAddressSession, suggestAddresses } from "../../googleMapsPublic";
 import { SHOPS_CENTRE } from "../locations/locations";
 import { searchBias } from "../../geolocate";
 
@@ -1461,6 +1461,20 @@ function CityBox({
 }) {
   const t = useT();
   const [choices, setChoices] = useState<Choice[]>([]);
+  // ⚠️ One autocomplete session for one address being typed. Places bills per
+  // request without a token and per session with one, and this box is debounced
+  // into several requests. Held in a ref so a re-render does not start a new
+  // session mid-word — a fresh token per keystroke is billed exactly like no
+  // token at all.
+  const session = useRef<string | null>(null);
+  useEffect(() => {
+    session.current ??= newAddressSession();
+    return () => {
+      endAddressSession(session.current);
+      session.current = null;
+    };
+  }, []);
+
   // Set the moment a suggestion is taken, so choosing one does not immediately
   // ask Google what it thinks of the text it just wrote.
   const settled = useRef("");
@@ -1477,7 +1491,7 @@ function CityBox({
     }
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void suggestAddresses(input, "city", searchBias(SHOPS_CENTRE), controller.signal)
+      void suggestAddresses(input, "city", searchBias(SHOPS_CENTRE), controller.signal, session.current)
         .then((items) => setChoices(items))
         // No key, no network, no Places: the box stays a plain text field and
         // the form works exactly as it did. Suggestions are a convenience and

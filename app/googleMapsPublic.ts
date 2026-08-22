@@ -255,11 +255,59 @@ export function unloadMaps() {
 // Falls back to our own /api/geo, which asks Google with the same key from the
 // server, when the library couldn't load. Address search then costs an extra
 // hop per keystroke but still works, which is the right way round.
+// ——— ⚠️ Autocomplete sessions, which is how this is billed ———
+//
+// Places bills autocomplete per *request* unless the requests carry a session
+// token, in which case a whole burst of typing is one session. The field is
+// debounced, so an address is three to six requests — and this app puts an
+// address box on the locations page, the pin picker, the delivery map and the
+// careers form, where every applicant types one and nothing is sold.
+//
+// Nothing here passed a token, so every one of those was its own bill.
+//
+// ⚠️ Worth being exact about the saving rather than overselling it: Google's
+// cheaper "with Place Details" session needs a Place Details call to close it,
+// and this app resolves a chosen suggestion through Geocoding with a place_id
+// instead. So a session here closes as autocomplete-without-details — still one
+// charge for the burst rather than one per keystroke, which is the point, but
+// not the cheapest tier that exists.
+//
+// A session is a string the caller holds for as long as somebody is typing one
+// address, and drops when they pick a suggestion or leave. Callers that pass
+// nothing behave exactly as before.
+type Session = {
+  /** For the browser library, which wants an object rather than a string. */
+  js: google.maps.places.AutocompleteSessionToken | null;
+  /** For /api/geo, which sends the REST shape. */
+  id: string;
+};
+
+const sessions = new Map<string, Session>();
+
+/** Start a session. Hold the string while somebody types one address. */
+export function newAddressSession(): string {
+  const id =
+    globalThis.crypto?.randomUUID?.() ??
+    `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  sessions.set(id, { js: null, id });
+  return id;
+}
+
+/** End it — on choosing a suggestion, or on the field closing.
+ *
+ *  ⚠️ Not optional in spirit: a session left open is a token that keeps being
+ *  sent, and Google closes it on its own timer anyway. The real reason to call
+ *  this is the map above, which would otherwise grow for the life of the page. */
+export function endAddressSession(session: string | null | undefined): void {
+  if (session) sessions.delete(session);
+}
+
 export async function suggestAddresses(
   query: string,
   kind: SuggestKind,
   near: [number, number],
   signal?: AbortSignal,
+  session?: string | null,
 ): Promise<Suggestion[]> {
   const maps = await loadMaps();
 
@@ -267,7 +315,7 @@ export async function suggestAddresses(
     const response = await fetch("/api/geo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "suggest", query, kind }),
+      body: JSON.stringify({ action: "suggest", query, kind, session: session ?? undefined }),
       signal,
     });
     if (!response.ok) throw new Error("Address search failed.");
@@ -275,9 +323,22 @@ export async function suggestAddresses(
     return body.suggestions ?? [];
   }
 
-  const { AutocompleteSuggestion } = (await maps.importLibrary(
+  const { AutocompleteSuggestion, AutocompleteSessionToken } = (await maps.importLibrary(
     "places",
   )) as google.maps.PlacesLibrary;
+
+  // ⚠️ One token object per session, made lazily and kept. A fresh token on
+  // every keystroke is exactly the same as no token at all — each request its
+  // own session, billed its own way — and it is the mistake that looks like
+  // working code, because the requests still succeed.
+  let token: google.maps.places.AutocompleteSessionToken | undefined;
+  if (session) {
+    const held = sessions.get(session);
+    if (held) {
+      held.js ??= new AutocompleteSessionToken();
+      token = held.js;
+    }
+  }
 
   const ask = (types: readonly string[]) =>
     AutocompleteSuggestion.fetchAutocompleteSuggestions({
@@ -288,6 +349,7 @@ export async function suggestAddresses(
         center: { lat: near[0], lng: near[1] },
         radius: 20000,
       },
+      ...(token ? { sessionToken: token } : null),
     });
 
   // Same fallback as the server copy, for the same reason: a request Places

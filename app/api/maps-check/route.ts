@@ -1,5 +1,7 @@
 import { authorized, notFound } from "../../diagnostics";
 import { geocode, googleMapsKey, matrixProblem, routeBetween, suggest } from "../../googleMaps";
+import { LOCATIONS } from "../../(marketing)/locations/locations";
+import { googleMapsBrowserKey } from "../../googleMaps";
 import { shapeFingerprint } from "../../deliveryArea";
 import { deliveryShape } from "../../deliveryShape";
 import { deliveryArea } from "../../deliveryArea";
@@ -115,6 +117,48 @@ export async function GET(request: Request) {
             "Places autocomplete returned nothing for a partial address." +
             " Check Places API (New) is enabled on this project.",
         },
+    // ——— ⚠️ Is the key that bills you sitting in the page source? ———
+    //
+    // One key used by both the browser and the server cannot be
+    // referrer-restricted, because server requests carry no referrer — see the
+    // note at the top of app/api/maps-config. So a single key means the key
+    // that bills this account is in the HTML of a public site, and an
+    // unexplained bill is as likely to be somebody else's traffic as your own.
+    // Two keys is the configuration that cannot be lifted.
+    keys: googleMapsBrowserKey()
+      ? { ok: true as const, separate: true }
+      : {
+          ok: false as const,
+          separate: false,
+          why:
+            "GOOGLE_MAPS_BROWSER_KEY is not set, so the browser is handed the" +
+            " same key the server uses. That key cannot be referrer-restricted" +
+            " and is readable in the page source. Set a second key, restricted" +
+            " by HTTP referrer to this domain, and restrict the server key by" +
+            " API instead.",
+        },
+
+    // ——— ⚠️ Which counters still cost a Geocoding call ———
+    //
+    // storePlace() returns before the geocoder when a location has surveyed
+    // `door` coordinates. Every shop without them is a Geocoding lookup per
+    // process, and — until the backoff added alongside this — a lookup per
+    // request whenever the key was refused. Eleven typed coordinates end it.
+    doors: (() => {
+      const missing = LOCATIONS.filter((store) => !store.door).map((store) => store.id);
+      return missing.length === 0
+        ? { ok: true as const, surveyed: LOCATIONS.length }
+        : {
+            ok: false as const,
+            missing,
+            why:
+              `${missing.length} of ${LOCATIONS.length} counters have no surveyed` +
+              " door, so each one is geocoded once per server process. Add" +
+              " `door: [lat, lng]` in locations.ts to stop paying for an answer" +
+              " that does not change.",
+          };
+    })(),
+
     // ——— ⚠️ The committed boundary, and whether it still describes this shop ———
     //
     // The shape is measured once by `npm run measure:delivery` and checked in;

@@ -9,7 +9,7 @@ import { Button } from "../../ui/Button";
 import { pinDataUri } from "./mapEngine";
 import { PIN_STYLE } from "./mapStyle";
 import { useResolvedTheme } from "../../theme";
-import { suggestAddresses, type Suggestion } from "../../googleMapsPublic";
+import { endAddressSession, newAddressSession, suggestAddresses, type Suggestion } from "../../googleMapsPublic";
 import { SHOPS_CENTRE, DELIVERY_RADIUS_MILES } from "./locations";
 
 // Where the courier actually goes, placed by the person who lives there.
@@ -808,6 +808,20 @@ function CrosshairIcon({ spinning }: { spinning: boolean }) {
 // having been shown it.
 function PinSearch({ onPick }: { onPick: (point: [number, number]) => void }) {
   const t = useT();
+  // ⚠️ One autocomplete session for one address being typed. Places bills per
+  // request without a token and per session with one, and this box is debounced
+  // into several requests. Held in a ref so a re-render does not start a new
+  // session mid-word — a fresh token per keystroke is billed exactly like no
+  // token at all.
+  const session = useRef<string | null>(null);
+  useEffect(() => {
+    session.current ??= newAddressSession();
+    return () => {
+      endAddressSession(session.current);
+      session.current = null;
+    };
+  }, []);
+
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   // The suggestions, and the query they belong to, in one piece of state.
@@ -830,7 +844,7 @@ function PinSearch({ onPick }: { onPick: (point: [number, number]) => void }) {
     // A pause, not a request per character. Places bills per session and per
     // keystroke is a lot of both.
     const timer = window.setTimeout(() => {
-      void suggestAddresses(typed, "address", searchBias(SHOPS_CENTRE), controller.signal)
+      void suggestAddresses(typed, "address", searchBias(SHOPS_CENTRE), controller.signal, session.current)
         .then((items) => {
           setFound({ forQuery: typed, items });
           setOpen(true);

@@ -73,6 +73,23 @@ const MAX_DRIFT_MILES = 0.5;
 
 const resolved = new Map<string, StorePlace>();
 
+// ——— ⚠️ When the lookup fails, and why that needed its own memory ———
+//
+// Successes were remembered and failures were not, on the reasoning that a
+// lookup which failed because the key was not set yet should be retried rather
+// than cached as "no". Correct about the intent and unbounded in cost: while
+// the key is refused — restricted wrongly, API not enabled, billing off — every
+// request that touches a shop position re-geocodes *all eleven shops*, forever,
+// at Geocoding rates. Nothing in the app notices; the typed coordinates are
+// returned and everything keeps working, expensively. It is visible in this
+// repository's own test output as a wall of REQUEST_DENIED.
+//
+// So a failure is remembered too, briefly. Long enough that a broken key costs
+// eleven calls a minute instead of eleven per request; short enough that fixing
+// the key in the console shows up on the map without a redeploy.
+const RETRY_AFTER_MS = 60_000;
+const failedAt = new Map<string, number>();
+
 // The full address as Google should be asked for it.
 //
 // The two fields are split in locations.ts because the cards show them on two
@@ -89,11 +106,16 @@ function typed(location: StoreLocation): StorePlace {
 //
 // Memoised per process rather than per request. A street address does not move
 // between two requests, and the alternative is a Geocoding call on the path of
-// every delivery quote. Only successes are remembered, so a lookup that failed
-// because the key wasn't set yet is retried rather than cached as "no".
+// every delivery quote.
+//
+// ⚠️ Failures are remembered too, for a minute — see RETRY_AFTER_MS. A refused
+// key used to mean eleven Geocoding calls on every single request.
 export async function storePlace(location: StoreLocation): Promise<StorePlace> {
   const hit = resolved.get(location.id);
   if (hit) return hit;
+
+  const failed = failedAt.get(location.id);
+  if (failed !== undefined && Date.now() - failed < RETRY_AFTER_MS) return typed(location);
 
   // A surveyed door beats a geocode, and there is nothing to look up.
   //
@@ -115,7 +137,10 @@ export async function storePlace(location: StoreLocation): Promise<StorePlace> {
   // makes it the best possible hint for the one lookup that has to land on
   // that same block.
   const place = await geocode(fullAddress(location), location.position).catch(() => null);
-  if (!place) return typed(location);
+  if (!place) {
+    failedAt.set(location.id, Date.now());
+    return typed(location);
+  }
 
   const found: [number, number] = [place.lat, place.lng];
   const drift = milesBetween(location.position, found);
@@ -126,7 +151,14 @@ export async function storePlace(location: StoreLocation): Promise<StorePlace> {
         `address on file, so the typed position stands. Check ` +
         `${JSON.stringify(fullAddress(location))}.`,
     );
-    return typed(location);
+    // ⚠️ Remembered as an answer, not as a failure. This lookup *succeeded* and
+    // was billed for; what was rejected is where it landed, and asking again
+    // buys the same wrong answer at the same price. A minute's backoff would
+    // mean paying for it every minute for as long as the process lives. The
+    // warning above is the thing that gets this fixed, and it is printed once.
+    const standing = typed(location);
+    resolved.set(location.id, standing);
+    return standing;
   }
 
   const answer: StorePlace = { position: found, address: place.address, exact: true };
