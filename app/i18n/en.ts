@@ -281,6 +281,21 @@ export const en = {
   "notes.unpinYes": "Take it down",
   "notes.unpinNo": "Keep it",
   "notes.unpinFailed": "That didn't come down. Try again in a moment.",
+  // ⚠️ The shop taking down somebody else's note, which is a different act
+  // from unpinning your own — see UnpinNote.tsx. Different words, so whoever
+  // is holding the shop's phone cannot clear a wall thinking they are tidying.
+  "notes.takeDown": "Take down",
+  "notes.takeDownAsk": "Take this off the wall?",
+  "keeper.title": "Shop sign-in",
+  "keeper.label": "Shop key",
+  "keeper.signIn": "Sign in",
+  "keeper.signOut": "Sign out",
+  "keeper.signedIn": "Signed in as the shop.",
+  "keeper.signedInHow": "Every note on the wall now has a Take down control. It lasts twelve hours.",
+  // ⚠️ One message for every way of not getting in — a wrong key, a key that
+  // was right an hour ago, a deploy with no key set at all. The endpoint
+  // answers the same way, and saying more here would undo that.
+  "keeper.failed": "That key didn't work.",
   "notes.errPhoto": "That picture didn't come through. Try another one.",
   "checkout.orTypeCard": "or type your card",
   "checkout.payWithApplePay": "Pay with Apple Pay",

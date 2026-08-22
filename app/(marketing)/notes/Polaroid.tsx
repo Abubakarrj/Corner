@@ -45,6 +45,7 @@ export default function Polaroid({
   drawing,
   photo = null,
   mine = false,
+  keeper = false,
   developingLabel = "developing",
   className = "",
 }: {
@@ -63,6 +64,11 @@ export default function Polaroid({
    *  a client component with no server to ask; there the card falls back to the
    *  token in localStorage. See UnpinNote. */
   mine?: boolean;
+  /** ⚠️ Whether this browser holds the shop's key, which puts a takedown on
+   *  every card rather than on one. Decided on the server from the keeper
+   *  cookie — httpOnly, so the page cannot read it — and passed down for the
+   *  same reason `mine` is. See app/shopKeeper.ts. */
+  keeper?: boolean;
   /** ⚠️ Passed in rather than looked up, because this renders on both sides of
    *  the line: the wall is a client component with the translator in hand, and
    *  /notes/all is a server page that has no hook to call. A default in English
@@ -221,7 +227,7 @@ export default function Polaroid({
             server, so a wall of a hundred notes is a hundred of these and none
             of them shows. See UnpinNote.tsx for why it has to appear after
             mount rather than during render. */}
-        {id ? <UnpinNote id={id} mine={mine} /> : null}
+        {id ? <UnpinNote id={id} mine={mine} keeper={keeper} /> : null}
       </figcaption>
     </figure>
   );

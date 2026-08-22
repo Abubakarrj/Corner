@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import PageTitle from "../../ui/PageTitle";
 import BackButton from "../../ui/BackButton";
 import { isNotesConfigured, listNotes } from "../../cornerNotes";
 import NotesWall from "./NotesWall";
+import { KEEPER_COOKIE, keeperIsValid } from "../../shopKeeper";
 
 // Corner Notes: the wall people leave things on.
 //
@@ -29,6 +31,9 @@ export default async function NotesPage() {
   // ⚠️ 24 rather than 60. The wall is the scattered view and tilted cards need
   // room; the rest live on /notes/all, laid flat and ordered by place.
   const notes = await listNotes(24);
+  // ⚠️ The shop, if this is the shop. httpOnly, so the wall cannot ask — see
+  // app/shopKeeper.ts and the note on NotesWall's `keeper` prop.
+  const keeper = keeperIsValid((await cookies()).get(KEEPER_COOKIE)?.value);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-6">
@@ -53,6 +58,7 @@ export default async function NotesPage() {
           // distinguishable on screen. See listNotes().
           notes={notes ?? []}
           reachable={isNotesConfigured() && notes !== null}
+          keeper={keeper}
         />
       </div>
     </div>

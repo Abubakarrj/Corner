@@ -417,6 +417,44 @@ export async function unpinNote(
   }
 }
 
+/** Take a note down as the shop, without the browser that wrote it.
+ *
+ *  ⚠️ This is the one path in the app that takes down somebody else's note, and
+ *  it has no proof in its signature on purpose: the proof is the keeper cookie,
+ *  checked in app/api/corner-notes/unpin before this is reached, and putting a
+ *  second half-check here would suggest a caller could supply one. There is one
+ *  caller. Read app/shopKeeper.ts before adding another.
+ *
+ *  Hidden rather than deleted, like every other takedown on this wall — the
+ *  reason is at the top of this file, and it is that a mistake made about
+ *  somebody else's note should be recoverable. The permanent one is
+ *  scripts/notes.mjs, run by a person against the shop's own database.
+ *
+ *  ⚠️ True when the note is already down, not false. The shop pressing this on
+ *  a card somebody unpinned a moment ago in another tab has got what it wanted,
+ *  and an error there would send them looking for a problem that is not one. */
+export async function takeDownNote(id: string): Promise<boolean> {
+  const client = db();
+  if (!client) return false;
+  if (!/^n_[0-9a-f-]{36}$/.test(id)) return false;
+  try {
+    await prepared();
+    const gone = await client.query(
+      `UPDATE ${SCHEMA}.corner_notes SET hidden = true WHERE id = $1`,
+      [id],
+    );
+    // ⚠️ Rows matched, not rows changed — Postgres reports an UPDATE that set
+    // hidden = true on an already-hidden row as one row. What this must not
+    // report is success for an id that is not on the wall at all, because the
+    // shop pressing a control on a card it can see and being told "done" about
+    // nothing is how a note stays up while everybody believes it came down.
+    return (gone.rowCount ?? 0) > 0;
+  } catch (error) {
+    console.error(`[corner-notes] the shop could not take a note down: ${explainDbError(error)}`);
+    return false;
+  }
+}
+
 /** The ids of the notes this browser wrote and that are still up.
  *
  *  ⚠️ Ids only, and only the ones still on the wall. It answers exactly the

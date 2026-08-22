@@ -27,6 +27,7 @@ import { scatterStyle } from "./scatter";
 export default function NotesWall({
   notes,
   reachable,
+  keeper = false,
 }: {
   /** The wall itself, read on the server so the page is not an empty box while
    *  a fetch happens. */
@@ -34,6 +35,17 @@ export default function NotesWall({
   /** False when there is no database behind this. The wall says so rather than
    *  showing an empty grid that reads as "nobody has written". */
   reachable: boolean;
+  /** ⚠️ Whether the shop is signed in, decided on the server and passed
+   *  through this component untouched. It is here only because this is a
+   *  client component and the cards are inside it — the keeper cookie is
+   *  httpOnly and nothing in the browser can read it. See app/shopKeeper.ts.
+   *
+   *  ⚠️ `mine` is deliberately *not* threaded the same way and stays false on
+   *  this wall: it is per-card, and resolving it would mean a database read per
+   *  note on the page a stranger is most likely to arrive at cold. Here the
+   *  card falls back to the localStorage token, which is what it has always
+   *  done. The shop's takedown is not per-card, so it costs nothing. */
+  keeper?: boolean;
 }) {
   const t = useT();
 
@@ -93,6 +105,7 @@ export default function NotesWall({
                 note={entry.note}
                 drawing={entry.drawing}
                 photo={entry.photo}
+                keeper={keeper}
                 developingLabel={t("notes.developing")}
               />
             </li>

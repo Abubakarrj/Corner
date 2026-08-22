@@ -36,10 +36,36 @@ import { forgetNote, subscribeMine, tokenFor } from "./mine";
 // It is on the card the *device* wrote. Not the person — there are no accounts
 // here, and app/noteOwner.ts sets out exactly how far a device claim reaches
 // and where it stops. Somebody who cleared their site data, or wrote from a
-// phone and is now on a laptop, will not see this and has to ask the shop, the
-// way the privacy policy says.
+// phone and is now on a laptop, will not see this and has to ask the shop.
+//
+// ——— ⚠️ And the third way it appears: the shop ———
+//
+// `keeper` is the server saying this browser holds the shop's key, and it puts
+// the control on *every* card rather than on one. That is the takedown the
+// privacy policy promises, and until it existed the answer was a person editing
+// a `hidden` column by hand — which is not a promise anybody can keep at speed.
+//
+// ⚠️ It says something different, because it is a different act. Unpinning your
+// own note is housekeeping and the word for it is "Unpin". Taking down
+// somebody else's is moderation, and a control that used the same word would
+// let whoever is holding the shop's phone clear a wall while believing they
+// were tidying their own. See notes.takeDown in app/i18n/en.ts.
 
-export default function UnpinNote({ id, mine = false }: { id: string; mine?: boolean }) {
+export default function UnpinNote({
+  id,
+  mine = false,
+  keeper = false,
+}: {
+  id: string;
+  mine?: boolean;
+  /** ⚠️ The server's answer, never the browser's. Decided from the keeper
+   *  cookie, which is httpOnly and unreadable from the page on purpose — so it
+   *  arrives as a prop or not at all. A page that could set this for itself
+   *  would be a page where the control is one devtools edit away, and while the
+   *  endpoint would still refuse the request, offering a stranger a button that
+   *  says "take it down" on somebody's note is its own small harm. */
+  keeper?: boolean;
+}) {
   const t = useT();
   const router = useRouter();
   const [asking, setAsking] = useState(false);
@@ -89,12 +115,14 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
     }
   }, [id, router, sending, token]);
 
-  // ⚠️ Either proof shows the control. `mine` is the server's answer, rendered
-  // into the markup and therefore right on the first paint and unaffected by
-  // anything Safari does to storage. The token is what a note written before
-  // the cookie existed has, and what the wall — a client component with no
-  // server to ask — has for everything.
-  if (!mine && !token) return null;
+  // ⚠️ Any of the three shows the control. `mine` is the server's answer,
+  // rendered into the markup and therefore right on the first paint and
+  // unaffected by anything Safari does to storage. The token is what a note
+  // written before the cookie existed has, and what the wall — a client
+  // component with no server to ask — has for everything. `keeper` is the shop,
+  // and it is the only one of the three that appears on a card this browser did
+  // not write.
+  if (!mine && !token && !keeper) return null;
 
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -103,7 +131,7 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
           {/* ⚠️ Paper's ink, like the rest of this card: the palette's would
               print cream on a sheet that stays light. See --cb-paper. */}
           <span className="text-[11px]" style={{ color: "var(--cb-paper-quiet)" }}>
-            {t("notes.unpinAsk")}
+            {t(keeper && !mine ? "notes.takeDownAsk" : "notes.unpinAsk")}
           </span>
           <button
             type="button"
@@ -130,7 +158,11 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
           className="cb-tap cursor-pointer text-[11px] underline"
           style={{ color: "var(--cb-paper-faint)" }}
         >
-          {t("notes.unpin")}
+          {/* ⚠️ "Take down", not "Unpin", when this is the shop on a card it
+              did not write. Same control, different act — see the note at the
+              top. `mine` wins when both are true: the shop taking down its own
+              note is still just unpinning it. */}
+          {t(keeper && !mine ? "notes.takeDown" : "notes.unpin")}
         </button>
       )}
       {failed ? (

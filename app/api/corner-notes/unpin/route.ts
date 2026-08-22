@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { unpinNote } from "../../../cornerNotes";
+import { takeDownNote, unpinNote } from "../../../cornerNotes";
+import { KEEPER_COOKIE, keeperIsValid } from "../../../shopKeeper";
 import { NOTE_DEVICE_COOKIE, hashDeviceToken, isDeviceToken } from "../../../noteDevice";
 import { isUnpinToken } from "../../../noteOwner";
 import { clientIp, throttle } from "../../../rateLimit";
@@ -37,10 +38,25 @@ import { clientIp, throttle } from "../../../rateLimit";
 //
 // ——— What this cannot do ———
 //
-// It cannot restore a note, and it cannot take down a note posted from another
-// device. Both are in app/noteOwner.ts, which is where the limits of a
-// device-held claim are written out. The shop's own takedown — the one the
-// privacy policy promises — is still the `hidden` column reached by hand.
+// It cannot restore a note. That limit is in app/noteOwner.ts, along with the
+// rest of what a device-held claim can and cannot say.
+//
+// ——— ⚠️ And the one caller that is not a device ———
+//
+// It *can* now take down a note posted from another browser, for exactly one
+// requester: the shop, holding the keeper cookie. That is the takedown the
+// privacy policy promises, which until now was the `hidden` column reached by
+// hand — see app/shopKeeper.ts for what the cookie is and why it is not the
+// key itself.
+//
+// ⚠️ The keeper path is checked first and returns on its own, which means the
+// timing reasoning above does not apply to it and does not need to: a request
+// carrying a valid keeper cookie has already proved who it is, and there is
+// nothing left to learn from how long the answer takes. What must stay true is
+// the other direction — an *invalid* keeper cookie has to fall through to the
+// ordinary path and be answered exactly like no cookie at all, rather than
+// being refused in a way that says "that was a keeper cookie, and it was
+// wrong". It does, because keeperIsValid is total and returns false.
 
 /** ⚠️ Unpin attempts per address per hour.
  *
@@ -68,11 +84,22 @@ export async function POST(request: Request) {
   const body = payload as Record<string, unknown> | null;
   const id = typeof body?.id === "string" ? body.id : "";
   const token = body?.token;
-  const cookie = (await cookies()).get(NOTE_DEVICE_COOKIE)?.value;
+  const jar = await cookies();
+  const cookie = jar.get(NOTE_DEVICE_COOKIE)?.value;
   const device = isDeviceToken(cookie) ? hashDeviceToken(cookie) : null;
 
-  // ⚠️ The shape check now passes on a missing token, which it did not before.
-  // A browser that has the cookie and no token is the ordinary case after
+  // ——— ⚠️ The shop, which needs no note of its own ———
+  //
+  // Before the shape check, deliberately. A keeper is taking down somebody
+  // else's note, so it carries neither the token nor that note's device
+  // cookie, and the check below would refuse it as malformed.
+  if (keeperIsValid(jar.get(KEEPER_COOKIE)?.value)) {
+    if (!id) return Response.json({ error: "api.badRequest" }, { status: 400 });
+    return Response.json({ ok: await takeDownNote(id) });
+  }
+
+  // ⚠️ The shape check passes on a missing token, which it did not always. A
+  // browser that has the device cookie and no token is the ordinary case after
   // Safari has cleared localStorage, and refusing it with a 400 would be this
   // endpoint telling somebody their own note is not theirs.
   //

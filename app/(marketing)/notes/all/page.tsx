@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { countNotes, listNeighborhoods, listNotes, noteIdsForDevice } from "../../../cornerNotes";
 import { NOTE_DEVICE_COOKIE, hashDeviceToken, isDeviceToken } from "../../../noteDevice";
 import Polaroid from "../Polaroid";
+import { KEEPER_COOKIE, keeperIsValid } from "../../../shopKeeper";
 import NoteComposer from "../NoteComposer";
 
 // Every note, by neighbourhood — and where a new one gets written.
@@ -53,8 +54,13 @@ export default async function AllNotesPage({
   //
   // The cookie is httpOnly, so only the server can read it, so the ownership
   // has to be resolved here and handed down. The card gets a boolean.
-  const cookie = (await cookies()).get(NOTE_DEVICE_COOKIE)?.value;
+  const jar = await cookies();
+  const cookie = jar.get(NOTE_DEVICE_COOKIE)?.value;
   const deviceHash = isDeviceToken(cookie) ? hashDeviceToken(cookie) : null;
+  // ⚠️ The shop, if this is the shop. Same reason the line above exists: the
+  // keeper cookie is httpOnly, so whether the takedown appears is decided here
+  // and handed down as a boolean. See app/shopKeeper.ts.
+  const keeper = keeperIsValid(jar.get(KEEPER_COOKIE)?.value);
   const [notes, places, total, mine] = await Promise.all([
     // ⚠️ 120 is the cap listNotes() enforces anyway. Said here so the number on
     // screen and the number fetched are the same decision rather than two.
@@ -133,6 +139,7 @@ export default async function AllNotesPage({
                 drawing={entry.drawing}
                 photo={entry.photo}
                 mine={mine.has(entry.id)}
+                keeper={keeper}
               />
             </li>
           ))}
