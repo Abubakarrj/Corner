@@ -89,17 +89,25 @@ export default function Polaroid({
       // between those two jobs and does neither well, which is what the single
       // 0_2px_10px was doing.
       //
-      // Dark mode gets the same values and needs none of it: a white card on
-      // #171614 separates by itself, and black at these alphas is invisible
+      // Dark mode gets the same values and needs none of it: the card carries
+      // its own edge against #171614, and black at these alphas is invisible
       // there. Nothing is gained by branching, so it does not.
-      className={`m-0 flex h-full flex-col rounded-[3px] border border-[#e5e0d4] bg-white p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.20),0_7px_18px_rgba(0,0,0,0.16)] ${className}`}
+      className={`m-0 flex h-full flex-col rounded-[3px] border p-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.20),0_7px_18px_rgba(0,0,0,0.16)] ${className}`}
+      // ⚠️ The paper tokens, which are a surface of their own rather than the
+      // palette's. Not because a polaroid is white in both themes — it is not,
+      // and it was, and that is what made a wall of these read as holes cut in
+      // the dark page. It is *paper* in both themes: the lightest thing in the
+      // frame, dimmer at night, never inverted. See --cb-paper in globals.css
+      // for what the window's ink constrains here.
+      style={{ background: "var(--cb-paper)", borderColor: "var(--cb-paper-edge)" }}
     >
       {/* The window. Square, like a real one, and the same grey whether or not
           anybody drew — see the note above. */}
       <div
         className={`relative aspect-square w-full overflow-hidden ${
-          developing ? "cb-developing" : "bg-[#efefe9]"
+          developing ? "cb-developing" : ""
         }`}
+        style={developing ? undefined : { background: "var(--cb-paper-window)" }}
       >
         {/* ——— The photograph, under the ink ———
 
@@ -135,7 +143,10 @@ export default function Polaroid({
             write, which is why it is small and lowercase: it is the shop
             speaking, quietly, on somebody else's card. */}
         {developing ? (
-          <span className="absolute inset-0 flex items-center justify-center text-[11px] tracking-wide text-[#6b675e]">
+          <span
+            className="absolute inset-0 flex items-center justify-center text-[11px] tracking-wide"
+            style={{ color: "var(--cb-paper-latent-ink)" }}
+          >
             {developingLabel}
           </span>
         ) : null}
@@ -170,33 +181,36 @@ export default function Polaroid({
       </div>
 
       <figcaption className="pt-2">
-        {/* ——— ⚠️ Fixed colours, not the theme's ———
+        {/* ——— ⚠️ Paper's ink, not the theme's ———
 
             These were text-quiet, text-faint and text-ink, which are the right
-            tokens on any surface that follows the theme. This one does not: a
-            polaroid is white in both themes, deliberately, because that is what
-            a polaroid is. So in dark mode the tokens resolved to the dark
-            theme's cream ink and printed cream on white — a card whose caption
+            tokens on any surface that follows the palette. This one does not:
+            the palette's ink inverts to a warm off-white at night, and on a
+            card that stays light that printed cream on paper — a caption that
             could not be read at all.
 
-            A fixed surface takes fixed colours. #1d1c19 is the light theme's
-            ink, which is what this card would have used if the theme could see
-            that it is always light. */}
+            The fix at the time was to nail all three to the light theme's
+            values, which fixed the caption and left the card itself white on
+            a near-black page. Both halves live in --cb-paper now: the card
+            dims and its ink darkens with it, measured against the card rather
+            than assumed from the light theme. */}
         <p
           className="m-0 flex flex-wrap items-baseline gap-x-1.5 text-[12px] leading-tight"
-          style={{ color: "#6b675e" }}
+          style={{ color: "var(--cb-paper-quiet)" }}
         >
           <span className="font-medium">{name}</span>
           {/* The neighbourhood is what makes this a wall rather than a list.
               Quieter than the name, because it is context. */}
-          {neighborhood ? <span style={{ color: "#8a8578" }}>· {neighborhood}</span> : null}
+          {neighborhood ? (
+            <span style={{ color: "var(--cb-paper-faint)" }}>· {neighborhood}</span>
+          ) : null}
         </p>
         {note ? (
           // break-words, because a name or a note can be one unbroken string of
           // forty characters and a card that overflows takes the grid with it.
           <p
             className="m-0 mt-0.5 break-words text-[13px] leading-[1.35]"
-            style={{ color: "#1d1c19" }}
+            style={{ color: "var(--cb-paper-ink)" }}
           >
             {note}
           </p>

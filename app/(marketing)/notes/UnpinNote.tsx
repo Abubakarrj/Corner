@@ -100,10 +100,9 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
       {asking ? (
         <>
-          {/* ⚠️ Fixed colours, like the rest of this card: a polaroid is white
-              in both themes, so theme tokens would print cream on white in the
-              dark. See the note in Polaroid.tsx. */}
-          <span className="text-[11px]" style={{ color: "#6b675e" }}>
+          {/* ⚠️ Paper's ink, like the rest of this card: the palette's would
+              print cream on a sheet that stays light. See --cb-paper. */}
+          <span className="text-[11px]" style={{ color: "var(--cb-paper-quiet)" }}>
             {t("notes.unpinAsk")}
           </span>
           <button
@@ -111,7 +110,7 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
             onClick={() => void unpin()}
             disabled={sending}
             className="cb-tap cursor-pointer text-[11px] underline disabled:opacity-50"
-            style={{ color: "#be1923" }}
+            style={{ color: "var(--cb-paper-red)" }}
           >
             {t("notes.unpinYes")}
           </button>
@@ -119,7 +118,7 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
             type="button"
             onClick={() => setAsking(false)}
             className="cb-tap cursor-pointer text-[11px] underline"
-            style={{ color: "#8a8578" }}
+            style={{ color: "var(--cb-paper-faint)" }}
           >
             {t("notes.unpinNo")}
           </button>
@@ -129,13 +128,13 @@ export default function UnpinNote({ id, mine = false }: { id: string; mine?: boo
           type="button"
           onClick={() => setAsking(true)}
           className="cb-tap cursor-pointer text-[11px] underline"
-          style={{ color: "#8a8578" }}
+          style={{ color: "var(--cb-paper-faint)" }}
         >
           {t("notes.unpin")}
         </button>
       )}
       {failed ? (
-        <span role="alert" className="text-[11px]" style={{ color: "#be1923" }}>
+        <span role="alert" className="text-[11px]" style={{ color: "var(--cb-paper-red)" }}>
           {t("notes.unpinFailed")}
         </span>
       ) : null}

@@ -200,9 +200,19 @@ export default function DrawPad({
         onPointerMove={move}
         onPointerUp={up}
         onPointerCancel={up}
-        // ⚠️ Without this the browser claims a slow drag as a scroll and the
-        // second half of the stroke never arrives.
-        style={{ touchAction: "none" }}
+        // touchAction: without it the browser claims a slow drag as a scroll
+        // and the second half of the stroke never arrives.
+        //
+        // ⚠️ And paper, rather than --cb-surface, for a harder reason than the
+        // polaroid's. The pencils are a fixed table in app/drawing.ts and
+        // INKS[0] is a near-black: on a ground that inverts with the theme, the
+        // default pencil draws in the dark with nothing to show for it. The pad
+        // is the same sheet the card is, so what you draw on is what you get.
+        style={{
+          touchAction: "none",
+          background: "var(--cb-paper)",
+          borderColor: "var(--cb-paper-edge)",
+        }}
         // A pad is a canvas, not a control: there is nothing here to tab to and
         // nothing a keyboard could usefully do with it. Named as an image with
         // the instruction as its label, so a screen reader says what it is and
@@ -210,7 +220,7 @@ export default function DrawPad({
         // pointer. Leaving a note without drawing is always allowed.
         role="img"
         aria-label={t("notes.padLabel")}
-        className="relative aspect-square w-full cursor-crosshair touch-none select-none overflow-hidden rounded-xl border border-line-soft bg-white"
+        className="relative aspect-square w-full cursor-crosshair touch-none select-none overflow-hidden rounded-xl border"
       >
         {/* ——— ⚠️ The photograph, underneath the ink ———
 
@@ -282,7 +292,14 @@ export default function DrawPad({
           light page shows its own edge; a light one does not, and without the
           border the amber and the pink read as floating blobs of different
           sizes. The chosen one is marked by a ring outside that border rather
-          than by changing it, so nothing moves when the choice does. */}
+          than by changing it, so nothing moves when the choice does.
+
+          ⚠️ And every swatch sits on paper, not on the panel. INKS[0] is a
+          near-black chosen to be a pencil on a light pad, and on the dark
+          theme's panel it was a black dot on charcoal — the default pencil,
+          the one most people never change, invisible in the picker that offers
+          it. A swatch is a preview of a mark, so it belongs on the surface
+          those marks are made on. */}
       <div
         role="radiogroup"
         aria-label={t("notes.inkLabel")}
@@ -301,6 +318,7 @@ export default function DrawPad({
             className={`cb-tap flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-shadow ${
               ink === index ? "ring-2 ring-ink ring-offset-2 ring-offset-surface" : ""
             }`}
+            style={{ background: "var(--cb-paper)" }}
           >
             <span
               aria-hidden
@@ -333,9 +351,13 @@ export default function DrawPad({
             // The first cut marked the chosen nib by darkening its 1px border,
             // which at this size is not a difference anybody can see — three
             // buttons that look identical are three buttons nobody presses.
-            className={`cb-tap flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-line-soft transition-shadow ${
+            // ⚠️ On paper, like the pencils above and for the same reason: the
+            // dot is drawn in the chosen ink, and the chosen ink is a
+            // near-black by default. On the panel it disappeared at night.
+            className={`cb-tap flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border transition-shadow ${
               width === index ? "ring-2 ring-ink ring-offset-2 ring-offset-surface" : ""
             }`}
+            style={{ background: "var(--cb-paper)", borderColor: "var(--cb-paper-edge)" }}
           >
             <span
               aria-hidden

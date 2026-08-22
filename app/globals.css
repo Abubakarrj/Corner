@@ -272,6 +272,48 @@
      rather than on top of the tabs. A number guessed in the second place
      drifts the moment the first one changes. */
   --cb-tab-bar-h: 66px;
+
+  /* ——— ⚠️ Paper: the polaroids on the notes wall ———
+   *
+   * A surface that does not follow the palette, because it is not a panel. It
+   * is a photograph, and a photograph is paper.
+   *
+   * These were literals scattered through Polaroid.tsx and UnpinNote.tsx, with
+   * a comment on each saying "fixed colours, a polaroid is white in both
+   * themes". That was right about the reason and wrong about the answer: white
+   * paper on the dark theme's #171614 measures 18:1, which is not a card
+   * lying on a page, it is a light source. A wall of them is a page of holes.
+   *
+   * What a polaroid does in a dark room is not turn black. It goes dim, keeps
+   * its warmth, and stays the lightest thing in the frame. So paper is a
+   * surface of its own with two states, and the dark one is the same sheet
+   * under less light: 8.6:1 against the page, still obviously paper, no glare.
+   *
+   * ⚠️ Not the theme's own tokens, in either direction. The window has a
+   * stranger's drawing on it, in ink from a fixed table in app/drawing.ts that
+   * this stylesheet cannot see and must not contradict — INKS[0] is a
+   * near-black, so the ground it lands on has to stay light in both themes or
+   * the first pencil disappears. That is the constraint, and it is why paper
+   * dims rather than inverting. */
+  --cb-paper: #ffffff;
+  --cb-paper-edge: #e5e0d4;
+  /* The window: the square the drawing and the photograph live in. Slightly
+     off the card, so an empty one still reads as a frame. */
+  --cb-paper-window: #efefe9;
+  --cb-paper-ink: #1d1c19;
+  --cb-paper-quiet: #6b675e;
+  --cb-paper-faint: #8a8578;
+  /* The unpin control, which is the one thing on this card that is a colour
+     rather than an ink. It has to be measured against paper like the rest —
+     the palette's --cb-red is chosen against the page. */
+  --cb-paper-red: #be1923;
+  /* The two ends of the developing pulse. See .cb-developing. */
+  --cb-paper-latent: #cfd2c6;
+  --cb-paper-fixed: #e4e3da;
+  /* ⚠️ The word inside a developing frame, which sits on the pulse rather than
+     on the card and so cannot share --cb-paper-quiet. That ground is the
+     darkest paper gets, and an 11px label on it needs its own value. */
+  --cb-paper-latent-ink: #6b675e;
 }
 
 /* ——— transitions.dev ———
@@ -653,6 +695,43 @@
   --cb-map-chrome: #171614;
   --cb-map-chrome-edge: #918d84;
   --cb-map-chrome-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+
+  /* ——— Paper, under less light ———
+   *
+   * The same sheet, not a different object: still the lightest thing on the
+   * screen, still warm, no longer a lamp. White measured 18:1 against this
+   * page and read as a hole cut in it; this is 8.6:1, which is a card lying on
+   * a dark table.
+   *
+   * ⚠️ Warm on purpose, and it took two passes to get there. The first set was
+   * a neutral grey at the same lightness and it looked like concrete — at this
+   * distance from white the cream is doing all the work of saying "paper", and
+   * a grey sheet on a warm-charcoal page reads as a different material rather
+   * than a dimmer one. The one after it went too far the other way and came
+   * out manila. This sits between them.
+   *
+   * ⚠️ The window stays light. There is a stranger's drawing on it in ink from
+   * the fixed table in app/drawing.ts, whose first entry is a near-black — the
+   * ground under it cannot invert without taking the default pencil with it.
+   *
+   * The caption ink is measured against the card rather than carried over:
+   * #6b675e is 5.63:1 on white and only 4.30 here, so it darkens to hold AA at
+   * 12px. ⚠️ Which is also how the light theme's --cb-paper-faint turned out
+   * to be 3.68:1 on white — under the bar, and there before any of this. It is
+   * left alone rather than quietly changed, because that is a visible edit to
+   * a screen nobody asked about. */
+  --cb-paper: #bcb29c;
+  --cb-paper-edge: #ada38b;
+  --cb-paper-window: #afa590;
+  --cb-paper-ink: #211f1a;
+  --cb-paper-quiet: #3b372f;
+  --cb-paper-faint: #454036;
+  /* ⚠️ #be1923 measures 6.26:1 on white and 2.98 here. The unpin control is
+     11px, so the red darkens with the paper rather than riding along. */
+  --cb-paper-red: #851016;
+  --cb-paper-latent: #988f7c;
+  --cb-paper-fixed: #a89e88;
+  --cb-paper-latent-ink: #28251f;
 }
 
 /* A `dark:` variant that follows the attribute, not the media query.
@@ -1283,21 +1362,23 @@ body {
  * for takes seconds, and a fast pulse would read as a page waiting on a
  * request that is late.
  *
- * ⚠️ Fixed colours, like everything else on this card. A polaroid is white in
- * both themes on purpose (see Polaroid.tsx), so its window cannot take tokens
- * that flip. */
+ * ⚠️ The paper tokens, not the palette's. This used to be two literals with a
+ * comment saying a polaroid is white in both themes; it is paper in both
+ * themes, which is not the same claim — see --cb-paper. The pulse walks
+ * between the same two points relative to the window in either one, so the
+ * emulsion comes up at the same rate on a dim card as on a bright one. */
 .cb-developing {
-  background-color: #cfd2c6;
+  background-color: var(--cb-paper-latent);
   animation: cbDeveloping 3200ms ease-in-out infinite;
 }
 
 @keyframes cbDeveloping {
   0%,
   100% {
-    background-color: #cfd2c6;
+    background-color: var(--cb-paper-latent);
   }
   50% {
-    background-color: #e4e3da;
+    background-color: var(--cb-paper-fixed);
   }
 }
 
