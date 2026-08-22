@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useT } from "../../i18n";
+import { useT, type StringKey } from "../../i18n";
 import {
   CANVAS,
+  DEFAULT_INK,
+  DEFAULT_WIDTH,
+  INKS,
   MAX_POINTS,
   MAX_STROKES,
+  WIDTHS,
+  inkOf,
   strokePath,
+  widthOf,
   type Drawing,
   type Stroke,
 } from "../../drawing";
@@ -33,6 +39,31 @@ import {
 // it the line stops at the edge, and drawing near the border becomes a fight.
 // `touch-action: none` stops the browser deciding a slow drag was a scroll and
 // stealing the second half of a stroke.
+//
+// ——— ⚠️ The pencils, and where their colours are not ———
+//
+// A colour is chosen here as an *index* and stored as one. No hex string
+// crosses the wire, so the palette cannot be widened by anything a request body
+// contains. The strings themselves live in app/drawing.ts, which is the only
+// file that turns one into an attribute. Read the note above INKS before adding
+// a colour, and never reorder them.
+
+/** The name a screen reader reads for each pencil, in the order INKS declares
+ *  them. ⚠️ Positional, like INKS itself: a colour added there needs a name
+ *  here and the two lists are checked against each other in
+ *  tests/drawing.test.ts, because the failure otherwise is a swatch that
+ *  announces the wrong colour to the only people who cannot see it. */
+const INK_NAMES: StringKey[] = [
+  "notes.inkBlack",
+  "notes.inkRed",
+  "notes.inkAmber",
+  "notes.inkGreen",
+  "notes.inkBlue",
+  "notes.inkViolet",
+  "notes.inkPink",
+];
+
+const WIDTH_NAMES: StringKey[] = ["notes.penThin", "notes.penMedium", "notes.penThick"];
 
 export default function DrawPad({
   value,
@@ -52,10 +83,32 @@ export default function DrawPad({
   // The in-progress stroke, kept apart from `value` so a drag is one state
   // update per move rather than a rewrite of the whole drawing.
   const [live, setLive] = useState<Stroke | null>(null);
-  const drawing = useRef(false);
+  const [ink, setInk] = useState(DEFAULT_INK);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  // ——— ⚠️ One pointer at a time ———
+  //
+  // This was a boolean, and a boolean cannot tell a second finger from the
+  // first. Resting a palm on the pad while drawing fired a second pointerdown,
+  // which replaced the live stroke with a one-point one — so the line somebody
+  // was in the middle of vanished. Holding the id means every later event is
+  // checked against the pointer that started the stroke, and a palm is ignored.
+  const drawingWith = useRef<number | null>(null);
 
-  const points = value.reduce((sum, stroke) => sum + stroke.length, 0) / 2;
+  // ——— Undo, and the way back from it ———
+  //
+  // Undone strokes are kept until the next mark, so undo is recoverable rather
+  // than one-way. Cleared on a new stroke: a redo that reaches back past
+  // something drawn since would put a line into a picture that has moved on.
+  const [undone, setUndone] = useState<Drawing>([]);
+
+  const points = value.reduce((sum, stroke) => sum + stroke.points.length, 0) / 2;
   const full = value.length >= MAX_STROKES || points >= MAX_POINTS;
+  // ⚠️ What is left for the stroke being drawn, in coordinates rather than
+  // points. Without this a single unbroken drag could pass MAX_POINTS: the cap
+  // was only checked when a stroke *started*, so cleanDrawing truncated it on
+  // the way to the server and the card came back missing the end of a line
+  // somebody watched themselves draw.
+  const roomLeft = Math.max(0, (MAX_POINTS - points) * 2);
 
   /** Where the pointer is, in the drawing's own square. */
   const at = useCallback((event: React.PointerEvent): [number, number] | null => {
@@ -74,37 +127,67 @@ export default function DrawPad({
 
   const down = (event: React.PointerEvent<HTMLDivElement>) => {
     if (full) return;
+    // A second finger, or a palm. The stroke in progress is the one that counts.
+    if (drawingWith.current !== null) return;
     const point = at(event);
     if (!point) return;
     // ⚠️ Capture on the element, so a finger sliding off the pad keeps drawing
     // the same stroke rather than ending it at the edge.
     event.currentTarget.setPointerCapture(event.pointerId);
-    drawing.current = true;
-    setLive(point);
+    drawingWith.current = event.pointerId;
+    setLive({ ink, width, points: point });
   };
 
   const move = (event: React.PointerEvent) => {
-    if (!drawing.current) return;
+    if (drawingWith.current !== event.pointerId) return;
     const point = at(event);
     if (!point) return;
     setLive((stroke) => {
       if (!stroke) return stroke;
+      // The whole drawing's budget, spent by the stroke in progress.
+      if (stroke.points.length >= roomLeft) return stroke;
       // Skip a point that has not moved. A finger held still fires a stream of
       // identical positions, and each one is two more numbers in the payload
       // for no visible difference.
-      const [lastX, lastY] = [stroke[stroke.length - 2], stroke[stroke.length - 1]];
-      if (lastX === point[0] && lastY === point[1]) return stroke;
-      return [...stroke, ...point];
+      const p = stroke.points;
+      if (p[p.length - 2] === point[0] && p[p.length - 1] === point[1]) return stroke;
+      return { ...stroke, points: [...p, ...point] };
     });
   };
 
-  const up = () => {
-    if (!drawing.current) return;
-    drawing.current = false;
+  const up = (event: React.PointerEvent) => {
+    if (drawingWith.current !== event.pointerId) return;
+    drawingWith.current = null;
     setLive((stroke) => {
-      if (stroke && stroke.length >= 2) onChange([...value, stroke]);
+      if (stroke && stroke.points.length >= 2) {
+        onChange([...value, stroke]);
+        // Anything undone is now unreachable — see the note on `undone`.
+        setUndone([]);
+      }
       return null;
     });
+  };
+
+  const undo = () => {
+    const last = value[value.length - 1];
+    if (!last) return;
+    setUndone((stack) => [...stack, last]);
+    onChange(value.slice(0, -1));
+  };
+
+  const redo = () => {
+    const last = undone[undone.length - 1];
+    if (!last || full) return;
+    setUndone((stack) => stack.slice(0, -1));
+    onChange([...value, last]);
+  };
+
+  const clear = () => {
+    // ⚠️ Clearing is undoable too, which is the whole reason it is safe to put
+    // next to a drawing somebody spent five minutes on. The strokes go onto the
+    // stack in order, so pressing redo repeatedly rebuilds the picture.
+    setUndone(value.slice());
+    onChange([]);
   };
 
   const shown = live ? [...value, live] : value;
@@ -161,8 +244,11 @@ export default function DrawPad({
               key={index}
               d={strokePath(stroke)}
               fill="none"
-              stroke="#111"
-              strokeWidth={22}
+              // ⚠️ Through inkOf and widthOf, never `stroke.ink` — see the note
+              // at the top of app/drawing.ts. These are the two attributes a
+              // colour could have become a string in.
+              stroke={inkOf(stroke)}
+              strokeWidth={widthOf(stroke)}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -184,13 +270,97 @@ export default function DrawPad({
         ) : null}
       </div>
 
+      {/* ——— The pencils ———
+
+          A radio group rather than a row of buttons: exactly one is chosen, and
+          that is what a radio group means to anything reading the page out. The
+          swatch is the button, so the colour is the label — with the name
+          carried in aria-label, because "a red circle" is not something a
+          screen reader can work out from a background colour.
+
+          ⚠️ Every swatch keeps a border in both states. A dark swatch on a
+          light page shows its own edge; a light one does not, and without the
+          border the amber and the pink read as floating blobs of different
+          sizes. The chosen one is marked by a ring outside that border rather
+          than by changing it, so nothing moves when the choice does. */}
+      <div
+        role="radiogroup"
+        aria-label={t("notes.inkLabel")}
+        className="mt-3 flex flex-wrap items-center gap-2"
+      >
+        {INKS.map((colour, index) => (
+          <button
+            key={colour}
+            type="button"
+            role="radio"
+            aria-checked={ink === index}
+            aria-label={t(INK_NAMES[index])}
+            onClick={() => setInk(index)}
+            // 32px, which is the tappable floor the rest of the app uses. The
+            // swatch inside is smaller; the target is not.
+            className={`cb-tap flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-shadow ${
+              ink === index ? "ring-2 ring-ink ring-offset-2 ring-offset-surface" : ""
+            }`}
+          >
+            <span
+              aria-hidden
+              className="block h-5 w-5 rounded-full border border-black/15"
+              style={{ backgroundColor: colour }}
+            />
+          </button>
+        ))}
+      </div>
+
+      {/* ——— The nibs ———
+
+          Shown as three dots at the sizes they draw, which is the one label
+          that needs no translating. The names are still there for a screen
+          reader. */}
+      <div
+        role="radiogroup"
+        aria-label={t("notes.penLabel")}
+        className="mt-2 flex items-center gap-2"
+      >
+        {WIDTHS.map((nib, index) => (
+          <button
+            key={nib}
+            type="button"
+            role="radio"
+            aria-checked={width === index}
+            aria-label={t(WIDTH_NAMES[index])}
+            onClick={() => setWidth(index)}
+            // ⚠️ The same ring the swatches use, rather than a border colour.
+            // The first cut marked the chosen nib by darkening its 1px border,
+            // which at this size is not a difference anybody can see — three
+            // buttons that look identical are three buttons nobody presses.
+            className={`cb-tap flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-line-soft transition-shadow ${
+              width === index ? "ring-2 ring-ink ring-offset-2 ring-offset-surface" : ""
+            }`}
+          >
+            <span
+              aria-hidden
+              className="block rounded-full"
+              style={{
+                // ⚠️ Scaled against the widest nib, not against the drawing's
+                // square. Against the square, all three came out under a pixel
+                // and hit the same 4px floor — three dots the same size, for
+                // three pens that are not.
+                width: `${(nib / WIDTHS[WIDTHS.length - 1]) * 18}px`,
+                height: `${(nib / WIDTHS[WIDTHS.length - 1]) * 18}px`,
+                backgroundColor: INKS[ink],
+              }}
+            />
+          </button>
+        ))}
+      </div>
+
       <div className="mt-2 flex items-center justify-between gap-3">
         {/* Undo, not just clear. Losing a whole drawing to one bad line is how
             somebody gives up rather than starting again. */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => onChange(value.slice(0, -1))}
+            onClick={undo}
             disabled={value.length === 0}
             className="cb-press cb-tap cursor-pointer rounded-full border border-line-soft px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-ink disabled:cursor-default disabled:opacity-40"
           >
@@ -198,7 +368,15 @@ export default function DrawPad({
           </button>
           <button
             type="button"
-            onClick={() => onChange([])}
+            onClick={redo}
+            disabled={undone.length === 0 || full}
+            className="cb-press cb-tap cursor-pointer rounded-full border border-line-soft px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-ink disabled:cursor-default disabled:opacity-40"
+          >
+            {t("notes.redoStroke")}
+          </button>
+          <button
+            type="button"
+            onClick={clear}
             disabled={value.length === 0}
             className="cb-press cb-tap cursor-pointer rounded-full border border-line-soft px-3 py-1.5 text-[12px] text-muted transition-colors hover:text-ink disabled:cursor-default disabled:opacity-40"
           >

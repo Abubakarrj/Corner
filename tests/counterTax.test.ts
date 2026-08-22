@@ -47,7 +47,7 @@ ok("so the two counters with rates sit either side of it",
 // ⚠️ Every counter inside Los Angeles County says nothing, and that silence is
 // load-bearing: it is what makes the county rate the default instead of
 // something six records have to repeat and one will eventually get wrong.
-const named = ["pasadena", "fullerton", "longbeach", "torrance", "sanclemente", "gardengrove"];
+const named = ["pasadena", "fullerton", "longbeach", "torrance", "sanclemente", "gardengrove", "lapuente"];
 const quiet = LOCATIONS.filter((store) => store.taxRate === undefined).map((s) => s.id);
 ok("every LA County counter stays quiet about tax",
    quiet.join(",") === LOCATIONS.filter((s) => !named.includes(s.id)).map((s) => s.id).join(","),

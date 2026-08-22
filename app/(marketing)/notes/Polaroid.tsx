@@ -1,5 +1,5 @@
 import type { NotePhoto } from "../../cornerNotesShape";
-import { CANVAS, strokePath, type Drawing } from "../../drawing";
+import { CANVAS, inkOf, strokePath, widthOf, type Drawing } from "../../drawing";
 import UnpinNote from "./UnpinNote";
 
 // A note, as a polaroid.
@@ -155,8 +155,12 @@ export default function Polaroid({
                 key={index}
                 d={strokePath(stroke)}
                 fill="none"
-                stroke="#111"
-                strokeWidth={22}
+                // ⚠️ Through inkOf and widthOf. This is a stranger's drawing
+                // out of the database, and these are the two attributes that
+                // would be a place to put a string if the colour were one. It
+                // is an index; app/drawing.ts owns the table it indexes.
+                stroke={inkOf(stroke)}
+                strokeWidth={widthOf(stroke)}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />

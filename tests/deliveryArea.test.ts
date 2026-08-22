@@ -128,8 +128,34 @@ async function main() {
   // map over-claims tests the thing on screen rather than the working-out
   // behind it. The per-ring assertions above stay on `rings`, because whether
   // each shop's reach was measured correctly is the other question.
-  const insideAny = (point: [number, number]) =>
-    area.outline.some((loop) => inLoop(point, loop));
+  //
+  // ——— ⚠️ Non-zero winding, because that is what Google paints ———
+  //
+  // This was `outline.some(inLoop)`, and that is not the rule a map uses. A
+  // hole in the union is a loop wound the other way *inside* the outer one, so
+  // "inside any loop" answers true for every point in it — the one place the
+  // shape deliberately claims nothing.
+  //
+  // It reported eleven points as over-claimed the day an eleventh counter
+  // closed a bay near Compton into a hole. Every one of them was genuinely
+  // outside the shape: inside the outer loop, inside the hole, net winding
+  // zero, painted as a hole by Google and by this helper now.
+  //
+  // The same mistake was found and fixed in tests/polygonUnion.test.ts and not
+  // carried across to here, so this suite has been lenient about holes since
+  // the first one appeared. It is the same helper now, in all three places.
+  const insideAny = (point: [number, number]) => {
+    let winding = 0;
+    for (const loop of area.outline) {
+      if (!inLoop(point, loop)) continue;
+      let twice = 0;
+      for (let i = 0, j = loop.length - 1; i < loop.length; j = i, i += 1) {
+        twice += loop[j][1] * loop[i][0] - loop[i][1] * loop[j][0];
+      }
+      winding += twice > 0 ? 1 : -1;
+    }
+    return winding !== 0;
+  };
 
   const origins = LOCATIONS.filter((l) => l.delivery !== false).map((l) => l.position);
   console.log(`  ${area.origins.length} origins, ${vertices.length} vertices, ` +

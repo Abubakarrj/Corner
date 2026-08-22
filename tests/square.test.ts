@@ -460,6 +460,7 @@ async function main() {
   process.env.SQUARE_LOCATION_TORRANCE = "L-torrance";
   process.env.SQUARE_LOCATION_SANCLEMENTE = "L-sanclemente";
   process.env.SQUARE_LOCATION_GARDENGROVE = "L-gardengrove";
+  process.env.SQUARE_LOCATION_LAPUENTE = "L-lapuente";
   reset({
     order_entries: [
       { location_id: "L-glendon" },
@@ -484,7 +485,7 @@ async function main() {
   // something this assertion is about.
   ok("and every counter's location is searched",
      JSON.stringify([...(wire().location_ids as string[])].sort()) ===
-       JSON.stringify(["L-fullerton", "L-gardengrove", "L-glendon", "L-larchmont",
+       JSON.stringify(["L-fullerton", "L-gardengrove", "L-glendon", "L-lapuente", "L-larchmont",
                        "L-longbeach", "L-pasadena", "L-sanclemente", "L-torrance",
                        "L-ventura", "L-wilshire"]),
      JSON.stringify(wire().location_ids));
@@ -510,6 +511,7 @@ async function main() {
   delete process.env.SQUARE_LOCATION_TORRANCE;
   delete process.env.SQUARE_LOCATION_SANCLEMENTE;
   delete process.env.SQUARE_LOCATION_GARDENGROVE;
+  delete process.env.SQUARE_LOCATION_LAPUENTE;
   reset({ order_entries: [{ location_id: "L-glendon" }] });
   await countOpenSquareOrders();
   const filter = ((wire().query as Wire)?.filter ?? {}) as Wire;

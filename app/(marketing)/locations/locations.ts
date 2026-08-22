@@ -876,6 +876,56 @@ export const GARDENGROVE: StoreLocation = {
   ],
 };
 
+// La Puente. A full store.
+//
+// The San Gabriel Valley's own counter. Pasadena reaches the west end of it and
+// stops around El Monte; from here the ten miles carry on east through Hacienda
+// Heights, Industry, West Covina and Baldwin Park, which is ground no counter
+// had.
+export const LAPUENTE: StoreLocation = {
+  id: "lapuente",
+  name: "La Puente",
+  kind: "shop",
+  address: "861 N Sunset Ave",
+  city: "La Puente, CA 91744",
+  hours: SHOP_HOURS,
+  // ⚠️⚠️ 9.75% is Los Angeles County's rate with no city tax on top, and that
+  // second half is the guess. Pasadena adds 0.75% of its own; several San
+  // Gabriel Valley cities add their own too, and this was set without being
+  // able to check — CDTFA is not reachable from where it was written.
+  //
+  // ⚠️ LOOK THIS UP BEFORE THE STORE TAKES AN ORDER, at
+  // cdtfa.ca.gov/taxes-and-fees/rates.aspx, by street address rather than by
+  // city name. Sunset Ave runs along a city line for part of its length, which
+  // is exactly the case a ZIP code answers wrongly. Too low and the shop pays
+  // the difference out of its own margin on every order, quietly, for as long
+  // as nobody checks.
+  taxRate: 0.0975,
+  // ⚠️ Assumed, not given: the usual hours, opening at 7.
+  //
+  // ⚠️ Estimated, not surveyed. The 800 block of N Sunset, north of Main St;
+  // this is that stretch of the street rather than a rooftop. storePlaces.ts
+  // geocodes the address at runtime and uses that instead. Read the drift-guard
+  // warning above these records.
+  position: [34.0335, -117.9490],
+  catering: true,
+  aliases: [
+    "la puente",
+    "lapuente",
+    "puente",
+    "sunset ave",
+    "861 n sunset",
+    "hacienda heights",
+    "city of industry",
+    "industry",
+    "west covina",
+    "baldwin park",
+    "valinda",
+    "san gabriel valley",
+    "91744",
+  ],
+};
+
 // ⚠️ WESTERN is deliberately absent — paused, not closed. See the note above
 // its record. Adding it back to the end of this array is the whole of
 // reopening it.
@@ -890,6 +940,7 @@ export const LOCATIONS: StoreLocation[] = [
   TORRANCE,
   SANCLEMENTE,
   GARDENGROVE,
+  LAPUENTE,
 ];
 
 /** When a counter opens, as an hour of the day.

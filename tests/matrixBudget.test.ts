@@ -96,12 +96,58 @@ ok("and leaves headroom for the address checks sharing the quota",
 // nothing — and both are things somebody should be told about rather than left
 // to notice.
 const floorElements = elementsFor(RESOLUTION_FLOOR, counters.length);
-ok("⚠️ the rung in use is no coarser than the map drew before the ladder existed",
-   resolution.bearings >= RESOLUTION_FLOOR.bearings ||
-     insetMilesFor(resolution) <= insetMilesFor(RESOLUTION_FLOOR),
-   `${resolution.bearings}×${steps} draws a ${(insetMilesFor(resolution) * 5280).toFixed(0)}ft inset,` +
-     ` against ${(insetMilesFor(RESOLUTION_FLOOR) * 5280).toFixed(0)}ft at` +
-     ` ${RESOLUTION_FLOOR.bearings} bearings (${floorElements} elements)`);
+const coarserThanFloor = insetMilesFor(resolution) > insetMilesFor(RESOLUTION_FLOOR);
+
+// ⚠️ The best rung the budget can carry, worked out here rather than trusted.
+// This is the assertion that survives whatever the quota is: picking a rung
+// when a finer one was affordable is a bug in resolutionFor, and it is a
+// different thing entirely from a quota that cannot afford a fine one.
+const finerAffordable = resolutionLadder().filter(
+  (rung) =>
+    insetMilesFor(rung) < insetMilesFor(resolution) &&
+    elementsFor(rung, counters.length) <= quota * 0.9,
+);
+ok("⚠️ no finer rung was affordable and passed over",
+   finerAffordable.length === 0,
+   finerAffordable.map((r) => `${r.bearings}@${elementsFor(r, counters.length)}`).join(", "));
+
+// ——— ⚠️ Coarser than it used to be, and whose problem that is ———
+//
+// Two very different situations look identical from here, so they are told
+// apart rather than collapsed into one red line:
+//
+//   the quota has been raised and the map is *still* coarse — something in the
+//   code is wrong, and this fails;
+//
+//   the quota is Google's default and the shop has outgrown it — nothing in
+//   the code can fix that, the fix is a console setting, and a test that stays
+//   red until somebody does it is a test people learn to ignore.
+//
+// The second is a warning that names the action. It is not silent and it is not
+// a failure.
+if (coarserThanFloor) {
+  const line =
+    `${resolution.bearings}×${steps} draws a ${(insetMilesFor(resolution) * 5280).toFixed(0)}ft inset,` +
+    ` against ${(insetMilesFor(RESOLUTION_FLOOR) * 5280).toFixed(0)}ft at` +
+    ` ${RESOLUTION_FLOOR.bearings} bearings (${floorElements} elements, ` +
+    `${Math.round((floorElements / quota) * 100)}% of this quota)`;
+  if (quotaFrom === "default") {
+    console.log(
+      `\n  ⚠️ THE PUBLISHED MAP IS COARSER THAN IT USED TO BE.\n     ${line}` +
+        `\n     ${counters.length} counters do not fit a finer rung inside Google's default` +
+        ` quota, and no rung on the ladder would help — fewer bearings sag more` +
+        ` than the extra search step gains.` +
+        `\n     The fix is free and takes a minute: Routes API → Quotas →` +
+        ` Compute Route Matrix elements per minute in the Cloud console, then` +
+        ` set ROUTES_MATRIX_QUOTA to the new number.`,
+    );
+  } else {
+    ok("⚠️ the rung in use is no coarser than the map drew before the ladder existed",
+       false, line);
+  }
+} else {
+  ok("⚠️ the rung in use is no coarser than the map drew before the ladder existed", true);
+}
 
 // ——— ⚠️ The counter that will need the console ———
 //
