@@ -8,6 +8,7 @@ import { useLocale, useT, type StringKey } from "../../i18n";
 import { SHOP_EMAIL } from "../../shopFacts";
 import { EMPLOYMENT_TYPES, POSITIONS, type PositionId } from "./application";
 import type { Opening } from "./openings";
+import { placeColour } from "./placeColour";
 import { TERMS, formatPay, shiftLine, type ResolvedPay } from "./pay";
 
 // The careers page: what the shop is, what it hires for, and a way in.
@@ -44,7 +45,12 @@ const POSITION_NOTE: Record<PositionId, StringKey> = {
 };
 
 /** An opening with the "New" question already answered — see page.tsx. */
-export type ListedOpening = Opening & { isNew: boolean; pay: ResolvedPay | null };
+// ⚠️ `isNew` is gone from here rather than left unread. The badge it fed was
+// replaced by the shop tag — see the note where that is rendered — and a field
+// carried through three files for nobody to render is the kind of thing that
+// gets a stale value and nobody notices. isNew() itself stays in openings.ts,
+// so putting the badge back is a line in each of two files.
+export type ListedOpening = Opening & { pay: ResolvedPay | null };
 
 export default function CareersLanding({ openings }: { openings: ListedOpening[] }) {
   const t = useT();
@@ -318,7 +324,10 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
             // is, as against a set of cards that have to agree. So the facts
             // go back to a sentence-shaped line, in a fixed order, and a row
             // with two of them next to a row with none is unremarkable.
-            const facts: string[] = oneShop === null ? [opening.location] : [];
+            // ⚠️ The shop is no longer a fact on this line — it is the tag
+            // beside the title. Leaving it here as well printed it twice on
+            // every row, which is how a list gets longer without saying more.
+            const facts: string[] = [];
             if (opening.pay) {
               // Tips get their own phrasing rather than a suffix bolted on.
               // "plus tips" appended to a translated sentence lands in the
@@ -373,17 +382,44 @@ export default function CareersLanding({ openings }: { openings: ListedOpening[]
                       style={{ fontFamily: DISPLAY_FONT }}
                     >
                       {t(label)}
-                      {/* ⚠️ sky, not sun, and the palette's own note had to move
-                          with it. globals.css listed "the tag on something new"
-                          under sun, which is reward — the keychain you are
-                          earning. A New badge is not a reward, it is the page
-                          telling you when this went up, which is what sky is
-                          for. The token pair rather than a hex, so night
-                          follows: sky-soft is a pale blue in light and a deep
-                          one in dark, with sky-ink legible on both. */}
-                      {opening.isNew ? (
-                        <span className="ms-2 inline-block whitespace-nowrap rounded-full bg-sky-soft px-2 py-[2px] align-[3px] text-[10px] font-medium uppercase tracking-[0.06em] text-sky-ink">
-                          {t("careers.new")}
+                      {/* ——— ⚠️ The shop, beside the title, in its own colour ———
+
+                          This was a New badge, and a New badge answers a
+                          question nobody on this page is asking: with one row
+                          per job per shop, twenty rows are four role names
+                          five times over, and the thing you are scanning for
+                          is *where*. That was third on a grey line of five
+                          facts underneath.
+
+                          So the shop moved up here and took the colour, and it
+                          comes out of the facts line below rather than being
+                          said twice.
+
+                          ⚠️ The colour is decoration on top of the name, never
+                          instead of it. In greyscale, in a screenshot, or for
+                          anybody who does not tell violet from indigo, the tag
+                          still reads "Larchmont" — nothing here depends on
+                          knowing which shop is the green one.
+
+                          Hidden when the board is filtered to one shop, on the
+                          same reasoning the fact was: a column that says
+                          Larchmont on every row, under a filter that says
+                          Larchmont, is a word repeated rather than a word.
+
+                          Two custom properties and a class: the stylesheet
+                          turns the pair into a background and an ink, per
+                          theme. See placeColour.ts and .cb-place. */}
+                      {oneShop === null ? (
+                        <span
+                          className="cb-place ms-2 inline-block whitespace-nowrap rounded-full px-2 py-[2px] align-[3px] text-[10px] font-medium tracking-[0.02em]"
+                          style={
+                            {
+                              "--cb-place-h": placeColour(opening.location).hue,
+                              "--cb-place-s": placeColour(opening.location).saturation,
+                            } as React.CSSProperties
+                          }
+                        >
+                          {opening.location}
                         </span>
                       ) : null}
                     </span>

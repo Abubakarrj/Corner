@@ -1896,3 +1896,32 @@ body {
     animation: none !important;
   }
 }
+
+/* ——— The shop tag on a job row ———
+
+   One row per job per shop means a board of twenty is four role names repeated
+   five times, and the shop's name was the only thing telling them apart — in
+   grey, at 12px, third on a line of five facts. It is beside the title now,
+   with a colour, so a column of rows is scannable by place.
+
+   ⚠️ Two numbers in, a whole tag out. The component sets a hue and a saturation
+   and nothing else — see app/(marketing)/careers/placeColour.ts — and the
+   lightness is decided here, once per theme. That is the point of doing it this
+   way: a pale tint on the light page and a deep one at night, from the same
+   pair of numbers, rather than twenty hex values that have to be picked twice
+   and kept in step.
+
+   ⚠️ The lightnesses are not arbitrary. 92% behind 28% ink clears WCAG AA at
+   this size for every hue on the wheel, and the dark pair is the same contrast
+   the other way up. A hue with no saturation — the fallback for a place that is
+   not on the shop list — comes out as the page's own grey, which is what a tag
+   with nothing to say should look like. */
+.cb-place {
+  background-color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 1%) 92%);
+  color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 1%) 28%);
+}
+
+:root[data-theme="dark"] .cb-place {
+  background-color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 0.7%) 24%);
+  color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 1%) 84%);
+}

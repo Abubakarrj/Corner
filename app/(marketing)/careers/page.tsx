@@ -1,5 +1,5 @@
 import CareersLanding from "./CareersLanding";
-import { OPENINGS, isNew } from "./openings";
+import { OPENINGS } from "./openings";
 import { POSTS_PAY_SCALE, resolvePay } from "./pay";
 
 export const metadata = {
@@ -23,7 +23,6 @@ export default function CareersPage() {
   const now = new Date();
   const openings = OPENINGS.map((opening) => ({
     ...opening,
-    isNew: isNew(opening, now),
     // Numbers only. The card turns them into money in whatever language is
     // on, which is the half that needs the browser.
     //
