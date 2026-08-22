@@ -10,6 +10,7 @@
     "check:maps": "node scripts/check-maps.mjs",
     "notes": "node scripts/notes.mjs",
     "audit:overflow": "node scripts/audit-overflow.mjs",
+    "measure:delivery": "npx tsx scripts/measure-delivery-area.ts",
     "test": "node tests/run.mjs"
   },
   "dependencies": {

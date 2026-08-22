@@ -1,5 +1,7 @@
 import { authorized, notFound } from "../../diagnostics";
 import { geocode, googleMapsKey, matrixProblem, routeBetween, suggest } from "../../googleMaps";
+import { shapeFingerprint } from "../../deliveryArea";
+import { deliveryShape } from "../../deliveryShape";
 import { deliveryArea } from "../../deliveryArea";
 import { deliveryOrigin } from "../../storePlaces";
 
@@ -113,10 +115,40 @@ export async function GET(request: Request) {
             "Places autocomplete returned nothing for a partial address." +
             " Check Places API (New) is enabled on this project.",
         },
-    // The shaded shape on /delivery-areas, measured for real. `patches` is how
-    // many separate lobes the counters make — more than one is normal now that
-    // there is a shop in Orange County — and `counters` is how many origins
-    // every measurement was taken against.
+    // ——— ⚠️ The committed boundary, and whether it still describes this shop ———
+    //
+    // The shape is measured once by `npm run measure:delivery` and checked in;
+    // see app/deliveryShape.ts for why. That makes staleness the failure worth
+    // reporting here: a counter opened, nobody re-ran the script, and the map
+    // is quietly missing a lobe. tests/deliveryShape.test.ts fails on it too,
+    // and this is what says so on a deploy that got past the test.
+    shape: (() => {
+      const committed = deliveryShape();
+      if (!committed) {
+        return {
+          ok: false as const,
+          why:
+            "No committed boundary in app/deliveryShape.json, so every cold" +
+            " start measures it live — about 2,640 Route Matrix elements each" +
+            " time. Run `npm run measure:delivery` and commit the file.",
+        };
+      }
+      const now = shapeFingerprint();
+      return committed.measuredFrom === now
+        ? { ok: true as const, measuredAt: committed.measuredAt }
+        : {
+            ok: false as const,
+            measuredAt: committed.measuredAt,
+            why:
+              "The committed boundary was measured from a different set of" +
+              " counters. The published map is stale. Run" +
+              " `npm run measure:delivery` and commit app/deliveryShape.json.",
+          };
+    })(),
+    // The shaded shape on /delivery-areas. `patches` is how many separate lobes
+    // the counters make — more than one is normal now that there is a shop in
+    // Orange County — and `counters` is how many origins it was measured
+    // against.
     deliveryArea: area
       ? {
           ok: true as const,

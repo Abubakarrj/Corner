@@ -2,6 +2,7 @@ import "server-only";
 
 import { inThePacific } from "./coastline";
 import { driveMatrixMin } from "./googleMaps";
+import { deliveryShape } from "./deliveryShape";
 import { unionRings } from "./polygonUnion";
 import { deliveryOrigins } from "./storePlaces";
 import {
@@ -235,6 +236,15 @@ export const RESOLUTION_FLOOR: Resolution = { bearings: 36, targetFeet: 250 };
  *  next person to add a counter needs it, and nothing else in this file would
  *  have told them. */
 export const MATRIX_ELEMENT_QUOTA = 3000;
+
+/** ⚠️ Measure the boundary live instead of serving the committed one.
+ *
+ *  Off everywhere by default, and it should stay off on anything real: a live
+ *  rebuild is ~2,640 Route Matrix elements and it happens on every cold start,
+ *  which is what the committed shape exists to stop. It is here for
+ *  scripts/measure-delivery-area.mjs, which needs a real measurement to write
+ *  the file, and for the rare case of debugging one by hand. */
+const LIVE = process.env.DELIVERY_AREA_LIVE === "1";
 
 /** How much of a minute's quota one rebuild may spend.
  *
@@ -849,6 +859,23 @@ const TTL_MS = 60 * 60 * 1000;
  *  computed off LOCATIONS rather than off the resolved geocodes: this runs on
  *  every read, and reaching for storePlaces here would put a Geocoding attempt
  *  on the path of every request whenever Google is unreachable. */
+/** ⚠️ What the *geometry* depends on: the counters and the radius, and nothing
+ *  else. This is what the committed shape in app/deliveryShape.ts is stamped
+ *  with, and it is deliberately narrower than counterFingerprint() below.
+ *
+ *  The quota is not in here. It decides how finely a live rebuild can afford to
+ *  measure, which is a property of the measurement rather than of the area —
+ *  and a committed shape carries the rung it was measured at inside it. Putting
+ *  the quota in this string would make a shape look stale the moment somebody
+ *  changed an environment variable that cannot move a boundary by an inch. */
+export function shapeFingerprint(): string {
+  return (
+    deliveringStores()
+      .map((store) => `${store.id}@${store.position[0]},${store.position[1]}`)
+      .join("|") + `#${DELIVERY_RADIUS_MILES}`
+  );
+}
+
 function counterFingerprint(): string {
   // ⚠️ The quota is in here as well as the counters. It is read from the
   // environment, so a deploy that raises it would otherwise keep serving the
@@ -870,6 +897,45 @@ let inFlight: Promise<DeliveryArea | null> | null = null;
  *  answer — the page renders the shop and the address check without a shaded
  *  area, rather than a shape nobody measured. */
 export async function deliveryArea(): Promise<DeliveryArea | null> {
+  // ——— ⚠️ The committed shape comes first, and usually there is nothing else ———
+  //
+  // The boundary is a pure function of the counter list and the radius, both of
+  // which live in source. Measuring it at runtime was paying Google to re-derive
+  // a constant on every cold start — 2,640 Route Matrix elements, about $13 a
+  // time, and the cache that was supposed to prevent it was a module-level
+  // variable that died with the process. Forty-five cold starts made a $600
+  // bill for a shape that had not moved.
+  //
+  // So it is measured once, by scripts/measure-delivery-area.mjs, and committed.
+  // See app/deliveryShape.ts.
+  // ⚠️ !LIVE first. Without it the script that exists to produce this file
+  // would find a matching shape, return it, and write back exactly what it read
+  // — a measurement tool that measures nothing, and the only sign would be an
+  // unchanged `measuredAt`.
+  const committed = LIVE ? null : deliveryShape();
+  if (committed && committed.measuredFrom === shapeFingerprint()) return committed.area;
+
+  // ——— ⚠️ And when it does not match ———
+  //
+  // Somebody moved a counter or opened one and did not re-run the script. The
+  // published map is then missing that shop's reach, which is wrong — but it is
+  // an hour-of-staleness kind of wrong, and the alternative is re-opening the
+  // hole that produced the bill, silently, at the exact moment somebody is
+  // deploying a change.
+  //
+  // So the stale shape is served and the mismatch is made loud in three places
+  // that are hard to miss and none of which cost money: this log, the
+  // /api/maps-check diagnostic, and tests/deliveryShape.test.ts, which fails.
+  // A live measurement happens only when somebody asks for one by name.
+  if (committed) {
+    console.warn(
+      "[delivery-area] ⚠️ the committed shape does not match the counters — " +
+        "run `npm run measure:delivery` and commit app/deliveryShape.ts. " +
+        "Serving the shape as measured; the map is stale.",
+    );
+    return committed.area;
+  }
+
   const fingerprint = counterFingerprint();
   if (cached && cached.from === fingerprint && Date.now() - cached.at < TTL_MS) {
     return cached.area;
