@@ -1561,7 +1561,26 @@ function StateBox({
  *  column. Without this the date field pushes its own cell past the edge of
  *  the page and the right end of it is simply gone. */
 function fieldInput(error?: string | null, onSurface?: boolean): string {
-  return `w-full min-w-0 max-w-full rounded-xl border px-3 py-2.5 text-[16px] text-ink outline-none transition-colors focus:border-ink ${
+  // ——— ⚠️ appearance-none, and the field it is for ———
+  //
+  // Every input here is the same size except one: `type="date"` on iOS keeps
+  // its native control, which sizes itself from its own internals rather than
+  // from the padding and font here. On the careers form that came out as a box
+  // visibly taller than the name and email above it, with nothing in it —
+  // because an empty date input on iOS draws no placeholder either. It reads as
+  // a cell that is the wrong size, which is what it is.
+  //
+  // appearance-none takes the native control off so the box is the one this
+  // line describes, and min-h matches what the text fields compute to
+  // (16px line-height + 10px padding top and bottom + 2 borders). Stated
+  // rather than left to the browser, because the whole problem is that one
+  // browser computes it differently.
+  //
+  // ⚠️ Not verified on a real iPhone from here — this is diagnosed from the
+  // rendering signature in a screenshot and from what iOS does with date
+  // inputs. Chromium renders the field at 46px either way, so the audit script
+  // cannot see this one and did not find it.
+  return `w-full min-w-0 max-w-full appearance-none rounded-xl border px-3 py-2.5 text-[16px] leading-[1.5] text-ink outline-none transition-colors focus:border-ink min-h-[46px] ${
     // On a card, the field sinks to the page colour; on the page, it lifts to
     // the card colour. Either way it is one step away from whatever it is
     // sitting on. It used to sink to cream, which was a warm tint on a warm

@@ -304,9 +304,27 @@ export function InfoPanel({ card }: { card: InfoCard }) {
       <div className="mt-1.5 flex flex-col gap-1">
         {card.lines.map((line, index) => (
           <div key={index} className="flex items-baseline justify-between gap-3">
-            <span className="text-[12px] text-muted">{say(line.label)}</span>
+            {/* ⚠️ min-w-0 on both halves, and no shrink-0 on the value.
+                
+                The value used to be shrink-0, which is right for the thing this
+                panel was built for — a price, a time, a distance, all short and
+                none of which should wrap. It is wrong for the one line that is
+                not short: a delivery address. "233 S Alexandria Ave, Los
+                Angeles, CA 90004" cannot shrink, cannot wrap, and so ran
+                straight out of the right side of the card and off the screen.
+                
+                Now it wraps. Short values still take one line because they fit;
+                the address takes two. break-words rather than break-all so a
+                street name breaks at a space where it can, and only splits a
+                word when a single word is wider than the card.
+                
+                ⚠️ min-w-0 on the label too. A flex item will not shrink below
+                its content's minimum width without it, so a long label would
+                have moved the problem rather than fixed it — and labels are
+                translated into ten languages. */}
+            <span className="min-w-0 text-[12px] text-muted">{say(line.label)}</span>
             <span
-              className={`shrink-0 text-[12px] text-ink ${
+              className={`min-w-0 break-words text-end text-[12px] text-ink ${
                 // The last row of a totals panel is the total.
                 card.kind === "totals" && index === card.lines.length - 1 ? "font-medium" : ""
               }`}
