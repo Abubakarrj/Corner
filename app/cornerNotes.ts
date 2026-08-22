@@ -4,6 +4,8 @@ import { SCHEMA, db, explainDbError, isDatabaseConfigured, ready } from "./db";
 import { cleanDrawing, hasInk, type Drawing } from "./drawing";
 import { isPhotoState, photoOnWall, type PhotoState } from "./notePhoto";
 import { deviceMatches } from "./noteDevice";
+// ⚠️ TEMPORARY — see app/notesWithheld.ts, which says when this import goes.
+import { withheldKeys } from "./notesWithheld";
 import { hashUnpinToken, mintUnpinToken, tokenMatches } from "./noteOwner";
 import {
   MAX_NAME,
@@ -276,12 +278,32 @@ export async function listNotes(
          FROM ${SCHEMA}.corner_notes
         WHERE hidden = false
           AND ($3::text IS NULL OR lower(neighborhood) = lower($3))
+          -- ⚠️ TEMPORARY, and driven by NOTES_WITHHELD — see
+          -- app/notesWithheld.ts, including why it is an environment variable
+          -- and not a list in the source. Off entirely when unset, which is
+          -- everywhere except the deploy that sets it.
+          --
+          -- ⚠️ In the WHERE rather than filtered afterwards, so LIMIT still
+          -- counts what it returns. A post-filter would quietly serve 22 cards
+          -- for a page that asked for 24 and break the paging on /notes/all.
+          --
+          -- <> ALL over an empty array is true for every row, so emptying the
+          -- list withholds nothing — the failure direction you want from a
+          -- clause meant to be deleted.
+          -- ⚠️ The '|' has to be the SEPARATOR in notesWithheld.ts. This
+          -- builds the key a second time, in Postgres, and the two halves of
+          -- that pair drifted the first time they were written — a NUL on one
+          -- side and a space on the other, which withheld nothing at all and
+          -- looked exactly like working code.
+          AND lower(trim(name)) || '|' || lower(trim(coalesce(neighborhood, '')))
+              <> ALL($4::text[])
         ORDER BY ${options.byPlace ? "neighborhood ASC NULLS LAST, at DESC" : "at DESC"}
         LIMIT $1 OFFSET $2`,
       [
         Math.min(Math.max(limit, 1), 120),
         Math.max(offset, 0),
         readField(options.in ?? "", MAX_NEIGHBORHOOD) || null,
+        withheldKeys(),
       ],
     );
     return rows.rows.map((row) => ({
