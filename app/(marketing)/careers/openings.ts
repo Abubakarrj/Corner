@@ -7,7 +7,7 @@ import type { PositionId } from "./application";
 // could turn up to. The page used to list the four kinds and say nothing about
 // where, and a label was the thing missing.
 //
-// That shape is what let five shops become twenty rows without touching
+// That shape is what lets eleven shops be forty-four rows without touching
 // anything but this array.
 //
 // ——— This is now a list somebody maintains ———
@@ -20,18 +20,21 @@ import type { PositionId } from "./application";
 //
 // Nothing enforces that. It is a file somebody has to remember.
 //
-// ——— "New" expires by itself ———
+// ——— ⚠️ `since` is recorded and not currently shown ———
 //
-// `since` is the day the job went up, not a flag saying it is new. A boolean
-// would be true forever, because the day you clear it is a day nobody is
-// thinking about this file — so every "New" badge on the internet is either
-// fresh or a lie, and you cannot tell which by looking.
+// It is the day the job went up, not a flag saying it is new. A boolean would
+// be true forever, because the day you clear it is a day nobody is thinking
+// about this file — so every "New" badge on the internet is either fresh or a
+// lie, and you cannot tell which by looking. A date can only ever be honest.
 //
-// A date can only ever be honest: the badge appears for NEW_FOR_DAYS and then
-// stops on its own, and if somebody forgets this file entirely the worst that
-// happens is a badge quietly going away.
+// ⚠️ The badge it fed is gone. The board now carries the shop's name in its own
+// colour where the badge used to sit, because with one row per job per shop the
+// thing a reader is scanning for is *where*, not *when* — see placeColour.ts.
 //
-// Leave `since` off and there is simply no badge.
+// The dates stay accurate anyway, and isNew() stays in this file, so restoring
+// the badge is a line in each of two files rather than a data-entry job. A row
+// added without `since` would be silently "not new" if that ever happened,
+// which is the one way this field goes wrong.
 //
 // ——— The shop travels with the application ———
 //
@@ -91,11 +94,13 @@ export const NEW_FOR_DAYS = 30;
 // so there is nothing to staff. If it reopens, hiring for it is four more rows
 // here, not something to infer from an address coming back onto the map.
 //
-// `since` is on the sixteen jobs that opened with the new shops and off the
-// four that were already advertised. That is a lot of "New" badges at once,
-// which is what a shop opening four locations actually looks like; they expire
-// by themselves after NEW_FOR_DAYS.
+// ⚠️ Two dates because these went up in two batches: sixteen jobs when four
+// shops opened, and twenty-four more when the board was brought in line with a
+// shop list that had run six ahead of it. The four originals carry no date at
+// all, which is what "advertised for as long as anybody can remember" looks
+// like.
 const OPENED = "2026-08-21";
+const POSTED = "2026-08-22";
 
 export const OPENINGS: Opening[] = [
   { role: "counter", location: "Koreatown" },
@@ -103,24 +108,48 @@ export const OPENINGS: Opening[] = [
   { role: "counter", location: "Westwood", since: OPENED },
   { role: "counter", location: "Studio City", since: OPENED },
   { role: "counter", location: "Pasadena", since: OPENED },
+  { role: "counter", location: "Fullerton", since: POSTED },
+  { role: "counter", location: "Long Beach", since: POSTED },
+  { role: "counter", location: "Torrance", since: POSTED },
+  { role: "counter", location: "San Clemente", since: POSTED },
+  { role: "counter", location: "Garden Grove", since: POSTED },
+  { role: "counter", location: "La Puente", since: POSTED },
 
   { role: "kitchen", location: "Koreatown" },
   { role: "kitchen", location: "Larchmont", since: OPENED },
   { role: "kitchen", location: "Westwood", since: OPENED },
   { role: "kitchen", location: "Studio City", since: OPENED },
   { role: "kitchen", location: "Pasadena", since: OPENED },
+  { role: "kitchen", location: "Fullerton", since: POSTED },
+  { role: "kitchen", location: "Long Beach", since: POSTED },
+  { role: "kitchen", location: "Torrance", since: POSTED },
+  { role: "kitchen", location: "San Clemente", since: POSTED },
+  { role: "kitchen", location: "Garden Grove", since: POSTED },
+  { role: "kitchen", location: "La Puente", since: POSTED },
 
   { role: "shift-lead", location: "Koreatown" },
   { role: "shift-lead", location: "Larchmont", since: OPENED },
   { role: "shift-lead", location: "Westwood", since: OPENED },
   { role: "shift-lead", location: "Studio City", since: OPENED },
   { role: "shift-lead", location: "Pasadena", since: OPENED },
+  { role: "shift-lead", location: "Fullerton", since: POSTED },
+  { role: "shift-lead", location: "Long Beach", since: POSTED },
+  { role: "shift-lead", location: "Torrance", since: POSTED },
+  { role: "shift-lead", location: "San Clemente", since: POSTED },
+  { role: "shift-lead", location: "Garden Grove", since: POSTED },
+  { role: "shift-lead", location: "La Puente", since: POSTED },
 
   { role: "manager", location: "Koreatown" },
   { role: "manager", location: "Larchmont", since: OPENED },
   { role: "manager", location: "Westwood", since: OPENED },
   { role: "manager", location: "Studio City", since: OPENED },
   { role: "manager", location: "Pasadena", since: OPENED },
+  { role: "manager", location: "Fullerton", since: POSTED },
+  { role: "manager", location: "Long Beach", since: POSTED },
+  { role: "manager", location: "Torrance", since: POSTED },
+  { role: "manager", location: "San Clemente", since: POSTED },
+  { role: "manager", location: "Garden Grove", since: POSTED },
+  { role: "manager", location: "La Puente", since: POSTED },
 ];
 
 /** Whether a job still counts as new, as of `now`.

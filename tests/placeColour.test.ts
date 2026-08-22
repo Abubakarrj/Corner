@@ -35,6 +35,68 @@ const ok = (what: string, cond: boolean, detail = "") => {
 const wheel = placeWheel();
 const key = (c: { hue: number; saturation: number }) => `${c.hue}/${c.saturation}`;
 
+// ——— ⚠️ The colour maths, and the four numbers it borrows ———
+//
+// 88% behind 28% ink in light, 24% behind 84% in dark. ⚠️ Duplicated from
+// .cb-place in globals.css, which is the one thing here that can go stale in
+// silence: change them there and this keeps answering about the old ones.
+//
+// Worth duplicating anyway. Only the shops with a job posted put a tag on
+// screen, so a browser can check those and none of the rest — and a colour that
+// turns out to be unreadable the week a shop starts hiring is a colour nobody
+// tested.
+const LIGHT = { bg: 88, ink: 28 };
+const DARK = { bg: 24, ink: 84, satScale: 0.7 };
+
+type Rgb = [number, number, number];
+
+/** HSL to sRGB, the way a browser does it. */
+function paint(
+  colour: { hue: number; saturation: number },
+  lightness: number,
+  saturation = colour.saturation,
+): Rgb {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((colour.hue / 60) % 2) - 1));
+  const m = l - c / 2;
+  const sector = Math.floor(colour.hue / 60) % 6;
+  const table: Rgb[] = [[c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x]];
+  return table[sector].map((v) => (v + m) * 255) as Rgb;
+}
+
+const linear = (v: number) => {
+  const u = v / 255;
+  return u <= 0.04045 ? u / 12.92 : ((u + 0.055) / 1.055) ** 2.4;
+};
+
+/** CIE L*a*b*, which is the space distances mean something in. */
+function lab([r, g, b]: Rgb): Rgb {
+  const [R, G, B] = [linear(r), linear(g), linear(b)];
+  const bend = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+  const X = bend((R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047);
+  const Y = bend(R * 0.2126 + G * 0.7152 + B * 0.0722);
+  const Z = bend((R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883);
+  return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+}
+
+/** How different two colours look. Roughly: under 2.3 is the smallest
+ *  difference an eye can detect at all. */
+function deltaE(a: Rgb, b: Rgb): number {
+  const [x, y] = [lab(a), lab(b)];
+  return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+}
+
+function luminance(rgb: Rgb): number {
+  const [r, g, b] = rgb.map(linear);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+const contrast = (a: Rgb, b: Rgb) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
 console.log(`\n— ${LOCATIONS.length} shops, ${wheel.length} colours —`);
 
 // ——— ⚠️ Enough colours to go round ———
@@ -51,26 +113,37 @@ const seen = new Set(wheel.map(key));
 ok("and no two of them are the same colour", seen.size === wheel.length,
    `${seen.size} distinct of ${wheel.length}`);
 
-// ⚠️ Distinct as *numbers* is not distinct to an eye. Two hues fifteen degrees
-// apart at the size of a tag are one colour with a rounding error, so the wheel
-// is held to a real gap — measured the short way round, because 355 and 5 are
-// ten degrees apart and not three hundred and fifty.
-const MIN_HUE_GAP = 20;
-const tooClose: string[] = [];
+// ——— ⚠️ Told apart by an eye, not by an angle ———
+//
+// This counted degrees on the colour wheel and required twenty between any two.
+// It passed, and the board still carried three purples nobody could tell apart:
+// measured off the rendered page, the closest pair was 2.8 in Lab, which is
+// about the smallest difference an eye can detect at all.
+//
+// Hue degrees are not a perceptual measure. Twenty-seven degrees around the
+// blues is a far smaller step than twenty-seven around the greens, and a rule
+// counting degrees is blind to that. So the distance is measured between the
+// colours as they will actually be painted.
+//
+// The thresholds are set where the wheel comfortably clears them rather than at
+// the edge: the closest background pair is around 7 and the closest pair of
+// inks is over 17.
+const MIN_BG_DELTA = 5;
+const MIN_INK_DELTA = 12;
+const bgClose: string[] = [];
+const inkClose: string[] = [];
 for (let i = 0; i < wheel.length; i += 1) {
   for (let j = i + 1; j < wheel.length; j += 1) {
-    const raw = Math.abs(wheel[i].hue - wheel[j].hue);
-    const gap = Math.min(raw, 360 - raw);
-    // Two hues may sit close if their saturations pull them apart — brown is
-    // orange with the saturation taken out, and it reads as its own colour.
-    const satGap = Math.abs(wheel[i].saturation - wheel[j].saturation);
-    if (gap < MIN_HUE_GAP && satGap < 20) {
-      tooClose.push(`${key(wheel[i])} vs ${key(wheel[j])} (${gap}°)`);
-    }
+    const bg = deltaE(paint(wheel[i], LIGHT.bg), paint(wheel[j], LIGHT.bg));
+    const ink = deltaE(paint(wheel[i], LIGHT.ink), paint(wheel[j], LIGHT.ink));
+    if (bg < MIN_BG_DELTA) bgClose.push(`${key(wheel[i])}/${key(wheel[j])} ΔE ${bg.toFixed(1)}`);
+    if (ink < MIN_INK_DELTA) inkClose.push(`${key(wheel[i])}/${key(wheel[j])} ΔE ${ink.toFixed(1)}`);
   }
 }
-ok("⚠️ and no two are close enough to read as the same colour",
-   tooClose.length === 0, tooClose.join(", "));
+ok("⚠️ no two tags are close enough to read as the same colour",
+   bgClose.length === 0, bgClose.join(", "));
+ok("and neither are any two of the inks on them",
+   inkClose.length === 0, inkClose.join(", "));
 
 // ——— Every shop the board can name gets its own ———
 const shops = LOCATIONS.map((store) => store.name);
@@ -115,59 +188,33 @@ const unknown = advertised.filter((name) => placeColour(name) === PLACE_UNKNOWN)
 ok("⚠️ every shop with a job posted is a shop the site knows about",
    unknown.length === 0, unknown.join(", "));
 
-// ——— ⚠️ Legible, including the colours nothing is wearing yet ———
-//
-// Only the shops with a job posted put a tag on screen, so a browser can only
-// check five of the twelve. The other seven are one opening away from being
-// rendered, and a colour that turns out to be unreadable the week a shop starts
-// hiring is a colour nobody tested.
-//
-// So the contrast is computed here from the same lightnesses .cb-place uses —
-// 92% behind 28% in light, 24% behind 84% in dark. ⚠️ Those four numbers are
-// duplicated from globals.css, which is the one thing in this file that can go
-// stale silently: change them there and this keeps passing about the old ones.
-// They are worth duplicating anyway, because the alternative is seven colours
-// nobody checks at all.
-const LIGHT = { bg: 92, ink: 28 };
-const DARK = { bg: 24, ink: 84, satScale: 0.7 };
-
-/** sRGB relative luminance of an HSL colour, the WCAG way. */
-function luminance(h: number, s: number, l: number): number {
-  const sat = s / 100;
-  const light = l / 100;
-  const c = (1 - Math.abs(2 * light - 1)) * sat;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = light - c / 2;
-  const sector = Math.floor(h / 60) % 6;
-  const rgb = [
-    [c, x, 0], [x, c, 0], [0, c, x], [0, x, c], [x, 0, c], [c, 0, x],
-  ][sector].map((v) => v + m);
-  const [r, g, b] = rgb.map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-const contrast = (a: number, b: number) =>
-  (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-
-console.log("\n— every colour on the wheel, in both themes —");
+// ——— Legible, in both themes ———
+console.log("\n— every colour on the wheel —");
 const dim: string[] = [];
+let closestBg = Infinity;
 for (const colour of wheel) {
-  const light = contrast(
-    luminance(colour.hue, colour.saturation, LIGHT.bg),
-    luminance(colour.hue, colour.saturation, LIGHT.ink),
-  );
+  const light = contrast(paint(colour, LIGHT.bg), paint(colour, LIGHT.ink));
   const dark = contrast(
-    luminance(colour.hue, colour.saturation * DARK.satScale, DARK.bg),
-    luminance(colour.hue, colour.saturation, DARK.ink),
+    paint(colour, DARK.bg, colour.saturation * DARK.satScale),
+    paint(colour, DARK.ink),
   );
-  // 4.5:1 is AA for text this size. The tag is 10px and bold-ish, which is not
-  // "large text" by the guideline's definition, so the small-text bar applies.
+  // 4.5:1 is AA for text this size. The tag is 10px, which is not "large text"
+  // by the guideline's definition, so the small-text bar applies.
   if (light < 4.5 || dark < 4.5) {
     dim.push(`${key(colour)} light ${light.toFixed(1)} dark ${dark.toFixed(1)}`);
   }
-  console.log(`  ${key(colour).padEnd(8)} light ${light.toFixed(1)}:1  dark ${dark.toFixed(1)}:1`);
+  const nearest = Math.min(
+    ...wheel.filter((o) => o !== colour).map((o) => deltaE(paint(colour, LIGHT.bg), paint(o, LIGHT.bg))),
+  );
+  closestBg = Math.min(closestBg, nearest);
+  console.log(
+    `  ${key(colour).padEnd(8)} contrast ${light.toFixed(1)}:1 light, ${dark.toFixed(1)}:1 dark` +
+      `  |  nearest other tag ΔE ${nearest.toFixed(1)}`,
+  );
 }
 ok("⚠️ every colour clears AA against its own background, in both themes",
    dim.length === 0, dim.join("; "));
+console.log(`\n  closest pair of tags anywhere on the wheel: ΔE ${closestBg.toFixed(1)}`);
 
 console.log(
   `\n  advertised at ${advertised.length} of ${LOCATIONS.length} shops` +

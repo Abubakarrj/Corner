@@ -1911,13 +1911,19 @@ body {
    pair of numbers, rather than twenty hex values that have to be picked twice
    and kept in step.
 
-   ⚠️ The lightnesses are not arbitrary. 92% behind 28% ink clears WCAG AA at
-   this size for every hue on the wheel, and the dark pair is the same contrast
-   the other way up. A hue with no saturation — the fallback for a place that is
-   not on the shop list — comes out as the page's own grey, which is what a tag
-   with nothing to say should look like. */
+   ⚠️ The lightnesses are not arbitrary, and 88% is not 92% for a measured
+   reason. At 92% every hue collapses toward white: the closest two tags on the
+   published board came out 2.8 apart in Lab, which is roughly the smallest
+   difference an eye can detect, so two shops were the same colour in practice.
+   Four points of lightness buys the hues room to separate — the closest pair is
+   7.2 now — and it still clears WCAG AA behind 28% ink for every colour on the
+   wheel, with the dark pair the same contrast the other way up.
+
+   A hue with no saturation — the fallback for a place that is not on the shop
+   list — comes out as the page's own grey, which is what a tag with nothing to
+   say should look like. */
 .cb-place {
-  background-color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 1%) 92%);
+  background-color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 1%) 88%);
   color: hsl(var(--cb-place-h) calc(var(--cb-place-s) * 1%) 28%);
 }
 

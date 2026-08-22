@@ -36,31 +36,39 @@ export type PlaceColour = { hue: number; saturation: number };
  *  LOCATIONS would repaint the board, which is cosmetic and would still be a
  *  surprise to whoever did it.
  *
- *  Chosen to be told apart at the size of a tag, which is why no two sit within
- *  twenty degrees of each other on the wheel. tests/placeColour.test.ts holds
- *  them to it, and it caught two pairs in the first draft that were seventeen
- *  and fourteen degrees apart — near enough to read as one colour with a
- *  rounding error.
+ *  ——— ⚠️ Chosen by how far apart they look, not by hue ———
  *
- *  ⚠️ Brown is the exception the rule allows for. It is orange with the
- *  saturation taken out, eight degrees from the orange above it, and it reads
- *  as its own colour because of the saturation rather than the hue — which is
- *  why the check lets a close pair through when their saturations are far
- *  apart, and why saturation is carried here at all instead of being one
- *  constant. */
+ *  The first draft spaced these by degrees on the colour wheel, on a rule that
+ *  no two could sit within twenty of each other. That rule passed, and the
+ *  board still had three purples on it that nobody could tell apart: measured
+ *  off the rendered page, the closest pair came out at a colour difference of
+ *  2.8, which is about the smallest difference an eye can detect at all.
+ *
+ *  Hue degrees are not a perceptual measure. Twenty-seven degrees around the
+ *  blues and purples is a much smaller step than twenty-seven around the
+ *  greens, and a rule counting degrees cannot see the difference. So the wheel
+ *  is picked against the distance between the colours as they are actually
+ *  painted, and tests/placeColour.test.ts measures that rather than the angle:
+ *  the closest pair is 7.2 now, and every pair of *inks* is over 17.
+ *
+ *  ⚠️ Saturation is the second axis and it is doing real work. Brown is orange
+ *  with the saturation taken out and slate is blue the same way — both sit a
+ *  few degrees from a colour they are nothing like on screen. A wheel of twelve
+ *  hues alone, at the lightness a pale tag needs, cannot separate twelve
+ *  shops. */
 const WHEEL: PlaceColour[] = [
-  { hue: 272, saturation: 45 }, // violet
-  { hue: 130, saturation: 45 }, // green
-  { hue: 30, saturation: 68 }, // orange
-  { hue: 212, saturation: 55 }, // blue
-  { hue: 22, saturation: 26 }, // brown
-  { hue: 330, saturation: 50 }, // pink
-  { hue: 190, saturation: 45 }, // teal
-  { hue: 52, saturation: 62 }, // gold
-  { hue: 82, saturation: 40 }, // olive
-  { hue: 245, saturation: 45 }, // indigo
-  { hue: 302, saturation: 42 }, // magenta
-  { hue: 163, saturation: 42 }, // jade
+  { hue: 286, saturation: 58 }, // violet
+  { hue: 135, saturation: 52 }, // green
+  { hue: 28, saturation: 72 }, // orange
+  { hue: 215, saturation: 62 }, // blue
+  { hue: 24, saturation: 26 }, // brown
+  { hue: 338, saturation: 58 }, // pink
+  { hue: 188, saturation: 55 }, // teal
+  { hue: 48, saturation: 70 }, // gold
+  { hue: 78, saturation: 45 }, // olive
+  { hue: 242, saturation: 52 }, // indigo
+  { hue: 208, saturation: 20 }, // slate
+  { hue: 160, saturation: 48 }, // jade
 ];
 
 /** ⚠️ The fallback, for a job posted at a place that is not on the shop list.
